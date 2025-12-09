@@ -197,7 +197,7 @@ export default function UnifiedCalculatorPage() {
           <div className="space-y-2">
             <Label htmlFor="product-select">Выберите продукт (профиль бутылки)</Label>
             <Select onValueChange={handleProductSelect} value={selectedProductId}>
-              <SelectTrigger id="product-select" disabled={isLoadingProducts}>
+              <SelectTrigger id="product-select" disabled={isLoadingProducts || !products}>
                 <SelectValue placeholder={isLoadingProducts ? "Загрузка продуктов..." : "Выберите продукт из каталога..."} />
               </SelectTrigger>
               <SelectContent>

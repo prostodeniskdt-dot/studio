@@ -27,7 +27,8 @@ export function SessionsList({ sessions }: SessionsListProps) {
     }
   };
   
-  const formatDate = (timestamp: Timestamp | Date) => {
+  const formatDate = (timestamp: Timestamp | Date | undefined) => {
+    if (!timestamp) return 'Неверная дата';
     if (timestamp instanceof Timestamp) {
       return timestamp.toDate().toLocaleDateString('ru-RU');
     }

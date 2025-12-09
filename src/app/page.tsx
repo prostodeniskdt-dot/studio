@@ -4,66 +4,100 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AppLogo } from "@/components/app-logo";
+import { CheckCircle } from "lucide-react";
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-full flex-col justify-center items-center px-6 py-12 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
+    <div className="w-full min-h-full bg-background">
+      <div className="container relative grid h-full flex-col items-center justify-center lg:max-w-none lg:grid-cols-2 lg:px-0">
+        <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
+          <div
+            className="absolute inset-0 bg-cover"
+            style={{
+              backgroundImage:
+                "url(https://images.unsplash.com/photo-1579311318434-2c343b3b3f29?q=80&w=1974&auto=format&fit=crop)",
+            }}
+          />
+          <div className="relative z-20 flex items-center text-lg font-medium">
             <AppLogo />
+          </div>
+          <div className="relative z-20 mt-auto">
+            <blockquote className="space-y-2">
+              <p className="text-lg">
+                &ldquo;Эта система инвентаризации — лучшее, что случалось с моим баром. Просто, эффективно и экономит мне кучу денег!&rdquo;
+              </p>
+              <footer className="text-sm">Владелец бара</footer>
+            </blockquote>
+          </div>
         </div>
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold tracking-tight text-center">Войдите в свою учетную запись</CardTitle>
-            <CardDescription className="text-center">
-              Или <Link href="/signup" className="font-medium text-primary hover:underline">создайте новую учетную запись</Link>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form className="space-y-6">
-              <div>
-                <Label htmlFor="email">Адрес электронной почты</Label>
-                <div className="mt-2">
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    placeholder="you@example.com"
-                  />
-                </div>
-              </div>
+        <div className="lg:p-8">
+          <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+            <div className="flex flex-col space-y-2 text-center">
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Войдите в свою учетную запись
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Введите свою почту и пароль для входа
+              </p>
+            </div>
+            <Card>
+                <CardContent className="pt-6">
+                    <form className="space-y-4">
+                    <div>
+                        <Label htmlFor="email">Электронная почта</Label>
+                        <div className="mt-1">
+                        <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            autoComplete="email"
+                            required
+                            placeholder="you@example.com"
+                        />
+                        </div>
+                    </div>
 
-              <div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Пароль</Label>
-                  <div className="text-sm">
-                    <a href="#" className="font-medium text-primary hover:underline">
-                      Забыли пароль?
-                    </a>
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                  />
-                </div>
-              </div>
+                    <div>
+                        <div className="flex items-center justify-between">
+                        <Label htmlFor="password">Пароль</Label>
+                        <div className="text-sm">
+                            <a href="#" className="font-medium text-primary hover:underline">
+                            Забыли пароль?
+                            </a>
+                        </div>
+                        </div>
+                        <div className="mt-1">
+                        <Input
+                            id="password"
+                            name="password"
+                            type="password"
+                            autoComplete="current-password"
+                            required
+                        />
+                        </div>
+                    </div>
 
-              <div>
-                <Button type="submit" className="w-full" asChild>
-                  {/* In a real app, this would trigger a login action. For the demo, it navigates to the dashboard. */}
-                  <Link href="/dashboard">Войти</Link>
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+                    <div>
+                        <Button type="submit" className="w-full" asChild>
+                        {/* In a real app, this would trigger a login action. For the demo, it navigates to the dashboard. */}
+                        <Link href="/dashboard">Войти</Link>
+                        </Button>
+                    </div>
+                    </form>
+                </CardContent>
+            </Card>
+            <p className="px-8 text-center text-sm text-muted-foreground">
+              У вас нет аккаунта?{" "}
+              <Link
+                href="/signup"
+                className="underline underline-offset-4 hover:text-primary"
+              >
+                Создать
+              </Link>
+              .
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

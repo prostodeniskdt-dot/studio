@@ -10,6 +10,4 @@ export const ai = genkit({
     }),
     googleCloud(),
   ],
-  logLevel: 'debug',
-  model: 'googleai/gemini-2.5-flash',
 });

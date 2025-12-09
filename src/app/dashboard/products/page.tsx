@@ -17,7 +17,7 @@ export default function ProductsPage() {
 
     const { data: products, isLoading } = useCollection<Product>(productsQuery);
 
-    if (isLoading || !barId) {
+    if (isLoading || !products) {
         return (
             <div className="flex justify-center items-center h-full pt-20">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

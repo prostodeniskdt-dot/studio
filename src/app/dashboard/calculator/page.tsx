@@ -174,6 +174,14 @@ export default function UnifiedCalculatorPage() {
     }
   };
 
+  if (isLoadingProducts) {
+      return (
+          <div className="flex justify-center items-center h-full pt-20">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+      )
+  }
+
   return (
     <div className="container mx-auto">
       <h1 className="text-3xl font-bold tracking-tight mb-2">Универсальный калькулятор</h1>

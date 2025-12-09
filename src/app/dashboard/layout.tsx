@@ -2,7 +2,6 @@
 import {
   SidebarProvider,
   Sidebar,
-  SidebarHeader,
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
@@ -100,7 +99,7 @@ export default function DashboardLayout({
 
 
   // While loading auth state OR ensuring documents, show a loader.
-  if (!isDataReady) {
+  if (isUserLoading || !isDataReady) {
      return (
       <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background">
         <Loader2 className="h-8 w-8 animate-spin" />

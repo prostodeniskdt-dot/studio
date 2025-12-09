@@ -56,13 +56,14 @@ export default function LoginPage() {
         return;
     }
     try {
+      // The function now awaits the full sign-in and document creation process
       await initiateEmailSignIn(auth, firestore, data.email, data.password);
-      // On successful sign-in, the useEffect above will trigger the redirect.
+      
       toast({
         title: "Вход выполнен",
         description: "Перенаправляем на панель управления...",
       });
-      // The useEffect will handle the redirect
+      // The useEffect will handle the redirect once the user state is updated.
     } catch(e: any) {
         toast({
             variant: "destructive",

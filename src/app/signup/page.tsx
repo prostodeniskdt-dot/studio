@@ -56,12 +56,14 @@ export default function SignupPage() {
       return;
     }
     try {
+      // The function now awaits the full sign-up and document creation process
       await initiateEmailSignUpAndCreateUser(auth, firestore, data.email, data.password, data.name);
-      // The useUser effect will handle the redirect on successful sign-in
-       toast({
+      
+      toast({
         title: "Аккаунт создан",
         description: "Выполняется вход...",
       });
+      // The useUser effect will handle the redirect on successful sign-in
     } catch(e: any) {
         toast({
             variant: "destructive",

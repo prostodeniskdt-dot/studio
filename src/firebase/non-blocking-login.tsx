@@ -29,19 +29,12 @@ async function ensureUserAndBarDocuments(firestore: Firestore, user: User, name?
 
   const [userDoc, barDoc] = await Promise.all([getDoc(userRef), getDoc(barRef)]);
 
-  if (userDoc.exists() && barDoc.exists()) {
-    // Everything is already in place.
-    return;
-  }
-  
   const batch = writeBatch(firestore);
   let displayName = user.displayName || name;
 
-  // If displayName is still not available, create a default one from email.
+  // If displayName is still not available after profile update, create a default one.
   if (!displayName) {
     displayName = user.email?.split('@')[0] || 'Пользователь';
-    // Update the auth profile and wait for it to complete.
-    await updateProfile(user, { displayName });
   }
 
   // Create User document if it doesn't exist
@@ -67,7 +60,10 @@ async function ensureUserAndBarDocuments(firestore: Firestore, user: User, name?
     batch.set(barRef, newBar);
   }
   
-  await batch.commit();
+  // Only commit if there are changes
+  if (!userDoc.exists() || !barDoc.exists()) {
+    await batch.commit();
+  }
 }
 
 
@@ -78,7 +74,7 @@ export async function initiateEmailSignUpAndCreateUser(
   email: string,
   password: string,
   displayName: string
-): Promise<UserCredential> {
+): Promise<void> { // Return void as we handle logic inside
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
 
@@ -87,19 +83,15 @@ export async function initiateEmailSignUpAndCreateUser(
 
   // Now that the profile is updated, create the necessary documents.
   await ensureUserAndBarDocuments(firestore, user, displayName);
-  
-  return userCredential;
 }
 
 
 /** Initiate email/password sign-in and ensure documents exist. */
-export async function initiateEmailSignIn(auth: Auth, firestore: Firestore, email: string, password: string): Promise<UserCredential> {
+export async function initiateEmailSignIn(auth: Auth, firestore: Firestore, email: string, password: string): Promise<void> { // Return void
   const userCredential = await signInWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
 
   // After sign-in, ensure the user and bar documents are in place.
   // This will handle creation for users who might have been created before this logic was in place.
   await ensureUserAndBarDocuments(firestore, user);
-  
-  return userCredential;
 }

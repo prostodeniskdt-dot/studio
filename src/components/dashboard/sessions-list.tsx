@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn, translateStatus } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { LocalizedDate } from "@/components/localized-date";
 
 type SessionsListProps = {
   sessions: InventorySession[];
@@ -38,7 +39,7 @@ export function SessionsList({ sessions }: SessionsListProps) {
               </Badge>
             </div>
             <CardDescription>
-              Создано {session.createdAt.toLocaleDateString()}
+              Создано <LocalizedDate date={session.createdAt} />
             </CardDescription>
           </CardHeader>
           <div className="flex-grow" />

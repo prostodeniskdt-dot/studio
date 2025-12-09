@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Download, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { LocalizedDate } from "@/components/localized-date";
 
 type ReportViewProps = {
   session: InventorySession;
@@ -73,7 +74,7 @@ export function ReportView({ session, products }: ReportViewProps) {
         <div className="flex items-start justify-between mb-6">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Отчет по инвентаризации</h1>
-                <p className="text-muted-foreground">{session.name} - Закрыто {session.closedAt?.toLocaleDateString()}</p>
+                <p className="text-muted-foreground">{session.name} - {session.closedAt && <>Закрыто <LocalizedDate date={session.closedAt} /></>}</p>
             </div>
             <div className="flex gap-2">
                 <Button variant="outline" onClick={handleExportCSV}>

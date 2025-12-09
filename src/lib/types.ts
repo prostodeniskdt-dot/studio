@@ -21,7 +21,7 @@ export type ProductSubCategory = WhiskeySubCategory | RumSubCategory | GinSubCat
 
 
 export interface Product {
-  id?: string; // Optional because it's set by Firestore
+  id: string; 
   barId: string;
   name: string;
   category: ProductCategory;
@@ -46,17 +46,18 @@ export interface Product {
 export type InventorySessionStatus = 'draft' | 'in_progress' | 'completed';
 
 export interface InventorySession {
-  id?: string; // Optional because it's set by Firestore
+  id: string;
   barId: string;
   name: string;
   status: InventorySessionStatus;
   createdByUserId: string;
   createdAt: Timestamp;
   closedAt?: Timestamp;
+  lines?: InventoryLine[]; // Can be a subcollection
 }
 
 export interface InventoryLine {
-  id?: string; // Optional because it's set by Firestore
+  id: string; 
   productId: string;
   
   // All volumes in ml
@@ -78,7 +79,7 @@ export interface CalculatedInventoryLine extends InventoryLine {
 }
 
 export interface Bar {
-  id?: string; // Optional because it's set by Firestore
+  id: string;
   name: string;
   location: string;
   ownerUserId: string;

@@ -1,17 +1,55 @@
-import { mockInventorySessions, mockProducts } from "@/lib/data";
-import { notFound } from "next/navigation";
+'use client';
+
+import * as React from 'react';
+import { useParams, notFound, useRouter } from "next/navigation";
 import { ReportView } from "@/components/reports/report-view";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Loader2 } from "lucide-react";
+import type { InventorySession, Product, InventoryLine } from '@/lib/types';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, collection, query } from 'firebase/firestore';
 
-export default function SessionReportPage({ params }: { params: { id: string } }) {
-  // In a real app, this data would be fetched from Firestore
-  const session = mockInventorySessions.find(s => s.id === params.id);
-  const products = mockProducts;
 
-  if (!session) {
+export default function SessionReportPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const barId = user ? `bar_${user.uid}` : null;
+  
+  const sessionRef = useMemoFirebase(() => 
+    barId ? doc(firestore, 'bars', barId, 'inventorySessions', id) : null,
+    [firestore, barId, id]
+  );
+  const { data: session, isLoading: isLoadingSession } = useDoc<InventorySession>(sessionRef);
+
+  const linesRef = useMemoFirebase(() =>
+    barId ? collection(firestore, 'bars', barId, 'inventorySessions', id, 'lines') : null,
+    [barId, id]
+  );
+  const { data: lines, isLoading: isLoadingLines } = useCollection<InventoryLine>(linesRef);
+
+  const productsRef = useMemoFirebase(() =>
+    barId ? collection(firestore, 'bars', barId, 'products') : null,
+    [firestore, barId]
+  );
+  const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
+
+
+  const isLoading = isLoadingSession || isLoadingLines || isLoadingProducts;
+
+  if (isLoading) {
+    return (
+        <div className="flex items-center justify-center h-full">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+    );
+  }
+
+  if (!session || !lines || !products) {
     notFound();
   }
 
@@ -35,7 +73,7 @@ export default function SessionReportPage({ params }: { params: { id: string } }
 
   return (
     <div className="container mx-auto">
-      <ReportView session={session} products={products} />
+      <ReportView session={{...session, lines: lines}} products={products} />
     </div>
   );
 }

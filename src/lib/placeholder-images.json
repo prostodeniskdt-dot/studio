@@ -1,3 +1,64 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "whiskey",
+      "description": "A bottle of whiskey on a dark background.",
+      "imageUrl": "https://images.unsplash.com/photo-1681040900846-52788cabe723?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx3aGlza2V5JTIwYm90dGxlfGVufDB8fHx8MTc2NTMwODYyOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "whiskey bottle"
+    },
+    {
+      "id": "rum",
+      "description": "A bottle of rum with a pirate theme.",
+      "imageUrl": "https://images.unsplash.com/photo-1699230502588-f855b2e7623b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxydW0lMjBib3R0bGV8ZW58MHx8fHwxNzY1MjI4MjY3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "rum bottle"
+    },
+    {
+      "id": "vodka",
+      "description": "A clear bottle of vodka, looking crisp.",
+      "imageUrl": "https://images.unsplash.com/photo-1613255347968-aa2aaa353976?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx2b2RrYSUyMGJvdHRsZXxlbnwwfHx8fDE3NjUzMDg2Mjh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "vodka bottle"
+    },
+    {
+      "id": "gin",
+      "description": "A bottle of gin with botanicals.",
+      "imageUrl": "https://images.unsplash.com/photo-1611425541089-033a53eb2f6e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxnaW4lMjBib3R0bGV8ZW58MHx8fHwxNzY1MzA4NjI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "gin bottle"
+    },
+    {
+      "id": "tequila",
+      "description": "A bottle of tequila with a lime.",
+      "imageUrl": "https://images.unsplash.com/photo-1680089305271-514858ace8a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8dGVxdWlsYSUyMGJvdHRsZXxlbnwwfHx8fDE3NjUzMDg2Mjh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "tequila bottle"
+    },
+    {
+      "id": "liqueur",
+      "description": "A colorful bottle of liqueur.",
+      "imageUrl": "https://images.unsplash.com/photo-1702399129748-afb48d93ed67?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxsaXF1ZXVyJTIwYm90dGxlfGVufDB8fHx8MTc2NTMwODYyOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "liqueur bottle"
+    },
+    {
+      "id": "wine",
+      "description": "A bottle of red wine.",
+      "imageUrl": "https://images.unsplash.com/photo-1611571940159-425a28706d6f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3aW5lJTIwYm90dGxlfGVufDB8fHx8MTc2NTMwMTQ4NXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "wine bottle"
+    },
+    {
+      "id": "beer",
+      "description": "A craft beer bottle.",
+      "imageUrl": "https://images.unsplash.com/photo-1618885472179-5e474019f2a9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxiZWVyJTIwYm90dGxlfGVufDB8fHx8MTc2NTI0Njc3MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "beer bottle"
+    },
+    {
+      "id": "syrup",
+      "description": "A bottle of colorful syrup for cocktails.",
+      "imageUrl": "https://images.unsplash.com/photo-1700104494895-9a4916ea77e2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzeXJ1cCUyMGJvdHRsZXxlbnwwfHx8fDE3NjUxOTM1MjV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "syrup bottle"
+    },
+    {
+      "id": "other",
+      "description": "A generic bottle for other categories.",
+      "imageUrl": "https://images.unsplash.com/photo-1602143407151-7111542de6e8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxib3R0bGV8ZW58MHx8fHwxNzY1MzA4NjI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "bottle"
+    }
+  ]
 }

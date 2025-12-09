@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AppLogo } from "@/components/app-logo";
 
-export default function LoginPage() {
+export default function SignupPage() {
   return (
     <div className="flex min-h-full flex-col justify-center items-center px-6 py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -14,13 +14,27 @@ export default function LoginPage() {
         </div>
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold tracking-tight text-center">Sign in to your account</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight text-center">Create a new account</CardTitle>
             <CardDescription className="text-center">
-              Or <Link href="/signup" className="font-medium text-primary hover:underline">create a new account</Link>
+              Already have an account? <Link href="/" className="font-medium text-primary hover:underline">Sign In</Link>
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form className="space-y-6">
+              <div>
+                <Label htmlFor="name">Full name</Label>
+                <div className="mt-2">
+                  <Input
+                    id="name"
+                    name="name"
+                    type="text"
+                    autoComplete="name"
+                    required
+                    placeholder="John Doe"
+                  />
+                </div>
+              </div>
+              
               <div>
                 <Label htmlFor="email">Email address</Label>
                 <div className="mt-2">
@@ -36,20 +50,13 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="text-sm">
-                    <a href="#" className="font-medium text-primary hover:underline">
-                      Forgot password?
-                    </a>
-                  </div>
-                </div>
+                <Label htmlFor="password">Password</Label>
                 <div className="mt-2">
                   <Input
                     id="password"
                     name="password"
                     type="password"
-                    autoComplete="current-password"
+                    autoComplete="new-password"
                     required
                   />
                 </div>
@@ -57,8 +64,7 @@ export default function LoginPage() {
 
               <div>
                 <Button type="submit" className="w-full" asChild>
-                  {/* In a real app, this would trigger a login action. For the demo, it navigates to the dashboard. */}
-                  <Link href="/dashboard">Sign in</Link>
+                  <Link href="/dashboard">Create account</Link>
                 </Button>
               </div>
             </form>

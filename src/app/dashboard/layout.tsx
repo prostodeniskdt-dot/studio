@@ -9,10 +9,63 @@ import {
 import { UserNav } from "@/components/user-nav";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ClientOnly } from "@/components/client-only";
-import { useUser } from "@/firebase";
+import { useUser, useFirestore } from "@/firebase";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { doc, getDoc, writeBatch, serverTimestamp } from "firebase/firestore";
+
+// Helper function to ensure user and bar documents exist
+async function ensureUserAndBarDocuments(firestore: any, user: any): Promise<void> {
+    if (!firestore || !user) return;
+
+    const userRef = doc(firestore, 'users', user.uid);
+    const barId = `bar_${user.uid}`;
+    const barRef = doc(firestore, 'bars', barId);
+
+    const batch = writeBatch(firestore);
+
+    try {
+        const userDoc = await getDoc(userRef);
+        const barDoc = await getDoc(barRef);
+        
+        let shouldCommit = false;
+
+        if (!userDoc.exists()) {
+            const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
+            const newUser = {
+                id: user.uid,
+                displayName: displayName,
+                email: user.email,
+                role: 'manager',
+                createdAt: serverTimestamp(),
+            };
+            batch.set(userRef, newUser);
+            shouldCommit = true;
+        }
+
+        if (!barDoc.exists()) {
+            const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
+            const newBar = {
+                id: barId,
+                name: `Бар ${displayName}`,
+                location: 'Не указано',
+                ownerUserId: user.uid,
+            };
+            batch.set(barRef, newBar);
+            shouldCommit = true;
+        }
+        
+        if (shouldCommit) {
+            await batch.commit();
+        }
+    } catch (error) {
+        console.error("Error ensuring user and bar documents:", error);
+        // This error should be surfaced to the user
+        throw new Error("Не удалось инициализировать данные пользователя.");
+    }
+}
+
 
 export default function DashboardLayout({
   children,
@@ -20,25 +73,38 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const router = useRouter();
-
-  // Derived state to check if we are ready to render children
-  const isReady = !isUserLoading && !!user;
+  const [isDataReady, setIsDataReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // If loading is finished and there's no user, redirect to login.
+    // If auth state is done loading and there's no user, redirect to login.
     if (!isUserLoading && !user) {
       router.replace('/');
+      return;
     }
-  }, [user, isUserLoading, router]);
 
-  // While loading auth state, or if there's no user, show a loader.
-  // This prevents any child components from attempting to fetch data
-  // before the user state (and thus barId) is known.
-  if (!isReady) {
+    // If we have a user and firestore instance, ensure their documents exist.
+    if (user && firestore) {
+      ensureUserAndBarDocuments(firestore, user)
+        .then(() => {
+          setIsDataReady(true);
+        })
+        .catch((err) => {
+          console.error(err);
+          setError(err.message);
+        });
+    }
+  }, [user, isUserLoading, firestore, router]);
+
+
+  // While loading auth state OR ensuring documents, show a loader.
+  if (!isDataReady) {
      return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background">
         <Loader2 className="h-8 w-8 animate-spin" />
+        {error ? <p className="text-destructive">{error}</p> : <p>Подготовка вашей панели управления...</p>}
       </div>
     );
   }

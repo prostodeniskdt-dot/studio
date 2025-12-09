@@ -8,8 +8,8 @@ import { AppLogo } from "@/components/app-logo";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth, useFirestore } from "@/firebase";
-import { initiateEmailSignUpAndCreateUser } from "@/firebase/non-blocking-login";
+import { useAuth } from "@/firebase";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
@@ -24,10 +24,8 @@ const signupSchema = z.object({
 
 type SignupFormInputs = z.infer<typeof signupSchema>;
 
-
 export default function SignupPage() {
   const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
@@ -47,7 +45,7 @@ export default function SignupPage() {
   }, [user, isUserLoading, router]);
 
   const onSubmit: SubmitHandler<SignupFormInputs> = async (data) => {
-    if (!auth || !firestore) {
+    if (!auth) {
       toast({
         variant: "destructive",
         title: "Ошибка",
@@ -56,8 +54,9 @@ export default function SignupPage() {
       return;
     }
     try {
-      // The function now awaits the full sign-up and document creation process
-      await initiateEmailSignUpAndCreateUser(auth, firestore, data.email, data.password, data.name);
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      // After creating the user, update their profile with the display name.
+      await updateProfile(userCredential.user, { displayName: data.name });
       
       toast({
         title: "Аккаунт создан",

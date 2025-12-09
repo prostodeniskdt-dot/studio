@@ -8,14 +8,13 @@ import { AppLogo } from "@/components/app-logo";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth, useFirestore } from "@/firebase";
-import { initiateEmailSignIn } from "@/firebase/non-blocking-login";
+import { useAuth } from "@/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { useUser } from "@/firebase";
 import { Loader2 } from "lucide-react";
-
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Неверный формат электронной почты" }),
@@ -24,10 +23,8 @@ const loginSchema = z.object({
 
 type LoginFormInputs = z.infer<typeof loginSchema>;
 
-
 export default function LoginPage() {
   const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
@@ -47,7 +44,7 @@ export default function LoginPage() {
   }, [user, isUserLoading, router]);
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
-    if (!auth || !firestore) {
+    if (!auth) {
          toast({
             variant: "destructive",
             title: "Ошибка",
@@ -56,9 +53,7 @@ export default function LoginPage() {
         return;
     }
     try {
-      // The function now awaits the full sign-in and document creation process
-      await initiateEmailSignIn(auth, firestore, data.email, data.password);
-      
+      await signInWithEmailAndPassword(auth, data.email, data.password);
       toast({
         title: "Вход выполнен",
         description: "Перенаправляем на панель управления...",

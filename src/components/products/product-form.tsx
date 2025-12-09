@@ -23,17 +23,25 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import type { Product, ProductCategory } from '@/lib/types';
+import type { Product } from '@/lib/types';
 import { productCategories, translateCategory } from '@/lib/utils';
+import { Separator } from '../ui/separator';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
   category: z.enum(productCategories),
-  bottleVolumeMl: z.coerce.number().positive('Должно быть положительным числом.'),
+  
+  // Экономика
   costPerBottle: z.coerce.number().positive('Должно быть положительным числом.'),
   sellingPricePerPortion: z.coerce.number().positive('Должно быть положительным числом.'),
   portionVolumeMl: z.coerce.number().positive('Должно быть положительным числом.'),
+
+  // Профиль бутылки
+  bottleVolumeMl: z.coerce.number().positive('Должно быть положительным числом.'),
+  bottleHeightCm: z.coerce.number().optional(),
+  fullBottleWeightG: z.coerce.number().optional(),
+  emptyBottleWeightG: z.coerce.number().optional(),
+
   isActive: z.boolean(),
 });
 
@@ -44,6 +52,9 @@ export function ProductForm({ product }: { product?: Product }) {
     resolver: zodResolver(formSchema),
     defaultValues: product ? {
         ...product,
+        bottleHeightCm: product.bottleHeightCm ?? undefined,
+        fullBottleWeightG: product.fullBottleWeightG ?? undefined,
+        emptyBottleWeightG: product.emptyBottleWeightG ?? undefined,
     } : {
       name: '',
       category: 'Other',
@@ -98,20 +109,11 @@ export function ProductForm({ product }: { product?: Product }) {
             </FormItem>
           )}
         />
+        
+        <Separator />
+        <h3 className="text-lg font-medium">Экономика</h3>
+
         <div className="grid grid-cols-2 gap-4">
-            <FormField
-            control={form.control}
-            name="bottleVolumeMl"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Объем бутылки (мл)</FormLabel>
-                <FormControl>
-                    <Input type="number" {...field} />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
-            />
             <FormField
             control={form.control}
             name="portionVolumeMl"
@@ -120,21 +122,6 @@ export function ProductForm({ product }: { product?: Product }) {
                 <FormLabel>Объем порции (мл)</FormLabel>
                 <FormControl>
                     <Input type="number" {...field} />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
-            />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-            <FormField
-            control={form.control}
-            name="costPerBottle"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Стоимость бутылки ($)</FormLabel>
-                <FormControl>
-                    <Input type="number" step="0.01" {...field} />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
@@ -154,6 +141,80 @@ export function ProductForm({ product }: { product?: Product }) {
             )}
             />
         </div>
+         <FormField
+            control={form.control}
+            name="costPerBottle"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Стоимость закупки ($)</FormLabel>
+                <FormControl>
+                    <Input type="number" step="0.01" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+
+        <Separator />
+        <h3 className="text-lg font-medium">Профиль бутылки для калькулятора</h3>
+        
+        <FormField
+        control={form.control}
+        name="bottleVolumeMl"
+        render={({ field }) => (
+            <FormItem>
+            <FormLabel>Номинальный объем (мл)</FormLabel>
+            <FormControl>
+                <Input type="number" {...field} />
+            </FormControl>
+            <FormMessage />
+            </FormItem>
+        )}
+        />
+        <div className="grid grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="fullBottleWeightG"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Вес полной (г)</FormLabel>
+                <FormControl>
+                    <Input type="number" {...field} placeholder="1150"/>
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="emptyBottleWeightG"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Вес пустой (г)</FormLabel>
+                <FormControl>
+                    <Input type="number" {...field} placeholder="450"/>
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+        <FormField
+            control={form.control}
+            name="bottleHeightCm"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Высота бутылки (см)</FormLabel>
+                <FormControl>
+                    <Input type="number" step="0.1" {...field} placeholder="30"/>
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+       
+        <Separator />
+
         <FormField
           control={form.control}
           name="isActive"
@@ -164,7 +225,7 @@ export function ProductForm({ product }: { product?: Product }) {
                   Активен
                 </FormLabel>
                 <FormDescription>
-                  Активные продукты доступны для сессий инвентаризации.
+                  Активные продукты доступны для инвентаризаций и калькулятора.
                 </FormDescription>
               </div>
               <FormControl>

@@ -8,12 +8,12 @@ export const mockUser: User = {
 };
 
 export const mockProducts: Product[] = [
-  { id: 'prod-1', name: 'Jameson 0.7L', category: 'Whiskey', bottleVolumeMl: 700, costPerBottle: 25, sellingPricePerPortion: 7, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'prod-2', name: 'Havana Club 3 Anos 0.7L', category: 'Rum', bottleVolumeMl: 700, costPerBottle: 18, sellingPricePerPortion: 6, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'prod-3', name: 'Absolut Vodka 1L', category: 'Vodka', bottleVolumeMl: 1000, costPerBottle: 22, sellingPricePerPortion: 6.5, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'prod-4', name: 'Beefeater Gin 0.7L', category: 'Gin', bottleVolumeMl: 700, costPerBottle: 20, sellingPricePerPortion: 6, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'prod-1', name: 'Jameson 0.7L', category: 'Whiskey', bottleVolumeMl: 700, costPerBottle: 25, sellingPricePerPortion: 7, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1150, emptyBottleWeightG: 450, bottleHeightCm: 30 },
+  { id: 'prod-2', name: 'Havana Club 3 Anos 0.7L', category: 'Rum', bottleVolumeMl: 700, costPerBottle: 18, sellingPricePerPortion: 6, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1120, emptyBottleWeightG: 420, bottleHeightCm: 29 },
+  { id: 'prod-3', name: 'Absolut Vodka 1L', category: 'Vodka', bottleVolumeMl: 1000, costPerBottle: 22, sellingPricePerPortion: 6.5, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1500, emptyBottleWeightG: 500, bottleHeightCm: 32 },
+  { id: 'prod-4', name: 'Beefeater Gin 0.7L', category: 'Gin', bottleVolumeMl: 700, costPerBottle: 20, sellingPricePerPortion: 6, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1180, emptyBottleWeightG: 480, bottleHeightCm: 28 },
   { id: 'prod-5', name: 'Olmeca Blanco 0.7L', category: 'Tequila', bottleVolumeMl: 700, costPerBottle: 23, sellingPricePerPortion: 7, portionVolumeMl: 40, isActive: false, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'prod-6', name: 'Campari 1L', category: 'Liqueur', bottleVolumeMl: 1000, costPerBottle: 19, sellingPricePerPortion: 5, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'prod-6', name: 'Campari 1L', category: 'Liqueur', bottleVolumeMl: 1000, costPerBottle: 19, sellingPricePerPortion: 5, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1650, emptyBottleWeightG: 650, bottleHeightCm: 31 },
   { id: 'prod-7', name: 'Coca-Cola 0.2L', category: 'Other', bottleVolumeMl: 200, costPerBottle: 0.5, sellingPricePerPortion: 2, portionVolumeMl: 200, isActive: true, createdAt: new Date(), updatedAt: new Date() },
 ];
 

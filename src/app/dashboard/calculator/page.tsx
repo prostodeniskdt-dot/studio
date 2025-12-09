@@ -5,24 +5,41 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { TriangleAlert, Ruler, Weight } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Ruler, Weight, Bot } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import type { Product } from '@/lib/types';
+import { mockProducts } from '@/lib/data';
 
 export default function UnifiedCalculatorPage() {
-  // Состояния для калькулятора по высоте
+  const [products] = React.useState<Product[]>(mockProducts);
+  const [selectedProductId, setSelectedProductId] = React.useState<string | null>(null);
+
+  // Состояния для калькулятора
   const [bottleHeight, setBottleHeight] = React.useState('');
   const [bottleVolume, setBottleVolume] = React.useState('');
   const [liquidHeight, setLiquidHeight] = React.useState('');
   const [calculatedVolumeByHeight, setCalculatedVolumeByHeight] = React.useState<number | null>(null);
 
-  // Состояния для калькулятора по весу
   const [fullWeight, setFullWeight] = React.useState('');
   const [emptyWeight, setEmptyWeight] = React.useState('');
   const [currentWeight, setCurrentWeight] = React.useState('');
-  // nominalVolume используется общий (bottleVolume)
   const [calculatedVolumeByWeight, setCalculatedVolumeByWeight] = React.useState<number | null>(null);
   
+  const handleProductSelect = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    setSelectedProductId(productId);
+    if (product) {
+        setBottleVolume(product.bottleVolumeMl?.toString() ?? '');
+        setFullWeight(product.fullBottleWeightG?.toString() ?? '');
+        setEmptyWeight(product.emptyBottleWeightG?.toString() ?? '');
+        setBottleHeight(product.bottleHeightCm?.toString() ?? '');
+        // Сброс результатов при выборе нового продукта
+        setCalculatedVolumeByHeight(null);
+        setCalculatedVolumeByWeight(null);
+    }
+  };
+
   const handleCalculate = () => {
     // Расчет по высоте
     const bh = parseFloat(bottleHeight);
@@ -63,41 +80,47 @@ export default function UnifiedCalculatorPage() {
   return (
     <div className="container mx-auto">
       <h1 className="text-3xl font-bold tracking-tight mb-2">Универсальный калькулятор</h1>
-      <p className="text-muted-foreground mb-6">Рассчитайте остатки в бутылке, используя точные и быстрые методы.</p>
+      <p className="text-muted-foreground mb-6">Рассчитайте остатки в бутылке, используя сохраненные профили и точные методы.</p>
       
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
-          <CardTitle>Расчет объема жидкости по профилю бутылки</CardTitle>
-          <CardDescription>Введите данные для получения точного и примерного расчетов.</CardDescription>
+          <CardTitle>Расчет объема жидкости</CardTitle>
+          <CardDescription>Выберите продукт для автозаполнения или введите данные вручную.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+
+          <div className="space-y-2">
+            <Label htmlFor="product-select">Выберите продукт (профиль бутылки)</Label>
+            <Select onValueChange={handleProductSelect}>
+              <SelectTrigger id="product-select">
+                <SelectValue placeholder="Выберите продукт из каталога..." />
+              </SelectTrigger>
+              <SelectContent>
+                {products.filter(p => p.isActive).map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Separator />
+
           <div className="grid md:grid-cols-2 gap-8">
             {/* Левая колонка: Ввод данных */}
             <div className="space-y-6">
-              {/* Общие данные */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Параметры бутылки</h3>
-                <div className="space-y-2">
-                    <Label htmlFor="bottleVolume">Номинальный объем бутылки (мл)</Label>
-                    <Input
-                      id="bottleVolume"
-                      type="number"
-                      value={bottleVolume}
-                      onChange={(e) => setBottleVolume(e.target.value)}
-                      placeholder="например, 700"
-                    />
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Блок калькулятора по весу */}
-              <div className="space-y-4">
-                <div className='flex items-center gap-2'>
-                    <Weight className="h-5 w-5 text-primary"/>
-                    <h3 className="text-lg font-semibold">Данные для точного расчета (вес)</h3>
-                </div>
+                <h3 className="text-lg font-semibold">Параметры и замеры</h3>
                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="bottleVolume">Номинальный объем (мл)</Label>
+                        <Input id="bottleVolume" type="number" value={bottleVolume} onChange={(e) => setBottleVolume(e.target.value)} placeholder="700" />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="bottleHeight">Высота бутылки (см)</Label>
+                        <Input id="bottleHeight" type="number" value={bottleHeight} onChange={(e) => setBottleHeight(e.target.value)} placeholder="30" />
+                    </div>
+                </div>
+                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="fullWeight">Вес полной (г)</Label>
                         <Input id="fullWeight" type="number" value={fullWeight} onChange={e => setFullWeight(e.target.value)} placeholder="1150" />
@@ -107,24 +130,16 @@ export default function UnifiedCalculatorPage() {
                         <Input id="emptyWeight" type="number" value={emptyWeight} onChange={e => setEmptyWeight(e.target.value)} placeholder="450" />
                     </div>
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="currentWeight">Текущий вес бутылки (г)</Label>
-                    <Input id="currentWeight" type="number" value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} placeholder="Замер с помощью весов" />
-                </div>
               </div>
               
               <Separator />
 
-              {/* Блок калькулятора по высоте */}
               <div className="space-y-4">
-                <div className='flex items-center gap-2'>
-                    <Ruler className="h-5 w-5 text-primary"/>
-                    <h3 className="text-lg font-semibold">Данные для примерного расчета (высота)</h3>
-                </div>
+                 <h3 className="text-lg font-semibold">Текущие замеры</h3>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label htmlFor="bottleHeight">Высота бутылки (см)</Label>
-                        <Input id="bottleHeight" type="number" value={bottleHeight} onChange={(e) => setBottleHeight(e.target.value)} placeholder="30" />
+                        <Label htmlFor="currentWeight">Текущий вес (г)</Label>
+                        <Input id="currentWeight" type="number" value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} placeholder="Замер с весов" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="liquidHeight">Высота жидкости (см)</Label>
@@ -153,13 +168,6 @@ export default function UnifiedCalculatorPage() {
                     <div className="text-center p-4 rounded-lg bg-background">
                       <p className="text-base text-muted-foreground flex items-center justify-center gap-2"><Ruler className='h-4 w-4'/> Примерный объем (по высоте):</p>
                       <p className="text-2xl font-semibold text-muted-foreground">{calculatedVolumeByHeight !== null ? `${calculatedVolumeByHeight} мл` : 'Нет данных'}</p>
-                       <Alert variant="destructive" className="mt-4 text-left">
-                          <TriangleAlert className="h-4 w-4" />
-                          <AlertTitle>Внимание!</AlertTitle>
-                          <AlertDescription>
-                              Метод по высоте неточен для бутылок неправильной формы. Используйте для быстрой оценки.
-                          </AlertDescription>
-                      </Alert>
                     </div>
                   </CardContent>
                 </Card>

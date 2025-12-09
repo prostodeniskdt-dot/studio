@@ -91,9 +91,9 @@ const columns: ColumnDef<Product>[] = [
     cell: ({ row }) => <div className="lowercase text-left pl-4">{formatCurrency(row.getValue('costPerBottle'))}</div>,
   },
   {
-    accessorKey: 'sellingPricePerPortion',
-    header: 'Цена порции',
-    cell: ({ row }) => <div>{formatCurrency(row.getValue('sellingPricePerPortion'))}</div>,
+    accessorKey: 'bottleVolumeMl',
+    header: 'Объем',
+    cell: ({ row }) => <div>{row.getValue('bottleVolumeMl')} мл</div>,
   },
   {
     accessorKey: 'isActive',
@@ -132,7 +132,7 @@ const columns: ColumnDef<Product>[] = [
               <DropdownMenuItem className="text-destructive focus:text-destructive">Архивировать продукт</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <SheetContent>
+          <SheetContent className="w-full sm:max-w-md overflow-y-auto">
             <SheetHeader>
               <SheetTitle>Редактировать продукт</SheetTitle>
             </SheetHeader>
@@ -147,7 +147,9 @@ const columns: ColumnDef<Product>[] = [
 export function ProductsTable({ products }: { products: Product[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
+    sellingPricePerPortion: false,
+  });
   const [rowSelection, setRowSelection] = React.useState({});
 
   const table = useReactTable({
@@ -174,7 +176,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
         <div className="flex items-center justify-between py-4">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Продукты</h1>
-                <p className="text-muted-foreground">Управляйте товарными позициями вашего бара.</p>
+                <p className="text-muted-foreground">Управляйте каталогом товаров и их профилями для калькулятора.</p>
             </div>
             <div className="flex items-center gap-2">
             <Input
@@ -205,7 +207,15 @@ export function ProductsTable({ products }: { products: Product[] }) {
                             column.toggleVisibility(!!value)
                         }
                         >
-                        {column.id}
+                         {
+                            {
+                                name: 'Название',
+                                category: 'Категория',
+                                costPerBottle: 'Стоимость',
+                                bottleVolumeMl: 'Объем',
+                                isActive: 'Статус',
+                            }[column.id] || column.id
+                         }
                         </DropdownMenuCheckboxItem>
                     );
                     })}
@@ -218,7 +228,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
                         Добавить продукт
                     </Button>
                 </SheetTrigger>
-                <SheetContent>
+                <SheetContent className="w-full sm:max-w-md overflow-y-auto">
                     <SheetHeader>
                     <SheetTitle>Добавить новый продукт</SheetTitle>
                     </SheetHeader>

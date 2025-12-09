@@ -13,10 +13,18 @@ export interface Product {
   id: string;
   name: string;
   category: ProductCategory;
-  bottleVolumeMl: number;
+  
+  // Экономика
   costPerBottle: number;
   sellingPricePerPortion: number;
   portionVolumeMl: number;
+  
+  // Профиль бутылки
+  bottleVolumeMl: number;
+  bottleHeightCm?: number;
+  fullBottleWeightG?: number;
+  emptyBottleWeightG?: number;
+
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

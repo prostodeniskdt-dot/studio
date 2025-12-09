@@ -1,18 +1,38 @@
 'use client';
+
+import * as React from 'react';
 import { mockInventorySessions, mockProducts } from "@/lib/data";
-import { notFound } from "next/navigation";
+import { useParams, notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { InventoryTable } from "@/components/sessions/inventory-table";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
+import { FileText, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { translateStatus } from "@/lib/utils";
 import { LocalizedDate } from "@/components/localized-date";
+import type { InventorySession, Product } from '@/lib/types';
 
-export default function SessionPage({ params }: { params: { id: string } }) {
-  // In a real app, this data would be fetched from Firestore
-  const session = mockInventorySessions.find(s => s.id === params.id);
-  const products = mockProducts;
+export default function SessionPage() {
+  const params = useParams();
+  const id = params.id as string;
+  
+  const [session, setSession] = React.useState<InventorySession | null | undefined>(undefined);
+  const [products, setProducts] = React.useState<Product[]>([]);
+
+  React.useEffect(() => {
+    // In a real app, this data would be fetched from Firestore
+    const foundSession = mockInventorySessions.find(s => s.id === id);
+    setSession(foundSession || null);
+    setProducts(mockProducts);
+  }, [id]);
+
+  if (session === undefined) {
+    return (
+        <div className="flex items-center justify-center h-full">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+    );
+  }
 
   if (!session) {
     notFound();

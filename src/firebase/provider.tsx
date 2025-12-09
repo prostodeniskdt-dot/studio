@@ -154,16 +154,37 @@ export const useFirebaseApp = (): FirebaseApp => {
   return firebaseApp;
 };
 
-type MemoFirebase <T> = T & {__memo?: boolean};
+type MemoizedFirebaseObject<T> = T & { __memo?: boolean };
 
-export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | (MemoFirebase<T>) {
-  const memoized = useMemo(factory, deps);
-  
-  if(typeof memoized !== 'object' || memoized === null) return memoized;
-  (memoized as MemoFirebase<T>).__memo = true;
-  
-  return memoized;
+/**
+ * Memoizes a Firestore query or document reference. This is critical for preventing
+ * infinite loops in hooks like `useCollection` and `useDoc` that have object
+ * dependencies.
+ *
+ * It attaches a `__memo` flag to the created object to allow hooks to verify
+ * that the reference/query has been properly memoized.
+ *
+ * @param factory A function that creates the Firestore query or reference.
+ * @param deps The dependency array for the `useMemo` hook.
+ * @returns The memoized query/reference, or null if the factory returns null.
+ */
+export function useMemoFirebase<T extends object | null>(factory: () => T, deps: DependencyList): T {
+  const memoized = useMemo(() => {
+    const value = factory();
+    if (value) {
+      // Add a non-enumerable property to mark the object as memoized.
+      Object.defineProperty(value, '__memo', {
+        value: true,
+        writable: false,
+        enumerable: false,
+      });
+    }
+    return value;
+  }, deps); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return memoized as T;
 }
+
 
 /**
  * Hook specifically for accessing the authenticated user's state.

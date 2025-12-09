@@ -9,7 +9,7 @@ import Link from "next/link";
 import { BarChart3, Loader2 } from "lucide-react";
 import type { InventorySession, Product, InventoryLine } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query } from 'firebase/firestore';
+import { doc, collection } from 'firebase/firestore';
 
 
 export default function SessionReportPage() {
@@ -21,19 +21,19 @@ export default function SessionReportPage() {
   const barId = user ? `bar_${user.uid}` : null;
   
   const sessionRef = useMemoFirebase(() => 
-    barId ? doc(firestore, 'bars', barId, 'inventorySessions', id) : null,
+    firestore && barId ? doc(firestore, 'bars', barId, 'inventorySessions', id) : null,
     [firestore, barId, id]
   );
   const { data: session, isLoading: isLoadingSession } = useDoc<InventorySession>(sessionRef);
 
   const linesRef = useMemoFirebase(() =>
-    barId ? collection(firestore, 'bars', barId, 'inventorySessions', id, 'lines') : null,
+    firestore && barId ? collection(firestore, 'bars', barId, 'inventorySessions', id, 'lines') : null,
     [firestore, barId, id]
   );
   const { data: lines, isLoading: isLoadingLines } = useCollection<InventoryLine>(linesRef);
 
   const productsRef = useMemoFirebase(() =>
-    barId ? collection(firestore, 'bars', barId, 'products') : null,
+    firestore && barId ? collection(firestore, 'bars', barId, 'products') : null,
     [firestore, barId]
   );
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
@@ -50,6 +50,9 @@ export default function SessionReportPage() {
   }
 
   if (!session) {
+     if (!isLoadingSession) {
+      notFound();
+    }
     return (
         <div className="flex items-center justify-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

@@ -43,6 +43,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { doc, collection, writeBatch } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 
 export function ProductsTable({ products, barId }: { products: Product[], barId: string | null }) {
@@ -69,7 +70,7 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
   }
 
   const handleArchiveAction = async (product: Product, archive: boolean) => {
-    if (!barId) return;
+    if (!barId || !firestore) return;
     const productRef = doc(firestore, 'bars', barId, 'products', product.id!);
     const batch = writeBatch(firestore);
     batch.update(productRef, { isActive: !archive });
@@ -251,10 +252,12 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
                         })}
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <Button onClick={() => handleOpenSheet()}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Добавить продукт
-                </Button>
+                <SheetTrigger asChild>
+                    <Button onClick={() => handleOpenSheet()}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Добавить продукт
+                    </Button>
+                </SheetTrigger>
                 </div>
             </div>
         <div className="rounded-md border">

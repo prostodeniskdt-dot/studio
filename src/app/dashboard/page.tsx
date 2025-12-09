@@ -18,11 +18,10 @@ export default function DashboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  // Assuming one bar per user for now. In a real app, you'd select a bar.
   const barId = user ? `bar_${user.uid}` : null; 
 
   const sessionsQuery = useMemoFirebase(() => 
-    barId ? query(
+    firestore && barId ? query(
         collection(firestore, 'bars', barId, 'inventorySessions'), 
         orderBy('createdAt', 'desc')
     ) : null,
@@ -32,7 +31,7 @@ export default function DashboardPage() {
   const { data: sessions, isLoading: isLoadingSessions } = useCollection<InventorySession>(sessionsQuery);
   
   const productsQuery = useMemoFirebase(() => 
-    barId ? query(
+    firestore && barId ? query(
       collection(firestore, 'bars', barId, 'products'), 
       where('isActive', '==', true)
     ) : null,
@@ -42,7 +41,7 @@ export default function DashboardPage() {
 
 
   const handleCreateSession = async () => {
-    if (!user || !barId || !activeProducts) {
+    if (!user || !barId || !activeProducts || !firestore) {
       toast({
         variant: "destructive",
         title: "Ошибка",
@@ -69,7 +68,9 @@ export default function DashboardPage() {
       const linesCollection = collection(firestore, 'bars', barId, 'inventorySessions', sessionId, 'lines');
       
       activeProducts.forEach(product => {
+        const lineDocRef = doc(linesCollection); // Automatically generate ID
         const newLine = {
+          id: lineDocRef.id,
           productId: product.id,
           inventorySessionId: sessionId,
           startStock: 0,
@@ -77,7 +78,6 @@ export default function DashboardPage() {
           sales: 0,
           endStock: 0,
         };
-        const lineDocRef = doc(linesCollection); // Automatically generate ID
         batch.set(lineDocRef, newLine);
       });
       
@@ -138,8 +138,8 @@ export default function DashboardPage() {
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Сессии инвентаризации</h1>
-        <Button onClick={handleCreateSession} disabled={isLoadingProducts}>
-          {isLoadingProducts ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle />}
+        <Button onClick={handleCreateSession} disabled={isLoading || !activeProducts}>
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle />}
           Начать инвентаризацию
         </Button>
       </div>

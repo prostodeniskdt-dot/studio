@@ -35,19 +35,19 @@ export default function SessionPage() {
   const barId = user ? `bar_${user.uid}` : null;
   
   const sessionRef = useMemoFirebase(() => 
-    barId ? doc(firestore, 'bars', barId, 'inventorySessions', id) : null,
+    firestore && barId ? doc(firestore, 'bars', barId, 'inventorySessions', id) : null,
     [firestore, barId, id]
   );
   const { data: session, isLoading: isLoadingSession } = useDoc<InventorySession>(sessionRef);
 
   const linesRef = useMemoFirebase(() =>
-    barId ? collection(firestore, 'bars', barId, 'inventorySessions', id, 'lines') : null,
+    firestore && barId ? collection(firestore, 'bars', barId, 'inventorySessions', id, 'lines') : null,
     [firestore, barId, id]
   );
   const { data: lines, isLoading: isLoadingLines } = useCollection<InventoryLine>(linesRef);
 
   const productsRef = useMemoFirebase(() =>
-    barId ? collection(firestore, 'bars', barId, 'products') : null,
+    firestore && barId ? collection(firestore, 'bars', barId, 'products') : null,
     [firestore, barId]
   );
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
@@ -61,7 +61,7 @@ export default function SessionPage() {
   }, [lines]);
   
   const handleSaveChanges = async () => {
-    if (!localLines || !barId) return;
+    if (!localLines || !barId || !firestore) return;
 
     const batch = writeBatch(firestore);
     localLines.forEach(line => {
@@ -90,19 +90,21 @@ export default function SessionPage() {
   };
 
   const handleCompleteSession = async () => {
-    if (!sessionRef || !barId) return;
+    if (!sessionRef || !barId || !firestore) return;
     const batch = writeBatch(firestore);
 
     // Save any pending changes first
     if (localLines) {
         localLines.forEach(line => {
-            const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', id, 'lines', line.id);
-            batch.update(lineRef, {
-                startStock: line.startStock,
-                purchases: line.purchases,
-                sales: line.sales,
-                endStock: line.endStock,
-            });
+            if (line.id) { // Ensure line.id exists
+                const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', id, 'lines', line.id);
+                batch.update(lineRef, {
+                    startStock: line.startStock,
+                    purchases: line.purchases,
+                    sales: line.sales,
+                    endStock: line.endStock,
+                });
+            }
         });
     }
 
@@ -137,6 +139,9 @@ export default function SessionPage() {
   if (!session) {
     // This can happen briefly while data is loading, or if the session is not found.
     // notFound() should be called only after we are sure it doesn't exist.
+     if (!isLoadingSession) {
+      notFound();
+    }
     return (
         <div className="flex items-center justify-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -165,7 +170,7 @@ export default function SessionPage() {
         <div>
             <h1 className="text-3xl font-bold tracking-tight">{session.name}</h1>
             <p className="text-muted-foreground">
-                Создано {session.createdAt?.toDate().toLocaleDateString('ru-RU')}
+                {session.createdAt && `Создано ${session.createdAt?.toDate().toLocaleDateString('ru-RU')}`}
             </p>
         </div>
         <div className="flex items-center gap-4">
@@ -181,13 +186,13 @@ export default function SessionPage() {
                 </Button>
             ) : (
                 <div className="flex gap-2">
-                    <Button onClick={handleSaveChanges} variant="outline">
+                    <Button onClick={handleSaveChanges} variant="outline" disabled={!isEditable}>
                         <Save className="mr-2 h-4 w-4" />
                         Сохранить
                     </Button>
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button>Завершить сессию</Button>
+                            <Button disabled={!isEditable}>Завершить сессию</Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>

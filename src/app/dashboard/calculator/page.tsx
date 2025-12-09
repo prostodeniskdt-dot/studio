@@ -20,7 +20,7 @@ export default function UnifiedCalculatorPage() {
   const barId = user ? `bar_${user.uid}` : null;
 
   const productsQuery = useMemoFirebase(() => 
-      barId ? query(collection(firestore, 'bars', barId, 'products'), where('isActive', '==', true)) : null,
+      firestore && barId ? query(collection(firestore, 'bars', barId, 'products'), where('isActive', '==', true)) : null,
       [firestore, barId]
   );
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsQuery);
@@ -53,6 +53,11 @@ export default function UnifiedCalculatorPage() {
   };
 
   const handleCalculate = () => {
+    // Reset calculations first
+    setCalculatedVolumeByHeight(null);
+    setCalculatedVolumeByWeight(null);
+
+    // Height calculation
     const bh = parseFloat(bottleHeight);
     const bv = parseFloat(bottleVolume);
     const lh = parseFloat(liquidHeight);
@@ -64,31 +69,27 @@ export default function UnifiedCalculatorPage() {
         const volume = (lh / bh) * bv;
         setCalculatedVolumeByHeight(Math.round(volume));
       }
-    } else {
-      setCalculatedVolumeByHeight(null);
     }
 
+    // Weight calculation
     const fw = parseFloat(fullWeight);
     const ew = parseFloat(emptyWeight);
     const cw = parseFloat(currentWeight);
-    const nv = parseFloat(bottleVolume);
 
-    if (fw > ew && cw >= ew && nv > 0) {
+    if (fw > ew && cw >= ew && bv > 0) {
         const liquidNetWeight = fw - ew;
         const currentLiquidWeight = cw - ew;
         if (currentLiquidWeight <= 0) {
             setCalculatedVolumeByWeight(0);
         } else {
-            const volume = (currentLiquidWeight / liquidNetWeight) * nv;
+            const volume = (currentLiquidWeight / liquidNetWeight) * bv;
             setCalculatedVolumeByWeight(Math.round(volume));
         }
-    } else {
-        setCalculatedVolumeByWeight(null);
     }
   };
 
   const handleSendToInventory = async () => {
-    if (calculatedVolumeByWeight === null || !selectedProductId || !barId) {
+    if (calculatedVolumeByWeight === null || !selectedProductId || !barId || !firestore) {
       toast({
         variant: "destructive",
         title: "Ошибка",

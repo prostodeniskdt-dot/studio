@@ -11,13 +11,13 @@ export default function ProductsPage() {
     const barId = user ? `bar_${user.uid}` : null;
 
     const productsQuery = useMemoFirebase(() => 
-        barId ? query(collection(firestore, 'bars', barId, 'products')) : null,
+        firestore && barId ? query(collection(firestore, 'bars', barId, 'products')) : null,
         [firestore, barId]
     );
 
     const { data: products, isLoading } = useCollection<Product>(productsQuery);
 
-    if (isLoading) {
+    if (isLoading || !barId) {
         return (
             <div className="flex justify-center items-center h-full">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

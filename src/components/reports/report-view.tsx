@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn, formatCurrency } from '@/lib/utils';
-import { Download, Sparkles, FileType } from 'lucide-react';
+import { Download, Sparkles, FileType, FileJson } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { LocalizedDate } from "@/components/localized-date";
 import { VarianceAnalysisModal } from '../sessions/variance-analysis-modal';
@@ -16,6 +16,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
@@ -103,9 +105,15 @@ export function ReportView({ session, products }: ReportViewProps) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
+                    <DropdownMenuLabel>Формат экспорта</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleExportCSV}>
                       <FileType className="mr-2 h-4 w-4" />
-                      <span>CSV (Excel)</span>
+                      <span>CSV (для Excel)</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem disabled>
+                       <FileJson className="mr-2 h-4 w-4" />
+                      <span>PDF (скоро)</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -250,3 +258,5 @@ export function ReportView({ session, products }: ReportViewProps) {
     </div>
   );
 }
+
+    

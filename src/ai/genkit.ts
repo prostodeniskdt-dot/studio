@@ -4,10 +4,9 @@ import {googleCloud} from '@genkit-ai/google-cloud';
 
 export const ai = genkit({
   plugins: [
-    googleAI({
-      apiKey: process.env.GEMINI_API_KEY,
-    }),
-    googleCloud(),
+    googleAI,
+    googleCloud,
   ],
+  logLevel: 'debug',
   model: 'googleai/gemini-2.5-flash',
 });

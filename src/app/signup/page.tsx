@@ -8,8 +8,8 @@ import { AppLogo } from "@/components/app-logo";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from "@/firebase";
-import { initiateEmailSignUp } from "@/firebase/non-blocking-login";
+import { useAuth, useFirestore } from "@/firebase";
+import { initiateEmailSignUpAndCreateUser } from "@/firebase/non-blocking-login";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
@@ -26,6 +26,7 @@ type SignupFormInputs = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
@@ -46,9 +47,7 @@ export default function SignupPage() {
 
   const onSubmit: SubmitHandler<SignupFormInputs> = (data) => {
     try {
-        initiateEmailSignUp(auth, data.email, data.password);
-        // We don't set user display name here, as onAuthStateChanged will handle the redirect.
-        // A cloud function or a "complete profile" page would be a better place for that.
+        initiateEmailSignUpAndCreateUser(auth, firestore, data.email, data.password, data.name);
     } catch(e: any) {
         toast({
             variant: "destructive",

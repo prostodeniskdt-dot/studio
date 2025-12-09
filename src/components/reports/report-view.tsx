@@ -42,7 +42,7 @@ export function ReportView({ session, products }: ReportViewProps) {
   
   const handleExportCSV = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Продукт,Начало (мл),Покупки (мл),Продажи (порции),Теор. конец (мл),Факт. конец (мл),Разница (мл),Разница ($)\n";
+    csvContent += "Продукт,Начало (мл),Покупки (мл),Продажи (порции),Теор. конец (мл),Факт. конец (мл),Разница (мл),Разница (руб.)\n";
     calculatedLines.forEach(line => {
       const row = [
         line.product?.name,
@@ -138,7 +138,7 @@ export function ReportView({ session, products }: ReportViewProps) {
                     <TableHead className="text-right">Факт. (мл)</TableHead>
                     <TableHead className="text-right">Разн. (мл)</TableHead>
                     <TableHead className="text-right">Разн. (%)</TableHead>
-                    <TableHead className="text-right">Разн. ($)</TableHead>
+                    <TableHead className="text-right">Разн. (руб.)</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>

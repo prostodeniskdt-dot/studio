@@ -132,7 +132,7 @@ export function ProductForm({ product }: { product?: Product }) {
             name="sellingPricePerPortion"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Цена за порцию ($)</FormLabel>
+                <FormLabel>Цена за порцию (₽)</FormLabel>
                 <FormControl>
                     <Input type="number" step="0.01" {...field} />
                 </FormControl>
@@ -146,7 +146,7 @@ export function ProductForm({ product }: { product?: Product }) {
             name="costPerBottle"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Стоимость закупки ($)</FormLabel>
+                <FormLabel>Стоимость закупки (₽)</FormLabel>
                 <FormControl>
                     <Input type="number" step="0.01" {...field} />
                 </FormControl>

@@ -65,7 +65,7 @@ export function InventoryTable({ session, products }: InventoryTableProps) {
               <TableHead className="text-right">Теор. (мл)</TableHead>
               <TableHead className="text-right">Факт. (мл)</TableHead>
               <TableHead className="text-right">Разн. (мл)</TableHead>
-              <TableHead className="text-right">Разн. ($)</TableHead>
+              <TableHead className="text-right">Разн. (руб.)</TableHead>
               <TableHead className="w-[100px]">Действия</TableHead>
             </TableRow>
           </TableHeader>

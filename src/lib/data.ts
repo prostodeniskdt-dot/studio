@@ -1,4 +1,4 @@
-import type { User, Product, InventorySession, InventorySessionStatus, ProductCategory, InventoryLine } from '@/lib/types';
+import type { User, Product, InventorySession, InventoryLine } from '@/lib/types';
 
 export const mockUser: User = {
   id: 'user-1',
@@ -8,13 +8,18 @@ export const mockUser: User = {
 };
 
 export const mockProducts: Product[] = [
-  { id: 'prod-1', name: 'Jameson 0.7L', category: 'Whiskey', bottleVolumeMl: 700, costPerBottle: 25, sellingPricePerPortion: 7, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1150, emptyBottleWeightG: 450, bottleHeightCm: 30 },
-  { id: 'prod-2', name: 'Havana Club 3 Anos 0.7L', category: 'Rum', bottleVolumeMl: 700, costPerBottle: 18, sellingPricePerPortion: 6, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1120, emptyBottleWeightG: 420, bottleHeightCm: 29 },
-  { id: 'prod-3', name: 'Absolut Vodka 1L', category: 'Vodka', bottleVolumeMl: 1000, costPerBottle: 22, sellingPricePerPortion: 6.5, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1500, emptyBottleWeightG: 500, bottleHeightCm: 32 },
-  { id: 'prod-4', name: 'Beefeater Gin 0.7L', category: 'Gin', bottleVolumeMl: 700, costPerBottle: 20, sellingPricePerPortion: 6, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1180, emptyBottleWeightG: 480, bottleHeightCm: 28 },
-  { id: 'prod-5', name: 'Olmeca Blanco 0.7L', category: 'Tequila', bottleVolumeMl: 700, costPerBottle: 23, sellingPricePerPortion: 7, portionVolumeMl: 40, isActive: false, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'prod-6', name: 'Campari 1L', category: 'Liqueur', bottleVolumeMl: 1000, costPerBottle: 19, sellingPricePerPortion: 5, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1650, emptyBottleWeightG: 650, bottleHeightCm: 31 },
-  { id: 'prod-7', name: 'Coca-Cola 0.2L', category: 'Other', bottleVolumeMl: 200, costPerBottle: 0.5, sellingPricePerPortion: 2, portionVolumeMl: 200, isActive: true, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'prod-1', name: 'Jameson 0.7L', category: 'Whiskey', bottleVolumeMl: 700, costPerBottle: 1800, sellingPricePerPortion: 350, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1150, emptyBottleWeightG: 450, bottleHeightCm: 30 },
+  { id: 'prod-2', name: 'Havana Club 3 Anos 0.7L', category: 'Rum', bottleVolumeMl: 700, costPerBottle: 1500, sellingPricePerPortion: 300, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1120, emptyBottleWeightG: 420, bottleHeightCm: 29 },
+  { id: 'prod-3', name: 'Absolut Vodka 1L', category: 'Vodka', bottleVolumeMl: 1000, costPerBottle: 1600, sellingPricePerPortion: 280, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1500, emptyBottleWeightG: 500, bottleHeightCm: 32 },
+  { id: 'prod-4', name: 'Beefeater Gin 0.7L', category: 'Gin', bottleVolumeMl: 700, costPerBottle: 1700, sellingPricePerPortion: 320, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1180, emptyBottleWeightG: 480, bottleHeightCm: 28 },
+  { id: 'prod-5', name: 'Olmeca Blanco 0.7L', category: 'Tequila', bottleVolumeMl: 700, costPerBottle: 2000, sellingPricePerPortion: 400, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1200, emptyBottleWeightG: 500, bottleHeightCm: 27 },
+  { id: 'prod-6', name: 'Campari 1L', category: 'Liqueur', bottleVolumeMl: 1000, costPerBottle: 1900, sellingPricePerPortion: 250, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1650, emptyBottleWeightG: 650, bottleHeightCm: 31 },
+  { id: 'prod-7', name: 'Jack Daniel\'s 1L', category: 'Whiskey', bottleVolumeMl: 1000, costPerBottle: 2500, sellingPricePerPortion: 450, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1550, emptyBottleWeightG: 550, bottleHeightCm: 31 },
+  { id: 'prod-8', name: 'Sauza Silver 1L', category: 'Tequila', bottleVolumeMl: 1000, costPerBottle: 2100, sellingPricePerPortion: 380, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1510, emptyBottleWeightG: 510, bottleHeightCm: 33 },
+  { id: 'prod-9', name: 'Baileys Original 0.7L', category: 'Liqueur', bottleVolumeMl: 700, costPerBottle: 1600, sellingPricePerPortion: 300, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 1250, emptyBottleWeightG: 550, bottleHeightCm: 26 },
+  { id: 'prod-10', name: 'Beluga Noble 0.5L', category: 'Vodka', bottleVolumeMl: 500, costPerBottle: 1200, sellingPricePerPortion: 350, portionVolumeMl: 40, isActive: true, createdAt: new Date(), updatedAt: new Date(), fullBottleWeightG: 950, emptyBottleWeightG: 450, bottleHeightCm: 28 },
+  { id: 'prod-11', name: 'Coca-Cola 0.2L', category: 'Other', bottleVolumeMl: 200, costPerBottle: 40, sellingPricePerPortion: 100, portionVolumeMl: 200, isActive: true, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'prod-12', name: 'Архивный продукт', category: 'Other', bottleVolumeMl: 500, costPerBottle: 500, sellingPricePerPortion: 150, portionVolumeMl: 50, isActive: false, createdAt: new Date(), updatedAt: new Date() }
 ];
 
 const generateMockLines = (): InventoryLine[] => {

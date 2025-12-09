@@ -99,7 +99,7 @@ export function ReportView({ session, products }: ReportViewProps) {
             <Card>
                 <CardHeader><CardTitle>Общее отклонение</CardTitle></CardHeader>
                 <CardContent>
-                    <p className={cn("text-3xl font-bold", totals.totalVariance > 0 ? 'text-green-600' : 'text-destructive')}>
+                    <p className={cn("text-3xl font-bold", totals.totalVariance >= 0 ? 'text-green-600' : 'text-destructive')}>
                         {formatCurrency(totals.totalVariance)}
                     </p>
                 </CardContent>
@@ -192,13 +192,13 @@ export function ReportView({ session, products }: ReportViewProps) {
                     <TableCell className="font-medium">{line.product?.name}</TableCell>
                     <TableCell className="text-right font-mono">{Math.round(line.theoreticalEndStock)}</TableCell>
                     <TableCell className="text-right font-mono">{line.endStock}</TableCell>
-                    <TableCell className={cn("text-right font-mono", line.differenceVolume > 0 ? 'text-green-600' : line.differenceVolume < 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                    <TableCell className={cn("text-right font-mono", line.differenceVolume >= 0 ? 'text-green-600' : 'text-destructive')}>
                         {Math.round(line.differenceVolume)}
                     </TableCell>
-                     <TableCell className={cn("text-right font-mono", line.differencePercent > 0 ? 'text-green-600' : line.differencePercent < 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                     <TableCell className={cn("text-right font-mono", line.differencePercent >= 0 ? 'text-green-600' : 'text-destructive')}>
                         {line.differencePercent.toFixed(2)}%
                     </TableCell>
-                    <TableCell className={cn("text-right font-mono", line.differenceMoney > 0 ? 'text-green-600' : line.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                    <TableCell className={cn("text-right font-mono", line.differenceMoney >= 0 ? 'text-green-600' : 'text-destructive')}>
                         {formatCurrency(line.differenceMoney)}
                     </TableCell>
                     <TableCell className="text-center">
@@ -215,7 +215,7 @@ export function ReportView({ session, products }: ReportViewProps) {
              <TableFooter>
                 <TableRow>
                     <TableCell colSpan={6} className="font-bold text-lg">Общее отклонение</TableCell>
-                    <TableCell className={cn("text-right font-bold text-lg", totals.totalVariance > 0 ? 'text-green-600' : totals.totalVariance < 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                    <TableCell className={cn("text-right font-bold text-lg", totals.totalVariance >= 0 ? 'text-green-600' : 'text-destructive')}>
                         {formatCurrency(totals.totalVariance)}
                     </TableCell>
                      <TableCell />

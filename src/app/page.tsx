@@ -47,9 +47,21 @@ export default function LoginPage() {
   }, [user, isUserLoading, router]);
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
+    if (!auth || !firestore) {
+         toast({
+            variant: "destructive",
+            title: "Ошибка",
+            description: "Сервисы Firebase не инициализированы.",
+        });
+        return;
+    }
     try {
       await initiateEmailSignIn(auth, firestore, data.email, data.password);
       // On successful sign-in, the useEffect above will trigger the redirect.
+      toast({
+        title: "Вход выполнен",
+        description: "Перенаправляем на панель управления...",
+      });
     } catch(e: any) {
         toast({
             variant: "destructive",

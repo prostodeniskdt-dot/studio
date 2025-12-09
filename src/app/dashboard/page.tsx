@@ -28,7 +28,7 @@ export default function DashboardPage() {
     [firestore, barId]
   );
   
-  const { data: sessions, isLoading: isLoadingSessions } = useCollection<InventorySession>(sessionsQuery);
+  const { data: sessions, isLoading: isLoadingSessions, error: sessionsError } = useCollection<InventorySession>(sessionsQuery);
   
   const productsQuery = useMemoFirebase(() => 
     firestore && barId ? query(
@@ -37,7 +37,7 @@ export default function DashboardPage() {
     ) : null,
     [firestore, barId]
   );
-  const { data: activeProducts, isLoading: isLoadingProducts } = useCollection<Product>(productsQuery);
+  const { data: activeProducts, isLoading: isLoadingProducts, error: productsError } = useCollection<Product>(productsQuery);
 
 
   const handleCreateSession = async () => {
@@ -98,7 +98,7 @@ export default function DashboardPage() {
   };
 
   const isLoading = isLoadingSessions || isLoadingProducts || !barId;
-
+  const hasDataLoadingError = sessionsError || productsError;
 
   return (
     <div className="container mx-auto">
@@ -138,7 +138,7 @@ export default function DashboardPage() {
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Сессии инвентаризации</h1>
-        <Button onClick={handleCreateSession} disabled={isLoading || !activeProducts}>
+        <Button onClick={handleCreateSession} disabled={isLoading || hasDataLoadingError}>
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle />}
           Начать инвентаризацию
         </Button>
@@ -146,6 +146,11 @@ export default function DashboardPage() {
       {isLoading ? (
          <div className="flex justify-center items-center h-48">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+         </div>
+      ) : hasDataLoadingError ? (
+         <div className="text-center text-destructive bg-destructive/10 p-4 rounded-md">
+            <p>Не удалось загрузить данные.</p>
+            <p className="text-xs">Возможно, у вас нет прав на просмотр или данные еще не созданы.</p>
          </div>
       ) : (
         <SessionsList sessions={sessions || []} />

@@ -8,9 +8,8 @@ import {
   getAuth,
   UserCredential,
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, collection, writeBatch, getDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, writeBatch, getDoc, getDocs, query, collection, where } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
-import { setDocumentNonBlocking } from './non-blocking-updates';
 
 
 /** Initiate anonymous sign-in (non-blocking). */
@@ -30,6 +29,11 @@ export function initiateEmailSignUpAndCreateUser(
     .then(userCredential => {
       const user = userCredential.user;
       
+      // First, update the auth profile
+      return updateProfile(user, { displayName: displayName }).then(() => user);
+    })
+    .then(user => {
+      // Now that profile is updated, create Firestore documents
       const batch = writeBatch(firestore);
 
       // 1. Create User document
@@ -48,15 +52,13 @@ export function initiateEmailSignUpAndCreateUser(
       const barRef = doc(firestore, 'bars', barId);
       const newBar = {
         id: barId,
-        name: `Бар пользователя ${displayName}`,
+        name: `Бар ${displayName}`,
         location: 'Не указано',
         ownerUserId: user.uid,
       };
       batch.set(barRef, newBar);
 
-      // 3. Set display name on the auth user object itself
-      batch.commit();
-      return updateProfile(user, { displayName: displayName });
+      return batch.commit();
     })
     .catch(error => {
       // Let the UI handle showing the error toast.
@@ -72,39 +74,49 @@ export async function initiateEmailSignIn(auth: Auth, firestore: Firestore, emai
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
+    
+    // Check if the user document exists.
     const userRef = doc(firestore, 'users', user.uid);
     const userDoc = await getDoc(userRef);
+    
+    const barId = `bar_${user.uid}`;
+    const barRef = doc(firestore, 'bars', barId);
+    const barDoc = await getDoc(barRef);
 
-    // If the user document doesn't exist, it's likely a user from before the create logic was added.
-    if (!userDoc.exists()) {
+
+    // If the user or bar document doesn't exist, create them.
+    // This handles users created before the logic was in place.
+    if (!userDoc.exists() || !barDoc.exists()) {
         const batch = writeBatch(firestore);
         
         const displayName = user.displayName || user.email?.split('@')[0] || 'Пользователь';
 
-        // 1. Create User document
-        const newUser = {
-            id: user.uid,
-            displayName: displayName,
-            email: user.email,
-            role: 'manager',
-            createdAt: serverTimestamp(),
-        };
-        batch.set(userRef, newUser);
+        // 1. Create User document if it doesn't exist
+        if (!userDoc.exists()) {
+            const newUser = {
+                id: user.uid,
+                displayName: displayName,
+                email: user.email,
+                role: 'manager',
+                createdAt: serverTimestamp(),
+            };
+            batch.set(userRef, newUser);
+        }
         
-        // 2. Create Bar document
-        const barId = `bar_${user.uid}`;
-        const barRef = doc(firestore, 'bars', barId);
-        const newBar = {
-            id: barId,
-            name: `Бар пользователя ${displayName}`,
-            location: 'Не указано',
-            ownerUserId: user.uid,
-        };
-        batch.set(barRef, newBar);
+        // 2. Create Bar document if it doesn't exist
+        if (!barDoc.exists()) {
+            const newBar = {
+                id: barId,
+                name: `Бар ${displayName}`,
+                location: 'Не указано',
+                ownerUserId: user.uid,
+            };
+            batch.set(barRef, newBar);
+        }
 
-        // 3. Update auth profile if needed
+        // 3. Update auth profile if it's missing a display name
         if (!user.displayName) {
-          updateProfile(user, { displayName: displayName });
+          await updateProfile(user, { displayName: displayName });
         }
         
         await batch.commit();

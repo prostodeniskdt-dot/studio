@@ -8,12 +8,11 @@ import { AppLogo } from "@/components/app-logo";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from "@/firebase";
+import { useAuth, useUser } from "@/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
-import { useUser } from "@/firebase";
 import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
@@ -54,10 +53,6 @@ export default function LoginPage() {
     }
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
-      toast({
-        title: "Вход выполнен",
-        description: "Перенаправляем на панель управления...",
-      });
       // The useEffect will handle the redirect once the user state is updated.
     } catch(e: any) {
         toast({
@@ -68,13 +63,25 @@ export default function LoginPage() {
     }
   };
   
-  if (isUserLoading || user) {
+  // Show a loader while checking for user auth state or if the form is submitting
+  if (isUserLoading || isSubmitting) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
+  
+  // If user is already logged in, they will be redirected by the useEffect.
+  // We can show a loader here as well to avoid a flash of the login page.
+  if (user) {
+     return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
 
   return (
     <div className="w-full min-h-full bg-background">

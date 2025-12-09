@@ -8,12 +8,11 @@ import { AppLogo } from "@/components/app-logo";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from "@/firebase";
+import { useAuth, useUser } from "@/firebase";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
-import { useUser } from "@/firebase";
 import { Loader2 } from "lucide-react";
 
 const signupSchema = z.object({
@@ -57,11 +56,6 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       // After creating the user, update their profile with the display name.
       await updateProfile(userCredential.user, { displayName: data.name });
-      
-      toast({
-        title: "Аккаунт создан",
-        description: "Выполняется вход...",
-      });
       // The useUser effect will handle the redirect on successful sign-in
     } catch(e: any) {
         toast({
@@ -72,7 +66,17 @@ export default function SignupPage() {
     }
   };
   
-  if (isUserLoading || user) {
+  // Show a loader while checking for user auth state or if the form is submitting
+  if (isUserLoading || isSubmitting) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  // If user is already logged in, they will be redirected by the useEffect.
+  if (user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin" />

@@ -23,71 +23,51 @@ export function initiateAnonymousSignIn(authInstance: Auth): void {
  * This function is now robust and waits for profile updates.
  */
 export async function ensureUserAndBarDocuments(firestore: Firestore, user: User): Promise<void> {
-  const userRef = doc(firestore, 'users', user.uid);
-  const barId = `bar_${user.uid}`;
-  const barRef = doc(firestore, 'bars', barId);
+    if (!firestore || !user) return;
 
-  const batch = writeBatch(firestore);
+    const userRef = doc(firestore, 'users', user.uid);
+    const barId = `bar_${user.uid}`;
+    const barRef = doc(firestore, 'bars', barId);
 
-  try {
-    const userDoc = await getDoc(userRef);
-    const barDoc = await getDoc(barRef);
-    
-    let shouldCommit = false;
+    const batch = writeBatch(firestore);
 
-    if (!userDoc.exists()) {
-        const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
-        const newUser = {
-            id: user.uid,
-            displayName: displayName,
-            email: user.email,
-            role: 'manager',
-            createdAt: serverTimestamp(),
-        };
-        batch.set(userRef, newUser);
-        shouldCommit = true;
+    try {
+        const userDoc = await getDoc(userRef);
+        const barDoc = await getDoc(barRef);
+        
+        let shouldCommit = false;
+
+        if (!userDoc.exists()) {
+            const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
+            const newUser = {
+                id: user.uid,
+                displayName: displayName,
+                email: user.email,
+                role: 'manager',
+                createdAt: serverTimestamp(),
+            };
+            batch.set(userRef, newUser);
+            shouldCommit = true;
+        }
+
+        if (!barDoc.exists()) {
+            const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
+            const newBar = {
+                id: barId,
+                name: `Бар ${displayName}`,
+                location: 'Не указано',
+                ownerUserId: user.uid,
+            };
+            batch.set(barRef, newBar);
+            shouldCommit = true;
+        }
+        
+        if (shouldCommit) {
+            await batch.commit();
+        }
+    } catch (error) {
+        console.error("Error ensuring user and bar documents:", error);
+        // Re-throw the error to be caught by the calling function
+        throw error;
     }
-
-    if (!barDoc.exists()) {
-        const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
-        const newBar = {
-            id: barId,
-            name: `Бар ${displayName}`,
-            location: 'Не указано',
-            ownerUserId: user.uid,
-        };
-        batch.set(barRef, newBar);
-        shouldCommit = true;
-    }
-    
-    if (shouldCommit) {
-        await batch.commit();
-    }
-
-  } catch (error) {
-    console.error("Error ensuring user and bar documents:", error);
-    // Re-throw the error to be caught by the calling function
-    throw error;
-  }
-}
-
-
-/** Initiate email/password sign-up and create user/bar documents reliably. */
-export async function initiateEmailSignUpAndCreateUser(
-  auth: Auth,
-  firestore: Firestore,
-  email: string,
-  password: string,
-  displayName: string
-): Promise<void> {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(userCredential.user, { displayName });
-    // This function is now called from the layout, so no need to call it here.
-}
-
-
-/** Initiate email/password sign-in and ensure documents exist. */
-export async function initiateEmailSignIn(auth: Auth, firestore: Firestore, email: string, password: string): Promise<void> {
-    await signInWithEmailAndPassword(auth, email, password);
-    // This function is now called from the layout, so no need to call it here.
 }

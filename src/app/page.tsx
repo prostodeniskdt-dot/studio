@@ -8,7 +8,7 @@ import { AppLogo } from "@/components/app-logo";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from "@/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { initiateEmailSignIn } from "@/firebase/non-blocking-login";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +26,7 @@ type LoginFormInputs = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
@@ -46,7 +47,7 @@ export default function LoginPage() {
 
   const onSubmit: SubmitHandler<LoginFormInputs> = (data) => {
     try {
-      initiateEmailSignIn(auth, data.email, data.password);
+      initiateEmailSignIn(auth, firestore, data.email, data.password);
     } catch(e: any) {
         toast({
             variant: "destructive",

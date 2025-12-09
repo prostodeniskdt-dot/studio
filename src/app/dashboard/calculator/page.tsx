@@ -6,18 +6,27 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Ruler, Weight, Send } from 'lucide-react';
+import { Ruler, Weight, Send, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import type { Product } from '@/lib/types';
-import { mockProducts, mockInventorySessions } from '@/lib/data';
+import type { Product, InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc } from 'firebase/firestore';
 
 export default function UnifiedCalculatorPage() {
   const { toast } = useToast();
-  const [products] = React.useState<Product[]>(mockProducts);
-  const [selectedProductId, setSelectedProductId] = React.useState<string | null>(null);
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const barId = user ? `bar_${user.uid}` : null;
 
-  // Состояния для калькулятора
+  const productsQuery = useMemoFirebase(() => 
+      barId ? query(collection(firestore, 'bars', barId, 'products'), where('isActive', '==', true)) : null,
+      [firestore, barId]
+  );
+  const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsQuery);
+
+  const [selectedProductId, setSelectedProductId] = React.useState<string | undefined>(undefined);
+
   const [bottleHeight, setBottleHeight] = React.useState('');
   const [bottleVolume, setBottleVolume] = React.useState('');
   const [liquidHeight, setLiquidHeight] = React.useState('');
@@ -28,22 +37,22 @@ export default function UnifiedCalculatorPage() {
   const [currentWeight, setCurrentWeight] = React.useState('');
   const [calculatedVolumeByWeight, setCalculatedVolumeByWeight] = React.useState<number | null>(null);
   
+  const [isSending, setIsSending] = React.useState(false);
+
   const handleProductSelect = (productId: string) => {
-    const product = products.find(p => p.id === productId);
+    const product = products?.find(p => p.id === productId);
     setSelectedProductId(productId);
     if (product) {
         setBottleVolume(product.bottleVolumeMl?.toString() ?? '');
         setFullWeight(product.fullBottleWeightG?.toString() ?? '');
         setEmptyWeight(product.emptyBottleWeightG?.toString() ?? '');
         setBottleHeight(product.bottleHeightCm?.toString() ?? '');
-        // Сброс результатов при выборе нового продукта
         setCalculatedVolumeByHeight(null);
         setCalculatedVolumeByWeight(null);
     }
   };
 
   const handleCalculate = () => {
-    // Расчет по высоте
     const bh = parseFloat(bottleHeight);
     const bv = parseFloat(bottleVolume);
     const lh = parseFloat(liquidHeight);
@@ -59,11 +68,10 @@ export default function UnifiedCalculatorPage() {
       setCalculatedVolumeByHeight(null);
     }
 
-    // Расчет по весу
     const fw = parseFloat(fullWeight);
     const ew = parseFloat(emptyWeight);
     const cw = parseFloat(currentWeight);
-    const nv = parseFloat(bottleVolume); // Используем общий объем
+    const nv = parseFloat(bottleVolume);
 
     if (fw > ew && cw >= ew && nv > 0) {
         const liquidNetWeight = fw - ew;
@@ -79,8 +87,8 @@ export default function UnifiedCalculatorPage() {
     }
   };
 
-  const handleSendToInventory = () => {
-    if (calculatedVolumeByWeight === null || !selectedProductId) {
+  const handleSendToInventory = async () => {
+    if (calculatedVolumeByWeight === null || !selectedProductId || !barId) {
       toast({
         variant: "destructive",
         title: "Ошибка",
@@ -89,35 +97,68 @@ export default function UnifiedCalculatorPage() {
       return;
     }
 
-    const activeSession = mockInventorySessions.find(s => s.status === 'in_progress');
+    setIsSending(true);
+    
+    try {
+      const sessionsQuery = query(
+          collection(firestore, 'bars', barId, 'inventorySessions'), 
+          where('status', '==', 'in_progress'),
+          orderBy('createdAt', 'desc'),
+          limit(1)
+      );
 
-    if (!activeSession) {
+      const sessionsSnapshot = await getDocs(sessionsQuery);
+
+      if (sessionsSnapshot.empty) {
+        toast({
+          variant: "destructive",
+          title: "Нет активной сессии",
+          description: "Пожалуйста, начните новую инвентаризацию на главной панели.",
+        });
+        setIsSending(false);
+        return;
+      }
+      
+      const activeSession = sessionsSnapshot.docs[0];
+      const activeSessionId = activeSession.id;
+
+      const linesQuery = query(
+        collection(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines'),
+        where('productId', '==', selectedProductId),
+        limit(1)
+      );
+      
+      const linesSnapshot = await getDocs(linesQuery);
+
+      if (linesSnapshot.empty) {
+        toast({
+          variant: "destructive",
+          title: "Продукт не найден в сессии",
+          description: "Этот продукт не является частью текущей инвентаризации.",
+        });
+        setIsSending(false);
+        return;
+      }
+      
+      const lineDoc = linesSnapshot.docs[0];
+      const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines', lineDoc.id);
+
+      await updateDoc(lineRef, { endStock: calculatedVolumeByWeight });
+      
       toast({
-        variant: "destructive",
-        title: "Нет активной сессии",
-        description: "Пожалуйста, начните новую инвентаризацию на главной панели.",
+        title: "Данные отправлены",
+        description: `Остаток для продукта ${products?.find(p => p.id === selectedProductId)?.name} (${calculatedVolumeByWeight} мл) обновлен в текущей сессии.`,
       });
-      return;
-    }
 
-    const lineIndex = activeSession.lines.findIndex(l => l.productId === selectedProductId);
-
-    if (lineIndex === -1) {
-      toast({
-        variant: "destructive",
-        title: "Продукт не найден в сессии",
-        description: "Этот продукт не является частью текущей инвентаризации.",
+    } catch (error: any) {
+       toast({
+          variant: "destructive",
+          title: "Ошибка отправки данных",
+          description: "Не удалось обновить данные в сессии.",
       });
-      return;
+    } finally {
+        setIsSending(false);
     }
-
-    // Обновляем endStock в макете данных
-    activeSession.lines[lineIndex].endStock = calculatedVolumeByWeight;
-
-    toast({
-      title: "Данные отправлены",
-      description: `Остаток для продукта ${products.find(p => p.id === selectedProductId)?.name} (${calculatedVolumeByWeight} мл) обновлен в текущей сессии.`,
-    });
   };
 
   return (
@@ -134,12 +175,12 @@ export default function UnifiedCalculatorPage() {
 
           <div className="space-y-2">
             <Label htmlFor="product-select">Выберите продукт (профиль бутылки)</Label>
-            <Select onValueChange={handleProductSelect}>
-              <SelectTrigger id="product-select">
-                <SelectValue placeholder="Выберите продукт из каталога..." />
+            <Select onValueChange={handleProductSelect} value={selectedProductId}>
+              <SelectTrigger id="product-select" disabled={isLoadingProducts}>
+                <SelectValue placeholder={isLoadingProducts ? "Загрузка продуктов..." : "Выберите продукт из каталога..."} />
               </SelectTrigger>
               <SelectContent>
-                {products.filter(p => p.isActive).map(p => (
+                {products?.filter(p => p.isActive).map(p => (
                   <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                 ))}
               </SelectContent>
@@ -149,7 +190,6 @@ export default function UnifiedCalculatorPage() {
           <Separator />
 
           <div className="grid md:grid-cols-2 gap-8">
-            {/* Левая колонка: Ввод данных */}
             <div className="space-y-6">
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Параметры и замеры</h3>
@@ -192,7 +232,6 @@ export default function UnifiedCalculatorPage() {
               </div>
             </div>
 
-            {/* Правая колонка: Результаты */}
             <div className="space-y-6">
                <Button onClick={handleCalculate} className="w-full h-12 text-lg">
                 Рассчитать
@@ -212,9 +251,9 @@ export default function UnifiedCalculatorPage() {
                       <p className="text-base text-muted-foreground flex items-center justify-center gap-2"><Ruler className='h-4 w-4'/> Примерный объем (по высоте):</p>
                       <p className="text-2xl font-semibold text-muted-foreground">{calculatedVolumeByHeight !== null ? `${calculatedVolumeByHeight} мл` : 'Нет данных'}</p>
                     </div>
-                     <Button onClick={handleSendToInventory} className="w-full" disabled={calculatedVolumeByWeight === null}>
-                        <Send className="mr-2 h-4 w-4" />
-                        Отправить в инвентаризацию
+                     <Button onClick={handleSendToInventory} className="w-full" disabled={calculatedVolumeByWeight === null || isSending}>
+                        {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                        {isSending ? 'Отправка...' : 'Отправить в инвентаризацию'}
                     </Button>
                   </CardContent>
                 </Card>

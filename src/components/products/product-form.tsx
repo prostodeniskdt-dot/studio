@@ -3,7 +3,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -26,18 +25,20 @@ import { Switch } from '@/components/ui/switch';
 import type { Product } from '@/lib/types';
 import { productCategories, productSubCategories, translateCategory, translateSubCategory } from '@/lib/utils';
 import { Separator } from '../ui/separator';
+import { useFirestore, useUser } from '@/firebase';
+import { serverTimestamp, collection, doc } from 'firebase/firestore';
+import { addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
   category: z.enum(productCategories),
   subCategory: z.string().optional(),
   
-  // Экономика
   costPerBottle: z.coerce.number().positive('Должно быть положительным числом.'),
   sellingPricePerPortion: z.coerce.number().positive('Должно быть положительным числом.'),
   portionVolumeMl: z.coerce.number().positive('Должно быть положительным числом.'),
 
-  // Профиль бутылки
   bottleVolumeMl: z.coerce.number().positive('Должно быть положительным числом.'),
   bottleHeightCm: z.coerce.number().optional(),
   fullBottleWeightG: z.coerce.number().optional(),
@@ -48,7 +49,16 @@ const formSchema = z.object({
 
 type ProductFormValues = z.infer<typeof formSchema>;
 
-export function ProductForm({ product }: { product?: Product }) {
+interface ProductFormProps {
+    product?: Product;
+    barId: string | null;
+    onFormSubmit: () => void;
+}
+
+export function ProductForm({ product, barId, onFormSubmit }: ProductFormProps) {
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: product ? {
@@ -71,8 +81,31 @@ export function ProductForm({ product }: { product?: Product }) {
   const watchedCategory = form.watch('category');
 
   function onSubmit(data: ProductFormValues) {
-    // In a real app, this would call a server action to save the product
-    console.log('Product submitted:', data);
+    if (!barId) {
+      toast({ variant: "destructive", title: "Ошибка", description: "Не найден идентификатор бара." });
+      return;
+    }
+    
+    const productCollection = collection(firestore, 'bars', barId, 'products');
+
+    if (product?.id) {
+        // Update existing product
+        const productRef = doc(productCollection, product.id);
+        updateDocumentNonBlocking(productRef, { ...data, updatedAt: serverTimestamp() });
+        toast({ title: "Продукт обновлен", description: `Данные о "${data.name}" сохранены.` });
+
+    } else {
+        // Create new product
+        const newProductData = {
+            ...data,
+            barId: barId,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        };
+        addDocumentNonBlocking(productCollection, newProductData);
+        toast({ title: "Продукт создан", description: `"${data.name}" добавлен в каталог.` });
+    }
+    onFormSubmit();
   }
 
   return (

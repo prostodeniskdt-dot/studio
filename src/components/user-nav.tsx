@@ -15,13 +15,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { mockUser } from '@/lib/data';
-import { LogOut, User as UserIcon } from 'lucide-react';
+import { useUser, useAuth } from '@/firebase';
+import { LogOut, User as UserIcon, Loader2 } from 'lucide-react';
+import { signOut } from 'firebase/auth';
 
 export function UserNav() {
-  const user = mockUser;
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
 
-  const getInitials = (name: string) => {
+  const handleLogout = () => {
+    signOut(auth);
+  };
+
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return '??';
     const names = name.split(' ');
     if (names.length > 1) {
       return names[0][0] + names[names.length - 1][0];
@@ -29,12 +36,24 @@ export function UserNav() {
     return names[0][0];
   };
 
+  if (isUserLoading) {
+    return <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />;
+  }
+
+  if (!user) {
+    return (
+        <Button asChild>
+            <Link href="/">Войти</Link>
+        </Button>
+    )
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={`https://avatar.vercel.sh/${user.email}.png`} alt={user.displayName} />
+            <AvatarImage src={user.photoURL ?? `https://avatar.vercel.sh/${user.email}.png`} alt={user.displayName ?? 'User'} />
             <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
           </Avatar>
         </Button>
@@ -42,7 +61,7 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.displayName}</p>
+            <p className="text-sm font-medium leading-none">{user.displayName || 'Пользователь'}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
             </p>
@@ -56,11 +75,9 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-            <Link href="/">
-                <LogOut />
-                Выйти
-            </Link>
+        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+            <LogOut />
+            Выйти
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

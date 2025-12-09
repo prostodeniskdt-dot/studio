@@ -1,12 +1,69 @@
+'use client';
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AppLogo } from "@/components/app-logo";
-import { CheckCircle } from "lucide-react";
+import { useForm, type SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useAuth } from "@/firebase";
+import { initiateEmailSignIn } from "@/firebase/non-blocking-login";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
+import { useUser } from "@/firebase";
+
+
+const loginSchema = z.object({
+  email: z.string().email({ message: "Неверный формат электронной почты" }),
+  password: z.string().min(6, { message: "Пароль должен содержать не менее 6 символов" }),
+});
+
+type LoginFormInputs = z.infer<typeof loginSchema>;
+
 
 export default function LoginPage() {
+  const auth = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormInputs>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
+
+  const onSubmit: SubmitHandler<LoginFormInputs> = (data) => {
+    try {
+      initiateEmailSignIn(auth, data.email, data.password);
+    } catch(e: any) {
+        toast({
+            variant: "destructive",
+            title: "Ошибка входа",
+            description: e.message,
+        });
+    }
+  };
+  
+  if (isUserLoading || user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        {/* Можно добавить Skeleton/Spinner */}
+      </div>
+    );
+  }
+
   return (
     <div className="w-full min-h-full bg-background">
       <div className="container relative grid h-full flex-col items-center justify-center lg:max-w-none lg:grid-cols-2 lg:px-0">
@@ -43,18 +100,19 @@ export default function LoginPage() {
             </div>
             <Card>
                 <CardContent className="pt-6">
-                    <form className="space-y-4">
+                    <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
                     <div>
                         <Label htmlFor="email">Электронная почта</Label>
                         <div className="mt-1">
                         <Input
                             id="email"
-                            name="email"
                             type="email"
                             autoComplete="email"
                             required
                             placeholder="you@example.com"
+                            {...register("email")}
                         />
+                        {errors.email && <p className="text-xs text-destructive mt-1">{errors.email.message}</p>}
                         </div>
                     </div>
 
@@ -70,18 +128,18 @@ export default function LoginPage() {
                         <div className="mt-1">
                         <Input
                             id="password"
-                            name="password"
                             type="password"
                             autoComplete="current-password"
                             required
+                             {...register("password")}
                         />
+                         {errors.password && <p className="text-xs text-destructive mt-1">{errors.password.message}</p>}
                         </div>
                     </div>
 
                     <div>
-                        <Button type="submit" className="w-full" asChild>
-                        {/* In a real app, this would trigger a login action. For the demo, it navigates to the dashboard. */}
-                        <Link href="/dashboard">Войти</Link>
+                        <Button type="submit" className="w-full">
+                          Войти
                         </Button>
                     </div>
                     </form>

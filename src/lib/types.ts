@@ -1,10 +1,13 @@
+import type { Timestamp } from 'firebase/firestore';
+
 export type UserRole = 'admin' | 'manager' | 'bartender';
 
-export interface User {
-  id: string;
+export interface UserProfile {
+  id: string; // Firebase UID
   displayName: string;
   email: string;
   role: UserRole;
+  createdAt: Timestamp;
 }
 
 export type ProductCategory = 'Whiskey' | 'Rum' | 'Vodka' | 'Gin' | 'Tequila' | 'Liqueur' | 'Wine' | 'Beer' | 'Syrup' | 'Other';
@@ -18,7 +21,8 @@ export type ProductSubCategory = WhiskeySubCategory | RumSubCategory | GinSubCat
 
 
 export interface Product {
-  id: string;
+  id?: string; // Optional because it's set by Firestore
+  barId: string;
   name: string;
   category: ProductCategory;
   subCategory?: ProductSubCategory;
@@ -35,28 +39,26 @@ export interface Product {
   emptyBottleWeightG?: number;
 
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export type InventorySessionStatus = 'draft' | 'in_progress' | 'completed';
 
 export interface InventorySession {
-  id: string;
+  id?: string; // Optional because it's set by Firestore
+  barId: string;
   name: string;
   status: InventorySessionStatus;
   createdByUserId: string;
-  createdAt: Date;
-  closedAt?: Date;
-  lines: InventoryLine[];
+  createdAt: Timestamp;
+  closedAt?: Timestamp;
 }
 
 export interface InventoryLine {
-  id: string;
+  id?: string; // Optional because it's set by Firestore
   productId: string;
-  // This will be populated for UI display
-  product?: Product;
-
+  
   // All volumes in ml
   startStock: number;
   purchases: number;
@@ -66,9 +68,18 @@ export interface InventoryLine {
   sales: number; 
 }
 
+// UI-specific, not stored in DB
 export interface CalculatedInventoryLine extends InventoryLine {
+  product?: Product;
   theoreticalEndStock: number;
   differenceVolume: number;
   differenceMoney: number;
   differencePercent: number;
+}
+
+export interface Bar {
+  id?: string; // Optional because it's set by Firestore
+  name: string;
+  location: string;
+  ownerUserId: string;
 }

@@ -1,11 +1,71 @@
+'use client';
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AppLogo } from "@/components/app-logo";
+import { useForm, type SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useAuth } from "@/firebase";
+import { initiateEmailSignUp } from "@/firebase/non-blocking-login";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
+import { useUser } from "@/firebase";
+
+const signupSchema = z.object({
+  name: z.string().min(2, { message: "Имя должно содержать не менее 2 символов" }),
+  email: z.string().email({ message: "Неверный формат электронной почты" }),
+  password: z.string().min(6, { message: "Пароль должен содержать не менее 6 символов" }),
+});
+
+type SignupFormInputs = z.infer<typeof signupSchema>;
+
 
 export default function SignupPage() {
+  const auth = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignupFormInputs>({
+    resolver: zodResolver(signupSchema),
+  });
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
+
+  const onSubmit: SubmitHandler<SignupFormInputs> = (data) => {
+    try {
+        initiateEmailSignUp(auth, data.email, data.password);
+        // We don't set user display name here, as onAuthStateChanged will handle the redirect.
+        // A cloud function or a "complete profile" page would be a better place for that.
+    } catch(e: any) {
+        toast({
+            variant: "destructive",
+            title: "Ошибка регистрации",
+            description: e.message,
+        });
+    }
+  };
+  
+  if (isUserLoading || user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        {/* Можно добавить Skeleton/Spinner */}
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-full flex-col justify-center items-center px-6 py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -20,18 +80,19 @@ export default function SignupPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <div>
                 <Label htmlFor="name">Полное имя</Label>
                 <div className="mt-2">
                   <Input
                     id="name"
-                    name="name"
                     type="text"
                     autoComplete="name"
                     required
                     placeholder="Иван Иванов"
+                    {...register("name")}
                   />
+                  {errors.name && <p className="text-xs text-destructive mt-1">{errors.name.message}</p>}
                 </div>
               </div>
               
@@ -40,12 +101,13 @@ export default function SignupPage() {
                 <div className="mt-2">
                   <Input
                     id="email"
-                    name="email"
                     type="email"
                     autoComplete="email"
                     required
                     placeholder="you@example.com"
+                     {...register("email")}
                   />
+                   {errors.email && <p className="text-xs text-destructive mt-1">{errors.email.message}</p>}
                 </div>
               </div>
 
@@ -54,17 +116,18 @@ export default function SignupPage() {
                 <div className="mt-2">
                   <Input
                     id="password"
-                    name="password"
                     type="password"
                     autoComplete="new-password"
                     required
+                    {...register("password")}
                   />
+                  {errors.password && <p className="text-xs text-destructive mt-1">{errors.password.message}</p>}
                 </div>
               </div>
 
               <div>
-                <Button type="submit" className="w-full" asChild>
-                  <Link href="/dashboard">Создать аккаунт</Link>
+                <Button type="submit" className="w-full">
+                  Создать аккаунт
                 </Button>
               </div>
             </form>

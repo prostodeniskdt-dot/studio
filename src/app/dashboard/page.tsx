@@ -3,53 +3,92 @@
 import * as React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, BarChart3, Package, Sparkles } from "lucide-react";
+import { PlusCircle, BarChart3, Package, Sparkles, Loader2 } from "lucide-react";
 import { SessionsList } from "@/components/dashboard/sessions-list";
-import { mockInventorySessions, mockProducts } from "@/lib/data";
 import { useRouter } from 'next/navigation';
-import type { InventorySession, InventoryLine } from '@/lib/types';
+import type { InventorySession, Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, serverTimestamp, query, where, orderBy } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
 export default function DashboardPage() {
   const router = useRouter();
   const { toast } = useToast();
-  // In a real app, this data would be fetched from Firestore
-  const [sessions, setSessions] = React.useState(mockInventorySessions);
+  const { user } = useUser();
+  const firestore = useFirestore();
 
-  const handleCreateSession = () => {
-    const newSessionId = `session-${Date.now()}`;
-    const activeProducts = mockProducts.filter(p => p.isActive);
-    
-    const newLines: InventoryLine[] = activeProducts.map(p => ({
-        id: `line-${p.id}-${newSessionId}`,
-        productId: p.id,
-        startStock: 0, // In a real app, this might carry over from the previous session
-        purchases: 0,
-        sales: 0,
-        endStock: 0,
-    }));
+  // Assuming one bar per user for now. In a real app, you'd select a bar.
+  const barId = user ? `bar_${user.uid}` : null; 
 
-    const newSession: InventorySession = {
-        id: newSessionId,
+  const sessionsQuery = useMemoFirebase(() => 
+    barId ? query(
+        collection(firestore, 'bars', barId, 'inventorySessions'), 
+        orderBy('createdAt', 'desc')
+    ) : null,
+    [firestore, barId]
+  );
+  
+  const { data: sessions, isLoading: isLoadingSessions } = useCollection<InventorySession>(sessionsQuery);
+  
+  const productsQuery = useMemoFirebase(() => 
+    barId ? query(
+      collection(firestore, 'bars', barId, 'products'), 
+      where('isActive', '==', true)
+    ) : null,
+    [firestore, barId]
+  );
+  const { data: activeProducts, isLoading: isLoadingProducts } = useCollection<Product>(productsQuery);
+
+
+  const handleCreateSession = async () => {
+    if (!user || !barId || !activeProducts) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Не удалось загрузить данные для создания сессии.",
+      });
+      return;
+    }
+
+    const newSessionData = {
+        barId: barId,
         name: `Инвентаризация от ${new Date().toLocaleDateString('ru-RU')}`,
-        status: 'in_progress',
-        createdByUserId: 'user-1',
-        createdAt: new Date(),
-        lines: newLines,
+        status: 'in_progress' as const,
+        createdByUserId: user.uid,
+        createdAt: serverTimestamp(),
     };
+    
+    try {
+      const sessionRef = await addDocumentNonBlocking(collection(firestore, 'bars', barId, 'inventorySessions'), newSessionData);
+      const sessionId = sessionRef.id;
 
-    // This is a mock implementation. We add it to the global mock array.
-    mockInventorySessions.unshift(newSession);
-    setSessions(mockInventorySessions);
-
-
-    toast({
-        title: "Сессия создана",
-        description: `Новая сессия "${newSession.name}" была успешно создана.`,
-    });
-
-    router.push(`/dashboard/sessions/${newSessionId}`);
+      // Add lines for all active products
+      const linesCollection = collection(firestore, 'bars', barId, 'inventorySessions', sessionId, 'lines');
+      for (const product of activeProducts) {
+        const newLine = {
+          productId: product.id,
+          startStock: 0,
+          purchases: 0,
+          sales: 0,
+          endStock: 0,
+        };
+        addDocumentNonBlocking(linesCollection, newLine);
+      }
+      
+      toast({
+          title: "Сессия создана",
+          description: `Новая сессия "${newSessionData.name}" была успешно создана.`,
+      });
+      router.push(`/dashboard/sessions/${sessionId}`);
+    } catch (error: any) {
+       toast({
+          variant: "destructive",
+          title: "Ошибка создания сессии",
+          description: error.message,
+      });
+    }
   };
 
 
@@ -91,12 +130,18 @@ export default function DashboardPage() {
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Сессии инвентаризации</h1>
-        <Button onClick={handleCreateSession}>
-          <PlusCircle />
+        <Button onClick={handleCreateSession} disabled={isLoadingProducts}>
+          {isLoadingProducts ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle />}
           Начать инвентаризацию
         </Button>
       </div>
-      <SessionsList sessions={sessions} />
+      {isLoadingSessions ? (
+         <div className="flex justify-center items-center h-48">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+         </div>
+      ) : (
+        <SessionsList sessions={sessions || []} />
+      )}
     </div>
   );
 }

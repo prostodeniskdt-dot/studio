@@ -2,17 +2,10 @@
 
 import * as React from 'react';
 import {
-  CaretSortIcon,
-  ChevronDownIcon,
-  DotsHorizontalIcon,
-} from '@radix-ui/react-icons';
-import type {
   ColumnDef,
   ColumnFiltersState,
   SortingState,
   VisibilityState,
-} from '@tanstack/react-table';
-import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -20,6 +13,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import { MoreHorizontal, ArrowUpDown, ChevronDown, PlusCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -42,7 +36,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle } from 'lucide-react';
 
 import type { Product } from '@/lib/types';
 import { formatCurrency, translateCategory } from '@/lib/utils';
@@ -91,7 +84,7 @@ const columns: ColumnDef<Product>[] = [
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
           Стоимость
-          <CaretSortIcon className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
@@ -122,7 +115,7 @@ const columns: ColumnDef<Product>[] = [
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
                 <span className="sr-only">Открыть меню</span>
-                <DotsHorizontalIcon className="h-4 w-4" />
+                <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -195,7 +188,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="ml-auto">
-                    Колонки <ChevronDownIcon className="ml-2 h-4 w-4" />
+                    Колонки <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

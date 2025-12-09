@@ -12,58 +12,7 @@ import { useUser, useFirestore } from "@/firebase";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { doc, getDoc, writeBatch, serverTimestamp } from "firebase/firestore";
-
-// Helper function to ensure user and bar documents exist
-async function ensureUserAndBarDocuments(firestore: any, user: any): Promise<void> {
-    if (!firestore || !user) return;
-
-    const userRef = doc(firestore, 'users', user.uid);
-    const barId = `bar_${user.uid}`;
-    const barRef = doc(firestore, 'bars', barId);
-
-    const batch = writeBatch(firestore);
-
-    try {
-        const userDoc = await getDoc(userRef);
-        const barDoc = await getDoc(barRef);
-        
-        let shouldCommit = false;
-
-        if (!userDoc.exists()) {
-            const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
-            const newUser = {
-                id: user.uid,
-                displayName: displayName,
-                email: user.email,
-                role: 'manager',
-                createdAt: serverTimestamp(),
-            };
-            batch.set(userRef, newUser);
-            shouldCommit = true;
-        }
-
-        if (!barDoc.exists()) {
-            const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
-            const newBar = {
-                id: barId,
-                name: `Бар ${displayName}`,
-                location: 'Не указано',
-                ownerUserId: user.uid,
-            };
-            batch.set(barRef, newBar);
-            shouldCommit = true;
-        }
-        
-        if (shouldCommit) {
-            await batch.commit();
-        }
-    } catch (error) {
-        console.error("Error ensuring user and bar documents:", error);
-        // This error should be surfaced to the user
-        throw new Error("Не удалось инициализировать данные пользователя.");
-    }
-}
+import { ensureUserAndBarDocuments } from "@/firebase/non-blocking-login";
 
 
 export default function DashboardLayout({
@@ -86,14 +35,20 @@ export default function DashboardLayout({
 
     // If we have a user and firestore instance, ensure their documents exist.
     if (user && firestore) {
-      ensureUserAndBarDocuments(firestore, user)
-        .then(() => {
+      // Use an async IIFE (Immediately Invoked Function Expression)
+      // to handle the async operation within useEffect.
+      (async () => {
+        try {
+          // CRITICAL FIX: Added `await` here.
+          // This ensures we wait for the documents to be created/verified
+          // before we try to render any pages that depend on them.
+          await ensureUserAndBarDocuments(firestore, user);
           setIsDataReady(true);
-        })
-        .catch((err) => {
-          console.error(err);
-          setError(err.message);
-        });
+        } catch (err: any) {
+          console.error("Failed to ensure user/bar documents:", err);
+          setError(err.message || "Не удалось инициализировать данные пользователя.");
+        }
+      })();
     }
   }, [user, isUserLoading, firestore, router]);
 

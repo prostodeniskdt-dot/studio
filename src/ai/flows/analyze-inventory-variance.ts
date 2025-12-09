@@ -4,11 +4,10 @@
  * @fileOverview AI-powered analysis of inventory variances to identify potential causes of discrepancies.
  *
  * - analyzeInventoryVariance - A function that takes inventory data and returns potential causes for variances.
- * - AnalyzeInventoryVarianceInput - The input type for the analyzeInventoryVariance function.
- * - AnalyzeInventoryVarianceOutput - The return type for the analyzeInventoryVariance function.
  */
 
 import {ai} from '@/ai/genkit';
+import { type AnalyzeInventoryVarianceInput, type AnalyzeInventoryVarianceOutput } from '@/lib/actions';
 import {z} from 'genkit';
 
 const AnalyzeInventoryVarianceInputSchema = z.object({
@@ -20,13 +19,9 @@ const AnalyzeInventoryVarianceInputSchema = z.object({
   startStock: z.number().describe('The starting stock level of the product.'),
 });
 
-export type AnalyzeInventoryVarianceInput = z.infer<typeof AnalyzeInventoryVarianceInputSchema>;
-
 const AnalyzeInventoryVarianceOutputSchema = z.object({
   analysis: z.string().describe('An analysis of potential causes for the inventory variance.'),
 });
-
-export type AnalyzeInventoryVarianceOutput = z.infer<typeof AnalyzeInventoryVarianceOutputSchema>;
 
 const prompt = ai.definePrompt({
   name: 'analyzeInventoryVariancePrompt',

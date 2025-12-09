@@ -2,9 +2,23 @@
 
 import { analyzeInventoryVariance as analyzeInventoryVarianceFlow } from '@/ai/flows/analyze-inventory-variance';
 import type { InventoryLine, Product } from './types';
-import type { AnalyzeInventoryVarianceInput, AnalyzeInventoryVarianceOutput } from '@/ai/flows/analyze-inventory-variance';
+import { z } from 'genkit';
 
-export type { AnalyzeInventoryVarianceInput, AnalyzeInventoryVarianceOutput };
+const AnalyzeInventoryVarianceInputSchema = z.object({
+  productName: z.string().describe('The name of the product being analyzed.'),
+  theoreticalEndStock: z.number().describe('The theoretical end stock level of the product.'),
+  endStock: z.number().describe('The actual end stock level of the product.'),
+  sales: z.number().describe('The amount of the product sold during the inventory session.'),
+  purchases: z.number().describe('The amount of the product purchased during the inventory session.'),
+  startStock: z.number().describe('The starting stock level of the product.'),
+});
+export type AnalyzeInventoryVarianceInput = z.infer<typeof AnalyzeInventoryVarianceInputSchema>;
+
+const AnalyzeInventoryVarianceOutputSchema = z.object({
+  analysis: z.string().describe('An analysis of potential causes for the inventory variance.'),
+});
+export type AnalyzeInventoryVarianceOutput = z.infer<typeof AnalyzeInventoryVarianceOutputSchema>;
+
 
 export async function runVarianceAnalysis(line: InventoryLine & { product?: Product }) {
   if (!line.product) {

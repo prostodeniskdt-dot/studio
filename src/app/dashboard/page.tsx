@@ -1,12 +1,57 @@
+
+'use client';
+
+import * as React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, BarChart3, Package, Sparkles } from "lucide-react";
 import { SessionsList } from "@/components/dashboard/sessions-list";
-import { mockInventorySessions } from "@/lib/data";
+import { mockInventorySessions, mockProducts } from "@/lib/data";
+import { useRouter } from 'next/navigation';
+import type { InventorySession, InventoryLine } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { toast } = useToast();
   // In a real app, this data would be fetched from Firestore
-  const sessions = mockInventorySessions;
+  const [sessions, setSessions] = React.useState(mockInventorySessions);
+
+  const handleCreateSession = () => {
+    // In a real app, this would be a server action creating a new session in Firestore
+    const newSessionId = `session-${Date.now()}`;
+    const activeProducts = mockProducts.filter(p => p.isActive);
+    
+    const newLines: InventoryLine[] = activeProducts.map(p => ({
+        id: `line-${p.id}-${newSessionId}`,
+        productId: p.id,
+        startStock: 0, // In a real app, this might carry over from the previous session
+        purchases: 0,
+        sales: 0,
+        endStock: 0,
+    }));
+
+    const newSession: InventorySession = {
+        id: newSessionId,
+        name: `Инвентаризация от ${new Date().toLocaleDateString('ru-RU')}`,
+        status: 'draft',
+        createdByUserId: 'user-1',
+        createdAt: new Date(),
+        lines: newLines,
+    };
+
+    // This is a mock implementation. We add it to the local state.
+    setSessions(prevSessions => [newSession, ...prevSessions]);
+
+    toast({
+        title: "Сессия создана",
+        description: `Новая сессия "${newSession.name}" была успешно создана.`,
+    });
+
+    router.push(`/dashboard/sessions/${newSessionId}`);
+  };
+
 
   return (
     <div className="container mx-auto">
@@ -46,9 +91,9 @@ export default function DashboardPage() {
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Сессии инвентаризации</h1>
-        <Button>
+        <Button onClick={handleCreateSession}>
           <PlusCircle />
-          Создать сессию
+          Начать инвентаризацию
         </Button>
       </div>
       <SessionsList sessions={sessions} />

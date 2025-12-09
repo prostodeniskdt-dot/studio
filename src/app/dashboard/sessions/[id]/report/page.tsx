@@ -28,7 +28,7 @@ export default function SessionReportPage() {
 
   const linesRef = useMemoFirebase(() =>
     barId ? collection(firestore, 'bars', barId, 'inventorySessions', id, 'lines') : null,
-    [barId, id]
+    [firestore, barId, id]
   );
   const { data: lines, isLoading: isLoadingLines } = useCollection<InventoryLine>(linesRef);
 
@@ -49,8 +49,20 @@ export default function SessionReportPage() {
     );
   }
 
-  if (!session || !lines || !products) {
-    notFound();
+  if (!session) {
+    return (
+        <div className="flex items-center justify-center h-full">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+    );
+  }
+
+  if (!lines || !products) {
+     return (
+        <div className="flex items-center justify-center h-full">
+           <p>Загрузка данных для отчета...</p>
+        </div>
+    );
   }
 
   if (session.status !== 'completed') {

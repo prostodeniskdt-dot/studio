@@ -9,8 +9,7 @@ import { useRouter } from 'next/navigation';
 import type { InventorySession, Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, serverTimestamp, query, where, orderBy } from 'firebase/firestore';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, serverTimestamp, query, where, orderBy, addDoc, writeBatch } from 'firebase/firestore';
 
 
 export default function DashboardPage() {
@@ -47,7 +46,7 @@ export default function DashboardPage() {
       toast({
         variant: "destructive",
         title: "Ошибка",
-        description: "Не удалось загрузить данные для создания сессии.",
+        description: "Не удалось загрузить данные для создания сессии. Убедитесь, что ваш бар настроен.",
       });
       return;
     }
@@ -58,15 +57,18 @@ export default function DashboardPage() {
         status: 'in_progress' as const,
         createdByUserId: user.uid,
         createdAt: serverTimestamp(),
+        closedAt: null,
     };
     
     try {
-      const sessionRef = await addDocumentNonBlocking(collection(firestore, 'bars', barId, 'inventorySessions'), newSessionData);
-      const sessionId = sessionRef.id;
+      const sessionDocRef = await addDoc(collection(firestore, 'bars', barId, 'inventorySessions'), newSessionData);
+      const sessionId = sessionDocRef.id;
 
-      // Add lines for all active products
+      // Add lines for all active products using a batch write
+      const batch = writeBatch(firestore);
       const linesCollection = collection(firestore, 'bars', barId, 'inventorySessions', sessionId, 'lines');
-      for (const product of activeProducts) {
+      
+      activeProducts.forEach(product => {
         const newLine = {
           productId: product.id,
           startStock: 0,
@@ -74,8 +76,11 @@ export default function DashboardPage() {
           sales: 0,
           endStock: 0,
         };
-        addDocumentNonBlocking(linesCollection, newLine);
-      }
+        const lineDocRef = doc(linesCollection); // Automatically generate ID
+        batch.set(lineDocRef, newLine);
+      });
+      
+      await batch.commit();
       
       toast({
           title: "Сессия создана",
@@ -86,7 +91,7 @@ export default function DashboardPage() {
        toast({
           variant: "destructive",
           title: "Ошибка создания сессии",
-          description: error.message,
+          description: "Не удалось создать новую сессию. Попробуйте снова.",
       });
     }
   };

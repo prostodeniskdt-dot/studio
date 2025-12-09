@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn, translateStatus } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { LocalizedDate } from "@/components/localized-date";
+import { Timestamp } from "firebase/firestore";
 
 type SessionsListProps = {
   sessions: InventorySession[];
@@ -26,6 +26,18 @@ export function SessionsList({ sessions }: SessionsListProps) {
         return 'default';
     }
   };
+  
+  const formatDate = (timestamp: Timestamp | Date) => {
+    if (timestamp instanceof Timestamp) {
+      return timestamp.toDate().toLocaleDateString('ru-RU');
+    }
+    // Fallback for cases where it might already be a Date object
+    if (timestamp instanceof Date) {
+      return timestamp.toLocaleDateString('ru-RU');
+    }
+    return 'Неверная дата';
+  }
+
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -39,7 +51,7 @@ export function SessionsList({ sessions }: SessionsListProps) {
               </Badge>
             </div>
             <CardDescription>
-              Создано <LocalizedDate date={session.createdAt} />
+              Создано {formatDate(session.createdAt)}
             </CardDescription>
           </CardHeader>
           <div className="flex-grow" />

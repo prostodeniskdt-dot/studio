@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { FileText, Loader2, Save, XCircle } from "lucide-react";
 import Link from "next/link";
 import { translateStatus } from "@/lib/utils";
-import { LocalizedDate } from "@/components/localized-date";
 import type { InventorySession, Product, InventoryLine } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, serverTimestamp, writeBatch } from 'firebase/firestore';
@@ -43,7 +42,7 @@ export default function SessionPage() {
 
   const linesRef = useMemoFirebase(() =>
     barId ? collection(firestore, 'bars', barId, 'inventorySessions', id, 'lines') : null,
-    [barId, id]
+    [firestore, barId, id]
   );
   const { data: lines, isLoading: isLoadingLines } = useCollection<InventoryLine>(linesRef);
 
@@ -91,13 +90,13 @@ export default function SessionPage() {
   };
 
   const handleCompleteSession = async () => {
-    if (!sessionRef) return;
+    if (!sessionRef || !barId) return;
     const batch = writeBatch(firestore);
 
     // Save any pending changes first
     if (localLines) {
         localLines.forEach(line => {
-            const lineRef = doc(firestore, 'bars', barId!, 'inventorySessions', id, 'lines', line.id);
+            const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', id, 'lines', line.id);
             batch.update(lineRef, {
                 startStock: line.startStock,
                 purchases: line.purchases,
@@ -136,7 +135,13 @@ export default function SessionPage() {
   }
 
   if (!session) {
-    notFound();
+    // This can happen briefly while data is loading, or if the session is not found.
+    // notFound() should be called only after we are sure it doesn't exist.
+    return (
+        <div className="flex items-center justify-center h-full">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+    );
   }
 
   const getStatusVariant = (status: (typeof session.status)) => {
@@ -160,7 +165,7 @@ export default function SessionPage() {
         <div>
             <h1 className="text-3xl font-bold tracking-tight">{session.name}</h1>
             <p className="text-muted-foreground">
-                Создано <LocalizedDate date={session.createdAt.toDate()} />
+                Создано {session.createdAt?.toDate().toLocaleDateString('ru-RU')}
             </p>
         </div>
         <div className="flex items-center gap-4">

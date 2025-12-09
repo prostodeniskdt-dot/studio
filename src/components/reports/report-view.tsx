@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Download, Sparkles, FileType, FileJson } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { LocalizedDate } from "@/components/localized-date";
+import { Timestamp } from 'firebase/firestore';
 import { VarianceAnalysisModal } from '../sessions/variance-analysis-modal';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Pie, PieChart, Cell } from 'recharts';
 import {
@@ -32,7 +32,7 @@ export function ReportView({ session, products }: ReportViewProps) {
   const [analyzingLine, setAnalyzingLine] = React.useState<CalculatedInventoryLine | null>(null);
 
   const calculatedLines: CalculatedInventoryLine[] = React.useMemo(() =>
-    session.lines.map(line => {
+    (session.lines || []).map(line => {
       const product = products.find(p => p.id === line.productId);
       return product ? calculateInventoryLine(line, product) : ({} as CalculatedInventoryLine);
     }).filter(l => l.id).sort((a,b) => a.differenceMoney - b.differenceMoney),
@@ -87,6 +87,17 @@ export function ReportView({ session, products }: ReportViewProps) {
 
     toast({ title: "Экспортировано в CSV", description: "Отчет был загружен." });
   };
+  
+  const formatDate = (timestamp: Timestamp | Date | undefined) => {
+    if (!timestamp) return '';
+    if (timestamp instanceof Timestamp) {
+      return timestamp.toDate().toLocaleDateString('ru-RU');
+    }
+    if (timestamp instanceof Date) {
+      return timestamp.toLocaleDateString('ru-RU');
+    }
+    return 'Неверная дата';
+  }
 
 
   return (
@@ -94,7 +105,7 @@ export function ReportView({ session, products }: ReportViewProps) {
         <div className="flex items-start justify-between mb-6">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Отчет по инвентаризации</h1>
-                <p className="text-muted-foreground">{session.name} - {session.closedAt && <>Закрыто <LocalizedDate date={session.closedAt} /></>}</p>
+                <p className="text-muted-foreground">{session.name} - {session.closedAt && <>Закрыто {formatDate(session.closedAt)}</>}</p>
             </div>
             <div className="flex gap-2">
                 <DropdownMenu>

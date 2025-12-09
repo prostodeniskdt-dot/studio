@@ -8,6 +8,7 @@ import {
   CollectionReference,
   DocumentReference,
   SetOptions,
+  doc,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import {FirestorePermissionError} from '@/firebase/errors';
@@ -47,6 +48,8 @@ export function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
           requestResourceData: data,
         })
       )
+      // Re-throw the error so the caller's catch block can handle it for UI updates
+      throw error;
     });
   return promise;
 }

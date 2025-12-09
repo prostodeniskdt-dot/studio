@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -19,7 +18,6 @@ export default function DashboardPage() {
   const [sessions, setSessions] = React.useState(mockInventorySessions);
 
   const handleCreateSession = () => {
-    // In a real app, this would be a server action creating a new session in Firestore
     const newSessionId = `session-${Date.now()}`;
     const activeProducts = mockProducts.filter(p => p.isActive);
     
@@ -35,14 +33,16 @@ export default function DashboardPage() {
     const newSession: InventorySession = {
         id: newSessionId,
         name: `Инвентаризация от ${new Date().toLocaleDateString('ru-RU')}`,
-        status: 'draft',
+        status: 'in_progress',
         createdByUserId: 'user-1',
         createdAt: new Date(),
         lines: newLines,
     };
 
-    // This is a mock implementation. We add it to the local state.
-    setSessions(prevSessions => [newSession, ...prevSessions]);
+    // This is a mock implementation. We add it to the global mock array.
+    mockInventorySessions.unshift(newSession);
+    setSessions(mockInventorySessions);
+
 
     toast({
         title: "Сессия создана",

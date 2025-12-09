@@ -18,6 +18,7 @@ export default function DashboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
+  // barId is now guaranteed to be available here because of the layout protection
   const barId = user ? `bar_${user.uid}` : null; 
 
   const sessionsQuery = useMemoFirebase(() => 
@@ -63,12 +64,11 @@ export default function DashboardPage() {
       const sessionDocRef = await addDoc(collection(firestore, 'bars', barId, 'inventorySessions'), newSessionData);
       const sessionId = sessionDocRef.id;
 
-      // Add lines for all active products using a batch write
       const batch = writeBatch(firestore);
       const linesCollection = collection(firestore, 'bars', barId, 'inventorySessions', sessionId, 'lines');
       
       activeProducts.forEach(product => {
-        const lineDocRef = doc(linesCollection); // Automatically generate ID
+        const lineDocRef = doc(linesCollection); 
         const newLine = {
           id: lineDocRef.id,
           productId: product.id,
@@ -77,6 +77,10 @@ export default function DashboardPage() {
           purchases: 0,
           sales: 0,
           endStock: 0,
+          theoreticalEndStock: 0,
+          differenceVolume: 0,
+          differenceMoney: 0,
+          differencePercent: 0,
         };
         batch.set(lineDocRef, newLine);
       });
@@ -97,7 +101,7 @@ export default function DashboardPage() {
     }
   };
 
-  const isLoading = isLoadingSessions || isLoadingProducts || !barId;
+  const isLoading = isLoadingSessions || isLoadingProducts;
   const hasDataLoadingError = sessionsError || productsError;
 
   return (
@@ -138,8 +142,8 @@ export default function DashboardPage() {
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Сессии инвентаризации</h1>
-        <Button onClick={handleCreateSession} disabled={isLoading || hasDataLoadingError}>
-          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle />}
+        <Button onClick={handleCreateSession} disabled={isLoading || hasDataLoadingError || !barId}>
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
           Начать инвентаризацию
         </Button>
       </div>

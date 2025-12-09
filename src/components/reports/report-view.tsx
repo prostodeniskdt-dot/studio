@@ -1,13 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import type { InventorySession, Product, CalculatedInventoryLine } from '@/lib/types';
-import { calculateInventoryLine } from '@/lib/calculations';
+import type { InventorySession, Product, InventoryLine } from '@/lib/types';
+import { calculateLineFields } from '@/lib/calculations';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn, formatCurrency } from '@/lib/utils';
-import { Download, Sparkles, FileType, FileJson } from 'lucide-react';
+import { Download, Sparkles, FileType, FileJson, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Timestamp } from 'firebase/firestore';
 import { VarianceAnalysisModal } from '../sessions/variance-analysis-modal';
@@ -29,15 +29,19 @@ type ReportViewProps = {
 
 export function ReportView({ session, products }: ReportViewProps) {
   const { toast } = useToast();
-  const [analyzingLine, setAnalyzingLine] = React.useState<CalculatedInventoryLine | null>(null);
+  const [analyzingLine, setAnalyzingLine] = React.useState<(InventoryLine & {product?: Product}) | null>(null);
 
-  const calculatedLines: CalculatedInventoryLine[] = React.useMemo(() =>
-    (session.lines || []).map(line => {
+  const calculatedLines = React.useMemo(() => {
+    if (!session.lines) return [];
+    return session.lines.map(line => {
       const product = products.find(p => p.id === line.productId);
-      return product ? calculateInventoryLine(line, product) : ({} as CalculatedInventoryLine);
-    }).filter(l => l.id).sort((a,b) => a.differenceMoney - b.differenceMoney),
-    [session.lines, products]
-  );
+      if (!product) return null;
+      const calculatedFields = calculateLineFields(line, product);
+      return { ...line, product, ...calculatedFields };
+    }).filter((l): l is NonNullable<typeof l> => l !== null)
+      .sort((a, b) => a.differenceMoney - b.differenceMoney);
+  }, [session.lines, products]);
+
 
   const totals = React.useMemo(() => {
     return calculatedLines.reduce(
@@ -97,6 +101,10 @@ export function ReportView({ session, products }: ReportViewProps) {
       return timestamp.toLocaleDateString('ru-RU');
     }
     return 'Неверная дата';
+  }
+
+  if (!session || !products || !session.lines) {
+      return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
 
 
@@ -238,7 +246,7 @@ export function ReportView({ session, products }: ReportViewProps) {
                         {formatCurrency(line.differenceMoney)}
                     </TableCell>
                     <TableCell className="text-center">
-                        {Math.abs(line.differenceVolume) > (line.product?.portionVolumeMl ?? 40) / 2 && (
+                        {Math.abs(line.differenceVolume) > (line.product?.portionVolumeMl ?? 40) / 4 && (
                             <Button variant="ghost" size="icon" onClick={() => setAnalyzingLine(line)}>
                                 <Sparkles className="h-4 w-4" />
                                 <span className="sr-only">Анализ</span>
@@ -269,5 +277,3 @@ export function ReportView({ session, products }: ReportViewProps) {
     </div>
   );
 }
-
-    

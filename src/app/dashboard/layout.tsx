@@ -22,13 +22,20 @@ export default function DashboardLayout({
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
+  // Derived state to check if we are ready to render children
+  const isReady = !isUserLoading && !!user;
+
   useEffect(() => {
+    // If loading is finished and there's no user, redirect to login.
     if (!isUserLoading && !user) {
       router.replace('/');
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || !user) {
+  // While loading auth state, or if there's no user, show a loader.
+  // This prevents any child components from attempting to fetch data
+  // before the user state (and thus barId) is known.
+  if (!isReady) {
      return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -36,6 +43,7 @@ export default function DashboardLayout({
     );
   }
 
+  // Once ready, render the full layout with children.
   return (
     <SidebarProvider>
       <div className="flex min-h-screen">

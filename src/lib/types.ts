@@ -17,7 +17,7 @@ export type GinSubCategory = 'London Dry' | 'Old Tom' | 'Plymouth' | 'Other';
 export type WineSubCategory = 'Red' | 'White' | 'Rose' | 'Sparkling' | 'Other';
 export type BeerSubCategory = 'Lager' | 'Ale' | 'Stout' | 'IPA' | 'Other';
 
-export type ProductSubCategory = WhiskeySubCategory | RumSubCategory | GinSubCategory | WineSubCategory | BeerSubCategory;
+export type ProductSubCategory = WhiskeySubCategory | RumSubCategory | GinSubCategory | WineSubCategory | BeerSubCategory | string;
 
 
 export interface Product {
@@ -59,6 +59,7 @@ export interface InventorySession {
 export interface InventoryLine {
   id: string; 
   productId: string;
+  inventorySessionId: string;
   
   // All volumes in ml
   startStock: number;
@@ -67,15 +68,17 @@ export interface InventoryLine {
   
   // Sales in number of portions
   sales: number; 
+
+  // Calculated fields - now adding them here as they are part of the line item
+  theoreticalEndStock: number;
+  differenceVolume: number;
+  differenceMoney: number;
+  differencePercent: number;
 }
 
 // UI-specific, not stored in DB
 export interface CalculatedInventoryLine extends InventoryLine {
   product?: Product;
-  theoreticalEndStock: number;
-  differenceVolume: number;
-  differenceMoney: number;
-  differencePercent: number;
 }
 
 export interface Bar {

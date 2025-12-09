@@ -2,12 +2,12 @@
 
 import * as React from 'react';
 import type { InventoryLine, Product, CalculatedInventoryLine } from '@/lib/types';
-import { calculateInventoryLine } from '@/lib/calculations';
+import { calculateLineFields } from '@/lib/calculations';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn, formatCurrency } from '@/lib/utils';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 import { VarianceAnalysisModal } from './variance-analysis-modal';
 
 type InventoryTableProps = {
@@ -21,23 +21,53 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
   
   const [analyzingLine, setAnalyzingLine] = React.useState<CalculatedInventoryLine | null>(null);
 
-  const calculatedLines: CalculatedInventoryLine[] = React.useMemo(() => 
-    lines.map(line => {
-      const product = products.find(p => p.id === line.productId);
-      return product ? calculateInventoryLine(line, product) : ({} as CalculatedInventoryLine);
-    }).filter(l => l.id), 
-  [lines, products]);
+  // This combines the line data with its corresponding product and calculated fields
+  const getCalculatedLine = React.useCallback((line: InventoryLine): CalculatedInventoryLine => {
+    const product = products.find(p => p.id === line.productId);
+    if (!product) {
+      // Return a default structure if product not found to avoid crashes
+      return { 
+        ...line, 
+        theoreticalEndStock: 0,
+        differenceVolume: 0,
+        differenceMoney: 0,
+        differencePercent: 0
+      };
+    }
+    const calculatedFields = calculateLineFields(line, product);
+    return { ...line, product, ...calculatedFields };
+  }, [products]);
 
+  const calculatedLines = React.useMemo(() => 
+    lines.map(getCalculatedLine).filter(l => l.product), 
+  [lines, getCalculatedLine]);
 
   const handleInputChange = (lineId: string, field: keyof InventoryLine, value: string) => {
     const numericValue = Number(value);
-    if (isNaN(numericValue)) return;
+    // Allow empty strings for clearing inputs, but don't parse them as NaN
+    if (value !== '' && isNaN(numericValue)) return;
 
     setLines(currentLines => {
         if (!currentLines) return null;
-        return currentLines.map(line => 
-            line.id === lineId ? { ...line, [field]: numericValue } : line
-        );
+        return currentLines.map(line => {
+            if (line.id === lineId) {
+                const updatedLine = { ...line, [field]: value === '' ? 0 : numericValue };
+                // Recalculate derived fields immediately
+                const product = products.find(p => p.id === updatedLine.productId);
+                if (product) {
+                    const { theoreticalEndStock, differenceVolume, differenceMoney, differencePercent } = calculateLineFields(updatedLine, product);
+                    return {
+                        ...updatedLine,
+                        theoreticalEndStock,
+                        differenceVolume,
+                        differenceMoney,
+                        differencePercent
+                    };
+                }
+                return updatedLine;
+            }
+            return line;
+        });
     });
   };
 
@@ -51,6 +81,9 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
     );
   }, [calculatedLines]);
 
+  if (!lines || !products) {
+    return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin" /></div>
+  }
 
   return (
     <>
@@ -66,12 +99,12 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
               <TableHead className="text-right">Факт. (мл)</TableHead>
               <TableHead className="text-right">Разн. (мл)</TableHead>
               <TableHead className="text-right">Разн. (руб.)</TableHead>
-              <TableHead className="w-[100px]">Действия</TableHead>
+              <TableHead className="w-[100px] text-center">Анализ</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {calculatedLines.map(line => (
-              <TableRow key={line.id} className={cn(line.differenceVolume !== 0 && 'bg-destructive/5 hover:bg-destructive/10')}>
+              <TableRow key={line.id} className={cn(line.differenceVolume !== 0 && isEditable && 'bg-muted/30 hover:bg-muted/50')}>
                 <TableCell className="font-medium">{line.product?.name}</TableCell>
                 <TableCell className="text-right">
                   {isEditable ? (
@@ -91,7 +124,7 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                 <TableCell className="text-right font-mono">{Math.round(line.theoreticalEndStock)}</TableCell>
                 <TableCell className="text-right">
                   {isEditable ? (
-                    <Input type="number" value={line.endStock} onChange={e => handleInputChange(line.id!, 'endStock', e.target.value)} className="w-24 text-right ml-auto" />
+                    <Input type="number" value={line.endStock} onChange={e => handleInputChange(line.id!, 'endStock', e.target.value)} className="w-24 text-right ml-auto bg-primary/10" />
                   ) : line.endStock}
                 </TableCell>
                 <TableCell className={cn("text-right font-mono", line.differenceVolume > 0 ? 'text-green-600' : line.differenceVolume < 0 ? 'text-destructive' : 'text-muted-foreground')}>
@@ -101,7 +134,7 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                   {formatCurrency(line.differenceMoney)}
                 </TableCell>
                 <TableCell className="text-center">
-                    {Math.abs(line.differenceVolume) > (line.product?.portionVolumeMl ?? 40) / 2 && (
+                    {Math.abs(line.differenceVolume) > (line.product?.portionVolumeMl ?? 40) / 4 && (
                          <Button variant="ghost" size="sm" onClick={() => setAnalyzingLine(line)}>
                             <Sparkles className="h-4 w-4" />
                             <span className="sr-only">Анализ</span>

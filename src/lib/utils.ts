@@ -71,7 +71,7 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
         // Rum
         case 'White': return 'Белый';
         case 'Gold': return 'Золотой';
-        case 'Dark': 'Темный';
+        case 'Dark': return 'Темный';
         case 'Spiced': return 'Пряный';
         
         // Gin
@@ -81,7 +81,8 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
 
         // Wine
         case 'Red': return 'Красное';
-        case 'White': return 'Белое';
+        // White is already a case for Rum
+        // case 'White': return 'Белое';
         case 'Rose': return 'Розовое';
         case 'Sparkling': return 'Игристое';
 

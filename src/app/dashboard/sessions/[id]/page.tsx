@@ -22,7 +22,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { calculateLineFields } from '@/lib/calculations';
 
 export default function SessionPage() {
   const params = useParams();
@@ -53,6 +54,8 @@ export default function SessionPage() {
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
 
   const [localLines, setLocalLines] = React.useState<InventoryLine[] | null>(null);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [isCompleting, setIsCompleting] = React.useState(false);
 
   React.useEffect(() => {
     if (lines) {
@@ -61,17 +64,23 @@ export default function SessionPage() {
   }, [lines]);
   
   const handleSaveChanges = async () => {
-    if (!localLines || !barId || !firestore) return;
+    if (!localLines || !barId || !firestore || !products) return;
 
+    setIsSaving(true);
     const batch = writeBatch(firestore);
     localLines.forEach(line => {
-      const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', id, 'lines', line.id);
-      batch.update(lineRef, {
-        startStock: line.startStock,
-        purchases: line.purchases,
-        sales: line.sales,
-        endStock: line.endStock,
-      });
+      const product = products.find(p => p.id === line.productId);
+      if (product) {
+          const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', id, 'lines', line.id);
+          const calculatedFields = calculateLineFields(line, product);
+          batch.update(lineRef, {
+            startStock: line.startStock,
+            purchases: line.purchases,
+            sales: line.sales,
+            endStock: line.endStock,
+            ...calculatedFields
+          });
+      }
     });
 
     try {
@@ -86,28 +95,20 @@ export default function SessionPage() {
         title: "Ошибка сохранения",
         description: "Не удалось сохранить изменения.",
       });
+    } finally {
+        setIsSaving(false);
     }
   };
 
   const handleCompleteSession = async () => {
-    if (!sessionRef || !barId || !firestore) return;
+    if (!sessionRef || !barId || !firestore || !localLines || !products) return;
+    setIsCompleting(true);
+    
+    // First, save any pending changes
+    await handleSaveChanges();
+
+    // Then, update the session status
     const batch = writeBatch(firestore);
-
-    // Save any pending changes first
-    if (localLines) {
-        localLines.forEach(line => {
-            if (line.id) { // Ensure line.id exists
-                const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', id, 'lines', line.id);
-                batch.update(lineRef, {
-                    startStock: line.startStock,
-                    purchases: line.purchases,
-                    sales: line.sales,
-                    endStock: line.endStock,
-                });
-            }
-        });
-    }
-
     batch.update(sessionRef, { status: 'completed', closedAt: serverTimestamp() });
 
     try {
@@ -123,6 +124,8 @@ export default function SessionPage() {
             title: "Ошибка",
             description: "Не удалось завершить сессию.",
         });
+    } finally {
+        setIsCompleting(false);
     }
   };
 
@@ -130,7 +133,7 @@ export default function SessionPage() {
 
   if (isLoading) {
     return (
-        <div className="flex items-center justify-center h-full">
+        <div className="flex items-center justify-center h-full pt-20">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
     );
@@ -143,7 +146,7 @@ export default function SessionPage() {
       notFound();
     }
     return (
-        <div className="flex items-center justify-center h-full">
+        <div className="flex items-center justify-center h-full pt-20">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
     );
@@ -186,19 +189,22 @@ export default function SessionPage() {
                 </Button>
             ) : (
                 <div className="flex gap-2">
-                    <Button onClick={handleSaveChanges} variant="outline" disabled={!isEditable}>
-                        <Save className="mr-2 h-4 w-4" />
-                        Сохранить
+                    <Button onClick={handleSaveChanges} variant="outline" disabled={!isEditable || isSaving}>
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        {isSaving ? 'Сохранение...' : 'Сохранить'}
                     </Button>
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button disabled={!isEditable}>Завершить сессию</Button>
+                            <Button disabled={!isEditable || isCompleting}>
+                                {isCompleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Завершить сессию
+                            </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
                             <AlertDialogTitle>Завершить сессию инвентаризации?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                После завершения сессии вы не сможете вносить изменения. Все текущие данные будут сохранены.
+                                Все текущие данные будут сохранены. После завершения сессии вы не сможете вносить изменения.
                                 Вы будете перенаправлены на страницу отчета.
                             </AlertDialogDescription>
                             </AlertDialogHeader>

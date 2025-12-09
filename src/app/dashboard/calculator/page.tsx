@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import type { Product, InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
 
 export default function UnifiedCalculatorPage() {
   const { toast } = useToast();
@@ -132,19 +132,31 @@ export default function UnifiedCalculatorPage() {
       const linesSnapshot = await getDocs(linesQuery);
 
       if (linesSnapshot.empty) {
-        toast({
-          variant: "destructive",
-          title: "Продукт не найден в сессии",
-          description: "Этот продукт не является частью текущей инвентаризации.",
-        });
-        setIsSending(false);
-        return;
-      }
-      
-      const lineDoc = linesSnapshot.docs[0];
-      const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines', lineDoc.id);
+        // This case should ideally not happen if all active products are added to the session
+        // But we handle it just in case
+        const batch = writeBatch(firestore);
+        const newLineRef = doc(collection(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines'));
+        const newLineData = {
+          id: newLineRef.id,
+          productId: selectedProductId,
+          inventorySessionId: activeSessionId,
+          startStock: 0,
+          purchases: 0,
+          sales: 0,
+          endStock: calculatedVolumeByWeight,
+          theoreticalEndStock: 0,
+          differenceVolume: 0,
+          differenceMoney: 0,
+          differencePercent: 0,
+        };
+        batch.set(newLineRef, newLineData);
+        await batch.commit();
 
-      await updateDoc(lineRef, { endStock: calculatedVolumeByWeight });
+      } else {
+        const lineDoc = linesSnapshot.docs[0];
+        const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines', lineDoc.id);
+        await updateDoc(lineRef, { endStock: calculatedVolumeByWeight });
+      }
       
       toast({
         title: "Данные отправлены",
@@ -252,7 +264,7 @@ export default function UnifiedCalculatorPage() {
                       <p className="text-base text-muted-foreground flex items-center justify-center gap-2"><Ruler className='h-4 w-4'/> Примерный объем (по высоте):</p>
                       <p className="text-2xl font-semibold text-muted-foreground">{calculatedVolumeByHeight !== null ? `${calculatedVolumeByHeight} мл` : 'Нет данных'}</p>
                     </div>
-                     <Button onClick={handleSendToInventory} className="w-full" disabled={calculatedVolumeByWeight === null || isSending}>
+                     <Button onClick={handleSendToInventory} className="w-full" disabled={calculatedVolumeByWeight === null || isSending || !barId}>
                         {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                         {isSending ? 'Отправка...' : 'Отправить в инвентаризацию'}
                     </Button>

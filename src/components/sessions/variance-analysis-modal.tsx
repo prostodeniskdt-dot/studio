@@ -1,11 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
+import { Terminal, Lightbulb } from 'lucide-react';
 
 import type { CalculatedInventoryLine } from '@/lib/types';
 import { runVarianceAnalysis } from '@/lib/actions';
@@ -22,24 +22,29 @@ export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnal
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  const performAnalysis = React.useCallback(() => {
+    setIsLoading(true);
+    setError(null);
+    setAnalysis(null);
+    
+    runVarianceAnalysis(line)
+      .then(result => {
+        setAnalysis(result.analysis);
+      })
+      .catch(err => {
+        setError(err.message || 'Произошла неизвестная ошибка.');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [line]);
+
+
   React.useEffect(() => {
     if (open) {
-      setIsLoading(true);
-      setError(null);
-      setAnalysis(null);
-      
-      runVarianceAnalysis(line)
-        .then(result => {
-          setAnalysis(result.analysis);
-        })
-        .catch(err => {
-          setError(err.message || 'Произошла неизвестная ошибка.');
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
+      performAnalysis();
     }
-  }, [open, line]);
+  }, [open, performAnalysis]);
 
   const varianceType = line.differenceVolume > 0 ? 'Излишек' : 'Недостача';
   const varianceColor = line.differenceVolume > 0 ? 'text-green-600' : 'text-destructive';
@@ -47,7 +52,7 @@ export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnal
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Анализ отклонений: {line.product?.name}</DialogTitle>
           <DialogDescription>
@@ -55,7 +60,7 @@ export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnal
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
-            <h3 className="font-semibold">Возможные причины</h3>
+            <h3 className="font-semibold flex items-center gap-2"><Lightbulb className="text-primary"/> Возможные причины</h3>
             {isLoading && (
                 <div className="space-y-2">
                     <Skeleton className="h-4 w-full" />
@@ -71,11 +76,17 @@ export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnal
                 </Alert>
             )}
             {analysis && (
-                <div className="text-sm text-muted-foreground prose prose-sm dark:prose-invert">
+                <div className="text-sm text-muted-foreground prose prose-sm dark:prose-invert rounded-md border p-4 bg-muted/50">
                     <p>{analysis}</p>
                 </div>
             )}
         </div>
+        <DialogFooter>
+          <Button onClick={() => onOpenChange(false)} variant="outline">Закрыть</Button>
+          <Button onClick={performAnalysis} disabled={isLoading}>
+            {isLoading ? "Анализ..." : "Повторить анализ"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

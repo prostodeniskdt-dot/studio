@@ -19,7 +19,7 @@ export default function ProductsPage() {
 
     if (isLoading || !barId) {
         return (
-            <div className="flex justify-center items-center h-full">
+            <div className="flex justify-center items-center h-full pt-20">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
         )

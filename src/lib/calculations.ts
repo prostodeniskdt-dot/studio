@@ -1,4 +1,4 @@
-import type { InventoryLine, Product, CalculatedInventoryLine } from '@/lib/types';
+import type { InventoryLine, Product } from '@/lib/types';
 
 /**
  * Calculates the theoretical end stock in milliliters.
@@ -12,8 +12,8 @@ export function calculateTheoreticalEndStock(line: InventoryLine, product: Produ
  * Calculates the difference in volume between actual and theoretical stock.
  * A negative value indicates a loss (shortage), a positive value indicates a surplus.
  */
-export function calculateDifferenceVolume(line: InventoryLine, theoreticalEndStock: number): number {
-  return line.endStock - theoreticalEndStock;
+export function calculateDifferenceVolume(endStock: number, theoreticalEndStock: number): number {
+  return endStock - theoreticalEndStock;
 }
 
 /**
@@ -31,22 +31,31 @@ export function calculateDifferenceMoney(differenceVolume: number, product: Prod
 export function calculateDifferencePercent(differenceVolume: number, line: InventoryLine, product: Product): number {
   if (!product) return 0;
   const volumeSold = line.sales * product.portionVolumeMl;
-  if (volumeSold === 0) return 0;
+  if (volumeSold === 0) {
+      if (differenceVolume !== 0) {
+          // Handle case where there are no sales, but there is a variance
+          // (e.g., from starting stock vs. ending stock)
+          // We can compare it to the starting stock
+          if (line.startStock > 0) {
+              return (differenceVolume / line.startStock) * 100;
+          }
+          return differenceVolume > 0 ? 100 : -100; // Or some other indicator of total loss/gain
+      }
+      return 0; // No sales and no difference
+  }
   return (differenceVolume / volumeSold) * 100;
 }
 
 /**
- * A wrapper function to perform all calculations for a given inventory line.
+ * A wrapper function to perform all calculations for a given inventory line and returns the calculated fields.
  */
-export function calculateInventoryLine(line: InventoryLine, product: Product): CalculatedInventoryLine {
+export function calculateLineFields(line: InventoryLine, product: Product) {
   const theoreticalEndStock = calculateTheoreticalEndStock(line, product);
-  const differenceVolume = calculateDifferenceVolume(line, theoreticalEndStock);
+  const differenceVolume = calculateDifferenceVolume(line.endStock, theoreticalEndStock);
   const differenceMoney = calculateDifferenceMoney(differenceVolume, product);
   const differencePercent = calculateDifferencePercent(differenceVolume, line, product);
 
   return {
-    ...line,
-    product,
     theoreticalEndStock,
     differenceVolume,
     differenceMoney,

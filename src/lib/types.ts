@@ -26,6 +26,7 @@ export interface Product {
   name: string;
   category: ProductCategory;
   subCategory?: ProductSubCategory;
+  imageUrl?: string;
   
   // Экономика
   costPerBottle: number;

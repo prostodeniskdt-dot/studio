@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -29,11 +30,13 @@ import { useFirestore, useUser } from '@/firebase';
 import { serverTimestamp, collection, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
   category: z.enum(productCategories),
   subCategory: z.string().optional(),
+  imageUrl: z.string().optional(),
   
   costPerBottle: z.coerce.number().positive('Должно быть положительным числом.'),
   sellingPricePerPortion: z.coerce.number().positive('Должно быть положительным числом.'),
@@ -64,6 +67,7 @@ export function ProductForm({ product, barId, onFormSubmit }: ProductFormProps) 
     defaultValues: product ? {
         ...product,
         subCategory: product.subCategory ?? undefined,
+        imageUrl: product.imageUrl ?? undefined,
         bottleHeightCm: product.bottleHeightCm ?? undefined,
         fullBottleWeightG: product.fullBottleWeightG ?? undefined,
         emptyBottleWeightG: product.emptyBottleWeightG ?? undefined,
@@ -75,10 +79,20 @@ export function ProductForm({ product, barId, onFormSubmit }: ProductFormProps) 
       sellingPricePerPortion: 0,
       portionVolumeMl: 40,
       isActive: true,
+      imageUrl: PlaceHolderImages.find(p => p.id.toLowerCase() === 'other')?.imageUrl,
     },
   });
 
   const watchedCategory = form.watch('category');
+
+  React.useEffect(() => {
+    if (form.formState.isDirty) {
+      const image = PlaceHolderImages.find(p => p.id.toLowerCase() === watchedCategory.toLowerCase());
+      if (image) {
+        form.setValue('imageUrl', image.imageUrl, { shouldDirty: true });
+      }
+    }
+  }, [watchedCategory, form]);
 
   function onSubmit(data: ProductFormValues) {
     if (!barId) {

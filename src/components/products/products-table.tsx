@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -107,7 +108,19 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
     {
       accessorKey: 'name',
       header: 'Название',
-      cell: ({ row }) => <div>{row.getValue('name')}</div>,
+      cell: ({ row }) => {
+        const product = row.original;
+        return (
+            <div className="flex items-center gap-4">
+                 <div className="w-10 h-10 rounded-md bg-muted overflow-hidden relative flex-shrink-0">
+                    {product.imageUrl && (
+                        <Image src={product.imageUrl} alt={product.name} fill style={{objectFit: 'contain'}} />
+                    )}
+                </div>
+                <div>{product.name}</div>
+            </div>
+        )
+      },
     },
     {
       accessorKey: 'category',

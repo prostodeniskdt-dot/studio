@@ -89,6 +89,11 @@
           "type": "string",
           "description": "The category of the product (e.g., Whiskey, Rum)."
         },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the product image.",
+          "format": "uri"
+        },
         "bottleVolumeMl": {
           "type": "number",
           "description": "The volume of the bottle in milliliters."

@@ -1,7 +1,10 @@
 'use server';
 
-import { analyzeInventoryVariance } from '@/ai/flows/analyze-inventory-variance';
+import { analyzeInventoryVariance as analyzeInventoryVarianceFlow } from '@/ai/flows/analyze-inventory-variance';
 import type { InventoryLine, Product } from './types';
+import type { AnalyzeInventoryVarianceInput, AnalyzeInventoryVarianceOutput } from '@/ai/flows/analyze-inventory-variance';
+
+export type { AnalyzeInventoryVarianceInput, AnalyzeInventoryVarianceOutput };
 
 export async function runVarianceAnalysis(line: InventoryLine & { product?: Product }) {
   if (!line.product) {
@@ -24,7 +27,7 @@ export async function runVarianceAnalysis(line: InventoryLine & { product?: Prod
     throw new Error('Неполные данные для анализа.');
   }
 
-  const input = {
+  const input: AnalyzeInventoryVarianceInput = {
     productName: name,
     startStock: startStock,
     purchases: purchases,
@@ -34,7 +37,7 @@ export async function runVarianceAnalysis(line: InventoryLine & { product?: Prod
   };
 
   try {
-    const result = await analyzeInventoryVariance(input);
+    const result = await analyzeInventoryVarianceFlow(input);
     return result;
   } catch (error) {
     console.error('Error in runVarianceAnalysis calling Genkit flow:', error);

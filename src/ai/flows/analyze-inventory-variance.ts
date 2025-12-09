@@ -28,10 +28,6 @@ const AnalyzeInventoryVarianceOutputSchema = z.object({
 
 export type AnalyzeInventoryVarianceOutput = z.infer<typeof AnalyzeInventoryVarianceOutputSchema>;
 
-export async function analyzeInventoryVariance(input: AnalyzeInventoryVarianceInput): Promise<AnalyzeInventoryVarianceOutput> {
-  return analyzeInventoryVarianceFlow(input);
-}
-
 const prompt = ai.definePrompt({
   name: 'analyzeInventoryVariancePrompt',
   input: {schema: AnalyzeInventoryVarianceInputSchema},
@@ -64,3 +60,7 @@ const analyzeInventoryVarianceFlow = ai.defineFlow(
     return output!;
   }
 );
+
+export async function analyzeInventoryVariance(input: AnalyzeInventoryVarianceInput): Promise<AnalyzeInventoryVarianceOutput> {
+  return analyzeInventoryVarianceFlow(input);
+}

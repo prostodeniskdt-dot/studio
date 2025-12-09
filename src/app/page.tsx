@@ -62,6 +62,7 @@ export default function LoginPage() {
         title: "Вход выполнен",
         description: "Перенаправляем на панель управления...",
       });
+      // The useEffect will handle the redirect
     } catch(e: any) {
         toast({
             variant: "destructive",

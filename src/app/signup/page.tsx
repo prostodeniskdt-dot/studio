@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { useUser } from "@/firebase";
+import { Loader2 } from "lucide-react";
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Имя должно содержать не менее 2 символов" }),
@@ -34,7 +35,7 @@ export default function SignupPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<SignupFormInputs>({
     resolver: zodResolver(signupSchema),
   });
@@ -45,9 +46,22 @@ export default function SignupPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const onSubmit: SubmitHandler<SignupFormInputs> = (data) => {
+  const onSubmit: SubmitHandler<SignupFormInputs> = async (data) => {
+    if (!auth || !firestore) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Сервисы Firebase не инициализированы.",
+      });
+      return;
+    }
     try {
-        initiateEmailSignUpAndCreateUser(auth, firestore, data.email, data.password, data.name);
+      await initiateEmailSignUpAndCreateUser(auth, firestore, data.email, data.password, data.name);
+      // The useUser effect will handle the redirect on successful sign-in
+       toast({
+        title: "Аккаунт создан",
+        description: "Выполняется вход...",
+      });
     } catch(e: any) {
         toast({
             variant: "destructive",
@@ -60,7 +74,7 @@ export default function SignupPage() {
   if (isUserLoading || user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        {/* Можно добавить Skeleton/Spinner */}
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -125,7 +139,8 @@ export default function SignupPage() {
               </div>
 
               <div>
-                <Button type="submit" className="w-full">
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Создать аккаунт
                 </Button>
               </div>

@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { useUser } from "@/firebase";
+import { Loader2 } from "lucide-react";
 
 
 const loginSchema = z.object({
@@ -34,7 +35,7 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<LoginFormInputs>({
     resolver: zodResolver(loginSchema),
   });
@@ -45,14 +46,15 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const onSubmit: SubmitHandler<LoginFormInputs> = (data) => {
+  const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
     try {
-      initiateEmailSignIn(auth, firestore, data.email, data.password);
+      await initiateEmailSignIn(auth, firestore, data.email, data.password);
+      // On successful sign-in, the useEffect above will trigger the redirect.
     } catch(e: any) {
         toast({
             variant: "destructive",
             title: "Ошибка входа",
-            description: e.message,
+            description: "Неверный email или пароль.",
         });
     }
   };
@@ -60,7 +62,7 @@ export default function LoginPage() {
   if (isUserLoading || user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        {/* Можно добавить Skeleton/Spinner */}
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -139,7 +141,8 @@ export default function LoginPage() {
                     </div>
 
                     <div>
-                        <Button type="submit" className="w-full">
+                        <Button type="submit" className="w-full" disabled={isSubmitting}>
+                           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                           Войти
                         </Button>
                     </div>

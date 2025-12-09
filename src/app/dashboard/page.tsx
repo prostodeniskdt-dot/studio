@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import type { InventorySession, Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, serverTimestamp, query, where, orderBy, addDoc, writeBatch } from 'firebase/firestore';
+import { collection, serverTimestamp, query, where, orderBy, addDoc, writeBatch, doc } from 'firebase/firestore';
 
 
 export default function DashboardPage() {
@@ -46,7 +46,7 @@ export default function DashboardPage() {
       toast({
         variant: "destructive",
         title: "Ошибка",
-        description: "Не удалось загрузить данные для создания сессии. Убедитесь, что ваш бар настроен.",
+        description: "Не удалось загрузить данные для создания сессии. Убедитесь, что ваш бар настроен и продукты добавлены.",
       });
       return;
     }
@@ -71,6 +71,7 @@ export default function DashboardPage() {
       activeProducts.forEach(product => {
         const newLine = {
           productId: product.id,
+          inventorySessionId: sessionId,
           startStock: 0,
           purchases: 0,
           sales: 0,
@@ -95,6 +96,8 @@ export default function DashboardPage() {
       });
     }
   };
+
+  const isLoading = isLoadingSessions || isLoadingProducts || !barId;
 
 
   return (
@@ -140,7 +143,7 @@ export default function DashboardPage() {
           Начать инвентаризацию
         </Button>
       </div>
-      {isLoadingSessions ? (
+      {isLoading ? (
          <div className="flex justify-center items-center h-48">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
          </div>

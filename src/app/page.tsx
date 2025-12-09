@@ -14,15 +14,15 @@ export default function LoginPage() {
         </div>
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold tracking-tight text-center">Sign in to your account</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight text-center">Войдите в свою учетную запись</CardTitle>
             <CardDescription className="text-center">
-              Or <Link href="/signup" className="font-medium text-primary hover:underline">create a new account</Link>
+              Или <Link href="/signup" className="font-medium text-primary hover:underline">создайте новую учетную запись</Link>
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form className="space-y-6">
               <div>
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="email">Адрес электронной почты</Label>
                 <div className="mt-2">
                   <Input
                     id="email"
@@ -37,10 +37,10 @@ export default function LoginPage() {
 
               <div>
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Пароль</Label>
                   <div className="text-sm">
                     <a href="#" className="font-medium text-primary hover:underline">
-                      Forgot password?
+                      Забыли пароль?
                     </a>
                   </div>
                 </div>
@@ -58,7 +58,7 @@ export default function LoginPage() {
               <div>
                 <Button type="submit" className="w-full" asChild>
                   {/* In a real app, this would trigger a login action. For the demo, it navigates to the dashboard. */}
-                  <Link href="/dashboard">Sign in</Link>
+                  <Link href="/dashboard">Войти</Link>
                 </Button>
               </div>
             </form>

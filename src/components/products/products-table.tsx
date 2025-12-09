@@ -45,7 +45,7 @@ import { Badge } from '@/components/ui/badge';
 import { PlusCircle } from 'lucide-react';
 
 import type { Product } from '@/lib/types';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, translateCategory } from '@/lib/utils';
 import { ProductForm } from './product-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
@@ -59,14 +59,14 @@ const columns: ColumnDef<Product>[] = [
           (table.getIsSomePageRowsSelected() && 'indeterminate')
         }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
+        aria-label="Выбрать все"
       />
     ),
     cell: ({ row }) => (
       <Checkbox
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
+        aria-label="Выбрать строку"
       />
     ),
     enableSorting: false,
@@ -74,13 +74,13 @@ const columns: ColumnDef<Product>[] = [
   },
   {
     accessorKey: 'name',
-    header: 'Name',
+    header: 'Название',
     cell: ({ row }) => <div>{row.getValue('name')}</div>,
   },
   {
     accessorKey: 'category',
-    header: 'Category',
-    cell: ({ row }) => <div>{row.getValue('category')}</div>,
+    header: 'Категория',
+    cell: ({ row }) => <div>{translateCategory(row.getValue('category'))}</div>,
   },
   {
     accessorKey: 'costPerBottle',
@@ -90,7 +90,7 @@ const columns: ColumnDef<Product>[] = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          Cost
+          Стоимость
           <CaretSortIcon className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -99,15 +99,15 @@ const columns: ColumnDef<Product>[] = [
   },
   {
     accessorKey: 'sellingPricePerPortion',
-    header: 'Portion Price',
+    header: 'Цена порции',
     cell: ({ row }) => <div>{formatCurrency(row.getValue('sellingPricePerPortion'))}</div>,
   },
   {
     accessorKey: 'isActive',
-    header: 'Status',
+    header: 'Статус',
     cell: ({ row }) => (
       <Badge variant={row.getValue('isActive') ? 'default' : 'outline'}>
-        {row.getValue('isActive') ? 'Active' : 'Archived'}
+        {row.getValue('isActive') ? 'Активен' : 'Архивирован'}
       </Badge>
     ),
   },
@@ -121,27 +121,27 @@ const columns: ColumnDef<Product>[] = [
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">Открыть меню</span>
                 <DotsHorizontalIcon className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuLabel>Действия</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => navigator.clipboard.writeText(product.id)}
               >
-                Copy product ID
+                Копировать ID продукта
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <SheetTrigger asChild>
-                <DropdownMenuItem>Edit product</DropdownMenuItem>
+                <DropdownMenuItem>Редактировать продукт</DropdownMenuItem>
               </SheetTrigger>
-              <DropdownMenuItem className="text-destructive focus:text-destructive">Archive product</DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive focus:text-destructive">Архивировать продукт</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <SheetContent>
             <SheetHeader>
-              <SheetTitle>Edit Product</SheetTitle>
+              <SheetTitle>Редактировать продукт</SheetTitle>
             </SheetHeader>
             <ProductForm product={product} />
           </SheetContent>
@@ -180,12 +180,12 @@ export function ProductsTable({ products }: { products: Product[] }) {
     <div className="w-full">
         <div className="flex items-center justify-between py-4">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-                <p className="text-muted-foreground">Manage your bar's inventory items.</p>
+                <h1 className="text-3xl font-bold tracking-tight">Продукты</h1>
+                <p className="text-muted-foreground">Управляйте товарными позициями вашего бара.</p>
             </div>
             <div className="flex items-center gap-2">
             <Input
-                placeholder="Filter products..."
+                placeholder="Фильтр по продуктам..."
                 value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
                 onChange={(event) =>
                 table.getColumn('name')?.setFilterValue(event.target.value)
@@ -195,7 +195,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="ml-auto">
-                    Columns <ChevronDownIcon className="ml-2 h-4 w-4" />
+                    Колонки <ChevronDownIcon className="ml-2 h-4 w-4" />
                 </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -222,12 +222,12 @@ export function ProductsTable({ products }: { products: Product[] }) {
                 <SheetTrigger asChild>
                     <Button>
                         <PlusCircle className="mr-2 h-4 w-4" />
-                        Add Product
+                        Добавить продукт
                     </Button>
                 </SheetTrigger>
                 <SheetContent>
                     <SheetHeader>
-                    <SheetTitle>Add a New Product</SheetTitle>
+                    <SheetTitle>Добавить новый продукт</SheetTitle>
                     </SheetHeader>
                     <ProductForm />
                 </SheetContent>
@@ -277,7 +277,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No results.
+                  Нет результатов.
                 </TableCell>
               </TableRow>
             )}
@@ -286,8 +286,8 @@ export function ProductsTable({ products }: { products: Product[] }) {
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{' '}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+          {table.getFilteredSelectedRowModel().rows.length} из{' '}
+          {table.getFilteredRowModel().rows.length} строк выбрано.
         </div>
         <div className="space-x-2">
           <Button
@@ -296,7 +296,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            Previous
+            Назад
           </Button>
           <Button
             variant="outline"
@@ -304,7 +304,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Next
+            Вперед
           </Button>
         </div>
       </div>

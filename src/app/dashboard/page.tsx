@@ -10,10 +10,10 @@ export default function DashboardPage() {
   return (
     <div className="container mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Inventory Sessions</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Сессии инвентаризации</h1>
         <Button>
           <PlusCircle />
-          Create Session
+          Создать сессию
         </Button>
       </div>
       <SessionsList sessions={sessions} />

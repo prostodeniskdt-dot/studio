@@ -15,8 +15,8 @@ import {
 import { AppLogo } from '@/components/app-logo';
 
 const menuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/dashboard/products', label: 'Products', icon: Package },
+  { href: '/dashboard', label: 'Панель', icon: Home },
+  { href: '/dashboard/products', label: 'Продукты', icon: Package },
 ];
 
 export function AppSidebar() {
@@ -57,11 +57,11 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              tooltip={{ children: 'Settings' }}
+              tooltip={{ children: 'Настройки' }}
             >
               <Link href="#">
                 <Settings />
-                <span>Settings</span>
+                <span>Настройки</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

@@ -52,14 +52,14 @@ export function UserNav() {
         <DropdownMenuGroup>
           <DropdownMenuItem>
             <UserIcon />
-            Profile
+            Профиль
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
             <Link href="/">
                 <LogOut />
-                Sign out
+                Выйти
             </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>

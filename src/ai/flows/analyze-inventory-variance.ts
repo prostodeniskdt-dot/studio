@@ -36,20 +36,20 @@ const prompt = ai.definePrompt({
   name: 'analyzeInventoryVariancePrompt',
   input: {schema: AnalyzeInventoryVarianceInputSchema},
   output: {schema: AnalyzeInventoryVarianceOutputSchema},
-  prompt: `You are an expert inventory analyst for bars.
+  prompt: `Вы — эксперт-аналитик по инвентаризации в барах.
 
-You are provided with inventory data for a specific product and your task is to analyze any variances between the theoretical and actual stock levels.
+Вам предоставляются данные инвентаризации по конкретному продукту, и ваша задача — проанализировать любые расхождения между теоретическим и фактическим уровнем запасов.
 
-Based on the provided data, identify potential causes for the variance. Consider factors such as potential over-pouring, theft, spoilage, incorrect sales recording, or incorrect stock counting.
+На основе предоставленных данных определите возможные причины расхождения. Учитывайте такие факторы, как возможный перелив, кража, порча, неверная регистрация продаж или неверный подсчет запасов.
 
-Product Name: {{{productName}}}
-Theoretical End Stock: {{{theoreticalEndStock}}}
-Actual End Stock: {{{endStock}}}
-Sales: {{{sales}}}
-Purchases: {{{purchases}}}
-Starting Stock: {{{startStock}}}
+Название продукта: {{{productName}}}
+Теоретический конечный запас: {{{theoreticalEndStock}}}
+Фактический конечный запас: {{{endStock}}}
+Продажи: {{{sales}}}
+Закупки: {{{purchases}}}
+Начальный запас: {{{startStock}}}
 
-Provide a concise analysis of the potential causes for the variance.
+Предоставьте краткий анализ потенциальных причин расхождения. Ответ должен быть на русском языке.
 `,
 });
 

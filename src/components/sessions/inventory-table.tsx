@@ -58,15 +58,15 @@ export function InventoryTable({ session, products }: InventoryTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[250px]">Product</TableHead>
-              <TableHead className="text-right">Start (ml)</TableHead>
-              <TableHead className="text-right">Purchases (ml)</TableHead>
-              <TableHead className="text-right">Sales (portions)</TableHead>
-              <TableHead className="text-right">Theoretical (ml)</TableHead>
-              <TableHead className="text-right">Actual (ml)</TableHead>
-              <TableHead className="text-right">Diff (ml)</TableHead>
-              <TableHead className="text-right">Diff ($)</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+              <TableHead className="w-[250px]">Продукт</TableHead>
+              <TableHead className="text-right">Начало (мл)</TableHead>
+              <TableHead className="text-right">Покупки (мл)</TableHead>
+              <TableHead className="text-right">Продажи (порции)</TableHead>
+              <TableHead className="text-right">Теор. (мл)</TableHead>
+              <TableHead className="text-right">Факт. (мл)</TableHead>
+              <TableHead className="text-right">Разн. (мл)</TableHead>
+              <TableHead className="text-right">Разн. ($)</TableHead>
+              <TableHead className="w-[100px]">Действия</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -104,7 +104,7 @@ export function InventoryTable({ session, products }: InventoryTableProps) {
                     {Math.abs(line.differenceVolume) > (line.product?.portionVolumeMl ?? 40) / 2 && (
                          <Button variant="ghost" size="sm" onClick={() => setAnalyzingLine(line)}>
                             <Sparkles className="h-4 w-4" />
-                            <span className="sr-only">Analyze</span>
+                            <span className="sr-only">Анализ</span>
                          </Button>
                     )}
                 </TableCell>
@@ -113,7 +113,7 @@ export function InventoryTable({ session, products }: InventoryTableProps) {
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={7} className="font-bold text-lg">Total Variance</TableCell>
+              <TableCell colSpan={7} className="font-bold text-lg">Общее отклонение</TableCell>
               <TableCell className={cn("text-right font-bold text-lg", totals.differenceMoney > 0 ? 'text-green-600' : totals.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground')}>
                 {formatCurrency(totals.differenceMoney)}
               </TableCell>

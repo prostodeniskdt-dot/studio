@@ -33,7 +33,7 @@ export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnal
           setAnalysis(result.analysis);
         })
         .catch(err => {
-          setError(err.message || 'An unknown error occurred.');
+          setError(err.message || 'Произошла неизвестная ошибка.');
         })
         .finally(() => {
           setIsLoading(false);
@@ -41,7 +41,7 @@ export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnal
     }
   }, [open, line]);
 
-  const varianceType = line.differenceVolume > 0 ? 'Surplus' : 'Shortage';
+  const varianceType = line.differenceVolume > 0 ? 'Излишек' : 'Недостача';
   const varianceColor = line.differenceVolume > 0 ? 'text-green-600' : 'text-destructive';
 
 
@@ -49,13 +49,13 @@ export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnal
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Variance Analysis: {line.product?.name}</DialogTitle>
+          <DialogTitle>Анализ отклонений: {line.product?.name}</DialogTitle>
           <DialogDescription>
-            AI-powered insights into a <span className={varianceColor}>{varianceType} of {Math.abs(Math.round(line.differenceVolume))}ml ({formatCurrency(Math.abs(line.differenceMoney))})</span>.
+            AI-аналитика <span className={varianceColor}>{varianceType} в {Math.abs(Math.round(line.differenceVolume))}мл ({formatCurrency(Math.abs(line.differenceMoney))})</span>.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
-            <h3 className="font-semibold">Potential Causes</h3>
+            <h3 className="font-semibold">Возможные причины</h3>
             {isLoading && (
                 <div className="space-y-2">
                     <Skeleton className="h-4 w-full" />
@@ -66,7 +66,7 @@ export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnal
             {error && (
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
-                    <AlertTitle>Analysis Failed</AlertTitle>
+                    <AlertTitle>Ошибка анализа</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
                 </Alert>
             )}

@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { InventorySession } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, translateStatus } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
@@ -34,18 +34,18 @@ export function SessionsList({ sessions }: SessionsListProps) {
             <div className="flex justify-between items-start">
               <CardTitle className="text-lg">{session.name}</CardTitle>
               <Badge variant={getStatusVariant(session.status)} className="capitalize">
-                {session.status.replace('_', ' ')}
+                {translateStatus(session.status)}
               </Badge>
             </div>
             <CardDescription>
-              Created on {session.createdAt.toLocaleDateString()}
+              Создано {session.createdAt.toLocaleDateString()}
             </CardDescription>
           </CardHeader>
           <div className="flex-grow" />
           <CardFooter>
             <Button asChild variant="ghost" className="w-full justify-start">
               <Link href={`/dashboard/sessions/${session.id}`}>
-                {session.status === 'in_progress' ? 'Continue' : 'View'} Session
+                {session.status === 'in_progress' ? 'Продолжить' : 'Смотреть'} сессию
                 <ArrowRight className="ml-auto" />
               </Link>
             </Button>

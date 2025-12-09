@@ -25,16 +25,15 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import type { Product, ProductCategory } from '@/lib/types';
-
-const productCategories: ProductCategory[] = ['Whiskey', 'Rum', 'Vodka', 'Gin', 'Tequila', 'Liqueur', 'Wine', 'Beer', 'Syrup', 'Other'];
+import { productCategories, translateCategory } from '@/lib/utils';
 
 const formSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters.'),
+  name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
   category: z.enum(productCategories),
-  bottleVolumeMl: z.coerce.number().positive('Must be a positive number.'),
-  costPerBottle: z.coerce.number().positive('Must be a positive number.'),
-  sellingPricePerPortion: z.coerce.number().positive('Must be a positive number.'),
-  portionVolumeMl: z.coerce.number().positive('Must be a positive number.'),
+  bottleVolumeMl: z.coerce.number().positive('Должно быть положительным числом.'),
+  costPerBottle: z.coerce.number().positive('Должно быть положительным числом.'),
+  sellingPricePerPortion: z.coerce.number().positive('Должно быть положительным числом.'),
+  portionVolumeMl: z.coerce.number().positive('Должно быть положительным числом.'),
   isActive: z.boolean(),
 });
 
@@ -69,7 +68,7 @@ export function ProductForm({ product }: { product?: Product }) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Product Name</FormLabel>
+              <FormLabel>Название продукта</FormLabel>
               <FormControl>
                 <Input placeholder="Jameson 0.7L" {...field} />
               </FormControl>
@@ -82,16 +81,16 @@ export function ProductForm({ product }: { product?: Product }) {
           name="category"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Category</FormLabel>
+              <FormLabel>Категория</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder="Выберите категорию" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   {productCategories.map(cat => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    <SelectItem key={cat} value={cat}>{translateCategory(cat)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -105,7 +104,7 @@ export function ProductForm({ product }: { product?: Product }) {
             name="bottleVolumeMl"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Bottle Volume (ml)</FormLabel>
+                <FormLabel>Объем бутылки (мл)</FormLabel>
                 <FormControl>
                     <Input type="number" {...field} />
                 </FormControl>
@@ -118,7 +117,7 @@ export function ProductForm({ product }: { product?: Product }) {
             name="portionVolumeMl"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Portion Volume (ml)</FormLabel>
+                <FormLabel>Объем порции (мл)</FormLabel>
                 <FormControl>
                     <Input type="number" {...field} />
                 </FormControl>
@@ -133,7 +132,7 @@ export function ProductForm({ product }: { product?: Product }) {
             name="costPerBottle"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Cost per Bottle ($)</FormLabel>
+                <FormLabel>Стоимость бутылки ($)</FormLabel>
                 <FormControl>
                     <Input type="number" step="0.01" {...field} />
                 </FormControl>
@@ -146,7 +145,7 @@ export function ProductForm({ product }: { product?: Product }) {
             name="sellingPricePerPortion"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Price per Portion ($)</FormLabel>
+                <FormLabel>Цена за порцию ($)</FormLabel>
                 <FormControl>
                     <Input type="number" step="0.01" {...field} />
                 </FormControl>
@@ -162,10 +161,10 @@ export function ProductForm({ product }: { product?: Product }) {
             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
                 <FormLabel className="text-base">
-                  Active
+                  Активен
                 </FormLabel>
                 <FormDescription>
-                  Active products are available for inventory sessions.
+                  Активные продукты доступны для сессий инвентаризации.
                 </FormDescription>
               </div>
               <FormControl>
@@ -177,7 +176,7 @@ export function ProductForm({ product }: { product?: Product }) {
             </FormItem>
           )}
         />
-        <Button type="submit">Save product</Button>
+        <Button type="submit">Сохранить продукт</Button>
       </form>
     </Form>
   );

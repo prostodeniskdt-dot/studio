@@ -41,7 +41,7 @@ export function ReportView({ session, products }: ReportViewProps) {
   
   const handleExportCSV = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Product,Start (ml),Purchases (ml),Sales (portions),Theoretical End (ml),Actual End (ml),Difference (ml),Difference ($)\n";
+    csvContent += "Продукт,Начало (мл),Покупки (мл),Продажи (порции),Теор. конец (мл),Факт. конец (мл),Разница (мл),Разница ($)\n";
     calculatedLines.forEach(line => {
       const row = [
         line.product?.name,
@@ -64,7 +64,7 @@ export function ReportView({ session, products }: ReportViewProps) {
     link.click();
     document.body.removeChild(link);
 
-    toast({ title: "Exported to CSV", description: "The report has been downloaded." });
+    toast({ title: "Экспортировано в CSV", description: "Отчет был загружен." });
   };
 
 
@@ -72,20 +72,20 @@ export function ReportView({ session, products }: ReportViewProps) {
     <div>
         <div className="flex items-start justify-between mb-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">Inventory Report</h1>
-                <p className="text-muted-foreground">{session.name} - Closed on {session.closedAt?.toLocaleDateString()}</p>
+                <h1 className="text-3xl font-bold tracking-tight">Отчет по инвентаризации</h1>
+                <p className="text-muted-foreground">{session.name} - Закрыто {session.closedAt?.toLocaleDateString()}</p>
             </div>
             <div className="flex gap-2">
                 <Button variant="outline" onClick={handleExportCSV}>
                     <Download className="mr-2 h-4 w-4" />
-                    Export CSV
+                    Экспорт CSV
                 </Button>
             </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
             <Card>
-                <CardHeader><CardTitle>Total Variance</CardTitle></CardHeader>
+                <CardHeader><CardTitle>Общее отклонение</CardTitle></CardHeader>
                 <CardContent>
                     <p className={cn("text-3xl font-bold", totals.totalVariance > 0 ? 'text-green-600' : 'text-destructive')}>
                         {formatCurrency(totals.totalVariance)}
@@ -93,13 +93,13 @@ export function ReportView({ session, products }: ReportViewProps) {
                 </CardContent>
             </Card>
             <Card>
-                <CardHeader><CardTitle>Total Revenue</CardTitle></CardHeader>
+                <CardHeader><CardTitle>Общая выручка</CardTitle></CardHeader>
                 <CardContent>
                     <p className="text-3xl font-bold">{formatCurrency(totals.totalRevenue)}</p>
                 </CardContent>
             </Card>
             <Card>
-                <CardHeader><CardTitle>Total Cost</CardTitle></CardHeader>
+                <CardHeader><CardTitle>Общая себестоимость</CardTitle></CardHeader>
                 <CardContent>
                     <p className="text-3xl font-bold">{formatCurrency(totals.totalCost)}</p>
                 </CardContent>
@@ -115,7 +115,7 @@ export function ReportView({ session, products }: ReportViewProps) {
         </div>
 
         <Card className="mb-6">
-            <CardHeader><CardTitle>Top 3 Losses</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Топ 3 потери</CardTitle></CardHeader>
             <CardContent>
                 <div className="space-y-4">
                     {topLosses.length > 0 ? topLosses.map(line => (
@@ -123,7 +123,7 @@ export function ReportView({ session, products }: ReportViewProps) {
                             <span>{line.product?.name}</span>
                             <span className="font-mono font-semibold text-destructive">{formatCurrency(line.differenceMoney)}</span>
                         </div>
-                    )) : <p className="text-muted-foreground">No significant losses recorded.</p>}
+                    )) : <p className="text-muted-foreground">Значительных потерь не зафиксировано.</p>}
                 </div>
             </CardContent>
         </Card>
@@ -132,12 +132,12 @@ export function ReportView({ session, products }: ReportViewProps) {
             <Table>
             <TableHeader>
                 <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead className="text-right">Theoretical (ml)</TableHead>
-                    <TableHead className="text-right">Actual (ml)</TableHead>
-                    <TableHead className="text-right">Diff (ml)</TableHead>
-                    <TableHead className="text-right">Diff (%)</TableHead>
-                    <TableHead className="text-right">Diff ($)</TableHead>
+                    <TableHead>Продукт</TableHead>
+                    <TableHead className="text-right">Теор. (мл)</TableHead>
+                    <TableHead className="text-right">Факт. (мл)</TableHead>
+                    <TableHead className="text-right">Разн. (мл)</TableHead>
+                    <TableHead className="text-right">Разн. (%)</TableHead>
+                    <TableHead className="text-right">Разн. ($)</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -160,7 +160,7 @@ export function ReportView({ session, products }: ReportViewProps) {
             </TableBody>
              <TableFooter>
                 <TableRow>
-                    <TableCell colSpan={5} className="font-bold text-lg">Total Variance</TableCell>
+                    <TableCell colSpan={5} className="font-bold text-lg">Общее отклонение</TableCell>
                     <TableCell className={cn("text-right font-bold text-lg", totals.totalVariance > 0 ? 'text-green-600' : totals.totalVariance < 0 ? 'text-destructive' : 'text-muted-foreground')}>
                         {formatCurrency(totals.totalVariance)}
                     </TableCell>

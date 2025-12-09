@@ -14,15 +14,15 @@ export default function SignupPage() {
         </div>
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold tracking-tight text-center">Create a new account</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight text-center">Создать новую учетную запись</CardTitle>
             <CardDescription className="text-center">
-              Already have an account? <Link href="/" className="font-medium text-primary hover:underline">Sign In</Link>
+              Уже есть аккаунт? <Link href="/" className="font-medium text-primary hover:underline">Войти</Link>
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form className="space-y-6">
               <div>
-                <Label htmlFor="name">Full name</Label>
+                <Label htmlFor="name">Полное имя</Label>
                 <div className="mt-2">
                   <Input
                     id="name"
@@ -30,13 +30,13 @@ export default function SignupPage() {
                     type="text"
                     autoComplete="name"
                     required
-                    placeholder="John Doe"
+                    placeholder="Иван Иванов"
                   />
                 </div>
               </div>
               
               <div>
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="email">Адрес электронной почты</Label>
                 <div className="mt-2">
                   <Input
                     id="email"
@@ -50,7 +50,7 @@ export default function SignupPage() {
               </div>
 
               <div>
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Пароль</Label>
                 <div className="mt-2">
                   <Input
                     id="password"
@@ -64,7 +64,7 @@ export default function SignupPage() {
 
               <div>
                 <Button type="submit" className="w-full" asChild>
-                  <Link href="/dashboard">Create account</Link>
+                  <Link href="/dashboard">Создать аккаунт</Link>
                 </Button>
               </div>
             </form>

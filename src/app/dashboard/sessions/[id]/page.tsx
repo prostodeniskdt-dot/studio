@@ -5,6 +5,7 @@ import { InventoryTable } from "@/components/sessions/inventory-table";
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 import Link from "next/link";
+import { translateStatus } from "@/lib/utils";
 
 export default function SessionPage({ params }: { params: { id: string } }) {
   // In a real app, this data would be fetched from Firestore
@@ -34,18 +35,18 @@ export default function SessionPage({ params }: { params: { id: string } }) {
         <div>
             <h1 className="text-3xl font-bold tracking-tight">{session.name}</h1>
             <p className="text-muted-foreground">
-                Created on {session.createdAt.toLocaleDateString()}
+                Создано {session.createdAt.toLocaleDateString()}
             </p>
         </div>
         <div className="flex items-center gap-4">
             <Badge variant={getStatusVariant(session.status)} className="capitalize text-base px-3 py-1">
-                {session.status.replace('_', ' ')}
+                {translateStatus(session.status)}
             </Badge>
             {session.status === 'completed' && (
                 <Button asChild>
                     <Link href={`/dashboard/sessions/${session.id}/report`}>
                         <FileText className="mr-2 h-4 w-4" />
-                        View Report
+                        Смотреть отчет
                     </Link>
                 </Button>
             )}

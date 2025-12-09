@@ -20,11 +20,11 @@ export default function SessionReportPage({ params }: { params: { id: string } }
         <div className="container mx-auto flex items-center justify-center h-full">
             <Alert className="max-w-md">
                 <BarChart3 className="h-4 w-4" />
-                <AlertTitle>Report Not Available</AlertTitle>
+                <AlertTitle>Отчет недоступен</AlertTitle>
                 <AlertDescription>
-                    This inventory session is not yet completed. Please complete the session to view the report.
+                    Эта сессия инвентаризации еще не завершена. Пожалуйста, завершите сессию для просмотра отчета.
                     <Button asChild variant="link" className="p-0 h-auto ml-1">
-                        <Link href={`/dashboard/sessions/${session.id}`}>Go back to session</Link>
+                        <Link href={`/dashboard/sessions/${session.id}`}>Вернуться к сессии</Link>
                     </Button>
                 </AlertDescription>
             </Alert>

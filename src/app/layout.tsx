@@ -6,8 +6,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'BarBoss Inventory',
-  description: 'Inventory calculator for bars',
+  title: 'BarBoss Инвентаризация',
+  description: 'Калькулятор инвентаризации для баров',
 };
 
 export default function RootLayout({
@@ -16,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="ru" className="h-full">
       <body className={`${inter.variable} font-sans antialiased h-full bg-background`}>
         {children}
         <Toaster />

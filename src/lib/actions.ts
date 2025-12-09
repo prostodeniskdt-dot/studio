@@ -5,7 +5,7 @@ import type { CalculatedInventoryLine } from './types';
 
 export async function runVarianceAnalysis(line: CalculatedInventoryLine) {
   if (!line.product) {
-    return { analysis: 'Error: Product data is missing.' };
+    return { analysis: 'Ошибка: данные о продукте отсутствуют.' };
   }
 
   const input = {
@@ -22,6 +22,6 @@ export async function runVarianceAnalysis(line: CalculatedInventoryLine) {
     return result;
   } catch (error) {
     console.error('Error analyzing inventory variance:', error);
-    return { analysis: 'An error occurred while analyzing the variance. Please try again.' };
+    return { analysis: 'Произошла ошибка при анализе отклонения. Пожалуйста, попробуйте еще раз.' };
   }
 }

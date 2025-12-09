@@ -71,3 +71,46 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
         throw error;
     }
 }
+
+/**
+ * Initiates email sign-up, creates a user, updates their profile, and ensures
+ * their necessary Firestore documents are created before resolving.
+ * @returns A Promise that resolves on success or rejects on failure.
+ */
+export async function initiateEmailSignUpAndCreateUser(
+  auth: Auth,
+  firestore: Firestore,
+  { name, email, password }: { name: string, email: string, password: string }
+): Promise<UserCredential> {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    // After creating the user, update their profile with the display name.
+    await updateProfile(userCredential.user, { displayName: name });
+    // Now that the profile is updated, ensure the documents are created.
+    await ensureUserAndBarDocuments(firestore, userCredential.user);
+    return userCredential;
+  } catch (error) {
+    console.error("Error during sign-up and document creation:", error);
+    throw error; // Re-throw to be handled by the UI
+  }
+}
+
+/**
+ * Initiates email sign-in and ensures the user's documents exist.
+ * @returns A Promise that resolves on success or rejects on failure.
+ */
+export async function initiateEmailSignIn(
+  auth: Auth,
+  firestore: Firestore,
+  { email, password }: { email: string, password: string }
+): Promise<UserCredential> {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    // After sign-in, ensure user documents are in place.
+    await ensureUserAndBarDocuments(firestore, userCredential.user);
+    return userCredential;
+  } catch (error) {
+    console.error("Error during sign-in:", error);
+    throw error; // Re-throw to be handled by the UI
+  }
+}

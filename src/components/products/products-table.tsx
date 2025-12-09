@@ -38,7 +38,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 import type { Product } from '@/lib/types';
-import { formatCurrency, translateCategory } from '@/lib/utils';
+import { formatCurrency, translateCategory, translateSubCategory } from '@/lib/utils';
 import { ProductForm } from './product-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
@@ -73,7 +73,16 @@ const columns: ColumnDef<Product>[] = [
   {
     accessorKey: 'category',
     header: 'Категория',
-    cell: ({ row }) => <div>{translateCategory(row.getValue('category'))}</div>,
+    cell: ({ row }) => {
+        const category = row.getValue('category') as Product['category'];
+        const subCategory = row.original.subCategory;
+        return (
+            <div>
+                <div>{translateCategory(category)}</div>
+                {subCategory && <div className="text-xs text-muted-foreground">{translateSubCategory(subCategory)}</div>}
+            </div>
+        )
+    }
   },
   {
     accessorKey: 'costPerBottle',

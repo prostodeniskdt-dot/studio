@@ -7,11 +7,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn, formatCurrency } from '@/lib/utils';
-import { Download, Sparkles } from 'lucide-react';
+import { Download, Sparkles, FileType } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { LocalizedDate } from "@/components/localized-date";
 import { VarianceAnalysisModal } from '../sessions/variance-analysis-modal';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Pie, PieChart, Cell } from 'recharts';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
 
 type ReportViewProps = {
   session: InventorySession;
@@ -88,10 +95,20 @@ export function ReportView({ session, products }: ReportViewProps) {
                 <p className="text-muted-foreground">{session.name} - {session.closedAt && <>Закрыто <LocalizedDate date={session.closedAt} /></>}</p>
             </div>
             <div className="flex gap-2">
-                <Button variant="outline" onClick={handleExportCSV}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Экспорт CSV
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline">
+                      <Download className="mr-2 h-4 w-4" />
+                      Экспорт
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={handleExportCSV}>
+                      <FileType className="mr-2 h-4 w-4" />
+                      <span>CSV (Excel)</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         </div>
 
@@ -214,7 +231,7 @@ export function ReportView({ session, products }: ReportViewProps) {
             </TableBody>
              <TableFooter>
                 <TableRow>
-                    <TableCell colSpan={6} className="font-bold text-lg">Общее отклонение</TableCell>
+                    <TableCell colSpan={5} className="font-bold text-lg">Общее отклонение</TableCell>
                     <TableCell className={cn("text-right font-bold text-lg", totals.totalVariance >= 0 ? 'text-green-600' : 'text-destructive')}>
                         {formatCurrency(totals.totalVariance)}
                     </TableCell>

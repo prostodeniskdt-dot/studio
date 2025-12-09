@@ -6,12 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Ruler, Weight, Bot } from 'lucide-react';
+import { Ruler, Weight, Send } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import type { Product } from '@/lib/types';
-import { mockProducts } from '@/lib/data';
+import { mockProducts, mockInventorySessions } from '@/lib/data';
+import { useToast } from '@/hooks/use-toast';
 
 export default function UnifiedCalculatorPage() {
+  const { toast } = useToast();
   const [products] = React.useState<Product[]>(mockProducts);
   const [selectedProductId, setSelectedProductId] = React.useState<string | null>(null);
 
@@ -77,15 +79,56 @@ export default function UnifiedCalculatorPage() {
     }
   };
 
+  const handleSendToInventory = () => {
+    if (calculatedVolumeByWeight === null || !selectedProductId) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Сначала рассчитайте точный объем по весу и выберите продукт.",
+      });
+      return;
+    }
+
+    const activeSession = mockInventorySessions.find(s => s.status === 'in_progress');
+
+    if (!activeSession) {
+      toast({
+        variant: "destructive",
+        title: "Нет активной сессии",
+        description: "Пожалуйста, начните новую инвентаризацию на главной панели.",
+      });
+      return;
+    }
+
+    const lineIndex = activeSession.lines.findIndex(l => l.productId === selectedProductId);
+
+    if (lineIndex === -1) {
+      toast({
+        variant: "destructive",
+        title: "Продукт не найден в сессии",
+        description: "Этот продукт не является частью текущей инвентаризации.",
+      });
+      return;
+    }
+
+    // Обновляем endStock в макете данных
+    activeSession.lines[lineIndex].endStock = calculatedVolumeByWeight;
+
+    toast({
+      title: "Данные отправлены",
+      description: `Остаток для продукта ${products.find(p => p.id === selectedProductId)?.name} (${calculatedVolumeByWeight} мл) обновлен в текущей сессии.`,
+    });
+  };
+
   return (
     <div className="container mx-auto">
       <h1 className="text-3xl font-bold tracking-tight mb-2">Универсальный калькулятор</h1>
-      <p className="text-muted-foreground mb-6">Рассчитайте остатки в бутылке, используя сохраненные профили и точные методы.</p>
+      <p className="text-muted-foreground mb-6">Рассчитайте остатки в бутылке и отправьте данные в текущую инвентаризацию.</p>
       
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle>Расчет объема жидкости</CardTitle>
-          <CardDescription>Выберите продукт для автозаполнения или введите данные вручную.</CardDescription>
+          <CardDescription>Выберите продукт для автозаполнения, введите замеры и отправьте результат в активную сессию.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
 
@@ -160,7 +203,7 @@ export default function UnifiedCalculatorPage() {
                   <CardHeader>
                     <CardTitle>Результаты расчета</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-6">
+                  <CardContent className="space-y-4">
                     <div className="text-center p-4 rounded-lg bg-background">
                       <p className="text-base text-muted-foreground flex items-center justify-center gap-2"><Weight className='h-4 w-4'/> Точный объем (по весу):</p>
                       <p className="text-4xl font-bold text-primary">{calculatedVolumeByWeight !== null ? `${calculatedVolumeByWeight} мл` : 'Нет данных'}</p>
@@ -169,6 +212,10 @@ export default function UnifiedCalculatorPage() {
                       <p className="text-base text-muted-foreground flex items-center justify-center gap-2"><Ruler className='h-4 w-4'/> Примерный объем (по высоте):</p>
                       <p className="text-2xl font-semibold text-muted-foreground">{calculatedVolumeByHeight !== null ? `${calculatedVolumeByHeight} мл` : 'Нет данных'}</p>
                     </div>
+                     <Button onClick={handleSendToInventory} className="w-full" disabled={calculatedVolumeByWeight === null}>
+                        <Send className="mr-2 h-4 w-4" />
+                        Отправить в инвентаризацию
+                    </Button>
                   </CardContent>
                 </Card>
               )}

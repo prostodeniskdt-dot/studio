@@ -24,12 +24,13 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import type { Product } from '@/lib/types';
-import { productCategories, translateCategory } from '@/lib/utils';
+import { productCategories, productSubCategories, translateCategory, translateSubCategory } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
   category: z.enum(productCategories),
+  subCategory: z.string().optional(),
   
   // Экономика
   costPerBottle: z.coerce.number().positive('Должно быть положительным числом.'),
@@ -52,6 +53,7 @@ export function ProductForm({ product }: { product?: Product }) {
     resolver: zodResolver(formSchema),
     defaultValues: product ? {
         ...product,
+        subCategory: product.subCategory ?? undefined,
         bottleHeightCm: product.bottleHeightCm ?? undefined,
         fullBottleWeightG: product.fullBottleWeightG ?? undefined,
         emptyBottleWeightG: product.emptyBottleWeightG ?? undefined,
@@ -65,6 +67,8 @@ export function ProductForm({ product }: { product?: Product }) {
       isActive: true,
     },
   });
+
+  const watchedCategory = form.watch('category');
 
   function onSubmit(data: ProductFormValues) {
     // In a real app, this would call a server action to save the product
@@ -87,28 +91,54 @@ export function ProductForm({ product }: { product?: Product }) {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="category"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Категория</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите категорию" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {productCategories.map(cat => (
-                    <SelectItem key={cat} value={cat}>{translateCategory(cat)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Категория</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите категорию" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {productCategories.map(cat => (
+                      <SelectItem key={cat} value={cat}>{translateCategory(cat)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           {(productSubCategories[watchedCategory] && productSubCategories[watchedCategory].length > 0) && (
+             <FormField
+                control={form.control}
+                name="subCategory"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Подкатегория</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                        <SelectTrigger>
+                        <SelectValue placeholder="Выберите подкатегорию" />
+                        </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        {productSubCategories[watchedCategory].map(subCat => (
+                          <SelectItem key={subCat} value={subCat}>{translateSubCategory(subCat)}</SelectItem>
+                        ))}
+                    </SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+           )}
+        </div>
         
         <Separator />
         <h3 className="text-lg font-medium">Экономика</h3>

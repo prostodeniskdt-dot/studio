@@ -8,11 +8,20 @@ export interface User {
 }
 
 export type ProductCategory = 'Whiskey' | 'Rum' | 'Vodka' | 'Gin' | 'Tequila' | 'Liqueur' | 'Wine' | 'Beer' | 'Syrup' | 'Other';
+export type WhiskeySubCategory = 'Scotch' | 'Irish' | 'Bourbon' | 'Japanese' | 'Other';
+export type RumSubCategory = 'White' | 'Gold' | 'Dark' | 'Spiced' | 'Other';
+export type GinSubCategory = 'London Dry' | 'Old Tom' | 'Plymouth' | 'Other';
+export type WineSubCategory = 'Red' | 'White' | 'Rose' | 'Sparkling' | 'Other';
+export type BeerSubCategory = 'Lager' | 'Ale' | 'Stout' | 'IPA' | 'Other';
+
+export type ProductSubCategory = WhiskeySubCategory | RumSubCategory | GinSubCategory | WineSubCategory | BeerSubCategory;
+
 
 export interface Product {
   id: string;
   name: string;
   category: ProductCategory;
+  subCategory?: ProductSubCategory;
   
   // Экономика
   costPerBottle: number;

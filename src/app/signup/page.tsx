@@ -68,6 +68,18 @@ export default function SignupPage() {
                 </Button>
               </div>
             </form>
+             <p className="mt-6 text-center text-sm text-muted-foreground">
+              Создавая аккаунт, вы соглашаетесь с нашей{" "}
+              <Link
+                href="https://docs.google.com/document/d/1v8xS6_m7dttEcfDEqSkVh3Z9byYx3HxCbt4zQMSTxzg/edit?tab=t.0"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-4 hover:text-primary"
+              >
+                Политикой конфиденциальности
+              </Link>
+              .
+            </p>
           </CardContent>
         </Card>
       </div>

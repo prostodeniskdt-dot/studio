@@ -21,7 +21,7 @@ export function AppLogo({ className }: { className?: string }) {
         <path d="m14 4 1-1" />
         <path d="m6 4-1-1" />
       </svg>
-      <span className="text-2xl font-bold text-primary">BarBoss</span>
+      <span className={cn("text-2xl font-bold", className?.includes('text-sidebar') ? 'text-inherit' : 'text-primary')}>BarBoss</span>
     </div>
   );
 }

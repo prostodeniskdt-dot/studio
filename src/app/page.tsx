@@ -16,6 +16,7 @@ export default function LoginPage() {
             style={{
               backgroundImage:
                 "url(https://images.unsplash.com/photo-1579311318434-2c343b3b3f29?q=80&w=1974&auto=format&fit=crop)",
+              filter: "grayscale(100%) brightness(0.5)",
             }}
           />
           <div className="relative z-20 flex items-center text-lg font-medium">
@@ -93,6 +94,18 @@ export default function LoginPage() {
                 className="underline underline-offset-4 hover:text-primary"
               >
                 Создать
+              </Link>
+              .
+            </p>
+            <p className="px-8 text-center text-sm text-muted-foreground">
+              Продолжая, вы соглашаетесь с нашей{" "}
+              <Link
+                href="https://docs.google.com/document/d/1v8xS6_m7dttEcfDEqSkVh3Z9byYx3HxCbt4zQMSTxzg/edit?tab=t.0"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-4 hover:text-primary"
+              >
+                Политикой конфиденциальности
               </Link>
               .
             </p>

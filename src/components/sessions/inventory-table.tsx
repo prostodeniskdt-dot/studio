@@ -93,14 +93,14 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[250px]">Продукт</TableHead>
-              <TableHead className="text-right">Начало (мл)</TableHead>
-              <TableHead className="text-right">Покупки (мл)</TableHead>
-              <TableHead className="text-right">Продажи (порции)</TableHead>
-              <TableHead className="text-right">Теор. (мл)</TableHead>
+              <TableHead className="w-full md:w-[250px]">Продукт</TableHead>
+              <TableHead className="text-right hidden md:table-cell">Начало (мл)</TableHead>
+              <TableHead className="text-right hidden lg:table-cell">Покупки (мл)</TableHead>
+              <TableHead className="text-right hidden lg:table-cell">Продажи (порции)</TableHead>
+              <TableHead className="text-right hidden md:table-cell">Теор. (мл)</TableHead>
               <TableHead className="text-right">Факт. (мл)</TableHead>
               <TableHead className="text-right">Разн. (мл)</TableHead>
-              <TableHead className="text-right">Разн. (руб.)</TableHead>
+              <TableHead className="text-right hidden sm:table-cell">Разн. (руб.)</TableHead>
               <TableHead className="w-[100px] text-center">Анализ</TableHead>
             </TableRow>
           </TableHeader>
@@ -123,23 +123,23 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                     )}
                     {subCategoryLines.map(line => (
                       <TableRow key={line.id} className={cn(line.differenceVolume !== 0 && isEditable && 'bg-amber-500/10 hover:bg-amber-500/20')}>
-                        <TableCell className="font-medium pl-10">{line.product?.name}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="font-medium pl-4 md:pl-10">{line.product?.name}</TableCell>
+                        <TableCell className="text-right hidden md:table-cell">
                           {isEditable ? (
                             <Input type="number" value={line.startStock} onChange={e => handleInputChange(line.id!, 'startStock', e.target.value)} className="w-24 text-right ml-auto" />
                           ) : line.startStock}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right hidden lg:table-cell">
                           {isEditable ? (
                             <Input type="number" value={line.purchases} onChange={e => handleInputChange(line.id!, 'purchases', e.target.value)} className="w-24 text-right ml-auto" />
                           ) : line.purchases}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right hidden lg:table-cell">
                           {isEditable ? (
                             <Input type="number" value={line.sales} onChange={e => handleInputChange(line.id!, 'sales', e.target.value)} className="w-24 text-right ml-auto" />
                           ) : line.sales}
                         </TableCell>
-                        <TableCell className="text-right font-mono">{Math.round(line.theoreticalEndStock)}</TableCell>
+                        <TableCell className="text-right font-mono hidden md:table-cell">{Math.round(line.theoreticalEndStock)}</TableCell>
                         <TableCell className="text-right">
                           {isEditable ? (
                             <Input type="number" value={line.endStock} onChange={e => handleInputChange(line.id!, 'endStock', e.target.value)} className="w-24 text-right ml-auto bg-primary/10" />
@@ -148,7 +148,7 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                         <TableCell className={cn("text-right font-mono", line.differenceVolume > 0 ? 'text-green-600' : line.differenceVolume < 0 ? 'text-destructive' : 'text-muted-foreground')}>
                           {Math.round(line.differenceVolume)}
                         </TableCell>
-                        <TableCell className={cn("text-right font-mono", line.differenceMoney > 0 ? 'text-green-600' : line.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                        <TableCell className={cn("text-right font-mono hidden sm:table-cell", line.differenceMoney > 0 ? 'text-green-600' : line.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground')}>
                           {formatCurrency(line.differenceMoney)}
                         </TableCell>
                         <TableCell className="text-center">
@@ -168,7 +168,9 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={7} className="font-bold text-lg">Общее отклонение</TableCell>
+              <TableCell colSpan={7} className="font-bold text-lg hidden sm:table-cell">Общее отклонение</TableCell>
+              <TableCell colSpan={3} className="font-bold text-lg sm:hidden">Общее отклонение</TableCell>
+
               <TableCell className={cn("text-right font-bold text-lg", totals.differenceMoney > 0 ? 'text-green-600' : totals.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground')}>
                 {formatCurrency(totals.differenceMoney)}
               </TableCell>

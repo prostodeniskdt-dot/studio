@@ -51,7 +51,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
-    sellingPricePerPortion: false,
+    costPerBottle: false,
     id: false, 
   });
   const [rowSelection, setRowSelection] = React.useState({});
@@ -114,6 +114,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
           }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Выбрать все"
+          className="hidden sm:flex"
         />
       ),
       cell: ({ row }) => (
@@ -121,6 +122,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
           aria-label="Выбрать строку"
+          className="hidden sm:flex"
         />
       ),
       enableSorting: false,
@@ -243,7 +245,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <div className="w-full">
-            <div className="flex items-center justify-between py-4">
+            <div className="flex items-center justify-between py-4 gap-2 flex-wrap">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Продукты</h1>
                     <p className="text-muted-foreground">Управляйте каталогом товаров и их профилями для калькулятора.</p>
@@ -258,7 +260,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
                   placeholder="Поиск по названию..."
                   searchPlaceholder="Введите название продукта..."
                   notFoundText="Продукт не найден."
-                  triggerClassName='w-[250px]'
+                  triggerClassName='w-[200px] sm:w-[250px]'
                 />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -298,7 +300,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
                 <SheetTrigger asChild>
                     <Button onClick={() => handleOpenSheet()}>
                         <PlusCircle className="mr-2 h-4 w-4" />
-                        Добавить продукт
+                        Добавить
                     </Button>
                 </SheetTrigger>
                 </div>
@@ -310,7 +312,12 @@ export function ProductsTable({ products }: { products: Product[] }) {
                 <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
                     return (
-                        <TableHead key={header.id}>
+                        <TableHead key={header.id} 
+                        className={cn({
+                            'hidden sm:table-cell': ['costPerBottle', 'bottleVolumeMl'].includes(header.column.id),
+                            'hidden lg:table-cell': ['category'].includes(header.column.id)
+                        })}
+                        >
                         {header.isPlaceholder
                             ? null
                             : flexRender(
@@ -331,7 +338,12 @@ export function ProductsTable({ products }: { products: Product[] }) {
                     data-state={row.getIsSelected() && 'selected'}
                     >
                     {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
+                        <TableCell key={cell.id}
+                        className={cn({
+                            'hidden sm:table-cell': ['costPerBottle', 'bottleVolumeMl'].includes(cell.column.id),
+                            'hidden lg:table-cell': ['category'].includes(cell.column.id)
+                        })}
+                        >
                         {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()
@@ -354,7 +366,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
             </Table>
         </div>
         <div className="flex items-center justify-end space-x-2 py-4">
-            <div className="flex-1 text-sm text-muted-foreground">
+            <div className="flex-1 text-sm text-muted-foreground hidden sm:block">
             {table.getFilteredSelectedRowModel().rows.length} из{' '}
             {table.getFilteredRowModel().rows.length} строк выбрано.
             </div>
@@ -378,7 +390,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
             </div>
         </div>
         </div>
-         <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+         <SheetContent className="w-full sm:w-[480px] sm:max-w-none overflow-y-auto">
             <SheetHeader>
                 <SheetTitle>{editingProduct ? 'Редактировать продукт' : 'Добавить новый продукт'}</SheetTitle>
             </SheetHeader>

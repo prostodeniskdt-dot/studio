@@ -51,9 +51,7 @@ export default function UnifiedCalculatorPage() {
   const [fullWeight, setFullWeight] = React.useState('');
   const [emptyWeight, setEmptyWeight] = React.useState('');
   const [currentWeight, setCurrentWeight] = React.useState('');
-  const [liquidHeight, setLiquidHeight] = React.useState('');
   const [calculatedVolumeByWeight, setCalculatedVolumeByWeight] = React.useState<number | null>(null);
-  const [calculatedVolumeByHeight, setCalculatedVolumeByHeight] = React.useState<number | null>(null);
   
   const [isSending, setIsSending] = React.useState(false);
   const [lastSentVolume, setLastSentVolume] = React.useState<'weight' | 'height' | null>(null);
@@ -66,20 +64,17 @@ export default function UnifiedCalculatorPage() {
         setFullWeight(product.fullBottleWeightG?.toString() ?? '');
         setEmptyWeight(product.emptyBottleWeightG?.toString() ?? '');
         setCalculatedVolumeByWeight(null);
-        setCalculatedVolumeByHeight(null);
     }
   };
 
   const handleCalculate = () => {
     setCalculatedVolumeByWeight(null);
-    setCalculatedVolumeByHeight(null);
 
     // Weight calculation
     const bv = parseFloat(bottleVolume);
     const fw = parseFloat(fullWeight);
     const ew = parseFloat(emptyWeight);
     const cw = parseFloat(currentWeight);
-    const lh = parseFloat(liquidHeight);
 
     if (fw > ew && cw >= ew && bv > 0) {
         const liquidNetWeight = fw - ew;
@@ -90,21 +85,6 @@ export default function UnifiedCalculatorPage() {
             const volume = (currentLiquidWeight / liquidNetWeight) * bv;
             setCalculatedVolumeByWeight(Math.round(volume));
         }
-    }
-    
-    // For height, we now assume a linear relationship as a rough estimate
-    // A better approach would be to have calibration points, but for now this is a simple approximation.
-    // Let's assume the liquid height correlates directly to the volume percentage.
-    // This is a big simplification. Let's find a product that has full and empty bottle heights to make a ratio.
-    // Since we removed bottleHeight, let's just make a simple linear approximation.
-    // Let's assume a "standard" full liquid height of 25cm for a 700ml bottle for approximation.
-    const standardFullHeight = 25; // cm, rough approximation for a standard 700ml bottle
-    if (lh > 0 && bv > 0) {
-        // This is a very rough estimate.
-        const estimatedMaxHeight = (bv / 700) * standardFullHeight;
-        const percentage = Math.min(lh / estimatedMaxHeight, 1);
-        const volume = percentage * bv;
-        setCalculatedVolumeByHeight(Math.round(volume));
     }
   };
 
@@ -257,15 +237,6 @@ export default function UnifiedCalculatorPage() {
 
                 <Separator />
                 
-                {/* Расчет по высоте */}
-                <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Примерный расчет по высоте</h3>
-                    <div className="space-y-2">
-                        <Label htmlFor="liquidHeight">Высота жидкости (см)</Label>
-                        <Input id="liquidHeight" type="number" value={liquidHeight} onChange={e => setLiquidHeight(e.target.value)} placeholder="Напр. 15.5" />
-                    </div>
-                </div>
-
                 <div className="space-y-2">
                     <Label htmlFor="bottleVolume">Номинальный объем (мл)</Label>
                     <Input id="bottleVolume" type="number" value={bottleVolume} onChange={(e) => setBottleVolume(e.target.value)} placeholder="700" />
@@ -277,7 +248,7 @@ export default function UnifiedCalculatorPage() {
                 Рассчитать
               </Button>
               
-              { (calculatedVolumeByWeight !== null || calculatedVolumeByHeight !== null) && (
+              { (calculatedVolumeByWeight !== null) && (
                 <Card className='bg-muted/50'>
                   <CardHeader>
                     <CardTitle>Результаты расчета</CardTitle>
@@ -290,16 +261,6 @@ export default function UnifiedCalculatorPage() {
                              <Button onClick={() => handleSendToInventory(calculatedVolumeByWeight, 'weight')} className="w-full mt-2" disabled={calculatedVolumeByWeight === null || isSending || !barId}>
                                 {isSending && lastSentVolume === 'weight' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                                 {isSending && lastSentVolume === 'weight' ? 'Отправка...' : 'Отправить в инвентаризацию'}
-                            </Button>
-                        </div>
-                    )}
-                    {calculatedVolumeByHeight !== null && (
-                        <div className="text-center p-4 rounded-lg bg-background">
-                            <p className="text-base text-muted-foreground flex items-center justify-center gap-2"><Ruler className='h-4 w-4'/> Примерный объем (по высоте):</p>
-                            <p className="text-3xl font-bold">{calculatedVolumeByHeight} мл</p>
-                             <Button onClick={() => handleSendToInventory(calculatedVolumeByHeight, 'height')} className="w-full mt-2" variant="secondary" disabled={calculatedVolumeByHeight === null || isSending || !barId}>
-                                {isSending && lastSentVolume === 'height' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                                {isSending && lastSentVolume === 'height' ? 'Отправка...' : 'Отправить в инвентаризацию'}
                             </Button>
                         </div>
                     )}

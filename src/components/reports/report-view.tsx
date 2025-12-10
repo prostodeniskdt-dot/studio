@@ -1,12 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import type { InventorySession, Product, InventoryLine } from '@/lib/types';
+import type { InventorySession, Product, InventoryLine, CalculatedInventoryLine } from '@/lib/types';
 import { calculateLineFields } from '@/lib/calculations';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn, formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency, translateCategory, translateSubCategory } from '@/lib/utils';
 import { Download, Sparkles, FileType, FileJson, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Timestamp } from 'firebase/firestore';
@@ -27,24 +27,44 @@ type ReportViewProps = {
   products: Product[];
 };
 
+type GroupedLines = Record<string, Record<string, CalculatedInventoryLine[]>>;
+
+
 export function ReportView({ session, products }: ReportViewProps) {
   const { toast } = useToast();
-  const [analyzingLine, setAnalyzingLine] = React.useState<(InventoryLine & {product?: Product}) | null>(null);
+  const [analyzingLine, setAnalyzingLine] = React.useState<CalculatedInventoryLine | null>(null);
 
-  const calculatedLines = React.useMemo(() => {
-    if (!session.lines) return [];
-    return session.lines.map(line => {
+  const groupedAndSortedLines = React.useMemo(() => {
+    if (!session.lines) return {};
+    const calculatedLines = session.lines.map(line => {
       const product = products.find(p => p.id === line.productId);
       if (!product) return null;
       const calculatedFields = calculateLineFields(line, product);
       return { ...line, product, ...calculatedFields };
-    }).filter((l): l is NonNullable<typeof l> => l !== null)
-      .sort((a, b) => a.differenceMoney - b.differenceMoney);
+    }).filter((l): l is NonNullable<typeof l> => l !== null);
+    
+    return calculatedLines.reduce<GroupedLines>((acc, line) => {
+        const category = line.product?.category || 'Other';
+        const subCategory = line.product?.subCategory || 'uncategorized';
+
+        if (!acc[category]) {
+            acc[category] = {};
+        }
+        if (!acc[category][subCategory]) {
+            acc[category][subCategory] = [];
+        }
+        acc[category][subCategory].push(line);
+        return acc;
+    }, {});
   }, [session.lines, products]);
+  
+  const allCalculatedLines = React.useMemo(() => 
+    Object.values(groupedAndSortedLines).flatMap(sub => Object.values(sub).flat()),
+  [groupedAndSortedLines]);
 
 
   const totals = React.useMemo(() => {
-    return calculatedLines.reduce(
+    return allCalculatedLines.reduce(
       (acc, line) => {
         acc.totalCost += (line.sales * (line.product?.costPerBottle ?? 0) / (line.product?.bottleVolumeMl ?? 1)) * (line.product?.portionVolumeMl ?? 0);
         acc.totalRevenue += line.sales * (line.product?.sellingPricePerPortion ?? 0);
@@ -55,9 +75,9 @@ export function ReportView({ session, products }: ReportViewProps) {
       },
       { totalCost: 0, totalRevenue: 0, totalVariance: 0, totalLoss: 0, totalSurplus: 0 }
     );
-  }, [calculatedLines]);
+  }, [allCalculatedLines]);
   
-  const topLosses = calculatedLines.filter(l => l.differenceMoney < 0).slice(0, 5);
+  const topLosses = allCalculatedLines.filter(l => l.differenceMoney < 0).sort((a, b) => a.differenceMoney - b.differenceMoney).slice(0, 5);
 
   const varianceCompositionData = [
       { name: 'Потери', value: Math.abs(totals.totalLoss), fill: 'hsl(var(--destructive))' },
@@ -67,7 +87,7 @@ export function ReportView({ session, products }: ReportViewProps) {
   const handleExportCSV = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += "Продукт,Начало (мл),Покупки (мл),Продажи (порции),Теор. конец (мл),Факт. конец (мл),Разница (мл),Разница (руб.)\n";
-    calculatedLines.forEach(line => {
+    allCalculatedLines.forEach(line => {
       const row = [
         line.product?.name,
         line.startStock,
@@ -231,29 +251,49 @@ export function ReportView({ session, products }: ReportViewProps) {
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {calculatedLines.map(line => (
-                <TableRow key={line.id}>
-                    <TableCell className="font-medium">{line.product?.name}</TableCell>
-                    <TableCell className="text-right font-mono">{Math.round(line.theoreticalEndStock)}</TableCell>
-                    <TableCell className="text-right font-mono">{line.endStock}</TableCell>
-                    <TableCell className={cn("text-right font-mono", line.differenceVolume >= 0 ? 'text-green-600' : 'text-destructive')}>
-                        {Math.round(line.differenceVolume)}
-                    </TableCell>
-                     <TableCell className={cn("text-right font-mono", line.differencePercent >= 0 ? 'text-green-600' : 'text-destructive')}>
-                        {line.differencePercent.toFixed(2)}%
-                    </TableCell>
-                    <TableCell className={cn("text-right font-mono", line.differenceMoney >= 0 ? 'text-green-600' : 'text-destructive')}>
-                        {formatCurrency(line.differenceMoney)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                        {Math.abs(line.differenceVolume) > (line.product?.portionVolumeMl ?? 40) / 4 && (
-                            <Button variant="ghost" size="icon" onClick={() => setAnalyzingLine(line)}>
-                                <Sparkles className="h-4 w-4" />
-                                <span className="sr-only">Анализ</span>
-                            </Button>
-                        )}
-                    </TableCell>
-                </TableRow>
+                {Object.entries(groupedAndSortedLines).map(([category, subCategories]) => (
+                    <React.Fragment key={category}>
+                        <TableRow className="bg-muted/20 hover:bg-muted/20">
+                            <TableCell colSpan={7} className="font-bold text-base">
+                                {translateCategory(category as any)}
+                            </TableCell>
+                        </TableRow>
+                        {Object.entries(subCategories).map(([subCategory, lines]) => (
+                            <React.Fragment key={subCategory}>
+                                {subCategory !== 'uncategorized' && (
+                                     <TableRow className="bg-muted/10 hover:bg-muted/10">
+                                        <TableCell colSpan={7} className="py-2 pl-8 font-semibold text-sm">
+                                            {translateSubCategory(subCategory as any)}
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                                {lines.sort((a,b) => (a.product?.name ?? '').localeCompare(b.product?.name ?? '')).map(line => (
+                                    <TableRow key={line.id}>
+                                        <TableCell className="font-medium pl-12">{line.product?.name}</TableCell>
+                                        <TableCell className="text-right font-mono">{Math.round(line.theoreticalEndStock)}</TableCell>
+                                        <TableCell className="text-right font-mono">{line.endStock}</TableCell>
+                                        <TableCell className={cn("text-right font-mono", line.differenceVolume >= 0 ? 'text-green-600' : 'text-destructive')}>
+                                            {Math.round(line.differenceVolume)}
+                                        </TableCell>
+                                        <TableCell className={cn("text-right font-mono", line.differencePercent >= 0 ? 'text-green-600' : 'text-destructive')}>
+                                            {line.differencePercent.toFixed(2)}%
+                                        </TableCell>
+                                        <TableCell className={cn("text-right font-mono", line.differenceMoney >= 0 ? 'text-green-600' : 'text-destructive')}>
+                                            {formatCurrency(line.differenceMoney)}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            {Math.abs(line.differenceVolume) > (line.product?.portionVolumeMl ?? 40) / 4 && (
+                                                <Button variant="ghost" size="icon" onClick={() => setAnalyzingLine(line)}>
+                                                    <Sparkles className="h-4 w-4" />
+                                                    <span className="sr-only">Анализ</span>
+                                                </Button>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </React.Fragment>
+                        ))}
+                    </React.Fragment>
                 ))}
             </TableBody>
              <TableFooter>

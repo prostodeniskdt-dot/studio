@@ -6,9 +6,10 @@ import { calculateLineFields } from '@/lib/calculations';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { cn, formatCurrency } from '@/lib/utils';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { cn, formatCurrency, translateCategory, translateSubCategory } from '@/lib/utils';
+import { Sparkles, Loader2, ChevronDown } from 'lucide-react';
 import { VarianceAnalysisModal } from './variance-analysis-modal';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 type InventoryTableProps = {
   lines: InventoryLine[];
@@ -17,34 +18,43 @@ type InventoryTableProps = {
   isEditable: boolean;
 };
 
+type GroupedLines = Record<string, Record<string, CalculatedInventoryLine[]>>;
+
+
 export function InventoryTable({ lines, setLines, products, isEditable }: InventoryTableProps) {
   
   const [analyzingLine, setAnalyzingLine] = React.useState<CalculatedInventoryLine | null>(null);
 
   // This combines the line data with its corresponding product and calculated fields
-  const getCalculatedLine = React.useCallback((line: InventoryLine): CalculatedInventoryLine => {
+  const getCalculatedLine = React.useCallback((line: InventoryLine): CalculatedInventoryLine | null => {
     const product = products.find(p => p.id === line.productId);
     if (!product) {
-      // Return a default structure if product not found to avoid crashes
-      return { 
-        ...line, 
-        theoreticalEndStock: 0,
-        differenceVolume: 0,
-        differenceMoney: 0,
-        differencePercent: 0
-      };
+      return null;
     }
     const calculatedFields = calculateLineFields(line, product);
     return { ...line, product, ...calculatedFields };
   }, [products]);
 
-  const calculatedLines = React.useMemo(() => 
-    lines.map(getCalculatedLine).filter(l => l.product), 
-  [lines, getCalculatedLine]);
+  const groupedAndSortedLines = React.useMemo(() => {
+    const calculatedLines = lines.map(getCalculatedLine).filter((l): l is CalculatedInventoryLine => l !== null);
+    
+    return calculatedLines.reduce<GroupedLines>((acc, line) => {
+        const category = line.product?.category || 'Other';
+        const subCategory = line.product?.subCategory || 'uncategorized';
+
+        if (!acc[category]) {
+            acc[category] = {};
+        }
+        if (!acc[category][subCategory]) {
+            acc[category][subCategory] = [];
+        }
+        acc[category][subCategory].push(line);
+        return acc;
+    }, {});
+  }, [lines, getCalculatedLine]);
 
   const handleInputChange = (lineId: string, field: keyof InventoryLine, value: string) => {
     const numericValue = Number(value);
-    // Allow empty strings for clearing inputs, but don't parse them as NaN
     if (value !== '' && isNaN(numericValue)) return;
 
     setLines(currentLines => {
@@ -52,17 +62,10 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
         return currentLines.map(line => {
             if (line.id === lineId) {
                 const updatedLine = { ...line, [field]: value === '' ? 0 : numericValue };
-                // Recalculate derived fields immediately
                 const product = products.find(p => p.id === updatedLine.productId);
                 if (product) {
                     const { theoreticalEndStock, differenceVolume, differenceMoney, differencePercent } = calculateLineFields(updatedLine, product);
-                    return {
-                        ...updatedLine,
-                        theoreticalEndStock,
-                        differenceVolume,
-                        differenceMoney,
-                        differencePercent
-                    };
+                    return { ...updatedLine, theoreticalEndStock, differenceVolume, differenceMoney, differencePercent };
                 }
                 return updatedLine;
             }
@@ -72,14 +75,14 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
   };
 
   const totals = React.useMemo(() => {
-    return calculatedLines.reduce(
+    return lines.map(getCalculatedLine).filter((l): l is CalculatedInventoryLine => l !== null).reduce(
       (acc, line) => {
         acc.differenceMoney += line.differenceMoney;
         return acc;
       },
       { differenceMoney: 0 }
     );
-  }, [calculatedLines]);
+  }, [lines, getCalculatedLine]);
 
   if (!lines || !products) {
     return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -103,45 +106,74 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
             </TableRow>
           </TableHeader>
           <TableBody>
-            {calculatedLines.map(line => (
-              <TableRow key={line.id} className={cn(line.differenceVolume !== 0 && isEditable && 'bg-muted/30 hover:bg-muted/50')}>
-                <TableCell className="font-medium">{line.product?.name}</TableCell>
-                <TableCell className="text-right">
-                  {isEditable ? (
-                    <Input type="number" value={line.startStock} onChange={e => handleInputChange(line.id!, 'startStock', e.target.value)} className="w-24 text-right ml-auto" />
-                  ) : line.startStock}
-                </TableCell>
-                <TableCell className="text-right">
-                  {isEditable ? (
-                    <Input type="number" value={line.purchases} onChange={e => handleInputChange(line.id!, 'purchases', e.target.value)} className="w-24 text-right ml-auto" />
-                  ) : line.purchases}
-                </TableCell>
-                <TableCell className="text-right">
-                  {isEditable ? (
-                    <Input type="number" value={line.sales} onChange={e => handleInputChange(line.id!, 'sales', e.target.value)} className="w-24 text-right ml-auto" />
-                  ) : line.sales}
-                </TableCell>
-                <TableCell className="text-right font-mono">{Math.round(line.theoreticalEndStock)}</TableCell>
-                <TableCell className="text-right">
-                  {isEditable ? (
-                    <Input type="number" value={line.endStock} onChange={e => handleInputChange(line.id!, 'endStock', e.target.value)} className="w-24 text-right ml-auto bg-primary/10" />
-                  ) : line.endStock}
-                </TableCell>
-                <TableCell className={cn("text-right font-mono", line.differenceVolume > 0 ? 'text-green-600' : line.differenceVolume < 0 ? 'text-destructive' : 'text-muted-foreground')}>
-                  {Math.round(line.differenceVolume)}
-                </TableCell>
-                <TableCell className={cn("text-right font-mono", line.differenceMoney > 0 ? 'text-green-600' : line.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground')}>
-                  {formatCurrency(line.differenceMoney)}
-                </TableCell>
-                <TableCell className="text-center">
-                    {Math.abs(line.differenceVolume) > (line.product?.portionVolumeMl ?? 40) / 4 && (
-                         <Button variant="ghost" size="sm" onClick={() => setAnalyzingLine(line)}>
-                            <Sparkles className="h-4 w-4" />
-                            <span className="sr-only">Анализ</span>
-                         </Button>
-                    )}
-                </TableCell>
-              </TableRow>
+            {Object.entries(groupedAndSortedLines).map(([category, subCategories]) => (
+                 <React.Fragment key={category}>
+                    <TableRow className="bg-muted/20 hover:bg-muted/20">
+                        <TableCell colSpan={9} className="font-bold text-base text-primary">
+                            {translateCategory(category as any)}
+                        </TableCell>
+                    </TableRow>
+                    {Object.entries(subCategories).map(([subCategory, lines]) => (
+                         <Collapsible asChild key={subCategory} defaultOpen>
+                            <React.Fragment>
+                                {subCategory !== 'uncategorized' && (
+                                    <TableRow className="bg-muted/10 hover:bg-muted/20">
+                                         <TableCell colSpan={9} className="py-2">
+                                            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-semibold w-full">
+                                                <ChevronDown className="h-4 w-4 transition-transform [&[data-state=open]]:-rotate-180" />
+                                                {translateSubCategory(subCategory as any)}
+                                            </CollapsibleTrigger>
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                                <CollapsibleContent asChild>
+                                    <React.Fragment>
+                                        {lines.map(line => (
+                                        <TableRow key={line.id} className={cn(line.differenceVolume !== 0 && isEditable && 'bg-amber-500/10 hover:bg-amber-500/20')}>
+                                            <TableCell className="font-medium pl-10">{line.product?.name}</TableCell>
+                                            <TableCell className="text-right">
+                                            {isEditable ? (
+                                                <Input type="number" value={line.startStock} onChange={e => handleInputChange(line.id!, 'startStock', e.target.value)} className="w-24 text-right ml-auto" />
+                                            ) : line.startStock}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                            {isEditable ? (
+                                                <Input type="number" value={line.purchases} onChange={e => handleInputChange(line.id!, 'purchases', e.target.value)} className="w-24 text-right ml-auto" />
+                                            ) : line.purchases}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                            {isEditable ? (
+                                                <Input type="number" value={line.sales} onChange={e => handleInputChange(line.id!, 'sales', e.target.value)} className="w-24 text-right ml-auto" />
+                                            ) : line.sales}
+                                            </TableCell>
+                                            <TableCell className="text-right font-mono">{Math.round(line.theoreticalEndStock)}</TableCell>
+                                            <TableCell className="text-right">
+                                            {isEditable ? (
+                                                <Input type="number" value={line.endStock} onChange={e => handleInputChange(line.id!, 'endStock', e.target.value)} className="w-24 text-right ml-auto bg-primary/10" />
+                                            ) : line.endStock}
+                                            </TableCell>
+                                            <TableCell className={cn("text-right font-mono", line.differenceVolume > 0 ? 'text-green-600' : line.differenceVolume < 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                                            {Math.round(line.differenceVolume)}
+                                            </TableCell>
+                                            <TableCell className={cn("text-right font-mono", line.differenceMoney > 0 ? 'text-green-600' : line.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                                            {formatCurrency(line.differenceMoney)}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                {Math.abs(line.differenceVolume) > (line.product?.portionVolumeMl ?? 40) / 4 && (
+                                                    <Button variant="ghost" size="sm" onClick={() => setAnalyzingLine(line)}>
+                                                        <Sparkles className="h-4 w-4" />
+                                                        <span className="sr-only">Анализ</span>
+                                                    </Button>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                        ))}
+                                    </React.Fragment>
+                                </CollapsibleContent>
+                            </React.Fragment>
+                        </Collapsible>
+                    ))}
+                 </React.Fragment>
             ))}
           </TableBody>
           <TableFooter>

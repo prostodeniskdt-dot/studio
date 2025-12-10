@@ -1,7 +1,7 @@
 'use server';
 
 import { analyzeInventoryVariance as analyzeInventoryVarianceFlow } from '@/ai/flows/analyze-inventory-variance';
-import type { InventoryLine, Product, Supplier, UserRole } from './types';
+import type { InventoryLine, Product, Supplier, UserRole, PurchaseOrder } from './types';
 import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeAdminApp } from '@/firebase/admin';
@@ -142,5 +142,45 @@ export async function deleteSupplier(barId: string, supplierId: string): Promise
     } catch (error) {
         console.error("Error in deleteSupplier server action:", error);
         return { success: false, error: 'Произошла ошибка на сервере при удалении поставщика.' };
+    }
+}
+
+export async function upsertPurchaseOrder(barId: string, order: Omit<PurchaseOrder, 'barId' | 'createdAt' | 'createdByUserId'> & { createdByUserId: string }): Promise<{ success: boolean; error?: string, id?: string }> {
+    try {
+        const { db } = initializeAdminApp();
+        const orderRef = db.collection('bars').doc(barId).collection('purchaseOrders').doc(order.id);
+
+        const dataToSet = {
+            ...order,
+            barId: barId,
+            updatedAt: FieldValue.serverTimestamp(),
+        };
+
+        if (!(await orderRef.get()).exists) {
+            dataToSet.createdAt = FieldValue.serverTimestamp();
+        }
+
+        await orderRef.set(dataToSet, { merge: true });
+
+        return { success: true, id: order.id };
+    } catch (error) {
+        console.error("Error in upsertPurchaseOrder server action:", error);
+        return { success: false, error: 'Произошла ошибка на сервере при сохранении заказа.' };
+    }
+}
+
+export async function deletePurchaseOrder(barId: string, orderId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { db } = initializeAdminApp();
+        const orderRef = db.collection('bars').doc(barId).collection('purchaseOrders').doc(orderId);
+        
+        // TODO: Also delete subcollection 'lines'
+        
+        await orderRef.delete();
+        
+        return { success: true };
+    } catch (error) {
+        console.error("Error in deletePurchaseOrder server action:", error);
+        return { success: false, error: 'Произошла ошибка на сервере при удалении заказа.' };
     }
 }

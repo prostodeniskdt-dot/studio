@@ -112,17 +112,23 @@ export interface PurchaseOrder {
     id: string;
     barId: string;
     supplierId: string;
+    // For UI
+    supplier?: Supplier;
     status: PurchaseOrderStatus;
     orderDate: Timestamp;
     expectedDeliveryDate?: Timestamp;
     createdAt: Timestamp;
     createdByUserId: string;
+    lines?: PurchaseOrderLine[];
+    totalAmount?: number;
 }
 
 export interface PurchaseOrderLine {
     id: string;
     purchaseOrderId: string;
     productId: string;
+    // For UI
+    product?: Product;
     quantity: number;
     costPerItem: number;
     receivedQuantity?: number;

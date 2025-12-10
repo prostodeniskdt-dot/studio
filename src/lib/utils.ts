@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { InventorySessionStatus, ProductCategory, ProductSubCategory, BrandySubCategory, VermouthSubCategory, UserRole } from "./types";
+import type { InventorySessionStatus, ProductCategory, ProductSubCategory, BrandySubCategory, VermouthSubCategory, UserRole, PurchaseOrderStatus } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -15,14 +15,25 @@ export function formatCurrency(amount: number, currency: string = 'RUB') {
   }).format(amount);
 }
 
-export function translateStatus(status: InventorySessionStatus): string {
+export function translateStatus(status: InventorySessionStatus | PurchaseOrderStatus): string {
     switch (status) {
+        // Inventory Session
         case 'completed':
             return 'Завершено';
         case 'in_progress':
             return 'В процессе';
         case 'draft':
             return 'Черновик';
+
+        // Purchase Order
+        case 'ordered':
+            return 'Заказан';
+        case 'partially_received':
+            return 'Частично получен';
+        case 'received':
+            return 'Получен';
+        case 'cancelled':
+            return 'Отменен';
         default:
             return status;
     }

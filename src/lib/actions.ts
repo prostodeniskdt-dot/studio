@@ -339,3 +339,46 @@ export async function addProductToSession(barId: string, sessionId: string, prod
         return { success: false, error: 'Произошла ошибка на сервере.' };
     }
 }
+
+
+export async function upsertProduct(productData: Partial<Product>): Promise<{ success: boolean; error?: string; id?: string }> {
+  try {
+    const { db } = initializeAdminApp();
+    const productsCollection = db.collection('products');
+    
+    let productId = productData.id;
+    
+    if (productId) {
+      // Update
+      const productRef = productsCollection.doc(productId);
+      await productRef.set({ ...productData, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      return { success: true, id: productId };
+    } else {
+      // Create
+      const newProductRef = productsCollection.doc();
+      const newProduct = {
+        ...productData,
+        id: newProductRef.id,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+      await newProductRef.set(newProduct);
+      return { success: true, id: newProductRef.id };
+    }
+  } catch (error) {
+    console.error("Error in upsertProduct server action:", error);
+    return { success: false, error: 'Произошла ошибка на сервере при сохранении продукта.' };
+  }
+}
+
+export async function archiveProduct(productId: string, archive: boolean): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { db } = initializeAdminApp();
+        const productRef = db.collection('products').doc(productId);
+        await productRef.update({ isActive: !archive });
+        return { success: true };
+    } catch (error) {
+        console.error("Error in archiveProduct server action:", error);
+        return { success: false, error: 'Произошла ошибка на сервере.' };
+    }
+}

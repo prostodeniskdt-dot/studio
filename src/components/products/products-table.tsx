@@ -40,11 +40,10 @@ import type { Product } from '@/lib/types';
 import { formatCurrency, translateCategory, translateSubCategory } from '@/lib/utils';
 import { ProductForm } from './product-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { doc, writeBatch } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Combobox, type GroupedComboboxOption } from '../ui/combobox';
+import { archiveProduct } from '@/lib/actions';
 
 
 export function ProductsTable({ products }: { products: Product[] }) {
@@ -60,7 +59,6 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | undefined>(undefined);
   
-  const firestore = useFirestore();
   const { toast } = useToast();
 
   const handleOpenSheet = (product?: Product) => {
@@ -73,16 +71,20 @@ export function ProductsTable({ products }: { products: Product[] }) {
     setEditingProduct(undefined);
   }
 
-  const handleArchiveAction = async (product: Product, archive: boolean) => {
-    if (!firestore) return;
-    const productRef = doc(firestore, 'products', product.id!);
-    const batch = writeBatch(firestore);
-    batch.update(productRef, { isActive: !archive });
-    await batch.commit();
-    toast({
-      title: `Продукт ${archive ? 'архивирован' : 'восстановлен'}`,
-      description: `"${product.name}" был ${archive ? 'архивирован' : 'восстановлен'}.`,
-    });
+  const handleArchiveAction = async (product: Product) => {
+    const result = await archiveProduct(product.id, product.isActive);
+    if(result.success) {
+      toast({
+        title: `Продукт ${product.isActive ? 'архивирован' : 'восстановлен'}`,
+        description: `"${product.name}" был ${product.isActive ? 'архивирован' : 'восстановлен'}.`,
+      });
+    } else {
+       toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: result.error,
+      });
+    }
   }
 
   const groupedProductOptions = React.useMemo<GroupedComboboxOption[]>(() => {
@@ -213,7 +215,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
               <DropdownMenuItem onClick={() => handleOpenSheet(product)}>Редактировать продукт</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
-                onClick={() => handleArchiveAction(product, product.isActive)}
+                onClick={() => handleArchiveAction(product)}
                 className={cn(product.isActive && "text-destructive focus:text-destructive")}
                >
                 {product.isActive ? 'Архивировать' : 'Восстановить'}

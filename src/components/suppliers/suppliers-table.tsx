@@ -196,20 +196,21 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
           </SheetHeader>
           <SupplierForm barId={barId} supplier={editingSupplier} onFormSubmit={handleCloseSheet} />
         </SheetContent>
-        <AlertDialog open={!!supplierToDelete} onOpenChange={(open) => !open && setSupplierToDelete(null)}>
-          <AlertDialogContent>
-              <AlertDialogHeader>
-                  <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                      Вы собираетесь удалить поставщика <span className="font-semibold">{supplierToDelete?.name}</span>. Это действие нельзя отменить.
-                  </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                  <AlertDialogCancel>Отмена</AlertDialogCancel>
-                  <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Удалить</AlertDialogAction>
-              </AlertDialogFooter>
-          </AlertDialogContent>
-      </AlertDialog>
-      </>
+      </Sheet>
+      <AlertDialog open={!!supplierToDelete} onOpenChange={(open) => !open && setSupplierToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Вы собираетесь удалить поставщика <span className="font-semibold">{supplierToDelete?.name}</span>. Это действие нельзя отменить.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Отмена</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Удалить</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

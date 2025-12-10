@@ -17,7 +17,7 @@ import { PlusCircle, Trash2 } from 'lucide-react';
 import { formatCurrency, translateCategory } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
-import { writeBatch, doc, collection, addDoc, deleteDoc } from 'firebase/firestore';
+import { writeBatch, doc, collection, addDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { Combobox, GroupedComboboxOption } from '../ui/combobox';
 import Image from 'next/image';
 
@@ -92,6 +92,7 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
             title: "Продукт уже в заказе",
             description: "Этот продукт уже был добавлен в этот заказ."
         });
+        setIsAdding(false);
         return;
     }
 
@@ -102,11 +103,11 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
         id: newLineRef.id,
         purchaseOrderId: orderId,
         productId: productId,
-        quantity: 1,
+        quantity: product.reorderQuantity || 1,
         costPerItem: product.costPerBottle,
         receivedQuantity: 0,
       };
-      await addDoc(linesCollection, newLineData);
+      await setDoc(newLineRef, newLineData);
       // Firestore listener will update the list
       toast({ title: 'Продукт добавлен в заказ' });
     } catch (error) {

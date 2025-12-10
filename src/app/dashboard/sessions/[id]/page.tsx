@@ -5,13 +5,19 @@ import { useParams, notFound, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { InventoryTable } from "@/components/sessions/inventory-table";
 import { Button } from "@/components/ui/button";
-import { FileText, Loader2, Save, XCircle } from "lucide-react";
+import { FileText, Loader2, Save, XCircle, Download, Upload } from "lucide-react";
 import Link from "next/link";
 import { translateStatus } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,6 +62,8 @@ export default function SessionPage() {
   const [localLines, setLocalLines] = React.useState<InventoryLine[] | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isCompleting, setIsCompleting] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
 
   React.useEffect(() => {
     if (lines) {
@@ -128,6 +136,96 @@ export default function SessionPage() {
         setIsCompleting(false);
     }
   };
+  
+  const handleExportCSV = () => {
+    if (!localLines || !products) return;
+
+    const headers = ["productId", "productName", "startStock", "purchases", "sales", "endStock"];
+    
+    const rows = localLines.map(line => {
+      const product = products.find(p => p.id === line.productId);
+      return [
+        line.productId,
+        product?.name.replace(/,/g, '') || '', // Remove commas from name
+        line.startStock,
+        line.purchases,
+        line.sales,
+        line.endStock
+      ].join(',');
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `session_${id}_export.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: "Экспорт завершен", description: "Данные сессии выгружены в CSV файл." });
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      try {
+        const rows = text.split('\n').slice(1); // Skip header row
+        const updatedLines = [...(localLines || [])];
+        let changesMade = false;
+
+        const csvData = new Map<string, any>();
+        rows.forEach(rowStr => {
+            if (!rowStr) return;
+            const rowData = rowStr.split(',');
+            const productId = rowData[0];
+            csvData.set(productId, {
+                startStock: parseFloat(rowData[2]),
+                purchases: parseFloat(rowData[3]),
+                sales: parseFloat(rowData[4]),
+                endStock: parseFloat(rowData[5]),
+            });
+        });
+
+        updatedLines.forEach((line, index) => {
+            if (csvData.has(line.productId)) {
+                const data = csvData.get(line.productId);
+                updatedLines[index] = {
+                    ...line,
+                    startStock: isNaN(data.startStock) ? line.startStock : data.startStock,
+                    purchases: isNaN(data.purchases) ? line.purchases : data.purchases,
+                    sales: isNaN(data.sales) ? line.sales : data.sales,
+                    endStock: isNaN(data.endStock) ? line.endStock : data.endStock,
+                };
+                changesMade = true;
+            }
+        });
+
+        if (changesMade) {
+          setLocalLines(updatedLines);
+          toast({ title: "Импорт завершен", description: "Данные из файла загружены в таблицу. Не забудьте сохранить изменения." });
+        } else {
+           toast({ variant: "destructive", title: "Импорт не удался", description: "Не найдено совпадающих productId в файле." });
+        }
+
+      } catch (error) {
+        toast({ variant: "destructive", title: "Ошибка парсинга файла", description: "Убедитесь, что файл имеет правильный формат CSV." });
+      } finally {
+        // Reset file input
+        if(event.target) event.target.value = '';
+      }
+    };
+    reader.readAsText(file);
+  };
+
 
   const isLoading = isLoadingSession || isLoadingLines || isLoadingProducts;
 
@@ -169,6 +267,13 @@ export default function SessionPage() {
 
   return (
     <div className="container mx-auto">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileImport}
+        className="hidden"
+        accept=".csv"
+      />
       <div className="flex items-center justify-between mb-2">
         <div>
             <h1 className="text-3xl font-bold tracking-tight">{session.name}</h1>
@@ -189,6 +294,24 @@ export default function SessionPage() {
                 </Button>
             ) : (
                 <div className="flex gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline">
+                          Импорт/Экспорт
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={handleImportClick}>
+                            <Upload className="mr-2 h-4 w-4" />
+                            <span>Импорт из CSV</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={handleExportCSV}>
+                            <Download className="mr-2 h-4 w-4" />
+                            <span>Экспорт в CSV</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
                     <Button onClick={handleSaveChanges} variant="outline" disabled={!isEditable || isSaving}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         {isSaving ? 'Сохранение...' : 'Сохранить'}

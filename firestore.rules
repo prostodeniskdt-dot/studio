@@ -85,13 +85,13 @@ service cloud.firestore {
       let isExplicitMember = exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid));
       return isBarOwner(barId) || isExplicitMember;
     }
-
+    
     /**
-     * Checks if a user is the owner of the bar or an admin.
-     * This is safe for list operations as it doesn't involve cross-document reads.
+     * Checks if the requesting user is the owner of a specific bar.
+     * This function is intended for `list` queries. It CANNOT check admin status.
      */
-     function isOwnerOrAdmin(barId) {
-        return isBarOwner(barId) || isAdmin();
+    function isBarOwnerForList(barDoc) {
+      return barDoc.ownerUserId == request.auth.uid;
     }
 
 
@@ -102,7 +102,6 @@ service cloud.firestore {
     /**
      * Determines if a user can read sensitive data within a specific bar's subcollections.
      * Access is granted to the bar members or an admin.
-     * For get() operations. For list(), use isOwnerOrAdmin.
      */
     function canReadBarData(barId) {
       return isBarMember(barId) || isAdmin();
@@ -280,8 +279,7 @@ service cloud.firestore {
        */
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        // List operations can only check ownership or admin status without cross-document reads
-        allow list: if isOwnerOrAdmin(barId);
+        allow list: if isBarOwnerForList(resource.data) || isAdmin();
         allow create: if canWriteBarData(barId) && isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteBarData(barId) && resourceExists();
@@ -291,8 +289,7 @@ service cloud.firestore {
          */
         match /lines/{inventoryLineId} {
           allow get: if canReadBarData(barId);
-          // List operations can only check ownership or admin status without cross-document reads
-          allow list: if isOwnerOrAdmin(barId);
+          allow list: if isBarOwner(barId) || isAdmin();
           allow create: if canWriteBarData(barId) && isInventoryLineCreateValid(inventorySessionId);
           allow update: if canWriteBarData(barId) && resourceExists() && isInventoryLineUpdateValid();
           allow delete: if canWriteBarData(barId) && resourceExists();

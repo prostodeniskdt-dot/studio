@@ -4,6 +4,8 @@ import * as React from 'react';
 import type { SessionWithLines } from '@/app/dashboard/analytics/page';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { VarianceTrendChart } from '@/components/analytics/variance-trend-chart';
+import { Button } from '../ui/button';
+import { PlusCircle } from 'lucide-react';
 
 
 export function AnalyticsView({ data }: { data: SessionWithLines[] }) {

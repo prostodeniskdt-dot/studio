@@ -37,7 +37,7 @@ export default function SuppliersPage() {
   }
 
   return (
-    <div className="container mx-auto">
+    <div className="w-full">
       <SuppliersTable suppliers={suppliers || []} barId={barId} />
     </div>
   );

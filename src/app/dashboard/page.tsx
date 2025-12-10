@@ -21,11 +21,9 @@ export default function DashboardPage() {
 
   const barId = user ? `bar_${user.uid}` : null; 
 
-  // Query for in-progress or draft sessions for the list
   const sessionsQuery = useMemoFirebase(() => 
     firestore && barId && user ? query(
         collection(firestore, 'bars', barId, 'inventorySessions'), 
-        where('status', 'in', ['in_progress', 'draft']),
         where('createdByUserId', '==', user.uid),
         orderBy('createdAt', 'desc')
     ) : null,
@@ -33,6 +31,11 @@ export default function DashboardPage() {
   );
   
   const { data: sessions, isLoading: isLoadingSessions, error: sessionsError } = useCollection<InventorySession>(sessionsQuery);
+  
+  const activeSessions = React.useMemo(() => {
+    if (!sessions) return [];
+    return sessions.filter(s => s.status === 'in_progress' || s.status === 'draft');
+  }, [sessions]);
 
 
   const handleCreateSession = async () => {
@@ -154,7 +157,7 @@ export default function DashboardPage() {
             <p className="text-xs">{sessionsError?.message || 'Возможно, у вас нет прав на просмотр или данные еще не созданы.'}</p>
          </div>
       ) : (
-        <SessionsList sessions={sessions || []} barId={barId} />
+        <SessionsList sessions={activeSessions} barId={barId} />
       )}
     </div>
   );

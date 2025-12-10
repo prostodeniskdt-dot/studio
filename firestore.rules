@@ -273,7 +273,7 @@ service cloud.firestore {
        */
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        // CORRECTED RULE: A user can list sessions if their query filters by their own user ID.
+        // A user can list sessions if their query filters by their own user ID.
         // This is safe because the rule is checked against the query itself, not by reading other documents.
         allow list: if request.query.createdByUserId == request.auth.uid;
         allow create: if canWriteBarData(barId) && isInventorySessionCreateValid(barId);
@@ -317,5 +317,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

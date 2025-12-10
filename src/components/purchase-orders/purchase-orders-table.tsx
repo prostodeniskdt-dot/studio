@@ -35,8 +35,13 @@ import { formatCurrency, translateStatus } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import Link from 'next/link';
 
+interface OrderWithSupplier extends PurchaseOrder {
+  supplier?: Supplier;
+  totalAmount: number;
+}
+
 interface PurchaseOrdersTableProps {
-  orders: PurchaseOrder[];
+  orders: OrderWithSupplier[];
   barId: string;
   suppliers: Supplier[];
 }
@@ -85,11 +90,11 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
     }
   };
 
-  const columns: ColumnDef<PurchaseOrder>[] = [
+  const columns: ColumnDef<OrderWithSupplier>[] = [
     {
       accessorKey: 'id',
       header: 'Номер',
-      cell: ({ row }) => <div className="font-medium">#{row.getValue('id').substring(0, 6)}</div>,
+      cell: ({ row }) => <div className="font-medium">#{(row.getValue('id') as string).substring(0, 6)}</div>,
     },
     {
       accessorKey: 'supplier',
@@ -171,8 +176,7 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
   });
 
   return (
-    <>
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <div className="w-full">
           <div className="flex items-center justify-between py-4">
             <div>
@@ -243,6 +247,6 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
               </AlertDialogFooter>
           </AlertDialogContent>
       </AlertDialog>
-      </>
+    </Sheet>
   );
 }

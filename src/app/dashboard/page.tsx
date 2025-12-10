@@ -34,6 +34,7 @@ export default function DashboardPage() {
   
   const activeSessions = React.useMemo(() => {
     if (!sessions) return [];
+    // This filtering is now done on the client side
     return sessions.filter(s => s.status === 'in_progress' || s.status === 'draft');
   }, [sessions]);
 
@@ -48,22 +49,15 @@ export default function DashboardPage() {
       return;
     }
     
-    // Check for existing in-progress session
-    const inProgressQuery = query(
-        collection(firestore, 'bars', barId, 'inventorySessions'), 
-        where('status', '==', 'in_progress'),
-        where('createdByUserId', '==', user.uid),
-        orderBy('createdAt', 'desc')
-    );
-    const inProgressSnapshot = await getDocs(inProgressQuery);
-    if (!inProgressSnapshot.empty) {
-        const existingSessionId = inProgressSnapshot.docs[0].id;
+    // Client-side check for existing in-progress session
+    const inProgressSession = sessions?.find(s => s.status === 'in_progress');
+    if (inProgressSession) {
         toast({
             title: "Активная сессия уже существует",
             description: "Вы будете перенаправлены на существующую сессию.",
-            action: <Button onClick={() => router.push(`/dashboard/sessions/${existingSessionId}`)}>Перейти</Button>
+            action: <Button onClick={() => router.push(`/dashboard/sessions/${inProgressSession.id}`)}>Перейти</Button>
         });
-        router.push(`/dashboard/sessions/${existingSessionId}`);
+        router.push(`/dashboard/sessions/${inProgressSession.id}`);
         return;
     }
 

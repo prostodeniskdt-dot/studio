@@ -41,22 +41,15 @@ export default function SessionsPage() {
       return;
     }
     
-    // Check for existing in-progress session
-    const inProgressQuery = query(
-        collection(firestore, 'bars', barId, 'inventorySessions'), 
-        where('status', '==', 'in_progress'),
-        where('createdByUserId', '==', user.uid),
-        orderBy('createdAt', 'desc')
-    );
-    const inProgressSnapshot = await getDocs(inProgressQuery);
-    if (!inProgressSnapshot.empty) {
-        const existingSessionId = inProgressSnapshot.docs[0].id;
+    // Check for existing in-progress session on the client
+    const inProgressSession = sessions?.find(s => s.status === 'in_progress');
+    if (inProgressSession) {
         toast({
             title: "Активная сессия уже существует",
             description: "Вы будете перенаправлены на существующую сессию.",
-            action: <Button onClick={() => router.push(`/dashboard/sessions/${existingSessionId}`)}>Перейти</Button>
+            action: <Button onClick={() => router.push(`/dashboard/sessions/${inProgressSession.id}`)}>Перейти</Button>
         });
-        router.push(`/dashboard/sessions/${existingSessionId}`);
+        router.push(`/dashboard/sessions/${inProgressSession.id}`);
         return;
     }
 

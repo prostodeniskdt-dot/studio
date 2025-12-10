@@ -96,3 +96,34 @@ export interface BarMember {
     // for UI
     userProfile?: UserProfile;
 }
+
+export interface Supplier {
+    id: string;
+    barId: string;
+    name: string;
+    contactName?: string;
+    phone?: string;
+    email?: string;
+}
+
+export type PurchaseOrderStatus = 'draft' | 'ordered' | 'partially_received' | 'received' | 'cancelled';
+
+export interface PurchaseOrder {
+    id: string;
+    barId: string;
+    supplierId: string;
+    status: PurchaseOrderStatus;
+    orderDate: Timestamp;
+    expectedDeliveryDate?: Timestamp;
+    createdAt: Timestamp;
+    createdByUserId: string;
+}
+
+export interface PurchaseOrderLine {
+    id: string;
+    purchaseOrderId: string;
+    productId: string;
+    quantity: number;
+    costPerItem: number;
+    receivedQuantity?: number;
+}

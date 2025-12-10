@@ -1,7 +1,7 @@
 'use server';
 
 import { analyzeInventoryVariance as analyzeInventoryVarianceFlow } from '@/ai/flows/analyze-inventory-variance';
-import type { InventoryLine, Product, UserRole } from './types';
+import type { InventoryLine, Product, Supplier, UserRole } from './types';
 import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeAdminApp } from '@/firebase/admin';
@@ -114,3 +114,33 @@ export async function removeStaffMember(barId: string, userId: string): Promise<
   }
 }
 
+export async function upsertSupplier(barId: string, supplier: Omit<Supplier, 'barId'>): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { db } = initializeAdminApp();
+        const supplierRef = db.collection('bars').doc(barId).collection('suppliers').doc(supplier.id);
+
+        await supplierRef.set({
+            ...supplier,
+            barId: barId,
+        }, { merge: true });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Error in upsertSupplier server action:", error);
+        return { success: false, error: 'Произошла ошибка на сервере при сохранении поставщика.' };
+    }
+}
+
+export async function deleteSupplier(barId: string, supplierId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { db } = initializeAdminApp();
+        const supplierRef = db.collection('bars').doc(barId).collection('suppliers').doc(supplierId);
+        
+        await supplierRef.delete();
+        
+        return { success: true };
+    } catch (error) {
+        console.error("Error in deleteSupplier server action:", error);
+        return { success: false, error: 'Произошла ошибка на сервере при удалении поставщика.' };
+    }
+}

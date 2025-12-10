@@ -1,0 +1,153 @@
+'use client';
+
+import * as React from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import type { Supplier } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+import { upsertSupplier } from '@/lib/actions';
+import { doc, collection } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import { Loader2 } from 'lucide-react';
+
+const formSchema = z.object({
+  name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
+  contactName: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email('Неверный формат email.').optional().or(z.literal('')),
+});
+
+type SupplierFormValues = z.infer<typeof formSchema>;
+
+interface SupplierFormProps {
+    barId: string;
+    supplier?: Supplier;
+    onFormSubmit: () => void;
+}
+
+export function SupplierForm({ barId, supplier, onFormSubmit }: SupplierFormProps) {
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const form = useForm<SupplierFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: supplier ? {
+      name: supplier.name,
+      contactName: supplier.contactName ?? '',
+      phone: supplier.phone ?? '',
+      email: supplier.email ?? '',
+    } : {
+      name: '',
+      contactName: '',
+      phone: '',
+      email: '',
+    },
+  });
+
+  const { isSubmitting } = form.formState;
+
+  async function onSubmit(data: SupplierFormValues) {
+    if (!firestore) {
+      toast({ variant: "destructive", title: "Ошибка", description: "Не удалось подключиться к базе данных." });
+      return;
+    }
+    
+    const supplierId = supplier?.id || doc(collection(firestore, 'bars', barId, 'suppliers')).id;
+    
+    const newSupplierData: Supplier = {
+      id: supplierId,
+      barId, //This will be overwritten by the server action but good to have
+      ...data,
+    };
+
+    const result = await upsertSupplier(barId, newSupplierData);
+
+    if (result.success) {
+      toast({
+        title: supplier ? 'Поставщик обновлен' : 'Поставщик создан',
+        description: `Данные по "${data.name}" сохранены.`,
+      });
+      onFormSubmit();
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: result.error || "Не удалось сохранить поставщика.",
+      });
+    }
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Название компании</FormLabel>
+              <FormControl>
+                <Input placeholder="ООО 'НапиткиМира'" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="contactName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Контактное лицо</FormLabel>
+              <FormControl>
+                <Input placeholder="Иван Петров" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Телефон</FormLabel>
+              <FormControl>
+                <Input placeholder="+7 (999) 123-45-67" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input placeholder="ivan@drinks.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSubmitting ? 'Сохранение...' : 'Сохранить'}
+        </Button>
+      </form>
+    </Form>
+  );
+}

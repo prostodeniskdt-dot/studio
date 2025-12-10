@@ -53,6 +53,8 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
     costPerBottle: false,
     id: false, 
+    category: false,
+    bottleVolumeMl: false,
   });
   const [rowSelection, setRowSelection] = React.useState({});
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);

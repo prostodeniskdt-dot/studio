@@ -93,15 +93,15 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-full md:w-[250px]">Продукт</TableHead>
+              <TableHead className="w-full md:w-auto">Продукт</TableHead>
               <TableHead className="text-right hidden md:table-cell">Начало (мл)</TableHead>
               <TableHead className="text-right hidden lg:table-cell">Покупки (мл)</TableHead>
               <TableHead className="text-right hidden lg:table-cell">Продажи (порции)</TableHead>
               <TableHead className="text-right hidden md:table-cell">Теор. (мл)</TableHead>
               <TableHead className="text-right">Факт. (мл)</TableHead>
-              <TableHead className="text-right">Разн. (мл)</TableHead>
+              <TableHead className="text-right hidden sm:table-cell">Разн. (мл)</TableHead>
               <TableHead className="text-right hidden sm:table-cell">Разн. (руб.)</TableHead>
-              <TableHead className="w-[100px] text-center">Анализ</TableHead>
+              <TableHead className="w-[100px] text-center hidden sm:table-cell">Анализ</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -121,7 +121,7 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                         </TableCell>
                       </TableRow>
                     )}
-                    {subCategoryLines.map(line => (
+                    {subCategoryLines.sort((a,b) => (a.product?.name ?? '').localeCompare(b.product?.name ?? '')).map(line => (
                       <TableRow key={line.id} className={cn(line.differenceVolume !== 0 && isEditable && 'bg-amber-500/10 hover:bg-amber-500/20')}>
                         <TableCell className="font-medium pl-4 md:pl-10">{line.product?.name}</TableCell>
                         <TableCell className="text-right hidden md:table-cell">
@@ -145,13 +145,13 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                             <Input type="number" value={line.endStock} onChange={e => handleInputChange(line.id!, 'endStock', e.target.value)} className="w-24 text-right ml-auto bg-primary/10" />
                           ) : line.endStock}
                         </TableCell>
-                        <TableCell className={cn("text-right font-mono", line.differenceVolume > 0 ? 'text-green-600' : line.differenceVolume < 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                        <TableCell className={cn("text-right font-mono hidden sm:table-cell", line.differenceVolume > 0 ? 'text-green-600' : line.differenceVolume < 0 ? 'text-destructive' : 'text-muted-foreground')}>
                           {Math.round(line.differenceVolume)}
                         </TableCell>
                         <TableCell className={cn("text-right font-mono hidden sm:table-cell", line.differenceMoney > 0 ? 'text-green-600' : line.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground')}>
                           {formatCurrency(line.differenceMoney)}
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="text-center hidden sm:table-cell">
                           {Math.abs(line.differenceVolume) > (line.product?.portionVolumeMl ?? 40) / 4 && (
                             <Button variant="ghost" size="sm" onClick={() => setAnalyzingLine(line)}>
                               <Sparkles className="h-4 w-4" />
@@ -169,12 +169,12 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
           <TableFooter>
             <TableRow>
               <TableCell colSpan={7} className="font-bold text-lg hidden sm:table-cell">Общее отклонение</TableCell>
-              <TableCell colSpan={3} className="font-bold text-lg sm:hidden">Общее отклонение</TableCell>
+              <TableCell colSpan={1} className="font-bold text-lg sm:hidden">Итого</TableCell>
 
               <TableCell className={cn("text-right font-bold text-lg", totals.differenceMoney > 0 ? 'text-green-600' : totals.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground')}>
                 {formatCurrency(totals.differenceMoney)}
               </TableCell>
-              <TableCell />
+              <TableCell className="hidden sm:table-cell" />
             </TableRow>
           </TableFooter>
         </Table>

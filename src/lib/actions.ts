@@ -190,3 +190,67 @@ export async function deletePurchaseOrder(barId: string, orderId: string): Promi
         return { success: false, error: 'Произошла ошибка на сервере при удалении заказа.' };
     }
 }
+
+export async function addPurchaseOrderLine(barId: string, orderId: string, product: Product): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { db } = initializeAdminApp();
+        const linesCollection = db.collection('bars').doc(barId).collection('purchaseOrders').doc(orderId).collection('lines');
+        
+        // Prevent adding duplicates
+        const existingLineQuery = linesCollection.where('productId', '==', product.id).limit(1);
+        const existingLineSnapshot = await existingLineQuery.get();
+        if (!existingLineSnapshot.empty) {
+            return { success: false, error: 'Продукт уже в заказе.' };
+        }
+
+        const newLineRef = linesCollection.doc();
+        const newLineData = {
+            id: newLineRef.id,
+            purchaseOrderId: orderId,
+            productId: product.id,
+            quantity: product.reorderQuantity || 1,
+            costPerItem: product.costPerBottle,
+            receivedQuantity: 0,
+        };
+        await newLineRef.set(newLineData);
+        return { success: true };
+    } catch (error) {
+        console.error("Error in addPurchaseOrderLine server action:", error);
+        return { success: false, error: 'Произошла ошибка на сервере.' };
+    }
+}
+
+export async function updatePurchaseOrderLines(barId: string, orderId: string, lines: PurchaseOrderLine[]): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { db } = initializeAdminApp();
+        const batch = db.batch();
+        const linesCollection = db.collection('bars').doc(barId).collection('purchaseOrders').doc(orderId).collection('lines');
+        
+        lines.forEach(line => {
+            const lineRef = linesCollection.doc(line.id);
+            batch.update(lineRef, {
+                quantity: line.quantity,
+                costPerItem: line.costPerItem,
+                receivedQuantity: line.receivedQuantity || 0
+            });
+        });
+        
+        await batch.commit();
+        return { success: true };
+    } catch (error) {
+        console.error("Error in updatePurchaseOrderLines server action:", error);
+        return { success: false, error: 'Произошла ошибка на сервере.' };
+    }
+}
+
+export async function deletePurchaseOrderLine(barId: string, orderId: string, lineId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { db } = initializeAdminApp();
+        const lineRef = db.collection('bars').doc(barId).collection('purchaseOrders').doc(orderId).collection('lines').doc(lineId);
+        await lineRef.delete();
+        return { success: true };
+    } catch (error) {
+        console.error("Error in deletePurchaseOrderLine server action:", error);
+        return { success: false, error: 'Произошла ошибка на сервере.' };
+    }
+}

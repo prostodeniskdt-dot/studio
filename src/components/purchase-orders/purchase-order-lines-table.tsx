@@ -13,11 +13,10 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2 } from 'lucide-react';
 import { formatCurrency, translateCategory } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore } from '@/firebase';
-import { writeBatch, doc, collection, addDoc, deleteDoc, setDoc } from 'firebase/firestore';
+import { addPurchaseOrderLine, updatePurchaseOrderLines, deletePurchaseOrderLine } from '@/lib/actions';
 import { Combobox, GroupedComboboxOption } from '../ui/combobox';
 import Image from 'next/image';
 
@@ -31,9 +30,10 @@ interface PurchaseOrderLinesTableProps {
 
 export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEditable }: PurchaseOrderLinesTableProps) {
   const { toast } = useToast();
-  const firestore = useFirestore();
   const [localLines, setLocalLines] = React.useState(lines);
   const [isAdding, setIsAdding] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
   React.useEffect(() => {
     setLocalLines(lines);
@@ -51,70 +51,44 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
   };
   
   const handleSaveLines = async () => {
-    if (!firestore) return;
-    const batch = writeBatch(firestore);
-    localLines.forEach(line => {
-      const lineRef = doc(firestore, 'bars', barId, 'purchaseOrders', orderId, 'lines', line.id);
-      batch.update(lineRef, {
-        quantity: line.quantity,
-        costPerItem: line.costPerItem,
-        receivedQuantity: line.receivedQuantity || 0
-      });
-    });
-    try {
-      await batch.commit();
-      toast({ title: 'Позиции заказа обновлены' });
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Ошибка при сохранении' });
+    setIsSaving(true);
+    const result = await updatePurchaseOrderLines(barId, orderId, localLines);
+    if (result.success) {
+        toast({ title: 'Позиции заказа обновлены' });
+    } else {
+        toast({ variant: 'destructive', title: 'Ошибка при сохранении', description: result.error });
     }
+    setIsSaving(false);
   };
 
   const handleRemoveLine = async (lineId: string) => {
-    if (!firestore) return;
-    try {
-        await deleteDoc(doc(firestore, 'bars', barId, 'purchaseOrders', orderId, 'lines', lineId));
-        // Firestore listener will handle the UI update
+    setIsProcessing(true);
+    const result = await deletePurchaseOrderLine(barId, orderId, lineId);
+    if (result.success) {
         toast({ title: 'Позиция удалена' });
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Ошибка при удалении' });
+    } else {
+        toast({ variant: 'destructive', title: 'Ошибка при удалении', description: result.error });
     }
+    setIsProcessing(false);
   };
   
   const handleAddProduct = async (productId: string) => {
-    if (!firestore) return;
+    setIsAdding(false);
+    setIsProcessing(true);
     const product = products.find(p => p.id === productId);
-    if (!product) return;
-
-    // Prevent adding duplicates
-    if (localLines.some(line => line.productId === productId)) {
-        toast({
-            variant: "destructive",
-            title: "Продукт уже в заказе",
-            description: "Этот продукт уже был добавлен в этот заказ."
-        });
-        setIsAdding(false);
+    if (!product) {
+        setIsProcessing(false);
         return;
-    }
+    };
 
-    try {
-      const linesCollection = collection(firestore, 'bars', barId, 'purchaseOrders', orderId, 'lines');
-      const newLineRef = doc(linesCollection);
-      const newLineData = {
-        id: newLineRef.id,
-        purchaseOrderId: orderId,
-        productId: productId,
-        quantity: product.reorderQuantity || 1,
-        costPerItem: product.costPerBottle,
-        receivedQuantity: 0,
-      };
-      await setDoc(newLineRef, newLineData);
-      // Firestore listener will update the list
-      toast({ title: 'Продукт добавлен в заказ' });
-    } catch (error) {
-       toast({ variant: 'destructive', title: 'Ошибка при добавлении продукта' });
-    } finally {
-        setIsAdding(false);
+    const result = await addPurchaseOrderLine(barId, orderId, product);
+
+    if (result.success) {
+        toast({ title: 'Продукт добавлен в заказ' });
+    } else {
+        toast({ variant: 'destructive', title: 'Ошибка', description: result.error });
     }
+    setIsProcessing(false);
   };
 
   const linesWithProducts = React.useMemo(() => {
@@ -146,9 +120,16 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
       .sort((a,b) => a.label.localeCompare(b.label));
 
   }, [products, localLines]);
+  
+  const hasChanges = JSON.stringify(localLines) !== JSON.stringify(lines);
 
   return (
     <div className="space-y-4">
+        {isProcessing && (
+            <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        )}
         <div className="rounded-md border">
         <Table>
             <TableHeader>
@@ -254,7 +235,10 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
                 )}
                 </>
             )}
-            <Button onClick={handleSaveLines} disabled={JSON.stringify(localLines) === JSON.stringify(lines)}>Сохранить изменения</Button>
+            <Button onClick={handleSaveLines} disabled={!hasChanges || isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
+            </Button>
         </div>
     </div>
   );

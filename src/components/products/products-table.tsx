@@ -45,6 +45,7 @@ import { doc, collection, writeBatch } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Combobox, type ComboboxOption } from '../ui/combobox';
 
 
 export function ProductsTable({ products, barId }: { products: Product[], barId: string | null }) {
@@ -81,6 +82,10 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
       description: `"${product.name}" был ${archive ? 'архивирован' : 'восстановлен'}.`,
     });
   }
+
+  const productOptions: ComboboxOption[] = React.useMemo(() => 
+    products.map(p => ({ value: p.id, label: p.name }))
+  , [products]);
 
   const columns: ColumnDef<Product>[] = [
     {
@@ -223,13 +228,19 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
                     <p className="text-muted-foreground">Управляйте каталогом товаров и их профилями для калькулятора.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                <Input
-                    placeholder="Фильтр по продуктам..."
-                    value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
-                    onChange={(event) =>
-                    table.getColumn('name')?.setFilterValue(event.target.value)
-                    }
-                    className="max-w-sm"
+                <Combobox 
+                  options={productOptions}
+                  onSelect={(value) => {
+                    const name = products.find(p => p.id === value)?.name || '';
+                    table.getColumn('name')?.setFilterValue(value ? `^${name}$` : '');
+                  }}
+                  value={
+                    products.find(p => p.name === (table.getColumn('name')?.getFilterValue() as string)?.replace(/[\^$]/g, ''))?.id
+                  }
+                  placeholder="Поиск по названию..."
+                  searchPlaceholder="Введите название продукта..."
+                  notFoundText="Продукт не найден."
+                  triggerClassName='w-[250px]'
                 />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

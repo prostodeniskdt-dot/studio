@@ -10,14 +10,16 @@ export interface UserProfile {
   createdAt: Timestamp;
 }
 
-export type ProductCategory = 'Whiskey' | 'Rum' | 'Vodka' | 'Gin' | 'Tequila' | 'Liqueur' | 'Wine' | 'Beer' | 'Syrup' | 'Other';
+export type ProductCategory = 'Whiskey' | 'Rum' | 'Vodka' | 'Gin' | 'Tequila' | 'Liqueur' | 'Wine' | 'Beer' | 'Syrup' | 'Brandy' | 'Vermouth' | 'Absinthe' | 'Bitters' | 'Other';
 export type WhiskeySubCategory = 'Scotch' | 'Irish' | 'Bourbon' | 'Japanese' | 'Other';
 export type RumSubCategory = 'White' | 'Gold' | 'Dark' | 'Spiced' | 'Other';
 export type GinSubCategory = 'London Dry' | 'Old Tom' | 'Plymouth' | 'Other';
 export type WineSubCategory = 'Red' | 'White' | 'Rose' | 'Sparkling' | 'Other';
 export type BeerSubCategory = 'Lager' | 'Ale' | 'Stout' | 'IPA' | 'Other';
+export type BrandySubCategory = 'Cognac' | 'Armagnac' | 'Calvados' | 'Other';
+export type VermouthSubCategory = 'Dry' | 'Sweet' | 'Bianco' | 'Other';
 
-export type ProductSubCategory = WhiskeySubCategory | RumSubCategory | GinSubCategory | WineSubCategory | BeerSubCategory | string;
+export type ProductSubCategory = WhiskeySubCategory | RumSubCategory | GinSubCategory | WineSubCategory | BeerSubCategory | BrandySubCategory | VermouthSubCategory | string;
 
 
 export interface Product {

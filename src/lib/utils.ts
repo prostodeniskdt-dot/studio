@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { InventorySessionStatus, ProductCategory, ProductSubCategory, WhiskeySubCategory, RumSubCategory, GinSubCategory, WineSubCategory, BeerSubCategory } from "./types";
+import type { InventorySessionStatus, ProductCategory, ProductSubCategory, BrandySubCategory, VermouthSubCategory } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -28,7 +28,7 @@ export function translateStatus(status: InventorySessionStatus): string {
     }
 }
 
-export const productCategories: ProductCategory[] = ['Whiskey', 'Rum', 'Vodka', 'Gin', 'Tequila', 'Liqueur', 'Wine', 'Beer', 'Syrup', 'Other'];
+export const productCategories: ProductCategory[] = ['Whiskey', 'Rum', 'Vodka', 'Gin', 'Tequila', 'Liqueur', 'Wine', 'Beer', 'Brandy', 'Vermouth', 'Absinthe', 'Bitters', 'Syrup', 'Other'];
 
 export const productSubCategories: Record<ProductCategory, ProductSubCategory[]> = {
     Whiskey: ['Scotch', 'Irish', 'Bourbon', 'Japanese', 'Other'],
@@ -36,10 +36,14 @@ export const productSubCategories: Record<ProductCategory, ProductSubCategory[]>
     Gin: ['London Dry', 'Old Tom', 'Plymouth', 'Other'],
     Wine: ['Red', 'White', 'Rose', 'Sparkling', 'Other'],
     Beer: ['Lager', 'Ale', 'Stout', 'IPA', 'Other'],
+    Brandy: ['Cognac', 'Armagnac', 'Calvados', 'Other'],
+    Vermouth: ['Dry', 'Sweet', 'Bianco', 'Other'],
     Vodka: [],
     Tequila: [],
     Liqueur: [],
     Syrup: [],
+    Absinthe: [],
+    Bitters: [],
     Other: []
 };
 
@@ -55,6 +59,10 @@ export function translateCategory(category: ProductCategory): string {
         case 'Wine': return 'Вино';
         case 'Beer': return 'Пиво';
         case 'Syrup': return 'Сироп';
+        case 'Brandy': return 'Бренди';
+        case 'Vermouth': return 'Вермут';
+        case 'Absinthe': return 'Абсент';
+        case 'Bitters': return 'Биттер';
         case 'Other': return 'Другое';
         default: return category;
     }
@@ -91,6 +99,16 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
         case 'Ale': return 'Эль';
         case 'Stout': return 'Стаут';
         case 'IPA': return 'IPA';
+
+        // Brandy
+        case 'Cognac': return 'Коньяк';
+        case 'Armagnac': return 'Арманьяк';
+        case 'Calvados': return 'Кальвадос';
+
+        // Vermouth
+        case 'Dry': return 'Сухой';
+        case 'Sweet': return 'Сладкий';
+        case 'Bianco': return 'Бьянко';
 
         case 'Other': return 'Другое';
         default: return subCategory;

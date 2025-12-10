@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
 import { Ruler, Weight, Send, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import type { Product, InventorySession } from '@/lib/types';
@@ -24,6 +24,11 @@ export default function UnifiedCalculatorPage() {
       [firestore, barId]
   );
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsQuery);
+
+  const productOptions: ComboboxOption[] = React.useMemo(() => 
+      products?.filter(p => p.isActive).map(p => ({ value: p.id, label: p.name })) ?? [],
+      [products]
+  );
 
   const [selectedProductId, setSelectedProductId] = React.useState<string | undefined>(undefined);
 
@@ -196,16 +201,14 @@ export default function UnifiedCalculatorPage() {
 
           <div className="space-y-2">
             <Label htmlFor="product-select">Выберите продукт (профиль бутылки)</Label>
-            <Select onValueChange={handleProductSelect} value={selectedProductId}>
-              <SelectTrigger id="product-select" disabled={isLoadingProducts || !products}>
-                <SelectValue placeholder={isLoadingProducts ? "Загрузка продуктов..." : "Выберите продукт из каталога..."} />
-              </SelectTrigger>
-              <SelectContent>
-                {products?.filter(p => p.isActive).map(p => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox 
+              options={productOptions}
+              value={selectedProductId}
+              onSelect={handleProductSelect}
+              placeholder={isLoadingProducts ? "Загрузка продуктов..." : "Выберите продукт из каталога..."}
+              searchPlaceholder='Поиск продукта...'
+              notFoundText='Продукт не найден.'
+            />
           </div>
 
           <Separator />

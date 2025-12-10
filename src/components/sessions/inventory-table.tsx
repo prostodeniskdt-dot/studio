@@ -127,7 +127,7 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                                     </TableRow>
                                 )}
                                 <CollapsibleContent asChild>
-                                    <React.Fragment>
+                                     <>
                                         {lines.map(line => (
                                         <TableRow key={line.id} className={cn(line.differenceVolume !== 0 && isEditable && 'bg-amber-500/10 hover:bg-amber-500/20')}>
                                             <TableCell className="font-medium pl-10">{line.product?.name}</TableCell>
@@ -168,7 +168,7 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                                             </TableCell>
                                         </TableRow>
                                         ))}
-                                    </React.Fragment>
+                                    </>
                                 </CollapsibleContent>
                             </TableBody>
                         </Collapsible>

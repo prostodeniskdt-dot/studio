@@ -37,6 +37,6 @@ export default function SuppliersPage() {
   }
 
   return (
-      <SuppliersTable suppliers={suppliers || []} barId={barId} />
+    <SuppliersTable suppliers={suppliers || []} barId={barId} />
   );
 }

@@ -87,6 +87,6 @@ export default function PurchaseOrdersPage() {
   }
 
   return (
-      <PurchaseOrdersTable orders={ordersWithDetails} barId={barId} suppliers={suppliers || []} />
+    <PurchaseOrdersTable orders={ordersWithDetails} barId={barId} suppliers={suppliers || []} />
   );
 }

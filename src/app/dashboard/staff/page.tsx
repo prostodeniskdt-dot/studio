@@ -75,16 +75,16 @@ export default function StaffPage() {
 
   return (
     <>
-        <div className="flex items-center justify-between py-4">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Персонал</h1>
-                <p className="text-muted-foreground">Управляйте командой вашего бара и их ролями.</p>
-            </div>
-            <Button onClick={() => setIsDialogOpen(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Пригласить сотрудника
-            </Button>
-        </div>
+      <div className="flex items-center justify-between py-4">
+          <div>
+              <h1 className="text-3xl font-bold tracking-tight">Персонал</h1>
+              <p className="text-muted-foreground">Управляйте командой вашего бара и их ролями.</p>
+          </div>
+          <Button onClick={() => setIsDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Пригласить сотрудника
+          </Button>
+      </div>
       <StaffTable staff={staffWithProfiles} barId={barId} />
       <AddStaffDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} barId={barId} />
     </>

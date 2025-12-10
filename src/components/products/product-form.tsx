@@ -297,10 +297,11 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             name="bottleHeightCm"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Высота бутылки (см)</FormLabel>
+                <FormLabel>Высота бутылки (см) - для рейки</FormLabel>
                 <FormControl>
                     <Input type="number" step="0.1" {...field} placeholder="30"/>
                 </FormControl>
+                 <FormDescription>Этот параметр нужен для приблизительного расчета по высоте жидкости.</FormDescription>
                 <FormMessage />
                 </FormItem>
             )}

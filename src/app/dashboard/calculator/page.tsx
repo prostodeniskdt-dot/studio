@@ -47,7 +47,6 @@ export default function UnifiedCalculatorPage() {
 
   const [selectedProductId, setSelectedProductId] = React.useState<string | undefined>(undefined);
 
-  const [bottleHeight, setBottleHeight] = React.useState('');
   const [bottleVolume, setBottleVolume] = React.useState('');
   const [liquidHeight, setLiquidHeight] = React.useState('');
   const [calculatedVolumeByHeight, setCalculatedVolumeByHeight] = React.useState<number | null>(null);
@@ -66,7 +65,6 @@ export default function UnifiedCalculatorPage() {
         setBottleVolume(product.bottleVolumeMl?.toString() ?? '');
         setFullWeight(product.fullBottleWeightG?.toString() ?? '');
         setEmptyWeight(product.emptyBottleWeightG?.toString() ?? '');
-        setBottleHeight(product.bottleHeightCm?.toString() ?? '');
         setCalculatedVolumeByHeight(null);
         setCalculatedVolumeByWeight(null);
     }
@@ -77,19 +75,23 @@ export default function UnifiedCalculatorPage() {
     setCalculatedVolumeByHeight(null);
     setCalculatedVolumeByWeight(null);
 
-    // Height calculation
-    const bh = parseFloat(bottleHeight);
+    // Height calculation - simplified
     const bv = parseFloat(bottleVolume);
     const lh = parseFloat(liquidHeight);
 
-    if (bh > 0 && bv > 0 && lh >= 0) {
-      if (lh > bh) {
-        setCalculatedVolumeByHeight(bv); 
-      } else {
-        const volume = (lh / bh) * bv;
-        setCalculatedVolumeByHeight(Math.round(volume));
-      }
+    if (bv > 0 && lh >= 0 && products) {
+        const product = products.find(p => p.id === selectedProductId);
+        const bottleHeight = product?.bottleHeightCm;
+        if(bottleHeight && bottleHeight > 0) {
+            if (lh > bottleHeight) {
+                setCalculatedVolumeByHeight(bv); 
+            } else {
+                const volume = (lh / bottleHeight) * bv;
+                setCalculatedVolumeByHeight(Math.round(volume));
+            }
+        }
     }
+
 
     // Weight calculation
     const fw = parseFloat(fullWeight);
@@ -231,16 +233,10 @@ export default function UnifiedCalculatorPage() {
           <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Параметры и замеры</h3>
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="bottleVolume">Номинальный объем (мл)</Label>
-                        <Input id="bottleVolume" type="number" value={bottleVolume} onChange={(e) => setBottleVolume(e.target.value)} placeholder="700" />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="bottleHeight">Высота бутылки (см)</Label>
-                        <Input id="bottleHeight" type="number" value={bottleHeight} onChange={(e) => setBottleHeight(e.target.value)} placeholder="30" />
-                    </div>
+                <h3 className="text-lg font-semibold">Параметры бутылки</h3>
+                <div className="space-y-2">
+                    <Label htmlFor="bottleVolume">Номинальный объем (мл)</Label>
+                    <Input id="bottleVolume" type="number" value={bottleVolume} onChange={(e) => setBottleVolume(e.target.value)} placeholder="700" />
                 </div>
                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">

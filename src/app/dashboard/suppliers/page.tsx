@@ -37,8 +37,6 @@ export default function SuppliersPage() {
   }
 
   return (
-    <div className="w-full">
       <SuppliersTable suppliers={suppliers || []} barId={barId} />
-    </div>
   );
 }

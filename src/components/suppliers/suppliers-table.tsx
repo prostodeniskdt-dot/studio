@@ -139,6 +139,7 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
 
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+      <div className="w-full">
         <div className="flex items-center justify-between py-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Поставщики</h1>
@@ -187,6 +188,7 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
             </TableBody>
           </Table>
         </div>
+      </div>
       <SheetContent>
         <SheetHeader>
           <SheetTitle>{editingSupplier ? 'Редактировать поставщика' : 'Добавить поставщика'}</SheetTitle>

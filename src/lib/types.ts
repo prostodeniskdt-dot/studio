@@ -89,3 +89,10 @@ export interface Bar {
   location: string;
   ownerUserId: string;
 }
+
+export interface BarMember {
+    userId: string;
+    role: 'manager' | 'bartender';
+    // for UI
+    userProfile?: UserProfile;
+}

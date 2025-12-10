@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { InventorySessionStatus, ProductCategory, ProductSubCategory, BrandySubCategory, VermouthSubCategory } from "./types";
+import type { InventorySessionStatus, ProductCategory, ProductSubCategory, BrandySubCategory, VermouthSubCategory, UserRole } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -25,6 +25,19 @@ export function translateStatus(status: InventorySessionStatus): string {
             return 'Черновик';
         default:
             return status;
+    }
+}
+
+export function translateRole(role: UserRole): string {
+    switch (role) {
+        case 'admin':
+            return 'Администратор';
+        case 'manager':
+            return 'Менеджер';
+        case 'bartender':
+            return 'Бармен';
+        default:
+            return role;
     }
 }
 

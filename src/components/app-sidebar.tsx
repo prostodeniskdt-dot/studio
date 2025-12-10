@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, BarChart3, Settings, Calculator, LineChart } from 'lucide-react';
+import { Home, Package, BarChart3, Settings, Calculator, LineChart, Users } from 'lucide-react';
 import {
   SidebarHeader,
   Sidebar,
@@ -20,6 +20,7 @@ const menuItems = [
   { href: '/dashboard/sessions', label: 'Сессии', icon: BarChart3 },
   { href: '/dashboard/analytics', label: 'Аналитика', icon: LineChart },
   { href: '/dashboard/calculator', label: 'Калькулятор', icon: Calculator },
+  { href: '/dashboard/staff', label: 'Персонал', icon: Users },
 ];
 
 export function AppSidebar() {

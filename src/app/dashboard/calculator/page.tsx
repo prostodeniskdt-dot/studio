@@ -21,8 +21,8 @@ export default function UnifiedCalculatorPage() {
   const barId = user ? `bar_${user.uid}` : null;
 
   const productsQuery = useMemoFirebase(() => 
-      firestore && barId ? query(collection(firestore, 'bars', barId, 'products'), where('isActive', '==', true)) : null,
-      [firestore, barId]
+      firestore ? query(collection(firestore, 'products'), where('isActive', '==', true)) : null,
+      [firestore]
   );
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsQuery);
 

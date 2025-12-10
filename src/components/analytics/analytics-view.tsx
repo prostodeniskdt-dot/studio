@@ -8,9 +8,13 @@ import { VarianceTrendChart } from '@/components/analytics/variance-trend-chart'
 
 export function AnalyticsView({ data }: { data: SessionWithLines[] }) {
     return (
-        <>
-            <h1 className="text-3xl font-bold tracking-tight mb-2">Аналитика</h1>
-            <p className="text-muted-foreground mb-6">Анализируйте данные по инвентаризациям для принятия лучших решений.</p>
+        <div className="w-full">
+            <div className="flex items-center justify-between py-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Аналитика</h1>
+                    <p className="text-muted-foreground">Анализируйте данные по инвентаризациям для принятия лучших решений.</p>
+                </div>
+            </div>
 
             <div className="grid gap-6">
                 <Card>
@@ -23,6 +27,6 @@ export function AnalyticsView({ data }: { data: SessionWithLines[] }) {
                 </CardContent>
                 </Card>
             </div>
-        </>
+        </div>
     )
 }

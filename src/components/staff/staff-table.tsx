@@ -51,7 +51,7 @@ interface StaffTableProps {
 export function StaffTable({ staff, barId }: StaffTableProps) {
   const { toast } = useToast();
   const [memberToDelete, setMemberToDelete] = React.useState<BarMember | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
 
   const handleDeleteClick = (member: BarMember) => {
     setMemberToDelete(member);
@@ -155,14 +155,13 @@ export function StaffTable({ staff, barId }: StaffTableProps) {
   });
 
   return (
-    <>
-      <div className="w-full">
+    <div className="w-full">
         <div className="flex items-center justify-between py-4">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Персонал</h1>
                 <p className="text-muted-foreground">Управляйте командой вашего бара и их ролями.</p>
             </div>
-            <Button onClick={() => setIsDialogOpen(true)}>
+            <Button onClick={() => setIsAddDialogOpen(true)}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Пригласить сотрудника
             </Button>
@@ -217,8 +216,7 @@ export function StaffTable({ staff, barId }: StaffTableProps) {
             </TableBody>
             </Table>
         </div>
-      </div>
-      <AddStaffDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} barId={barId} />
+      <AddStaffDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} barId={barId} />
       <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
           <AlertDialogContent>
               <AlertDialogHeader>
@@ -233,6 +231,6 @@ export function StaffTable({ staff, barId }: StaffTableProps) {
               </AlertDialogFooter>
           </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }

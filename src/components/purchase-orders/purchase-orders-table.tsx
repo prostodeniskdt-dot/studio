@@ -233,7 +233,7 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
           </SheetHeader>
           <PurchaseOrderForm barId={barId} suppliers={suppliers} order={editingOrder} onFormSubmit={handleCloseSheet} />
         </SheetContent>
-        <AlertDialog open={!!orderToDelete} onOpenChange={(open) => !open && setOrderToDelete(null)}>
+      <AlertDialog open={!!orderToDelete} onOpenChange={(open) => !open && setOrderToDelete(null)}>
           <AlertDialogContent>
               <AlertDialogHeader>
                   <AlertDialogTitle>Вы уверены?</AlertDialogTitle>

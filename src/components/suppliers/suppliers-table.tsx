@@ -138,65 +138,63 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
   });
 
   return (
-    <>
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <div className="w-full">
-          <div className="flex items-center justify-between py-4">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Поставщики</h1>
-              <p className="text-muted-foreground">Управляйте списком ваших поставщиков.</p>
-            </div>
-            <SheetTrigger asChild>
-              <Button onClick={() => handleOpenSheet()}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Добавить поставщика
-              </Button>
-            </SheetTrigger>
+    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+      <div className="w-full">
+        <div className="flex items-center justify-between py-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Поставщики</h1>
+            <p className="text-muted-foreground">Управляйте списком ваших поставщиков.</p>
           </div>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
-                      </TableHead>
+          <SheetTrigger asChild>
+            <Button onClick={() => handleOpenSheet()}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Добавить поставщика
+            </Button>
+          </SheetTrigger>
+        </div>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
                     ))}
                   </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center">
-                      Вы еще не добавили ни одного поставщика.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    Вы еще не добавили ни одного поставщика.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>{editingSupplier ? 'Редактировать поставщика' : 'Добавить поставщика'}</SheetTitle>
-          </SheetHeader>
-          <SupplierForm barId={barId} supplier={editingSupplier} onFormSubmit={handleCloseSheet} />
-        </SheetContent>
-      </Sheet>
+      </div>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>{editingSupplier ? 'Редактировать поставщика' : 'Добавить поставщика'}</SheetTitle>
+        </SheetHeader>
+        <SupplierForm barId={barId} supplier={editingSupplier} onFormSubmit={handleCloseSheet} />
+      </SheetContent>
       <AlertDialog open={!!supplierToDelete} onOpenChange={(open) => !open && setSupplierToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
@@ -211,6 +209,6 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
-    </>
+    </Sheet>
   );
 }

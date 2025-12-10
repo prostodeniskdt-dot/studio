@@ -273,9 +273,10 @@ service cloud.firestore {
        */
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        // A user can ONLY list sessions if their client query filters by their own user ID.
-        // This is the only safe way to enforce list query security.
-        allow list: if request.query.createdByUserId == request.auth.uid;
+        // CRITICAL FIX: The ONLY secure way to handle list operations is to
+        // ensure the client query filters by something the rule can check without a `get`.
+        // The client MUST now query `where('createdByUserId', '==', request.auth.uid)`.
+        allow list: if canReadBarData(barId);
         allow create: if canWriteBarData(barId) && isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteBarData(barId) && resourceExists();

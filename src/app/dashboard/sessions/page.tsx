@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, serverTimestamp, query, orderBy, addDoc, where, getDocs } from 'firebase/firestore';
+import { collection, serverTimestamp, query, addDoc } from 'firebase/firestore';
 
 
 export default function SessionsPage() {
@@ -20,19 +20,19 @@ export default function SessionsPage() {
   const barId = user ? `bar_${user.uid}` : null; 
 
   const sessionsQuery = useMemoFirebase(() => 
-    firestore && barId && user ? query(
-        collection(firestore, 'bars', barId, 'inventorySessions'),
-        where('createdByUserId', '==', user.uid)
-    ) : null,
-    [firestore, barId, user]
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions')) : null,
+    [firestore, barId]
   );
   
   const { data: sessions, isLoading: isLoadingSessions, error: sessionsError } = useCollection<InventorySession>(sessionsQuery);
 
   const sortedSessions = React.useMemo(() => {
-    if (!sessions) return [];
-    return [...sessions].sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
-  }, [sessions]);
+    if (!sessions || !user) return [];
+    // Filter and sort on the client side
+    return sessions
+        .filter(s => s.createdByUserId === user.uid)
+        .sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
+  }, [sessions, user]);
 
 
   const handleCreateSession = async () => {
@@ -46,7 +46,7 @@ export default function SessionsPage() {
     }
     
     // Check for existing in-progress session on the client
-    const inProgressSession = sessions?.find(s => s.status === 'in_progress');
+    const inProgressSession = sessions?.find(s => s.status === 'in_progress' && s.createdByUserId === user.uid);
     if (inProgressSession) {
         toast({
             title: "Активная сессия уже существует",

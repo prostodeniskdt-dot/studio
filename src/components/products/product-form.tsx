@@ -386,10 +386,11 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             </FormItem>
           )}
         />
-        <Button type="submit">Сохранить продукт</Button>
+        <Button type="submit" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Сохранить продукт
+        </Button>
       </form>
     </Form>
   );
 }
-
-    

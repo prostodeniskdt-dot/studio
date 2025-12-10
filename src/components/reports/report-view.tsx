@@ -323,5 +323,3 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
     </div>
   );
 }
-
-    

@@ -129,7 +129,7 @@ export function PurchaseOrderForm({ barId, order, suppliers, onFormSubmit }: Pur
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Поставщик</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!!order}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Выберите поставщика" />

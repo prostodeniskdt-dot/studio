@@ -136,7 +136,5 @@ export interface PurchaseOrderLine {
     product?: Product;
     quantity: number;
     costPerItem: number;
-    receivedQuantity?: number;
+    receivedQuantity: number;
 }
-
-    

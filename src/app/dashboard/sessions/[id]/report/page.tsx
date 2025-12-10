@@ -98,6 +98,7 @@ export default function SessionReportPage() {
             productsForOrder.forEach(product => {
                 const lineRef = doc(collection(orderRef, 'lines'));
                 const newLine = {
+                    id: lineRef.id,
                     purchaseOrderId: orderRef.id,
                     productId: product.id,
                     quantity: product.reorderQuantity || 1,
@@ -188,5 +189,3 @@ export default function SessionReportPage() {
     </div>
   );
 }
-
-    

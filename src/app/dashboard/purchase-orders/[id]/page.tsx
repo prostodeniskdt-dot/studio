@@ -95,7 +95,7 @@ export default function PurchaseOrderPage() {
                         products={allProducts || []}
                         barId={barId!}
                         orderId={order.id}
-                        isEditable={order.status === 'draft'}
+                        isEditable={order.status === 'draft' || order.status === 'ordered' || order.status === 'partially_received'}
                     />
                 </CardContent>
             </Card>

@@ -178,9 +178,11 @@ export async function deletePurchaseOrder(barId: string, orderId: string): Promi
         const linesSnapshot = await orderRef.collection('lines').get();
         const batch = db.batch();
         linesSnapshot.docs.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
         
-        await orderRef.delete();
+        // After deleting lines, delete the order itself
+        batch.delete(orderRef);
+        
+        await batch.commit();
         
         return { success: true };
     } catch (error) {
@@ -188,5 +190,3 @@ export async function deletePurchaseOrder(barId: string, orderId: string): Promi
         return { success: false, error: 'Произошла ошибка на сервере при удалении заказа.' };
     }
 }
-
-    

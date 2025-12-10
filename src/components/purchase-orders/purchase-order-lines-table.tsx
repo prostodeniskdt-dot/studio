@@ -39,13 +39,13 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
     setLocalLines(lines);
   }, [lines]);
 
-  const handleLineChange = (lineId: string, field: 'quantity' | 'costPerItem', value: string) => {
+  const handleLineChange = (lineId: string, field: 'quantity' | 'costPerItem' | 'receivedQuantity', value: string) => {
     const numValue = parseFloat(value);
-    if (isNaN(numValue)) return;
+    if (isNaN(numValue) && value !== '') return;
 
     setLocalLines(prev =>
       prev.map(line =>
-        line.id === lineId ? { ...line, [field]: numValue } : line
+        line.id === lineId ? { ...line, [field]: value === '' ? 0 : numValue } : line
       )
     );
   };
@@ -58,6 +58,7 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
       batch.update(lineRef, {
         quantity: line.quantity,
         costPerItem: line.costPerItem,
+        receivedQuantity: line.receivedQuantity || 0
       });
     });
     try {
@@ -96,13 +97,16 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
 
     try {
       const linesCollection = collection(firestore, 'bars', barId, 'purchaseOrders', orderId, 'lines');
-      await addDoc(linesCollection, {
+      const newLineRef = doc(linesCollection);
+      const newLineData = {
+        id: newLineRef.id,
         purchaseOrderId: orderId,
         productId: productId,
         quantity: 1,
         costPerItem: product.costPerBottle,
         receivedQuantity: 0,
-      });
+      };
+      await addDoc(linesCollection, newLineData);
       // Firestore listener will update the list
       toast({ title: 'Продукт добавлен в заказ' });
     } catch (error) {
@@ -151,6 +155,7 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
                 <TableHead className="w-[40%]">Продукт</TableHead>
                 <TableHead className="text-right">Кол-во (бут.)</TableHead>
                 <TableHead className="text-right">Цена за шт.</TableHead>
+                <TableHead className="text-right">Получено</TableHead>
                 <TableHead className="text-right">Сумма</TableHead>
                 {isEditable && <TableHead className="w-[50px]"></TableHead>}
             </TableRow>
@@ -190,6 +195,15 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
                             />
                         ) : formatCurrency(line.costPerItem)}
                     </TableCell>
+                    <TableCell className="text-right">
+                         <Input
+                            type="number"
+                            value={line.receivedQuantity || ''}
+                            onChange={e => handleLineChange(line.id, 'receivedQuantity', e.target.value)}
+                            className="w-20 ml-auto text-right"
+                            placeholder="0"
+                        />
+                    </TableCell>
                     <TableCell className="text-right font-medium">
                         {formatCurrency(line.quantity * line.costPerItem)}
                     </TableCell>
@@ -204,7 +218,7 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
                 ))
             ) : (
                 <TableRow>
-                    <TableCell colSpan={isEditable ? 5: 4} className="h-24 text-center">
+                    <TableCell colSpan={isEditable ? 6 : 5} className="h-24 text-center">
                         В этом заказе пока нет позиций.
                     </TableCell>
                 </TableRow>
@@ -212,15 +226,16 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
             </TableBody>
             <TableFooter>
                 <TableRow>
-                    <TableCell colSpan={3} className="text-right text-lg font-bold">Итого</TableCell>
+                    <TableCell colSpan={4} className="text-right text-lg font-bold">Итого</TableCell>
                     <TableCell className="text-right text-lg font-bold">{formatCurrency(totalAmount)}</TableCell>
                     {isEditable && <TableCell></TableCell>}
                 </TableRow>
             </TableFooter>
         </Table>
         </div>
-        {isEditable && (
-            <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4">
+            {isEditable && (
+                <>
                 {isAdding ? (
                     <Combobox
                         options={groupedProductOptions}
@@ -236,9 +251,10 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
                         Добавить продукт
                     </Button>
                 )}
-                 <Button onClick={handleSaveLines} disabled={JSON.stringify(localLines) === JSON.stringify(lines)}>Сохранить изменения</Button>
-            </div>
-        )}
+                </>
+            )}
+            <Button onClick={handleSaveLines} disabled={JSON.stringify(localLines) === JSON.stringify(lines)}>Сохранить изменения</Button>
+        </div>
     </div>
   );
 }

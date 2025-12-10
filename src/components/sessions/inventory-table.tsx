@@ -115,7 +115,7 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                     </TableRow>
                     {Object.entries(subCategories).map(([subCategory, lines]) => (
                          <Collapsible asChild key={subCategory} defaultOpen>
-                            <TableBody>
+                            <>
                                 {subCategory !== 'uncategorized' && (
                                     <TableRow className="bg-muted/10 hover:bg-muted/20">
                                          <TableCell colSpan={9} className="py-2">
@@ -170,7 +170,7 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                                         ))}
                                     </>
                                 </CollapsibleContent>
-                            </TableBody>
+                            </>
                         </Collapsible>
                     ))}
                  </TableBody>

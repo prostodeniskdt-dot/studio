@@ -89,7 +89,7 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
 
   return (
     <>
-      <div className="rounded-md border mt-6">
+      <div className="rounded-md border mt-6 overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

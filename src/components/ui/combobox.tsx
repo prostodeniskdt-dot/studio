@@ -11,7 +11,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
-  CommandList
+  CommandList,
 } from "@/components/ui/command"
 import {
   Popover,
@@ -22,7 +22,6 @@ import {
 export type ComboboxOption = {
     value: string;
     label: string;
-    category?: string; // Optional category for grouping
 }
 
 export type GroupedComboboxOption = {
@@ -31,7 +30,7 @@ export type GroupedComboboxOption = {
 }
 
 interface ComboboxProps {
-    options: ComboboxOption[] | GroupedComboboxOption[];
+    options: GroupedComboboxOption[];
     value?: string;
     onSelect: (value: string) => void;
     placeholder?: string;
@@ -39,11 +38,6 @@ interface ComboboxProps {
     notFoundText?: string;
     triggerClassName?: string;
 }
-
-const isGrouped = (options: any[]): options is GroupedComboboxOption[] => {
-  return options.length > 0 && 'options' in options[0] && 'label' in options[0];
-}
-
 
 export function Combobox({ 
     options,
@@ -58,70 +52,14 @@ export function Combobox({
 
   const getSelectedLabel = () => {
     if (!value) return placeholder;
-    if (isGrouped(options)) {
-        for (const group of options) {
-            const found = group.options.find(option => option.value === value);
-            if (found) return found.label;
-        }
-    } else {
-        const found = (options as ComboboxOption[]).find(option => option.value === value);
+    for (const group of options) {
+        const found = group.options.find(option => option.value === value);
         if (found) return found.label;
     }
     return placeholder;
   };
   
   const selectedLabel = getSelectedLabel();
-
-  const renderOptions = () => {
-    if (isGrouped(options)) {
-      return options.map((group) => (
-        <CommandGroup key={group.label} heading={group.label}>
-          {group.options.map((option) => (
-            <CommandItem
-              key={option.value}
-              value={option.label}
-              onSelect={() => {
-                onSelect(option.value === value ? "" : option.value)
-                setOpen(false)
-              }}
-            >
-              <Check
-                className={cn(
-                  "mr-2 h-4 w-4",
-                  value === option.value ? "opacity-100" : "opacity-0"
-                )}
-              />
-              {option.label}
-            </CommandItem>
-          ))}
-        </CommandGroup>
-      ));
-    }
-
-    return (
-      <CommandGroup>
-        {(options as ComboboxOption[]).map((option) => (
-          <CommandItem
-            key={option.value}
-            value={option.label}
-            onSelect={() => {
-              onSelect(option.value === value ? "" : option.value)
-              setOpen(false)
-            }}
-          >
-            <Check
-              className={cn(
-                "mr-2 h-4 w-4",
-                value === option.value ? "opacity-100" : "opacity-0"
-              )}
-            />
-            {option.label}
-          </CommandItem>
-        ))}
-      </CommandGroup>
-    );
-  };
-
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -143,7 +81,29 @@ export function Combobox({
           <CommandInput placeholder={searchPlaceholder} />
           <CommandList>
             <CommandEmpty>{notFoundText}</CommandEmpty>
-            {renderOptions()}
+            {options.map((group) => (
+              <CommandGroup key={group.label} heading={group.label}>
+                {group.options.map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    value={option.label} // Value for searching
+                    onSelect={(currentValue) => { // currentValue is the label
+                      // Find the option by label and get its value
+                      onSelect(option.value === value ? "" : option.value)
+                      setOpen(false)
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === option.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {option.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ))}
           </CommandList>
         </Command>
       </PopoverContent>

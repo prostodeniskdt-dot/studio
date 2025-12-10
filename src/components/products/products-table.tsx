@@ -84,6 +84,8 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
   }
 
   const groupedProductOptions = React.useMemo<GroupedComboboxOption[]>(() => {
+    if (!products) return [];
+
     const groups: Record<string, { value: string; label: string }[]> = {};
     
     products.forEach(p => {
@@ -237,16 +239,6 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
       rowSelection,
     },
   });
-  
-  React.useEffect(() => {
-    // This effect synchronizes the external filter value with the table's internal filter state.
-    const currentFilter = table.getColumn('name')?.getFilterValue();
-    const externalFilter = (columnFilters.find(f => f.id === 'name') as {value: string} | undefined)?.value
-    
-    if (externalFilter && currentFilter !== externalFilter) {
-      table.getColumn('name')?.setFilterValue(externalFilter);
-    }
-  }, [columnFilters, table]);
 
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -260,9 +252,10 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
                 <Combobox 
                   options={groupedProductOptions}
                   onSelect={(value) => {
-                    table.getColumn('name')?.setFilterValue(value ? products.find(p=>p.id === value)?.name : undefined);
+                    // Filter by ID, not by name
+                    table.getColumn('id')?.setFilterValue(value || undefined);
                   }}
-                  value={products.find(p=>p.name === table.getColumn('name')?.getFilterValue())?.id}
+                  value={table.getColumn('id')?.getFilterValue() as string}
                   placeholder="Поиск по названию..."
                   searchPlaceholder="Введите название продукта..."
                   notFoundText="Продукт не найден."

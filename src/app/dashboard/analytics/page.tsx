@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { InventorySession, InventoryLine } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
@@ -13,47 +13,47 @@ export default function AnalyticsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const barId = user ? `bar_${user.uid}` : null;
-  const [data, setData] = React.useState<SessionWithLines[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  
+  const sessionsQuery = useMemoFirebase(() =>
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions'), where('status', '==', 'completed')) : null,
+    [firestore, barId]
+  );
+  const { data: sessions, isLoading: isLoadingSessions } = useCollection<InventorySession>(sessionsQuery);
+
+  const [sessionsWithLines, setSessionsWithLines] = React.useState<SessionWithLines[]>([]);
+  const [isLoadingLines, setIsLoadingLines] = React.useState(true);
 
   React.useEffect(() => {
-    if (!firestore || !barId) {
-      setIsLoading(false);
+    if (!firestore || !barId || !sessions) {
+      if(!isLoadingSessions) setIsLoadingLines(false);
       return;
     }
 
-    const fetchData = async () => {
-      setIsLoading(true);
+    setIsLoadingLines(true);
+    const fetchLinesForSessions = async () => {
       try {
-        const sessionsQuery = query(
-          collection(firestore, 'bars', barId, 'inventorySessions'),
-          where('status', '==', 'completed')
+        const populatedSessions = await Promise.all(
+          sessions.map(async (session) => {
+            const linesQuery = collection(firestore, 'bars', barId, 'inventorySessions', session.id, 'lines');
+            const linesSnapshot = await getDocs(linesQuery);
+            const linesData = linesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as InventoryLine[];
+            return { ...session, lines: linesData };
+          })
         );
-        const sessionsSnapshot = await getDocs(sessionsQuery);
-        const sessionsData = sessionsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as InventorySession[];
         
-        const sessionsWithLines: SessionWithLines[] = [];
-
-        for (const session of sessionsData) {
-          const linesQuery = collection(firestore, 'bars', barId, 'inventorySessions', session.id, 'lines');
-          const linesSnapshot = await getDocs(linesQuery);
-          const linesData = linesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as InventoryLine[];
-          sessionsWithLines.push({ ...session, lines: linesData });
-        }
-        
-        // Sort by closed date, oldest first
-        sessionsWithLines.sort((a, b) => (a.closedAt?.toMillis() ?? 0) - (b.closedAt?.toMillis() ?? 0));
-
-        setData(sessionsWithLines);
+        populatedSessions.sort((a, b) => (a.closedAt?.toMillis() ?? 0) - (b.closedAt?.toMillis() ?? 0));
+        setSessionsWithLines(populatedSessions);
       } catch (error) {
-        console.error("Error fetching analytics data: ", error);
+        console.error("Error fetching lines for sessions:", error);
       } finally {
-        setIsLoading(false);
+        setIsLoadingLines(false);
       }
     };
 
-    fetchData();
-  }, [firestore, barId]);
+    fetchLinesForSessions();
+  }, [firestore, barId, sessions, isLoadingSessions]);
+
+  const isLoading = isLoadingSessions || isLoadingLines;
 
   if (isLoading) {
     return (
@@ -64,6 +64,6 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <AnalyticsView data={data} />
+    <AnalyticsView data={sessionsWithLines} />
   );
 }

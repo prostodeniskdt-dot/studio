@@ -273,7 +273,7 @@ service cloud.firestore {
        */
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        // A user can only list sessions they created.
+        // User can only list sessions they created OR if they are an admin.
         allow list: if (request.query.createdByUserId == request.auth.uid) || isAdmin();
         allow create: if canWriteBarData(barId) && isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();

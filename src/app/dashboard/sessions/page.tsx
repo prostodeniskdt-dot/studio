@@ -22,13 +22,17 @@ export default function SessionsPage() {
   const sessionsQuery = useMemoFirebase(() => 
     firestore && barId && user ? query(
         collection(firestore, 'bars', barId, 'inventorySessions'),
-        where('createdByUserId', '==', user.uid), 
-        orderBy('createdAt', 'desc')
+        where('createdByUserId', '==', user.uid)
     ) : null,
     [firestore, barId, user]
   );
   
   const { data: sessions, isLoading: isLoadingSessions, error: sessionsError } = useCollection<InventorySession>(sessionsQuery);
+
+  const sortedSessions = React.useMemo(() => {
+    if (!sessions) return [];
+    return [...sessions].sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
+  }, [sessions]);
 
 
   const handleCreateSession = async () => {
@@ -101,7 +105,7 @@ export default function SessionsPage() {
             <p className="text-xs">{sessionsError?.message || 'Возможно, у вас нет прав на просмотр или данные еще не созданы.'}</p>
          </div>
       ) : (
-        <SessionsList sessions={sessions || []} barId={barId} />
+        <SessionsList sessions={sortedSessions || []} barId={barId} />
       )}
     </div>
   );

@@ -24,8 +24,7 @@ export default function DashboardPage() {
   const sessionsQuery = useMemoFirebase(() => 
     firestore && barId && user ? query(
         collection(firestore, 'bars', barId, 'inventorySessions'), 
-        where('createdByUserId', '==', user.uid),
-        orderBy('createdAt', 'desc')
+        where('createdByUserId', '==', user.uid)
     ) : null,
     [firestore, barId, user]
   );
@@ -34,8 +33,9 @@ export default function DashboardPage() {
   
   const activeSessions = React.useMemo(() => {
     if (!sessions) return [];
-    // This filtering is now done on the client side
-    return sessions.filter(s => s.status === 'in_progress' || s.status === 'draft');
+    // Sort and filter on the client side
+    const sortedSessions = [...sessions].sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
+    return sortedSessions.filter(s => s.status === 'in_progress' || s.status === 'draft');
   }, [sessions]);
 
 

@@ -10,20 +10,21 @@ import Link from 'next/link';
 import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, serverTimestamp, query, orderBy, addDoc, where, getDocs } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
+import { createInventorySession } from '@/lib/actions';
 
 
 export default function DashboardPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();
-  const firestore = useFirestore();
+  const [isCreating, setIsCreating] = React.useState(false);
 
   const barId = user ? `bar_${user.uid}` : null; 
 
   const sessionsQuery = useMemoFirebase(() => 
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions')) : null,
-    [firestore, barId]
+    user?.uid && barId ? query(collection(user.firestore, 'bars', barId, 'inventorySessions')) : null,
+    [user, barId]
   );
   
   const { data: sessions, isLoading: isLoadingSessions, error: sessionsError } = useCollection<InventorySession>(sessionsQuery);
@@ -38,7 +39,7 @@ export default function DashboardPage() {
 
 
   const handleCreateSession = async () => {
-    if (!user || !barId || !firestore) {
+    if (!user || !barId) {
       toast({
         variant: "destructive",
         title: "Ошибка",
@@ -47,42 +48,34 @@ export default function DashboardPage() {
       return;
     }
     
-    // Client-side check for existing in-progress session
-    const inProgressSession = sessions?.find(s => s.status === 'in_progress');
-    if (inProgressSession) {
-        toast({
+    setIsCreating(true);
+    try {
+      const result = await createInventorySession(barId, user.uid);
+
+      if (result.success) {
+        if (result.isNew) {
+          toast({
+            title: "Сессия создана",
+            description: "Новая сессия инвентаризации была успешно создана.",
+          });
+        } else {
+          toast({
             title: "Активная сессия уже существует",
             description: "Вы будете перенаправлены на существующую сессию.",
-            action: <Button onClick={() => router.push(`/dashboard/sessions/${inProgressSession.id}`)}>Перейти</Button>
-        });
-        router.push(`/dashboard/sessions/${inProgressSession.id}`);
-        return;
-    }
-
-
-    const newSessionData = {
-        barId: barId,
-        name: `Инвентаризация от ${new Date().toLocaleDateString('ru-RU')}`,
-        status: 'in_progress' as const,
-        createdByUserId: user.uid,
-        createdAt: serverTimestamp(),
-        closedAt: null,
-    };
-    
-    try {
-      const sessionDocRef = await addDoc(collection(firestore, 'bars', barId, 'inventorySessions'), newSessionData);
-      
-      toast({
-          title: "Сессия создана",
-          description: `Новая сессия "${newSessionData.name}" была успешно создана.`,
-      });
-      router.push(`/dashboard/sessions/${sessionDocRef.id}`);
+          });
+        }
+        router.push(`/dashboard/sessions/${result.sessionId}`);
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error: any) {
        toast({
           variant: "destructive",
           title: "Ошибка создания сессии",
-          description: "Не удалось создать новую сессию. Попробуйте снова.",
+          description: error.message || "Не удалось создать новую сессию. Попробуйте снова.",
       });
+    } finally {
+        setIsCreating(false);
     }
   };
 
@@ -134,8 +127,8 @@ export default function DashboardPage() {
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Активные сессии</h1>
-        <Button onClick={handleCreateSession} disabled={isLoading || hasDataLoadingError || !barId}>
-          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+        <Button onClick={handleCreateSession} disabled={isLoading || isCreating || hasDataLoadingError || !barId}>
+          {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
           Начать
         </Button>
       </div>

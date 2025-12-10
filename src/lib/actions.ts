@@ -62,6 +62,42 @@ export async function runVarianceAnalysis(line: InventoryLine & { product?: Prod
   }
 }
 
+export async function createInventorySession(barId: string, userId: string): Promise<{ success: boolean; sessionId: string; isNew: boolean; error?: string }> {
+  try {
+    const { db } = initializeAdminApp();
+    const sessionsCollection = db.collection('bars').doc(barId).collection('inventorySessions');
+
+    // Check for existing in-progress session
+    const inProgressQuery = sessionsCollection.where('status', '==', 'in_progress').limit(1);
+    const inProgressSnapshot = await inProgressQuery.get();
+
+    if (!inProgressSnapshot.empty) {
+      const existingSessionId = inProgressSnapshot.docs[0].id;
+      return { success: true, sessionId: existingSessionId, isNew: false };
+    }
+
+    // Create a new session
+    const newSessionRef = sessionsCollection.doc();
+    const newSessionData = {
+        id: newSessionRef.id,
+        barId: barId,
+        name: `Инвентаризация от ${new Date().toLocaleDateString('ru-RU')}`,
+        status: 'in_progress' as const,
+        createdByUserId: userId,
+        createdAt: FieldValue.serverTimestamp(),
+        closedAt: null,
+    };
+    
+    await newSessionRef.set(newSessionData);
+    
+    return { success: true, sessionId: newSessionRef.id, isNew: true };
+  } catch (error) {
+    console.error("Error in createInventorySession server action:", error);
+    return { success: false, sessionId: '', isNew: false, error: 'Произошла ошибка на сервере при создании сессии.' };
+  }
+}
+
+
 // Server action to add a staff member
 export async function addStaffMember(barId: string, email: string, role: 'manager' | 'bartender'): Promise<{ success: boolean; error?: string }> {
   try {

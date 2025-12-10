@@ -8,13 +8,15 @@ import { useRouter } from 'next/navigation';
 import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, serverTimestamp, query, addDoc } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
+import { createInventorySession } from '@/lib/actions';
 
 
 export default function SessionsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();
+  const [isCreating, setIsCreating] = React.useState(false);
   const firestore = useFirestore();
 
   const barId = user ? `bar_${user.uid}` : null; 
@@ -35,7 +37,7 @@ export default function SessionsPage() {
 
 
   const handleCreateSession = async () => {
-    if (!user || !barId || !firestore) {
+    if (!user || !barId) {
       toast({
         variant: "destructive",
         title: "Ошибка",
@@ -44,41 +46,35 @@ export default function SessionsPage() {
       return;
     }
     
-    // Check for existing in-progress session on the client
-    const inProgressSession = sessions?.find(s => s.status === 'in_progress');
-    if (inProgressSession) {
-        toast({
+    setIsCreating(true);
+    try {
+      const result = await createInventorySession(barId, user.uid);
+
+      if (result.success) {
+        if (result.isNew) {
+          toast({
+            title: "Сессия создана",
+            description: "Новая сессия инвентаризации была успешно создана.",
+          });
+        } else {
+          toast({
             title: "Активная сессия уже существует",
             description: "Вы будете перенаправлены на существующую сессию.",
-            action: <Button onClick={() => router.push(`/dashboard/sessions/${inProgressSession.id}`)}>Перейти</Button>
-        });
-        router.push(`/dashboard/sessions/${inProgressSession.id}`);
-        return;
-    }
-
-    const newSessionData = {
-        barId: barId,
-        name: `Инвентаризация от ${new Date().toLocaleDateString('ru-RU')}`,
-        status: 'in_progress' as const,
-        createdByUserId: user.uid,
-        createdAt: serverTimestamp(),
-        closedAt: null,
-    };
-    
-    try {
-      const sessionDocRef = await addDoc(collection(firestore, 'bars', barId, 'inventorySessions'), newSessionData);
-      
-      toast({
-          title: "Сессия создана",
-          description: `Новая сессия "${newSessionData.name}" была успешно создана.`,
-      });
-      router.push(`/dashboard/sessions/${sessionDocRef.id}`);
+            action: <Button onClick={() => router.push(`/dashboard/sessions/${result.sessionId}`)}>Перейти</Button>
+          });
+        }
+        router.push(`/dashboard/sessions/${result.sessionId}`);
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error: any) {
        toast({
           variant: "destructive",
           title: "Ошибка создания сессии",
-          description: "Не удалось создать новую сессию. Попробуйте снова.",
+          description: error.message || "Не удалось создать новую сессию. Попробуйте снова.",
       });
+    } finally {
+        setIsCreating(false);
     }
   };
 
@@ -89,8 +85,8 @@ export default function SessionsPage() {
     <>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Сессии инвентаризации</h1>
-        <Button onClick={handleCreateSession} disabled={isLoading || hasDataLoadingError || !barId}>
-          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+        <Button onClick={handleCreateSession} disabled={isLoading || isCreating || hasDataLoadingError || !barId}>
+          {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
           Начать инвентаризацию
         </Button>
       </div>

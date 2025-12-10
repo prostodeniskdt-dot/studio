@@ -408,6 +408,7 @@ export default function SessionPage() {
             )}
         </div>
       </div>
+      <div className="overflow-x-auto">
        {localLines && allProducts && (
         <InventoryTable 
             lines={localLines} 
@@ -416,6 +417,7 @@ export default function SessionPage() {
             isEditable={isEditable} 
         />
       )}
+      </div>
        <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
         <DialogContent>
             <DialogHeader>

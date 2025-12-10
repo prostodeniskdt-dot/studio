@@ -53,6 +53,7 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
     sellingPricePerPortion: false,
+    id: false, // Hide ID column by default
   });
   const [rowSelection, setRowSelection] = React.useState({});
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
@@ -109,6 +110,10 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
       ),
       enableSorting: false,
       enableHiding: false,
+    },
+    {
+       accessorKey: 'id',
+       header: 'ID',
     },
     {
       accessorKey: 'name',
@@ -231,12 +236,9 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
                 <Combobox 
                   options={productOptions}
                   onSelect={(value) => {
-                    const name = products.find(p => p.id === value)?.name || '';
-                    table.getColumn('name')?.setFilterValue(value ? `^${name}$` : '');
+                    table.getColumn('id')?.setFilterValue(value || undefined);
                   }}
-                  value={
-                    products.find(p => p.name === (table.getColumn('name')?.getFilterValue() as string)?.replace(/[\^$]/g, ''))?.id
-                  }
+                  value={table.getColumn('id')?.getFilterValue() as string}
                   placeholder="Поиск по названию..."
                   searchPlaceholder="Введите название продукта..."
                   notFoundText="Продукт не найден."
@@ -269,6 +271,7 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
                                     costPerBottle: 'Стоимость',
                                     bottleVolumeMl: 'Объем',
                                     isActive: 'Статус',
+                                    id: 'ID'
                                 }[column.id] || column.id
                             }
                             </DropdownMenuCheckboxItem>

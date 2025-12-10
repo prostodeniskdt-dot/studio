@@ -274,7 +274,7 @@ service cloud.firestore {
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
         // Corrected Rule: Allow list if the user is a member of the bar.
-        // The client-side query MUST filter by createdByUserId to be efficient.
+        // The client-side query MUST filter by createdByUserId to be efficient and secure.
         allow list: if isBarMember(barId) || isAdmin();
         allow create: if canWriteBarData(barId) && isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();

@@ -1,18 +1,16 @@
 'use client';
 import { ProductsTable } from "@/components/products/products-table";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query } from "firebase/firestore";
 import type { Product } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 
 export default function ProductsPage() {
-    const { user } = useUser();
     const firestore = useFirestore();
-    const barId = user ? `bar_${user.uid}` : null;
 
     const productsQuery = useMemoFirebase(() => 
-        firestore && barId ? query(collection(firestore, 'bars', barId, 'products')) : null,
-        [firestore, barId]
+        firestore ? query(collection(firestore, 'products')) : null,
+        [firestore]
     );
 
     const { data: products, isLoading } = useCollection<Product>(productsQuery);
@@ -27,7 +25,7 @@ export default function ProductsPage() {
 
     return (
         <div className="container mx-auto">
-            <ProductsTable products={products || []} barId={barId} />
+            <ProductsTable products={products || []} />
         </div>
     );
 }

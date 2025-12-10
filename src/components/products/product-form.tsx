@@ -26,9 +26,9 @@ import { Switch } from '@/components/ui/switch';
 import type { Product } from '@/lib/types';
 import { productCategories, productSubCategories, translateCategory, translateSubCategory } from '@/lib/utils';
 import { Separator } from '../ui/separator';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { serverTimestamp, collection, doc } from 'firebase/firestore';
-import { addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -54,11 +54,10 @@ type ProductFormValues = z.infer<typeof formSchema>;
 
 interface ProductFormProps {
     product?: Product;
-    barId: string | null;
     onFormSubmit: () => void;
 }
 
-export function ProductForm({ product, barId, onFormSubmit }: ProductFormProps) {
+export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -95,12 +94,12 @@ export function ProductForm({ product, barId, onFormSubmit }: ProductFormProps) 
   }, [watchedCategory, form]);
 
   function onSubmit(data: ProductFormValues) {
-    if (!barId) {
-      toast({ variant: "destructive", title: "Ошибка", description: "Не найден идентификатор бара." });
+    if (!firestore) {
+      toast({ variant: "destructive", title: "Ошибка", description: "Не удалось подключиться к базе данных." });
       return;
     }
     
-    const productCollection = collection(firestore, 'bars', barId, 'products');
+    const productCollection = collection(firestore, 'products');
 
     if (product?.id) {
         // Update existing product
@@ -110,13 +109,14 @@ export function ProductForm({ product, barId, onFormSubmit }: ProductFormProps) 
 
     } else {
         // Create new product
+        const newDocRef = doc(productCollection); // Create a new doc ref to get ID
         const newProductData = {
+            id: newDocRef.id,
             ...data,
-            barId: barId,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         };
-        addDocumentNonBlocking(productCollection, newProductData);
+        setDocumentNonBlocking(newDocRef, newProductData, {});
         toast({ title: "Продукт создан", description: `"${data.name}" добавлен в каталог.` });
     }
     onFormSubmit();

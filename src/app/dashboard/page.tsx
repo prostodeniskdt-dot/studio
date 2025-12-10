@@ -6,10 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PlusCircle, BarChart3, Package, Sparkles, Loader2 } from "lucide-react";
 import { SessionsList } from "@/components/dashboard/sessions-list";
 import { useRouter } from 'next/navigation';
-import type { InventorySession, Product } from '@/lib/types';
+import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, serverTimestamp, query, where, orderBy, addDoc, writeBatch, doc } from 'firebase/firestore';
+import { collection, serverTimestamp, query, orderBy, addDoc } from 'firebase/firestore';
 
 
 export default function DashboardPage() {
@@ -29,23 +29,14 @@ export default function DashboardPage() {
   );
   
   const { data: sessions, isLoading: isLoadingSessions, error: sessionsError } = useCollection<InventorySession>(sessionsQuery);
-  
-  const productsQuery = useMemoFirebase(() => 
-    firestore && barId ? query(
-      collection(firestore, 'bars', barId, 'products'), 
-      where('isActive', '==', true)
-    ) : null,
-    [firestore, barId]
-  );
-  const { data: activeProducts, isLoading: isLoadingProducts, error: productsError } = useCollection<Product>(productsQuery);
 
 
   const handleCreateSession = async () => {
-    if (!user || !barId || !activeProducts || !firestore) {
+    if (!user || !barId || !firestore) {
       toast({
         variant: "destructive",
         title: "Ошибка",
-        description: "Не удалось загрузить данные для создания сессии. Убедитесь, что ваш бар настроен и продукты добавлены.",
+        description: "Не удалось загрузить данные для создания сессии.",
       });
       return;
     }
@@ -61,36 +52,12 @@ export default function DashboardPage() {
     
     try {
       const sessionDocRef = await addDoc(collection(firestore, 'bars', barId, 'inventorySessions'), newSessionData);
-      const sessionId = sessionDocRef.id;
-
-      const batch = writeBatch(firestore);
-      const linesCollection = collection(firestore, 'bars', barId, 'inventorySessions', sessionId, 'lines');
-      
-      activeProducts.forEach(product => {
-        const lineDocRef = doc(linesCollection); 
-        const newLine = {
-          id: lineDocRef.id,
-          productId: product.id,
-          inventorySessionId: sessionId,
-          startStock: 0,
-          purchases: 0,
-          sales: 0,
-          endStock: 0,
-          theoreticalEndStock: 0,
-          differenceVolume: 0,
-          differenceMoney: 0,
-          differencePercent: 0,
-        };
-        batch.set(lineDocRef, newLine);
-      });
-      
-      await batch.commit();
       
       toast({
           title: "Сессия создана",
           description: `Новая сессия "${newSessionData.name}" была успешно создана.`,
       });
-      router.push(`/dashboard/sessions/${sessionId}`);
+      router.push(`/dashboard/sessions/${sessionDocRef.id}`);
     } catch (error: any) {
        toast({
           variant: "destructive",
@@ -100,8 +67,8 @@ export default function DashboardPage() {
     }
   };
 
-  const isLoading = isLoadingSessions || isLoadingProducts;
-  const hasDataLoadingError = sessionsError || productsError;
+  const isLoading = isLoadingSessions;
+  const hasDataLoadingError = sessionsError;
 
   return (
     <div className="container mx-auto">
@@ -156,7 +123,7 @@ export default function DashboardPage() {
             <p className="text-xs">Возможно, у вас нет прав на просмотр или данные еще не созданы.</p>
          </div>
       ) : (
-        <SessionsList sessions={sessions || []} />
+        <SessionsList sessions={sessions || []} barId={barId} />
       )}
     </div>
   );

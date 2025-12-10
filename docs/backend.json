@@ -71,15 +71,11 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Product",
       "type": "object",
-      "description": "Represents a product in the bar's inventory.",
+      "description": "Represents a product in the global inventory catalog.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the product."
-        },
-        "barId": {
-          "type": "string",
-          "description": "Reference to Bar. The bar ID to which this product belongs. (Relationship: Bar 1:N Product)"
         },
         "name": {
           "type": "string",
@@ -122,7 +118,6 @@
       },
       "required": [
         "id",
-        "barId",
         "name",
         "category",
         "bottleVolumeMl",
@@ -286,18 +281,14 @@
         }
       },
       {
-        "path": "/bars/{barId}/products/{productId}",
+        "path": "/products/{productId}",
         "definition": {
           "entityName": "Product",
           "schema": {
             "$ref": "#/backend/entities/Product"
           },
-          "description": "Stores product information for each bar. Secured by `barId`.",
+          "description": "Global catalog of all products. Any authenticated user can contribute to this list.",
           "params": [
-            {
-              "name": "barId",
-              "description": "The unique identifier of the bar."
-            },
             {
               "name": "productId",
               "description": "The unique identifier of the product."

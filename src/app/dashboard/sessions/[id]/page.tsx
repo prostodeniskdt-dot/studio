@@ -5,12 +5,12 @@ import { useParams, notFound, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { InventoryTable } from "@/components/sessions/inventory-table";
 import { Button } from "@/components/ui/button";
-import { FileText, Loader2, Save, XCircle, Download, Upload } from "lucide-react";
+import { FileText, Loader2, Save, XCircle, Download, Upload, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { translateStatus } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { doc, collection, query, serverTimestamp, writeBatch, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -29,7 +29,18 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { calculateLineFields } from '@/lib/calculations';
+import { Combobox } from '@/components/ui/combobox';
+import { translateCategory } from '@/lib/utils';
+
 
 export default function SessionPage() {
   const params = useParams();
@@ -54,30 +65,87 @@ export default function SessionPage() {
   const { data: lines, isLoading: isLoadingLines } = useCollection<InventoryLine>(linesRef);
 
   const productsRef = useMemoFirebase(() =>
-    firestore && barId ? collection(firestore, 'bars', barId, 'products') : null,
-    [firestore, barId]
+    firestore ? collection(firestore, 'products') : null,
+    [firestore]
   );
-  const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
+  const { data: allProducts, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
 
   const [localLines, setLocalLines] = React.useState<InventoryLine[] | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isCompleting, setIsCompleting] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-
+  const [isAddProductOpen, setIsAddProductOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (lines) {
       setLocalLines(lines);
     }
   }, [lines]);
+
+  const productsInSession = React.useMemo(() => new Set(localLines?.map(line => line.productId)), [localLines]);
+  
+  const groupedProductOptions = React.useMemo(() => {
+    if (!allProducts) return [];
+
+    const availableProducts = allProducts.filter(p => p.isActive && !productsInSession.has(p.id));
+
+    const groups: Record<string, { value: string; label: string }[]> = {};
+    
+    availableProducts.forEach(p => {
+      const category = translateCategory(p.category);
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push({ value: p.id, label: p.name });
+    });
+
+    return Object.entries(groups)
+      .map(([label, options]) => ({ label, options }))
+      .sort((a,b) => a.label.localeCompare(b.label));
+
+  }, [allProducts, productsInSession]);
+
+
+  const handleAddProductToSession = async (productId: string) => {
+    if (!productId || !firestore || !barId || !linesRef) {
+        toast({ variant: "destructive", title: "Ошибка", description: "Невозможно добавить продукт." });
+        return;
+    }
+    const product = allProducts?.find(p => p.id === productId);
+    if (!product) {
+        toast({ variant: "destructive", title: "Ошибка", description: "Продукт не найден." });
+        return;
+    }
+
+    const newLine = {
+        id: '', // Firestore will generate this
+        productId: product.id,
+        inventorySessionId: id,
+        startStock: 0,
+        purchases: 0,
+        sales: 0,
+        endStock: 0,
+        ...calculateLineFields({ startStock: 0, purchases: 0, sales: 0, endStock: 0 } as InventoryLine, product),
+    };
+
+    try {
+        const lineDocRef = await addDoc(linesRef, newLine);
+        // Firestore listener will update the UI. We can manually add it for faster UI response if needed.
+        // setLocalLines(prev => [...(prev || []), { ...newLine, id: lineDocRef.id }]);
+        toast({ title: "Продукт добавлен", description: `"${product.name}" добавлен в инвентаризацию.` });
+        setIsAddProductOpen(false);
+    } catch (error) {
+        toast({ variant: "destructive", title: "Ошибка", description: "Не удалось добавить продукт в сессию." });
+    }
+  };
   
   const handleSaveChanges = async () => {
-    if (!localLines || !barId || !firestore || !products) return;
+    if (!localLines || !barId || !firestore || !allProducts) return;
 
     setIsSaving(true);
     const batch = writeBatch(firestore);
     localLines.forEach(line => {
-      const product = products.find(p => p.id === line.productId);
+      const product = allProducts.find(p => p.id === line.productId);
       if (product) {
           const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', id, 'lines', line.id);
           const calculatedFields = calculateLineFields(line, product);
@@ -109,13 +177,11 @@ export default function SessionPage() {
   };
 
   const handleCompleteSession = async () => {
-    if (!sessionRef || !barId || !firestore || !localLines || !products) return;
+    if (!sessionRef || !barId || !firestore || !localLines || !allProducts) return;
     setIsCompleting(true);
     
-    // First, save any pending changes
     await handleSaveChanges();
 
-    // Then, update the session status
     const batch = writeBatch(firestore);
     batch.update(sessionRef, { status: 'completed', closedAt: serverTimestamp() });
 
@@ -138,15 +204,15 @@ export default function SessionPage() {
   };
   
   const handleExportCSV = () => {
-    if (!localLines || !products) return;
+    if (!localLines || !allProducts) return;
 
     const headers = ["productId", "productName", "startStock", "purchases", "sales", "endStock"];
     
     const rows = localLines.map(line => {
-      const product = products.find(p => p.id === line.productId);
+      const product = allProducts.find(p => p.id === line.productId);
       return [
         line.productId,
-        product?.name.replace(/,/g, '') || '', // Remove commas from name
+        product?.name.replace(/,/g, '') || '',
         line.startStock,
         line.purchases,
         line.sales,
@@ -178,7 +244,7 @@ export default function SessionPage() {
     reader.onload = (e) => {
       const text = e.target?.result as string;
       try {
-        const rows = text.split('\n').slice(1); // Skip header row
+        const rows = text.split('\n').slice(1);
         const updatedLines = [...(localLines || [])];
         let changesMade = false;
 
@@ -219,7 +285,6 @@ export default function SessionPage() {
       } catch (error) {
         toast({ variant: "destructive", title: "Ошибка парсинга файла", description: "Убедитесь, что файл имеет правильный формат CSV." });
       } finally {
-        // Reset file input
         if(event.target) event.target.value = '';
       }
     };
@@ -238,8 +303,6 @@ export default function SessionPage() {
   }
 
   if (!session) {
-    // This can happen briefly while data is loading, or if the session is not found.
-    // notFound() should be called only after we are sure it doesn't exist.
      if (!isLoadingSession) {
       notFound();
     }
@@ -294,6 +357,10 @@ export default function SessionPage() {
                 </Button>
             ) : (
                 <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setIsAddProductOpen(true)} disabled={!isEditable}>
+                      <PlusCircle className="mr-2 h-4 w-4"/>
+                      Добавить продукт
+                    </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline">
@@ -341,14 +408,36 @@ export default function SessionPage() {
             )}
         </div>
       </div>
-       {localLines && products && (
+       {localLines && allProducts && (
         <InventoryTable 
             lines={localLines} 
             setLines={setLocalLines} 
-            products={products}
+            products={allProducts}
             isEditable={isEditable} 
         />
       )}
+       <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
+        <DialogContent>
+            <DialogHeader>
+            <DialogTitle>Добавить продукт в сессию</DialogTitle>
+            <DialogDescription>
+                Выберите продукт из общего каталога, чтобы добавить его в текущую инвентаризацию.
+            </DialogDescription>
+            </DialogHeader>
+            <Combobox 
+                options={groupedProductOptions}
+                onSelect={(value) => {
+                    handleAddProductToSession(value);
+                }}
+                placeholder="Выберите продукт..."
+                searchPlaceholder="Поиск продукта..."
+                notFoundText="Продукт не найден или уже добавлен."
+            />
+            <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddProductOpen(false)}>Отмена</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -24,7 +24,6 @@ export type ProductSubCategory = WhiskeySubCategory | RumSubCategory | GinSubCat
 
 export interface Product {
   id: string; 
-  barId: string;
   name: string;
   category: ProductCategory;
   subCategory?: ProductSubCategory;

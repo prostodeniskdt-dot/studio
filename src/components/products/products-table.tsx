@@ -40,19 +40,19 @@ import type { Product } from '@/lib/types';
 import { formatCurrency, translateCategory, translateSubCategory } from '@/lib/utils';
 import { ProductForm } from './product-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { doc, collection, writeBatch } from 'firebase/firestore';
+import { doc, writeBatch } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Combobox, type GroupedComboboxOption } from '../ui/combobox';
 
 
-export function ProductsTable({ products, barId }: { products: Product[], barId: string | null }) {
+export function ProductsTable({ products }: { products: Product[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
     sellingPricePerPortion: false,
-    id: false, // Hide ID column by default
+    id: false, 
   });
   const [rowSelection, setRowSelection] = React.useState({});
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
@@ -72,8 +72,8 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
   }
 
   const handleArchiveAction = async (product: Product, archive: boolean) => {
-    if (!barId || !firestore) return;
-    const productRef = doc(firestore, 'bars', barId, 'products', product.id!);
+    if (!firestore) return;
+    const productRef = doc(firestore, 'products', product.id!);
     const batch = writeBatch(firestore);
     batch.update(productRef, { isActive: !archive });
     await batch.commit();
@@ -252,7 +252,6 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
                 <Combobox 
                   options={groupedProductOptions}
                   onSelect={(value) => {
-                    // Filter by ID, not by name
                     table.getColumn('id')?.setFilterValue(value || undefined);
                   }}
                   value={table.getColumn('id')?.getFilterValue() as string}
@@ -383,7 +382,7 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
             <SheetHeader>
                 <SheetTitle>{editingProduct ? 'Редактировать продукт' : 'Добавить новый продукт'}</SheetTitle>
             </SheetHeader>
-            <ProductForm product={editingProduct} barId={barId} onFormSubmit={handleCloseSheet} />
+            <ProductForm product={editingProduct} onFormSubmit={handleCloseSheet} />
         </SheetContent>
     </Sheet>
   );

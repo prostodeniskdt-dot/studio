@@ -15,9 +15,11 @@
  * - `/users/{userId}`: Stores private user profiles, secured by user ID.
  * - `/roles_admin/{userId}`: A simple collection used for fast, efficient checks of
  *   admin privileges.
+ * - `/products/{productId}`: A global catalog of products. Authenticated users can
+ *   read and add to this list.
  * - `/bars/{barId}`: A top-level collection for all business data. Bar documents
  *   are public to read, but all nested subcollections (products, inventory) are
- *   private to the bar owner and admins.
+ *   private to the bar's owner and admins.
  *
  * Key Security Decisions:
  * - Admin Role Management: The `/roles_admin` collection is read-only from the
@@ -26,7 +28,7 @@
  * - No User Listing: To protect user privacy, listing the entire `/users` collection
  *   is explicitly disallowed.
  * - Bar Subcollection Privacy: While basic bar info is public, all sensitive sub-data
- *   (like inventory sessions and products) is private to the bar's owner and admins.
+ *   (like inventory sessions) is private to the bar's owner and admins.
  *   This is enforced using a `get()` call on the parent bar document to check ownership.
  *
  * Denormalization for Authorization:
@@ -141,17 +143,34 @@ service cloud.firestore {
     }
 
     /**
-     * On create, validates the product is linked to the correct parent bar via its path.
+     * On create, validates the product has all required fields.
+     * Since this is a public collection, validation is important.
      */
-    function isProductCreateValid(barId) {
-      return request.resource.data.barId == barId;
+    function isProductCreateValid() {
+      let data = request.resource.data;
+      return data.name is string && data.name.size() > 1 &&
+             data.category is string &&
+             data.bottleVolumeMl is number && data.bottleVolumeMl > 0 &&
+             data.costPerBottle is number && data.costPerBottle > 0 &&
+             data.portionVolumeMl is number && data.portionVolumeMl > 0 &&
+             data.sellingPricePerPortion is number && data.sellingPricePerPortion > 0 &&
+             data.isActive == true;
     }
     
     /**
-     * On update, ensures the product's link to its parent bar is immutable.
+     * On update, ensures critical product fields are not changed by non-admins.
+     * Regular users can only archive/unarchive.
      */
     function isProductUpdateValid() {
-      return request.resource.data.barId == resource.data.barId;
+       let data = request.resource.data;
+       let oldData = resource.data;
+       // Allow changing only isActive field for non-admins
+       return data.name == oldData.name &&
+              data.category == oldData.category &&
+              data.bottleVolumeMl == oldData.bottleVolumeMl &&
+              data.costPerBottle == oldData.costPerBottle &&
+              data.portionVolumeMl == oldData.portionVolumeMl &&
+              data.sellingPricePerPortion == oldData.sellingPricePerPortion;
     }
     
     /**
@@ -186,29 +205,16 @@ service cloud.firestore {
      * @description Controls access to the admin role collection.
      * This collection is used as a fast lookup to grant admin privileges.
      * It should only be modified by a trusted server environment.
-     * @path /roles_admin/{userId}
-     * @allow (get) An admin checks if another user is also an admin: `get /roles_admin/other_admin_uid` (auth: admin)
-     * @deny (create) A regular user tries to make themselves an admin: `create /roles_admin/user_uid` (auth: non-admin)
-     * @deny (list) Anyone tries to list all admins: `list /roles_admin`
-     * @principle Prevents client-side privilege escalation.
      */
     match /roles_admin/{userId} {
       allow get: if isAdmin();
       allow list: if false;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow create, update, delete: if false;
     }
 
     /**
      * @description Secures user profile documents.
-     * Each user has a document in this collection that only they or an admin can access.
-     * @path /users/{userId}
-     * @allow (create) A new user signs up and creates their own profile: `create /users/user_abc` (auth: user_abc)
-     * @allow (get) An admin views a user's profile: `get /users/user_abc` (auth: admin)
-     * @deny (get) A user tries to read another user's profile: `get /users/user_xyz` (auth: user_abc)
-     * @deny (list) Anyone tries to get a list of all users.
-     * @principle Restricts access to a user's own data tree.
+     * Each user has a document that only they or an admin can access.
      */
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
@@ -217,16 +223,22 @@ service cloud.firestore {
       allow update: if isOwner(userId) && resourceExists() && isUserUpdateValid();
       allow delete: if (isOwner(userId) || isAdmin()) && resourceExists();
     }
+    
+    /**
+     * @description Global product catalog.
+     * All authenticated users can read and add to this list. Editing is restricted.
+     */
+    match /products/{productId} {
+        allow get, list: if isSignedIn();
+        allow create: if isSignedIn() && isProductCreateValid();
+        // Admins can edit anything. Regular users can only update isActive.
+        allow update: if resourceExists() && (isAdmin() || isProductUpdateValid());
+        allow delete: if isAdmin() && resourceExists();
+    }
 
     /**
      * @description Secures the top-level bar documents.
      * Bar information is public to read, but only the owner or an admin can modify it.
-     * This collection is the root for all bar-specific data.
-     * @path /bars/{barId}
-     * @allow (get) Any user, signed in or not, can view a bar's details: `get /bars/bar_123`
-     * @allow (create) An authenticated user creates a new bar they will own: `create /bars/bar_123` (auth: user_abc, data: {ownerUserId: 'user_abc'})
-     * @deny (update) A user tries to modify a bar they don't own: `update /bars/bar_123` (auth: user_xyz)
-     * @principle Implements public read with owner-only writes.
      */
     match /bars/{barId} {
       allow get, list: if true;
@@ -235,28 +247,8 @@ service cloud.firestore {
       allow delete: if (isOwner(resource.data.ownerUserId) || isAdmin()) && resourceExists();
 
       /**
-       * @description Secures product information for a specific bar.
-       * Only the owner of the parent bar or an admin can read or write product data.
-       * @path /bars/{barId}/products/{productId}
-       * @allow (get, list) The bar owner views their products: `list /bars/bar_123/products` (auth: bar owner)
-       * @deny (get) A regular user tries to view products for a bar: `get /bars/bar_123/products/prod_456` (auth: user_xyz)
-       * @deny (create) A user tries to add a product to a bar they don't own.
-       * @principle Enforces hierarchical security based on the parent document's ownership.
-       */
-      match /products/{productId} {
-        allow get, list: if canReadBarData(barId);
-        allow create: if canWriteBarData(barId) && isProductCreateValid(barId);
-        allow update: if canWriteBarData(barId) && resourceExists() && isProductUpdateValid();
-        allow delete: if canWriteBarData(barId) && resourceExists();
-      }
-
-      /**
        * @description Secures inventory session data for a bar.
        * Access is restricted to the owner of the parent bar or an admin.
-       * @path /bars/{barId}/inventorySessions/{inventorySessionId}
-       * @allow (get, list) The bar owner lists their inventory sessions: `list /bars/bar_123/inventorySessions` (auth: bar owner)
-       * @deny (create) A regular user tries to start an inventory session for a bar they do not own.
-       * @principle Enforces hierarchical security based on the parent document's ownership.
        */
       match /inventorySessions/{inventorySessionId} {
         allow get, list: if canReadBarData(barId);
@@ -267,10 +259,6 @@ service cloud.firestore {
         /**
          * @description Secures individual line items within an inventory session.
          * Access is inherited from the grandparent bar document's ownership.
-         * @path /bars/{barId}/inventorySessions/{inventorySessionId}/lines/{inventoryLineId}
-         * @allow (update) The bar owner updates a line item count: `update /bars/bar_123/inventorySessions/sess_abc/lines/line_xyz` (auth: bar owner)
-         * @deny (get) A regular user attempts to read inventory line item data.
-         * @principle Enforces deep hierarchical security based on a top-level ancestor's ownership.
          */
         match /lines/{inventoryLineId} {
           allow get, list: if canReadBarData(barId);

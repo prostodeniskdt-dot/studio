@@ -9,7 +9,7 @@ import Link from "next/link";
 import { BarChart3, Loader2 } from "lucide-react";
 import type { InventorySession, Product, InventoryLine } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
+import { doc, collection, query } from 'firebase/firestore';
 
 
 export default function SessionReportPage() {
@@ -33,8 +33,8 @@ export default function SessionReportPage() {
   const { data: lines, isLoading: isLoadingLines } = useCollection<InventoryLine>(linesRef);
 
   const productsRef = useMemoFirebase(() =>
-    firestore && barId ? collection(firestore, 'bars', barId, 'products') : null,
-    [firestore, barId]
+    firestore ? query(collection(firestore, 'products')) : null,
+    [firestore]
   );
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
 

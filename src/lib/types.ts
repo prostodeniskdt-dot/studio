@@ -36,7 +36,6 @@ export interface Product {
   
   // Профиль бутылки
   bottleVolumeMl: number;
-  bottleHeightCm?: number;
   fullBottleWeightG?: number;
   emptyBottleWeightG?: number;
 

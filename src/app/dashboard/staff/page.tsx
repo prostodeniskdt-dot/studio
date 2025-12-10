@@ -55,7 +55,12 @@ export default function StaffPage() {
           setIsLoadingProfiles(false);
         }
     }
-    fetchMemberProfiles();
+    if (members.length > 0) {
+      fetchMemberProfiles();
+    } else {
+        setStaffWithProfiles([]);
+        setIsLoadingProfiles(false);
+    }
 
   }, [members, firestore, isLoadingMembers]);
   

@@ -50,7 +50,11 @@ export default function AnalyticsPage() {
       }
     };
 
-    fetchLinesForSessions();
+    if (sessions.length > 0) {
+      fetchLinesForSessions();
+    } else {
+      setIsLoadingLines(false);
+    }
   }, [firestore, barId, sessions, isLoadingSessions]);
 
   const isLoading = isLoadingSessions || isLoadingLines;

@@ -88,13 +88,13 @@ export function StaffTable({ staff, barId }: StaffTableProps) {
         const member = row.original;
         const name = member.userProfile?.displayName;
         const email = member.userProfile?.email;
-        const avatarUrl = `https://avatar.vercel.sh/${email}.png`;
+        const avatarUrl = email ? `https://avatar.vercel.sh/${email}.png` : undefined;
         const initials = name ? name.split(' ').map(n => n[0]).join('') : <User/>;
 
         return (
             <div className="flex items-center gap-4">
                  <Avatar>
-                    <AvatarImage src={avatarUrl} alt={name} />
+                    {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
                     <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
                 <div>

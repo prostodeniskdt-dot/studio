@@ -6,9 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Combobox, type GroupedComboboxOption } from '@/components/ui/combobox';
-import { Ruler, Weight, Send, Loader2 } from 'lucide-react';
+import { Weight, Send, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import type { Product, InventorySession } from '@/lib/types';
+import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
@@ -48,9 +48,6 @@ export default function UnifiedCalculatorPage() {
   const [selectedProductId, setSelectedProductId] = React.useState<string | undefined>(undefined);
 
   const [bottleVolume, setBottleVolume] = React.useState('');
-  const [liquidHeight, setLiquidHeight] = React.useState('');
-  const [calculatedVolumeByHeight, setCalculatedVolumeByHeight] = React.useState<number | null>(null);
-
   const [fullWeight, setFullWeight] = React.useState('');
   const [emptyWeight, setEmptyWeight] = React.useState('');
   const [currentWeight, setCurrentWeight] = React.useState('');
@@ -65,35 +62,15 @@ export default function UnifiedCalculatorPage() {
         setBottleVolume(product.bottleVolumeMl?.toString() ?? '');
         setFullWeight(product.fullBottleWeightG?.toString() ?? '');
         setEmptyWeight(product.emptyBottleWeightG?.toString() ?? '');
-        setCalculatedVolumeByHeight(null);
         setCalculatedVolumeByWeight(null);
     }
   };
 
   const handleCalculate = () => {
-    // Reset calculations first
-    setCalculatedVolumeByHeight(null);
     setCalculatedVolumeByWeight(null);
 
-    // Height calculation - simplified
-    const bv = parseFloat(bottleVolume);
-    const lh = parseFloat(liquidHeight);
-
-    if (bv > 0 && lh >= 0 && products) {
-        const product = products.find(p => p.id === selectedProductId);
-        const bottleHeight = product?.bottleHeightCm;
-        if(bottleHeight && bottleHeight > 0) {
-            if (lh > bottleHeight) {
-                setCalculatedVolumeByHeight(bv); 
-            } else {
-                const volume = (lh / bottleHeight) * bv;
-                setCalculatedVolumeByHeight(Math.round(volume));
-            }
-        }
-    }
-
-
     // Weight calculation
+    const bv = parseFloat(bottleVolume);
     const fw = parseFloat(fullWeight);
     const ew = parseFloat(emptyWeight);
     const cw = parseFloat(currentWeight);
@@ -154,8 +131,9 @@ export default function UnifiedCalculatorPage() {
       const linesSnapshot = await getDocs(linesQuery);
 
       if (linesSnapshot.empty) {
-        // This case should ideally not happen if all active products are added to the session
-        // But we handle it just in case
+        const product = products?.find(p => p.id === selectedProductId);
+        if (!product) return;
+
         const batch = writeBatch(firestore);
         const newLineRef = doc(collection(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines'));
         const newLineData = {
@@ -254,15 +232,9 @@ export default function UnifiedCalculatorPage() {
 
               <div className="space-y-4">
                  <h3 className="text-lg font-semibold">Текущие замеры</h3>
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="currentWeight">Текущий вес (г)</Label>
-                        <Input id="currentWeight" type="number" value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} placeholder="Замер с весов" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="liquidHeight">Высота жидкости (см)</Label>
-                        <Input id="liquidHeight" type="number" value={liquidHeight} onChange={(e) => setLiquidHeight(e.target.value)} placeholder="Замер рейкой" />
-                    </div>
+                <div className="space-y-2">
+                    <Label htmlFor="currentWeight">Текущий вес (г)</Label>
+                    <Input id="currentWeight" type="number" value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} placeholder="Замер с весов" />
                 </div>
               </div>
             </div>
@@ -272,7 +244,7 @@ export default function UnifiedCalculatorPage() {
                 Рассчитать
               </Button>
               
-              {(calculatedVolumeByWeight !== null || calculatedVolumeByHeight !== null) && (
+              {calculatedVolumeByWeight !== null && (
                 <Card className='bg-muted/50'>
                   <CardHeader>
                     <CardTitle>Результаты расчета</CardTitle>
@@ -281,10 +253,6 @@ export default function UnifiedCalculatorPage() {
                     <div className="text-center p-4 rounded-lg bg-background">
                       <p className="text-base text-muted-foreground flex items-center justify-center gap-2"><Weight className='h-4 w-4'/> Точный объем (по весу):</p>
                       <p className="text-4xl font-bold text-primary">{calculatedVolumeByWeight !== null ? `${calculatedVolumeByWeight} мл` : 'Нет данных'}</p>
-                    </div>
-                    <div className="text-center p-4 rounded-lg bg-background">
-                      <p className="text-base text-muted-foreground flex items-center justify-center gap-2"><Ruler className='h-4 w-4'/> Примерный объем (по высоте):</p>
-                      <p className="text-2xl font-semibold text-muted-foreground">{calculatedVolumeByHeight !== null ? `${calculatedVolumeByHeight} мл` : 'Нет данных'}</p>
                     </div>
                      <Button onClick={handleSendToInventory} className="w-full" disabled={calculatedVolumeByWeight === null || isSending || !barId}>
                         {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}

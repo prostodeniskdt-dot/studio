@@ -44,7 +44,6 @@ const formSchema = z.object({
   portionVolumeMl: z.coerce.number().positive('Должно быть положительным числом.'),
 
   bottleVolumeMl: z.coerce.number().positive('Должно быть положительным числом.'),
-  bottleHeightCm: z.coerce.number().optional(),
   fullBottleWeightG: z.coerce.number().optional(),
   emptyBottleWeightG: z.coerce.number().optional(),
 
@@ -80,7 +79,6 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         ...product,
         subCategory: product.subCategory ?? undefined,
         imageUrl: product.imageUrl ?? undefined,
-        bottleHeightCm: product.bottleHeightCm ?? undefined,
         fullBottleWeightG: product.fullBottleWeightG ?? undefined,
         emptyBottleWeightG: product.emptyBottleWeightG ?? undefined,
         reorderPointMl: product.reorderPointMl ?? undefined,
@@ -292,20 +290,6 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             )}
             />
         </div>
-        <FormField
-            control={form.control}
-            name="bottleHeightCm"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Высота бутылки (см) - для рейки</FormLabel>
-                <FormControl>
-                    <Input type="number" step="0.1" {...field} placeholder="30"/>
-                </FormControl>
-                 <FormDescription>Этот параметр нужен для приблизительного расчета по высоте жидкости.</FormDescription>
-                <FormMessage />
-                </FormItem>
-            )}
-            />
         
         <Separator />
         <h3 className="text-lg font-medium">Параметры автозаказа</h3>

@@ -40,6 +40,11 @@ export interface Product {
   fullBottleWeightG?: number;
   emptyBottleWeightG?: number;
 
+  // Закупки
+  reorderPointMl?: number;
+  reorderQuantity?: number;
+  defaultSupplierId?: string;
+
   isActive: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -133,3 +138,5 @@ export interface PurchaseOrderLine {
     costPerItem: number;
     receivedQuantity?: number;
 }
+
+    

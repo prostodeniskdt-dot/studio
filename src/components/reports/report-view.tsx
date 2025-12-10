@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn, formatCurrency, translateCategory, translateSubCategory } from '@/lib/utils';
-import { Download, Sparkles, FileType, FileJson, Loader2 } from 'lucide-react';
+import { Download, Sparkles, FileType, FileJson, Loader2, ShoppingCart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Timestamp } from 'firebase/firestore';
 import { VarianceAnalysisModal } from '../sessions/variance-analysis-modal';
@@ -25,12 +25,14 @@ import {
 type ReportViewProps = {
   session: InventorySession;
   products: Product[];
+  onCreatePurchaseOrder: () => void;
+  isCreatingOrder: boolean;
 };
 
 type GroupedLines = Record<string, Record<string, CalculatedInventoryLine[]>>;
 
 
-export function ReportView({ session, products }: ReportViewProps) {
+export function ReportView({ session, products, onCreatePurchaseOrder, isCreatingOrder }: ReportViewProps) {
   const { toast } = useToast();
   const [analyzingLine, setAnalyzingLine] = React.useState<CalculatedInventoryLine | null>(null);
 
@@ -136,6 +138,10 @@ export function ReportView({ session, products }: ReportViewProps) {
                 <p className="text-muted-foreground">{session.name} - {session.closedAt && <>Закрыто {formatDate(session.closedAt)}</>}</p>
             </div>
             <div className="flex gap-2">
+                <Button onClick={onCreatePurchaseOrder} disabled={isCreatingOrder}>
+                  {isCreatingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
+                  {isCreatingOrder ? 'Создание...' : 'Создать заказ на закупку'}
+                </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline">
@@ -317,3 +323,5 @@ export function ReportView({ session, products }: ReportViewProps) {
     </div>
   );
 }
+
+    

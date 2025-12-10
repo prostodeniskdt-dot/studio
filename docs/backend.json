@@ -133,6 +133,18 @@
           "type": "string",
           "description": "The timestamp when the product was created.",
           "format": "date-time"
+        },
+        "reorderPointMl": {
+          "type": "number",
+          "description": "The minimum stock level in milliliters that triggers a reorder."
+        },
+        "reorderQuantity": {
+          "type": "number",
+          "description": "The default number of bottles to reorder."
+        },
+        "defaultSupplierId": {
+          "type": "string",
+          "description": "The ID of the default supplier for this product."
         }
       },
       "required": [
@@ -487,3 +499,5 @@
     "reasoning": "The Firestore data structure is designed to support the BarBoss inventory management application, focusing on role-based access control and efficient data retrieval for inventory calculations and reporting. Key considerations are authorization independence, structural segregation, and clear data modeling.  The design ensures that security rules are simple, robust, and debuggable.\n\n**Authorization Independence:**  We avoid using `get()` calls in security rules by denormalizing authorization data. For instance, the `ownerUserId` from the `Bar` document is not only a reference but can also be copied to subcollections like `inventorySessions` to ensure rules can validate access without needing to read the parent `Bar` document.\n\n**Structural Segregation:** Collections are segregated based on access requirements.  User profiles are stored in `/users/{userId}`, ensuring private data is secured by path-based ownership. Collaborative data, such as inventory sessions and lines, resides in subcollections under the `Bar` document to enforce consistent security posture based on the bar context.\n\n**Access Modeling:**\n*   **Path-Based Ownership:** `/users/{userId}` allows straightforward ownership-based security rules for user data.\n*   **Hierarchical Paths for User-Owned Data**:  `/bars/{barId}/inventorySessions/{inventorySessionId}` creates a clear ownership hierarchy, simplifying rules related to bar-specific inventory.\n* **Bar Membership**: The `/bars/{barId}/members/{userId}` collection establishes a many-to-many relationship between bars and users, defining roles within a specific bar.\n\n**QAPs (Rules are not Filters):** The structure supports secure `list` operations. Access to `products` or `inventorySessions` is controlled by the `barId`, allowing listing only the resources related to a specific bar.  The `roles_admin` collection enables efficient admin role checks without reading user documents during listing.\n\n**Invariants:**  Timestamps (`createdAt`, `updatedAt`) can be enforced using server timestamps in Firestore rules. The structure also enables maintaining the integrity of ownership (e.g., only the `ownerUserId` can modify bar details).\n\n**Role-Based Access Control:** The `role` field within the `users` collection, combined with the existence of documents in `/roles_admin/{userId}`, supports role-based access control. Admins have a dedicated collection, providing a fast existence check in security rules."
   }
 }
+
+    

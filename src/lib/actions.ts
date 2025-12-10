@@ -1,7 +1,7 @@
 'use server';
 
 import { analyzeInventoryVariance as analyzeInventoryVarianceFlow } from '@/ai/flows/analyze-inventory-variance';
-import type { InventoryLine, Product, Supplier, UserRole, PurchaseOrder } from './types';
+import type { InventoryLine, Product, Supplier, UserRole, PurchaseOrder, PurchaseOrderLine } from './types';
 import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeAdminApp } from '@/firebase/admin';
@@ -150,13 +150,14 @@ export async function upsertPurchaseOrder(barId: string, order: Omit<PurchaseOrd
         const { db } = initializeAdminApp();
         const orderRef = db.collection('bars').doc(barId).collection('purchaseOrders').doc(order.id);
 
-        const dataToSet = {
+        const dataToSet: any = {
             ...order,
             barId: barId,
             updatedAt: FieldValue.serverTimestamp(),
         };
 
-        if (!(await orderRef.get()).exists) {
+        const docSnap = await orderRef.get();
+        if (!docSnap.exists) {
             dataToSet.createdAt = FieldValue.serverTimestamp();
         }
 
@@ -174,7 +175,10 @@ export async function deletePurchaseOrder(barId: string, orderId: string): Promi
         const { db } = initializeAdminApp();
         const orderRef = db.collection('bars').doc(barId).collection('purchaseOrders').doc(orderId);
         
-        // TODO: Also delete subcollection 'lines'
+        const linesSnapshot = await orderRef.collection('lines').get();
+        const batch = db.batch();
+        linesSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
         
         await orderRef.delete();
         
@@ -184,3 +188,5 @@ export async function deletePurchaseOrder(barId: string, orderId: string): Promi
         return { success: false, error: 'Произошла ошибка на сервере при удалении заказа.' };
     }
 }
+
+    

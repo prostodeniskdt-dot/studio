@@ -23,14 +23,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import type { Product } from '@/lib/types';
+import type { Product, Supplier } from '@/lib/types';
 import { productCategories, productSubCategories, translateCategory, translateSubCategory } from '@/lib/utils';
 import { Separator } from '../ui/separator';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { serverTimestamp, collection, doc } from 'firebase/firestore';
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
@@ -47,6 +48,10 @@ const formSchema = z.object({
   fullBottleWeightG: z.coerce.number().optional(),
   emptyBottleWeightG: z.coerce.number().optional(),
 
+  reorderPointMl: z.coerce.number().optional(),
+  reorderQuantity: z.coerce.number().optional(),
+  defaultSupplierId: z.string().optional(),
+
   isActive: z.boolean(),
 });
 
@@ -59,7 +64,15 @@ interface ProductFormProps {
 
 export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
+  const barId = user ? `bar_${user.uid}` : null;
+
+  const suppliersQuery = useMemoFirebase(() => 
+    firestore && barId ? collection(firestore, 'bars', barId, 'suppliers') : null,
+    [firestore, barId]
+  );
+  const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(formSchema),
@@ -70,6 +83,9 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         bottleHeightCm: product.bottleHeightCm ?? undefined,
         fullBottleWeightG: product.fullBottleWeightG ?? undefined,
         emptyBottleWeightG: product.emptyBottleWeightG ?? undefined,
+        reorderPointMl: product.reorderPointMl ?? undefined,
+        reorderQuantity: product.reorderQuantity ?? undefined,
+        defaultSupplierId: product.defaultSupplierId ?? undefined,
     } : {
       name: '',
       category: 'Other',
@@ -289,6 +305,62 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
                 </FormItem>
             )}
             />
+        
+        <Separator />
+        <h3 className="text-lg font-medium">Параметры автозаказа</h3>
+        <div className="grid grid-cols-2 gap-4">
+            <FormField
+                control={form.control}
+                name="reorderPointMl"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Минимальный остаток (мл)</FormLabel>
+                    <FormControl>
+                        <Input type="number" {...field} placeholder="Например, 350"/>
+                    </FormControl>
+                    <FormDescription>Когда остаток упадет ниже этого значения, товар попадет в автозаказ.</FormDescription>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="reorderQuantity"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Количество для заказа (бут.)</FormLabel>
+                    <FormControl>
+                        <Input type="number" {...field} placeholder="Например, 6"/>
+                    </FormControl>
+                    <FormDescription>Сколько бутылок заказывать, когда остаток низкий.</FormDescription>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+        </div>
+        <FormField
+            control={form.control}
+            name="defaultSupplierId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Поставщик по умолчанию</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger disabled={isLoadingSuppliers}>
+                      <SelectValue placeholder={isLoadingSuppliers ? "Загрузка..." : "Выберите поставщика"} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {suppliers ? suppliers.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    )) : <SelectItem value="loading" disabled>Загрузка...</SelectItem>}
+                  </SelectContent>
+                </Select>
+                <FormDescription>Основной поставщик для этого продукта.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
        
         <Separator />
 
@@ -319,3 +391,5 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     </Form>
   );
 }
+
+    

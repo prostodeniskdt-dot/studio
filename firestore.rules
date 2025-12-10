@@ -1,47 +1,38 @@
 /**
  * Core Philosophy:
  * This ruleset implements a role-based access control (RBAC) model combined with
- * user ownership. There are three primary levels of access:
+ * user ownership and bar membership. There are three primary levels of access:
  * 1. Admins: Have global read and write permissions across all data. Admin status
  *    is determined by the existence of a document in the `/roles_admin` collection.
  * 2. Bar Owners: Users designated as the `ownerUserId` on a `/bars/{barId}` document
- *    have full control over that bar and all of its nested data, including products
- *    and inventory sessions.
- * 3. Authenticated Users: Can manage their own user profile in `/users/{userId}`
+ *    have full control over that bar and all of its nested data.
+ * 3. Bar Members: Users who have a document in the `/bars/{barId}/members` subcollection
+ *    can access data within that bar according to their assigned role.
+ * 4. Authenticated Users: Can manage their own user profile in `/users/{userId}`
  *    and can create new bars, which they will then own.
  *
  * Data Structure:
- * The data is structured hierarchically to facilitate clear security boundaries.
  * - `/users/{userId}`: Stores private user profiles, secured by user ID.
- * - `/roles_admin/{userId}`: A simple collection used for fast, efficient checks of
- *   admin privileges.
- * - `/products/{productId}`: A global catalog of products. Authenticated users can
- *   read and add to this list.
- * - `/bars/{barId}`: A top-level collection for all business data. Bar documents
- *   are public to read, but all nested subcollections (products, inventory) are
- *   private to the bar's owner and admins.
+ * - `/roles_admin/{userId}`: A simple collection for fast admin privilege checks.
+ * - `/products/{productId}`: A global catalog of products. Authenticated users
+ *   can read and add to this list.
+ * - `/bars/{barId}`: Top-level collection for bar data.
+ * - `/bars/{barId}/members/{userId}`: Subcollection defining user roles within a bar.
+ * - `/bars/{barId}/inventorySessions/...`: Private data for a bar, accessible only
+ *   to its members (owners and staff).
  *
  * Key Security Decisions:
  * - Admin Role Management: The `/roles_admin` collection is read-only from the
- *   client to prevent privilege escalation. It must be managed by a trusted
- *   backend process or manually in the Firebase console.
- * - No User Listing: To protect user privacy, listing the entire `/users` collection
- *   is explicitly disallowed.
- * - Bar Subcollection Privacy: While basic bar info is public, all sensitive sub-data
- *   (like inventory sessions) is private to the bar's owner and admins.
- *   This is enforced using a `get()` call on the parent bar document to check ownership.
+ *   client to prevent privilege escalation.
+ * - No User Listing: Listing the entire `/users` collection is disallowed.
+ * - Bar Subcollection Privacy: All sensitive sub-data (like inventory) is private
+ *   to the bar's members. This is enforced using `exists()` and `get()` calls on
+ *   the parent bar's `members` subcollection.
  *
  * Denormalization for Authorization:
- * To ensure performant and secure rules, authorization relies on denormalized
- * owner IDs. Each `/bars/{barId}` document contains an `ownerUserId`, which is the
- * single source of truth for all write access to that bar and its subcollections.
- * This avoids complex and slow cross-collection queries in the rules. Relational
- * integrity fields (e.g., `barId` on a Product) are validated on write operations
- * to ensure data consistency.
- *
- * Structural Segregation:
- * User-private data (`/users`) is structurally separate from the collaborative
- * business data (`/bars`), allowing for distinct and simple security models for each.
+ * The `ownerUserId` on a `/bars/{barId}` document is the ultimate source of truth
+ * for ownership. For performance, role-based access for non-owners is checked
+ * via the `/bars/{barId}/members/{userId}` subcollection, avoiding complex joins.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -60,7 +51,6 @@ service cloud.firestore {
 
     /**
      * Checks if the current user has admin privileges.
-     * Admin status is granted by the existence of a document in the /roles_admin collection.
      */
     function isAdmin() {
       return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
@@ -75,7 +65,6 @@ service cloud.firestore {
 
     /**
      * Checks if the document being written to already exists.
-     * Crucial for protecting update and delete operations.
      */
     function resourceExists() {
       return resource != null;
@@ -83,11 +72,19 @@ service cloud.firestore {
 
     /**
      * Checks if the requesting user is the owner of a specific bar.
-     * This requires reading the bar document itself to check the `ownerUserId` field.
      */
     function isBarOwner(barId) {
       return get(/databases/$(database)/documents/bars/$(barId)).data.ownerUserId == request.auth.uid;
     }
+
+    /**
+     * Checks if the user is a member of the bar (either as staff or owner).
+     */
+    function isBarMember(barId) {
+      let isExplicitMember = exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid));
+      return isBarOwner(barId) || isExplicitMember;
+    }
+
 
     // ------------------------------------------------------------------------
     // Authorization Logic Functions
@@ -95,18 +92,21 @@ service cloud.firestore {
     
     /**
      * Determines if a user can read sensitive data within a specific bar's subcollections.
-     * Access is granted to the bar owner or an admin.
+     * Access is granted to the bar members or an admin.
      */
     function canReadBarData(barId) {
-      return isBarOwner(barId) || isAdmin();
+      return isBarMember(barId) || isAdmin();
     }
 
     /**
      * Determines if a user can write sensitive data within a specific bar's subcollections.
-     * Access is granted to the bar owner or an admin.
+     * Access is granted to the bar members or an admin.
+     * Specific role checks (e.g., manager vs. bartender) can be added here.
      */
     function canWriteBarData(barId) {
-      return isBarOwner(barId) || isAdmin();
+      // For now, any member can write. This can be refined with role checks.
+      // e.g., get(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid)).data.role == 'manager'
+      return isBarMember(barId) || isAdmin();
     }
 
 
@@ -118,14 +118,15 @@ service cloud.firestore {
      * On create, validates the user is creating their own profile and setting the ID correctly.
      */
     function isCreatingOwnUser(userId) {
-      return isOwner(userId) && request.resource.data.id == userId;
+      let isRoleValid = request.resource.data.role == 'manager'; // Default role
+      return isOwner(userId) && request.resource.data.id == userId && isRoleValid;
     }
 
     /**
-     * On update, ensures the user's unique ID remains immutable.
+     * On update, ensures the user's unique ID and role remain immutable by non-admins.
      */
     function isUserUpdateValid() {
-      return request.resource.data.id == resource.data.id;
+      return request.resource.data.id == resource.data.id && request.resource.data.role == resource.data.role;
     }
 
     /**
@@ -144,7 +145,6 @@ service cloud.firestore {
 
     /**
      * On create, validates the product has all required fields.
-     * Since this is a public collection, validation is important.
      */
     function isProductCreateValid() {
       let data = request.resource.data;
@@ -159,12 +159,10 @@ service cloud.firestore {
     
     /**
      * On update, ensures critical product fields are not changed by non-admins.
-     * Regular users can only archive/unarchive.
      */
     function isProductUpdateValid() {
        let data = request.resource.data;
        let oldData = resource.data;
-       // Allow changing only isActive field for non-admins
        return data.name == oldData.name &&
               data.category == oldData.category &&
               data.bottleVolumeMl == oldData.bottleVolumeMl &&
@@ -174,7 +172,7 @@ service cloud.firestore {
     }
     
     /**
-     * On create, validates the session is linked to the correct bar and created by the current user.
+     * On create, validates the session is linked to the correct bar and created by a bar member.
      */
     function isInventorySessionCreateValid(barId) {
       return request.resource.data.barId == barId && request.resource.data.createdByUserId == request.auth.uid;
@@ -201,32 +199,32 @@ service cloud.firestore {
       return request.resource.data.inventorySessionId == resource.data.inventorySessionId;
     }
 
+    // ------------------------------------------------------------------------
+    // Collection Rules
+    // ------------------------------------------------------------------------
+
     /**
      * @description Controls access to the admin role collection.
-     * This collection is used as a fast lookup to grant admin privileges.
-     * It should only be modified by a trusted server environment.
      */
     match /roles_admin/{userId} {
       allow get: if isAdmin();
-      allow list: if false;
-      allow create, update, delete: if false;
+      allow list, create, update, delete: if false; // Must be managed server-side
     }
 
     /**
      * @description Secures user profile documents.
-     * Each user has a document that only they or an admin can access.
      */
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
-      allow list: if false;
+      allow list: if false; // Protect user privacy
       allow create: if isCreatingOwnUser(userId);
-      allow update: if isOwner(userId) && resourceExists() && isUserUpdateValid();
+      // Users can update their own profile, admins can update any. Role is immutable.
+      allow update: if (isOwner(userId) && isUserUpdateValid()) || isAdmin();
       allow delete: if (isOwner(userId) || isAdmin()) && resourceExists();
     }
     
     /**
      * @description Global product catalog.
-     * All authenticated users can read and add to this list. Editing is restricted.
      */
     match /products/{productId} {
         allow get, list: if isSignedIn();
@@ -238,17 +236,26 @@ service cloud.firestore {
 
     /**
      * @description Secures the top-level bar documents.
-     * Bar information is public to read, but only the owner or an admin can modify it.
      */
     match /bars/{barId} {
-      allow get, list: if true;
+      // Basic bar info is public for potential discovery features.
+      allow get, list: if true; 
       allow create: if isSignedIn() && isCreatingOwnBar();
-      allow update: if (isOwner(resource.data.ownerUserId) || isAdmin()) && resourceExists() && isBarUpdateValid();
-      allow delete: if (isOwner(resource.data.ownerUserId) || isAdmin()) && resourceExists();
+      allow update: if (isBarOwner(barId) || isAdmin()) && resourceExists() && isBarUpdateValid();
+      allow delete: if (isBarOwner(barId) || isAdmin()) && resourceExists();
+
+      /**
+       * @description Controls access to the list of bar members.
+       * Only bar owners and admins can manage the staff list.
+       */
+      match /members/{userId} {
+        allow get, list: if canReadBarData(barId);
+        // Only owner or admin can add/remove/change roles of members
+        allow create, update, delete: if isBarOwner(barId) || isAdmin();
+      }
 
       /**
        * @description Secures inventory session data for a bar.
-       * Access is restricted to the owner of the parent bar or an admin.
        */
       match /inventorySessions/{inventorySessionId} {
         allow get, list: if canReadBarData(barId);
@@ -258,7 +265,6 @@ service cloud.firestore {
 
         /**
          * @description Secures individual line items within an inventory session.
-         * Access is inherited from the grandparent bar document's ownership.
          */
         match /lines/{inventoryLineId} {
           allow get, list: if canReadBarData(barId);
@@ -270,3 +276,4 @@ service cloud.firestore {
     }
   }
 }
+    

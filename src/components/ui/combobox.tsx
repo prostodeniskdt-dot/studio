@@ -22,16 +22,26 @@ import {
 export type ComboboxOption = {
     value: string;
     label: string;
+    category?: string; // Optional category for grouping
+}
+
+export type GroupedComboboxOption = {
+  label: string;
+  options: ComboboxOption[];
 }
 
 interface ComboboxProps {
-    options: ComboboxOption[];
+    options: ComboboxOption[] | GroupedComboboxOption[];
     value?: string;
     onSelect: (value: string) => void;
     placeholder?: string;
     searchPlaceholder?: string;
     notFoundText?: string;
     triggerClassName?: string;
+}
+
+const isGrouped = (options: any[]): options is GroupedComboboxOption[] => {
+  return options.length > 0 && 'options' in options[0] && 'label' in options[0];
 }
 
 
@@ -45,7 +55,73 @@ export function Combobox({
     triggerClassName
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
-  const selectedLabel = options.find((option) => option.value === value)?.label
+
+  const getSelectedLabel = () => {
+    if (!value) return placeholder;
+    if (isGrouped(options)) {
+        for (const group of options) {
+            const found = group.options.find(option => option.value === value);
+            if (found) return found.label;
+        }
+    } else {
+        const found = (options as ComboboxOption[]).find(option => option.value === value);
+        if (found) return found.label;
+    }
+    return placeholder;
+  };
+  
+  const selectedLabel = getSelectedLabel();
+
+  const renderOptions = () => {
+    if (isGrouped(options)) {
+      return options.map((group) => (
+        <CommandGroup key={group.label} heading={group.label}>
+          {group.options.map((option) => (
+            <CommandItem
+              key={option.value}
+              value={option.label}
+              onSelect={() => {
+                onSelect(option.value === value ? "" : option.value)
+                setOpen(false)
+              }}
+            >
+              <Check
+                className={cn(
+                  "mr-2 h-4 w-4",
+                  value === option.value ? "opacity-100" : "opacity-0"
+                )}
+              />
+              {option.label}
+            </CommandItem>
+          ))}
+        </CommandGroup>
+      ));
+    }
+
+    return (
+      <CommandGroup>
+        {(options as ComboboxOption[]).map((option) => (
+          <CommandItem
+            key={option.value}
+            value={option.label}
+            onSelect={() => {
+              onSelect(option.value === value ? "" : option.value)
+              setOpen(false)
+            }}
+          >
+            <Check
+              className={cn(
+                "mr-2 h-4 w-4",
+                value === option.value ? "opacity-100" : "opacity-0"
+              )}
+            />
+            {option.label}
+          </CommandItem>
+        ))}
+      </CommandGroup>
+    );
+  };
+
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -57,7 +133,7 @@ export function Combobox({
           className={cn("w-full justify-between", triggerClassName)}
         >
           <span className="truncate">
-            {value ? selectedLabel : placeholder}
+            {selectedLabel}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -67,26 +143,7 @@ export function Combobox({
           <CommandInput placeholder={searchPlaceholder} />
           <CommandList>
             <CommandEmpty>{notFoundText}</CommandEmpty>
-            <CommandGroup>
-              {options.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.label}
-                  onSelect={() => {
-                    onSelect(option.value === value ? "" : option.value)
-                    setOpen(false)
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {option.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
+            {renderOptions()}
           </CommandList>
         </Command>
       </PopoverContent>

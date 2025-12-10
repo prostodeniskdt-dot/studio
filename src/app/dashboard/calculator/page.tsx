@@ -5,13 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
+import { Combobox, type GroupedComboboxOption } from '@/components/ui/combobox';
 import { Ruler, Weight, Send, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import type { Product, InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { translateCategory } from '@/lib/utils';
 
 export default function UnifiedCalculatorPage() {
   const { toast } = useToast();
@@ -25,10 +26,24 @@ export default function UnifiedCalculatorPage() {
   );
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsQuery);
 
-  const productOptions: ComboboxOption[] = React.useMemo(() => 
-      products?.filter(p => p.isActive).map(p => ({ value: p.id, label: p.name })) ?? [],
-      [products]
-  );
+  const groupedProductOptions = React.useMemo<GroupedComboboxOption[]>(() => {
+    if (!products) return [];
+
+    const groups: Record<string, { value: string; label: string }[]> = {};
+    
+    products.filter(p => p.isActive).forEach(p => {
+      const category = translateCategory(p.category);
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push({ value: p.id, label: p.name });
+    });
+
+    return Object.entries(groups)
+      .map(([label, options]) => ({ label, options }))
+      .sort((a,b) => a.label.localeCompare(b.label));
+
+  }, [products]);
 
   const [selectedProductId, setSelectedProductId] = React.useState<string | undefined>(undefined);
 
@@ -202,7 +217,7 @@ export default function UnifiedCalculatorPage() {
           <div className="space-y-2">
             <Label htmlFor="product-select">Выберите продукт (профиль бутылки)</Label>
             <Combobox 
-              options={productOptions}
+              options={groupedProductOptions}
               value={selectedProductId}
               onSelect={handleProductSelect}
               placeholder={isLoadingProducts ? "Загрузка продуктов..." : "Выберите продукт из каталога..."}

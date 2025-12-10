@@ -27,7 +27,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -45,7 +44,7 @@ import { doc, collection, writeBatch } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Combobox, type ComboboxOption } from '../ui/combobox';
+import { Combobox, type GroupedComboboxOption } from '../ui/combobox';
 
 
 export function ProductsTable({ products, barId }: { products: Product[], barId: string | null }) {
@@ -84,9 +83,23 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
     });
   }
 
-  const productOptions: ComboboxOption[] = React.useMemo(() => 
-    products.map(p => ({ value: p.id, label: p.name }))
-  , [products]);
+  const groupedProductOptions = React.useMemo<GroupedComboboxOption[]>(() => {
+    const groups: Record<string, { value: string; label: string }[]> = {};
+    
+    products.forEach(p => {
+      const category = translateCategory(p.category);
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push({ value: p.id, label: p.name });
+    });
+
+    return Object.entries(groups)
+      .map(([label, options]) => ({ label, options }))
+      .sort((a,b) => a.label.localeCompare(b.label));
+
+  }, [products]);
+
 
   const columns: ColumnDef<Product>[] = [
     {
@@ -114,6 +127,7 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
     {
        accessorKey: 'id',
        header: 'ID',
+       enableHiding: false,
     },
     {
       accessorKey: 'name',
@@ -223,6 +237,16 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
       rowSelection,
     },
   });
+  
+  React.useEffect(() => {
+    // This effect synchronizes the external filter value with the table's internal filter state.
+    const currentFilter = table.getColumn('name')?.getFilterValue();
+    const externalFilter = (columnFilters.find(f => f.id === 'name') as {value: string} | undefined)?.value
+    
+    if (externalFilter && currentFilter !== externalFilter) {
+      table.getColumn('name')?.setFilterValue(externalFilter);
+    }
+  }, [columnFilters, table]);
 
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -234,11 +258,11 @@ export function ProductsTable({ products, barId }: { products: Product[], barId:
                 </div>
                 <div className="flex items-center gap-2">
                 <Combobox 
-                  options={productOptions}
+                  options={groupedProductOptions}
                   onSelect={(value) => {
-                    table.getColumn('id')?.setFilterValue(value || undefined);
+                    table.getColumn('name')?.setFilterValue(value ? products.find(p=>p.id === value)?.name : undefined);
                   }}
-                  value={table.getColumn('id')?.getFilterValue() as string}
+                  value={products.find(p=>p.name === table.getColumn('name')?.getFilterValue())?.id}
                   placeholder="Поиск по названию..."
                   searchPlaceholder="Введите название продукта..."
                   notFoundText="Продукт не найден."

@@ -6,6 +6,7 @@ import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeAdminApp } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { calculateLineFields } from './calculations';
 
 const AnalyzeInventoryVarianceInputSchema = z.object({
   productName: z.string().describe('The name of the product being analyzed.'),
@@ -191,7 +192,7 @@ export async function deletePurchaseOrder(barId: string, orderId: string): Promi
     }
 }
 
-export async function addPurchaseOrderLine(barId: string, orderId: string, product: Product): Promise<{ success: boolean; error?: string }> {
+export async function addPurchaseOrderLine(barId: string, orderId: string, product: Product): Promise<{ success: boolean; error?: string, id?: string }> {
     try {
         const { db } = initializeAdminApp();
         const linesCollection = db.collection('bars').doc(barId).collection('purchaseOrders').doc(orderId).collection('lines');
@@ -204,7 +205,7 @@ export async function addPurchaseOrderLine(barId: string, orderId: string, produ
         }
 
         const newLineRef = linesCollection.doc();
-        const newLineData = {
+        const newLineData: Omit<PurchaseOrderLine, 'id'> & { id: string } = {
             id: newLineRef.id,
             purchaseOrderId: orderId,
             productId: product.id,
@@ -213,7 +214,7 @@ export async function addPurchaseOrderLine(barId: string, orderId: string, produ
             receivedQuantity: 0,
         };
         await newLineRef.set(newLineData);
-        return { success: true };
+        return { success: true, id: newLineRef.id };
     } catch (error) {
         console.error("Error in addPurchaseOrderLine server action:", error);
         return { success: false, error: 'Произошла ошибка на сервере.' };
@@ -251,6 +252,90 @@ export async function deletePurchaseOrderLine(barId: string, orderId: string, li
         return { success: true };
     } catch (error) {
         console.error("Error in deletePurchaseOrderLine server action:", error);
+        return { success: false, error: 'Произошла ошибка на сервере.' };
+    }
+}
+
+
+export async function saveInventoryLines(barId: string, sessionId: string, lines: InventoryLine[]): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { db } = initializeAdminApp();
+        const batch = db.batch();
+        const productsCollection = db.collection('products');
+        const linesCollection = db.collection('bars').doc(barId).collection('inventorySessions').doc(sessionId).collection('lines');
+        
+        // Fetch all necessary products in one go
+        const productIds = lines.map(line => line.productId);
+        const productDocs = await db.getAll(...productIds.map(id => productsCollection.doc(id)));
+        const productsMap = new Map(productDocs.map(doc => [doc.id, doc.data() as Product]));
+
+        for (const line of lines) {
+            const product = productsMap.get(line.productId);
+            if (product) {
+                const lineRef = linesCollection.doc(line.id);
+                const calculatedFields = calculateLineFields(line, product);
+                batch.update(lineRef, {
+                    startStock: line.startStock,
+                    purchases: line.purchases,
+                    sales: line.sales,
+                    endStock: line.endStock,
+                    ...calculatedFields
+                });
+            }
+        }
+        
+        await batch.commit();
+        return { success: true };
+    } catch (error) {
+        console.error("Error in saveInventoryLines server action:", error);
+        return { success: false, error: 'Произошла ошибка на сервере при сохранении данных.' };
+    }
+}
+
+export async function completeInventorySession(barId: string, sessionId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { db } = initializeAdminApp();
+        const sessionRef = db.collection('bars').doc(barId).collection('inventorySessions').doc(sessionId);
+        
+        await sessionRef.update({
+            status: 'completed',
+            closedAt: FieldValue.serverTimestamp(),
+        });
+        
+        return { success: true };
+    } catch (error) {
+        console.error("Error in completeInventorySession server action:", error);
+        return { success: false, error: 'Произошла ошибка на сервере при завершении сессии.' };
+    }
+}
+
+export async function addProductToSession(barId: string, sessionId: string, productId: string): Promise<{ success: boolean; error?: string; id?: string }> {
+    try {
+        const { db } = initializeAdminApp();
+        const linesCollection = db.collection('bars').doc(barId).collection('inventorySessions').doc(sessionId).collection('lines');
+        
+        const productSnap = await db.collection('products').doc(productId).get();
+        if (!productSnap.exists) {
+            return { success: false, error: 'Продукт не найден.' };
+        }
+        const product = productSnap.data() as Product;
+
+        const newLineRef = linesCollection.doc();
+        const line: Omit<InventoryLine, 'id'> = {
+            productId: product.id,
+            inventorySessionId: sessionId,
+            startStock: 0,
+            purchases: 0,
+            sales: 0,
+            endStock: 0,
+            ...calculateLineFields({ startStock: 0, purchases: 0, sales: 0, endStock: 0 } as InventoryLine, product),
+        };
+
+        await newLineRef.set({ ...line, id: newLineRef.id });
+
+        return { success: true, id: newLineRef.id };
+    } catch (error) {
+        console.error("Error in addProductToSession server action:", error);
         return { success: false, error: 'Произошла ошибка на сервере.' };
     }
 }

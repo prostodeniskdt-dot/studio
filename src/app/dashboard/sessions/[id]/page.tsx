@@ -10,7 +10,7 @@ import Link from "next/link";
 import { translateStatus } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, serverTimestamp, writeBatch, addDoc } from 'firebase/firestore';
+import { doc, collection, query } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -37,9 +37,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { calculateLineFields } from '@/lib/calculations';
 import { Combobox } from '@/components/ui/combobox';
 import { translateCategory } from '@/lib/utils';
+import { addProductToSession, saveInventoryLines, completeInventorySession } from '@/lib/actions';
 
 
 export default function SessionPage() {
@@ -107,100 +107,65 @@ export default function SessionPage() {
 
 
   const handleAddProductToSession = async (productId: string) => {
-    if (!productId || !firestore || !barId || !linesRef) {
+    if (!productId || !barId) {
         toast({ variant: "destructive", title: "Ошибка", description: "Невозможно добавить продукт." });
         return;
     }
-    const product = allProducts?.find(p => p.id === productId);
-    if (!product) {
-        toast({ variant: "destructive", title: "Ошибка", description: "Продукт не найден." });
-        return;
-    }
+    
+    setIsAddProductOpen(false);
+    const result = await addProductToSession(barId, id, productId);
 
-    const newLine = {
-        id: '', // Firestore will generate this
-        productId: product.id,
-        inventorySessionId: id,
-        startStock: 0,
-        purchases: 0,
-        sales: 0,
-        endStock: 0,
-        ...calculateLineFields({ startStock: 0, purchases: 0, sales: 0, endStock: 0 } as InventoryLine, product),
-    };
-
-    try {
-        const lineDocRef = await addDoc(linesRef, newLine);
-        // Firestore listener will update the UI. We can manually add it for faster UI response if needed.
-        // setLocalLines(prev => [...(prev || []), { ...newLine, id: lineDocRef.id }]);
-        toast({ title: "Продукт добавлен", description: `"${product.name}" добавлен в инвентаризацию.` });
-        setIsAddProductOpen(false);
-    } catch (error) {
-        toast({ variant: "destructive", title: "Ошибка", description: "Не удалось добавить продукт в сессию." });
+    if (result.success) {
+      const product = allProducts?.find(p => p.id === productId);
+      toast({ title: "Продукт добавлен", description: `"${product?.name}" добавлен в инвентаризацию.` });
+    } else {
+      toast({ variant: "destructive", title: "Ошибка", description: result.error });
     }
   };
   
   const handleSaveChanges = async () => {
-    if (!localLines || !barId || !firestore || !allProducts) return;
+    if (!localLines || !barId) return;
 
     setIsSaving(true);
-    const batch = writeBatch(firestore);
-    localLines.forEach(line => {
-      const product = allProducts.find(p => p.id === line.productId);
-      if (product) {
-          const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', id, 'lines', line.id);
-          const calculatedFields = calculateLineFields(line, product);
-          batch.update(lineRef, {
-            startStock: line.startStock,
-            purchases: line.purchases,
-            sales: line.sales,
-            endStock: line.endStock,
-            ...calculatedFields
-          });
-      }
-    });
-
-    try {
-      await batch.commit();
-      toast({
-        title: "Изменения сохранены",
-        description: "Все данные в инвентаризации обновлены.",
-      });
-    } catch (error: any) {
-       toast({
-        variant: "destructive",
-        title: "Ошибка сохранения",
-        description: "Не удалось сохранить изменения.",
-      });
-    } finally {
-        setIsSaving(false);
+    const result = await saveInventoryLines(barId, id, localLines);
+    
+    if (result.success) {
+        toast({
+            title: "Изменения сохранены",
+            description: "Все данные в инвентаризации обновлены.",
+        });
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Ошибка сохранения",
+            description: result.error,
+        });
     }
+    setIsSaving(false);
   };
 
   const handleCompleteSession = async () => {
-    if (!sessionRef || !barId || !firestore || !localLines || !allProducts) return;
+    if (!sessionRef || !barId) return;
+
     setIsCompleting(true);
-    
-    await handleSaveChanges();
+    await handleSaveChanges(); // First, save any pending changes
 
-    const batch = writeBatch(firestore);
-    batch.update(sessionRef, { status: 'completed', closedAt: serverTimestamp() });
+    const result = await completeInventorySession(barId, id);
 
-    try {
-      await batch.commit();
-      toast({
-        title: "Сессия завершена",
-        description: "Инвентаризация завершена и отчет готов.",
-      });
-      router.push(`/dashboard/sessions/${id}/report`);
-    } catch (error: any) {
+    if (result.success) {
+        toast({
+            title: "Сессия завершена",
+            description: "Инвентаризация завершена и отчет готов.",
+        });
+        router.push(`/dashboard/sessions/${id}/report`);
+    } else {
         toast({
             variant: "destructive",
             title: "Ошибка",
-            description: "Не удалось завершить сессию.",
+            description: result.error,
         });
-    } finally {
-        setIsCompleting(false);
     }
+    setIsCompleting(false);
   };
   
   const handleExportCSV = () => {

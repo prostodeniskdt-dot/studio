@@ -61,7 +61,7 @@ export function VarianceTrendChart({ data }: { data: SessionWithLines[] }) {
 
   return (
     <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+       <ChartContainer config={chartConfig}>
         <BarChart data={chartData}>
             <CartesianGrid vertical={false} />
             <XAxis
@@ -82,7 +82,7 @@ export function VarianceTrendChart({ data }: { data: SessionWithLines[] }) {
             <Bar dataKey="totalSurplus" fill="var(--color-totalSurplus)" radius={4} />
             <Bar dataKey="totalLoss" fill="var(--color-totalLoss)" radius={4} />
         </BarChart>
-      </ResponsiveContainer>
+      </ChartContainer>
     </div>
   );
 }

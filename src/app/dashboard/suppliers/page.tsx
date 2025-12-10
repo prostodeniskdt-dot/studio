@@ -29,10 +29,10 @@ export default function SuppliersPage() {
   
   if (error) {
     return (
-        <div className="text-center text-destructive bg-destructive/10 p-4 rounded-md">
-            <p>Не удалось загрузить данные поставщиков.</p>
-            <p className="text-xs">{error.message}</p>
-        </div>
+      <div className="text-center text-destructive bg-destructive/10 p-4 rounded-md">
+          <p>Не удалось загрузить данные поставщиков.</p>
+          <p className="text-xs">{error.message}</p>
+      </div>
     )
   }
 

@@ -86,6 +86,14 @@ service cloud.firestore {
       return isBarOwner(barId) || isExplicitMember;
     }
 
+    /**
+     * Checks if a user is the owner of the bar or an admin.
+     * This is safe for list operations as it doesn't involve cross-document reads.
+     */
+     function isOwnerOrAdmin(barId) {
+        return isBarOwner(barId) || isAdmin();
+    }
+
 
     // ------------------------------------------------------------------------
     // Authorization Logic Functions
@@ -94,6 +102,7 @@ service cloud.firestore {
     /**
      * Determines if a user can read sensitive data within a specific bar's subcollections.
      * Access is granted to the bar members or an admin.
+     * For get() operations. For list(), use isOwnerOrAdmin.
      */
     function canReadBarData(barId) {
       return isBarMember(barId) || isAdmin();
@@ -270,7 +279,9 @@ service cloud.firestore {
        * @description Secures inventory session data for a bar.
        */
       match /inventorySessions/{inventorySessionId} {
-        allow get, list: if canReadBarData(barId);
+        allow get: if canReadBarData(barId);
+        // List operations can only check ownership or admin status without cross-document reads
+        allow list: if isOwnerOrAdmin(barId);
         allow create: if canWriteBarData(barId) && isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteBarData(barId) && resourceExists();
@@ -279,7 +290,9 @@ service cloud.firestore {
          * @description Secures individual line items within an inventory session.
          */
         match /lines/{inventoryLineId} {
-          allow get, list: if canReadBarData(barId);
+          allow get: if canReadBarData(barId);
+          // List operations can only check ownership or admin status without cross-document reads
+          allow list: if isOwnerOrAdmin(barId);
           allow create: if canWriteBarData(barId) && isInventoryLineCreateValid(inventorySessionId);
           allow update: if canWriteBarData(barId) && resourceExists() && isInventoryLineUpdateValid();
           allow delete: if canWriteBarData(barId) && resourceExists();
@@ -290,20 +303,23 @@ service cloud.firestore {
        * @description Secures supplier data for a bar.
        */
       match /suppliers/{supplierId} {
-        allow get, list, create, update, delete: if canWriteBarData(barId);
+        allow get: if canReadBarData(barId);
+        allow list, create, update, delete: if canWriteBarData(barId);
       }
 
       /**
        * @description Secures purchase order data for a bar.
        */
       match /purchaseOrders/{purchaseOrderId} {
-        allow get, list, create, update, delete: if canWriteBarData(barId);
+        allow get: if canReadBarData(barId);
+        allow list, create, update, delete: if canWriteBarData(barId);
 
         /**
          * @description Secures line items within a purchase order.
          */
         match /lines/{purchaseOrderLineId} {
-          allow get, list, create, update, delete: if canWriteBarData(barId);
+          allow get: if canReadBarData(barId);
+          allow list, create, update, delete: if canWriteBarData(barId);
         }
       }
     }

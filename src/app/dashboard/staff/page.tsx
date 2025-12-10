@@ -6,8 +6,6 @@ import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firesto
 import type { BarMember, UserProfile } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { StaffTable } from '@/components/staff/staff-table';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
 import { AddStaffDialog } from '@/components/staff/add-staff-dialog';
 
 export default function StaffPage() {
@@ -15,7 +13,6 @@ export default function StaffPage() {
   const firestore = useFirestore();
   const barId = user ? `bar_${user.uid}` : null;
   
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [staffWithProfiles, setStaffWithProfiles] = React.useState<BarMember[]>([]);
   const [isLoadingProfiles, setIsLoadingProfiles] = React.useState(true);
 
@@ -74,19 +71,6 @@ export default function StaffPage() {
   }
 
   return (
-    <>
-      <div className="flex items-center justify-between py-4">
-          <div>
-              <h1 className="text-3xl font-bold tracking-tight">Персонал</h1>
-              <p className="text-muted-foreground">Управляйте командой вашего бара и их ролями.</p>
-          </div>
-          <Button onClick={() => setIsDialogOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Пригласить сотрудника
-          </Button>
-      </div>
-      <StaffTable staff={staffWithProfiles} barId={barId} />
-      <AddStaffDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} barId={barId} />
-    </>
+    <StaffTable staff={staffWithProfiles} barId={barId} />
   );
 }

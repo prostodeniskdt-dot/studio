@@ -171,77 +171,78 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
   });
 
   return (
-    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-      <div className="w-full">
-        <div className="flex items-center justify-between py-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Заказы на закупку</h1>
-            <p className="text-muted-foreground">Управляйте вашими закупками у поставщиков.</p>
+    <>
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <div className="w-full">
+          <div className="flex items-center justify-between py-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Заказы на закупку</h1>
+              <p className="text-muted-foreground">Управляйте вашими закупками у поставщиков.</p>
+            </div>
+            <SheetTrigger asChild>
+              <Button onClick={() => handleOpenSheet()}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Создать заказ
+              </Button>
+            </SheetTrigger>
           </div>
-          <SheetTrigger asChild>
-            <Button onClick={() => handleOpenSheet()}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Создать заказ
-            </Button>
-          </SheetTrigger>
-        </div>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableHead>
                     ))}
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
-                    Заказов пока нет.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow key={row.id}>
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                      Заказов пока нет.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
-      </div>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle>{editingOrder ? 'Редактировать заказ' : 'Создать новый заказ'}</SheetTitle>
-        </SheetHeader>
-        <PurchaseOrderForm barId={barId} suppliers={suppliers} order={editingOrder} onFormSubmit={handleCloseSheet} />
-      </SheetContent>
-      <AlertDialog open={!!orderToDelete} onOpenChange={(open) => !open && setOrderToDelete(null)}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Вы собираетесь удалить заказ <span className="font-semibold">№{orderToDelete?.id.substring(0, 6)}</span>. Это действие нельзя отменить.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Отмена</AlertDialogCancel>
-                <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Удалить</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
-    </Sheet>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>{editingOrder ? 'Редактировать заказ' : 'Создать новый заказ'}</SheetTitle>
+          </SheetHeader>
+          <PurchaseOrderForm barId={barId} suppliers={suppliers} order={editingOrder} onFormSubmit={handleCloseSheet} />
+        </SheetContent>
+        <AlertDialog open={!!orderToDelete} onOpenChange={(open) => !open && setOrderToDelete(null)}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Вы собираетесь удалить заказ <span className="font-semibold">№{orderToDelete?.id.substring(0, 6)}</span>. Это действие нельзя отменить.
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel>Отмена</AlertDialogCancel>
+                  <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Удалить</AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+      </>
   );
 }

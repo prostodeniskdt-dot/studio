@@ -96,43 +96,43 @@ export default function DashboardPage() {
     <div className="container mx-auto">
       <Card className="mb-6 bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
         <CardHeader>
-          <CardTitle>Добро пожаловать в BarBoss!</CardTitle>
+          <CardTitle className="text-2xl md:text-3xl">Добро пожаловать в BarBoss!</CardTitle>
           <CardDescription>
             Это ваша панель управления для инвентаризации. Отслеживайте остатки, анализируйте расхождения и оптимизируйте работу вашего бара.
           </CardDescription>
         </CardHeader>
         <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 text-sm">
                 <Link href="/dashboard/products">
-                    <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
-                        <Package className="h-8 w-8 text-primary" />
-                        <div>
+                    <div className="flex items-center gap-3 p-2 md:p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
+                        <Package className="h-7 w-7 md:h-8 md:w-8 text-primary" />
+                        <div className="hidden md:block">
                             <h3 className="font-semibold">Управление продуктами</h3>
                             <p className="text-muted-foreground">Ведите каталог ваших напитков.</p>
                         </div>
                     </div>
                 </Link>
                 <Link href="/dashboard/sessions">
-                    <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
-                        <BarChart3 className="h-8 w-8 text-primary" />
-                        <div>
+                    <div className="flex items-center gap-3 p-2 md:p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
+                        <BarChart3 className="h-7 w-7 md:h-8 md:w-8 text-primary" />
+                        <div className="hidden md:block">
                             <h3 className="font-semibold">Проведение инвентаризаций</h3>
                             <p className="text-muted-foreground">Создавайте сессии для подсчета.</p>
                         </div>
                     </div>
                 </Link>
                 <Link href="/dashboard/analytics">
-                    <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
-                        <LineChart className="h-8 w-8 text-primary" />
-                        <div>
+                    <div className="flex items-center gap-3 p-2 md:p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
+                        <LineChart className="h-7 w-7 md:h-8 md:w-8 text-primary" />
+                        <div className="hidden md:block">
                             <h3 className="font-semibold">Аналитика</h3>
                             <p className="text-muted-foreground">Анализируйте данные и отчеты.</p>
                         </div>
                     </div>
                 </Link>
-                 <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <Sparkles className="h-8 w-8 text-primary" />
-                    <div>
+                 <div className="flex items-center gap-3 p-2 md:p-3 rounded-lg bg-muted/50">
+                    <Sparkles className="h-7 w-7 md:h-8 md:w-8 text-primary" />
+                    <div className="hidden md:block">
                         <h3 className="font-semibold">AI-анализ отклонений</h3>
                         <p className="text-muted-foreground">Используйте ИИ для поиска причин недостач.</p>
                     </div>
@@ -142,10 +142,10 @@ export default function DashboardPage() {
       </Card>
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Активные сессии</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Активные сессии</h1>
         <Button onClick={handleCreateSession} disabled={isLoading || hasDataLoadingError || !barId}>
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-          Начать инвентаризацию
+          Начать
         </Button>
       </div>
       {isLoading ? (

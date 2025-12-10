@@ -86,9 +86,9 @@ export default function LoginPage() {
   return (
     <div className="w-full min-h-screen bg-background">
       <div className="container relative grid h-screen flex-col items-center justify-center lg:max-w-none lg:grid-cols-2 lg:px-0">
-        <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
+        <div className="relative h-full flex-col bg-muted p-10 text-white flex">
           <div
-            className="absolute inset-0 bg-cover"
+            className="absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage:
                 "url(https://images.unsplash.com/photo-1579311318434-2c343b3b3f29?q=80&w=1974&auto=format&fit=crop)",
@@ -107,7 +107,7 @@ export default function LoginPage() {
             </blockquote>
           </div>
         </div>
-        <div className="lg:p-8">
+        <div className="lg:p-8 flex items-center h-full">
           <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
             <div className="flex flex-col space-y-2 text-center">
               <h1 className="text-2xl font-semibold tracking-tight">

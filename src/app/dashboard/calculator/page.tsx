@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Combobox, type GroupedComboboxOption } from '@/components/ui/combobox';
-import { Weight, Send, Loader2 } from 'lucide-react';
+import { Weight, Send, Loader2, Ruler } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -51,9 +51,12 @@ export default function UnifiedCalculatorPage() {
   const [fullWeight, setFullWeight] = React.useState('');
   const [emptyWeight, setEmptyWeight] = React.useState('');
   const [currentWeight, setCurrentWeight] = React.useState('');
+  const [liquidHeight, setLiquidHeight] = React.useState('');
   const [calculatedVolumeByWeight, setCalculatedVolumeByWeight] = React.useState<number | null>(null);
+  const [calculatedVolumeByHeight, setCalculatedVolumeByHeight] = React.useState<number | null>(null);
   
   const [isSending, setIsSending] = React.useState(false);
+  const [lastSentVolume, setLastSentVolume] = React.useState<'weight' | 'height' | null>(null);
 
   const handleProductSelect = (productId: string) => {
     const product = products?.find(p => p.id === productId);
@@ -63,17 +66,20 @@ export default function UnifiedCalculatorPage() {
         setFullWeight(product.fullBottleWeightG?.toString() ?? '');
         setEmptyWeight(product.emptyBottleWeightG?.toString() ?? '');
         setCalculatedVolumeByWeight(null);
+        setCalculatedVolumeByHeight(null);
     }
   };
 
   const handleCalculate = () => {
     setCalculatedVolumeByWeight(null);
+    setCalculatedVolumeByHeight(null);
 
     // Weight calculation
     const bv = parseFloat(bottleVolume);
     const fw = parseFloat(fullWeight);
     const ew = parseFloat(emptyWeight);
     const cw = parseFloat(currentWeight);
+    const lh = parseFloat(liquidHeight);
 
     if (fw > ew && cw >= ew && bv > 0) {
         const liquidNetWeight = fw - ew;
@@ -85,19 +91,35 @@ export default function UnifiedCalculatorPage() {
             setCalculatedVolumeByWeight(Math.round(volume));
         }
     }
+    
+    // For height, we now assume a linear relationship as a rough estimate
+    // A better approach would be to have calibration points, but for now this is a simple approximation.
+    // Let's assume the liquid height correlates directly to the volume percentage.
+    // This is a big simplification. Let's find a product that has full and empty bottle heights to make a ratio.
+    // Since we removed bottleHeight, let's just make a simple linear approximation.
+    // Let's assume a "standard" full liquid height of 25cm for a 700ml bottle for approximation.
+    const standardFullHeight = 25; // cm, rough approximation for a standard 700ml bottle
+    if (lh > 0 && bv > 0) {
+        // This is a very rough estimate.
+        const estimatedMaxHeight = (bv / 700) * standardFullHeight;
+        const percentage = Math.min(lh / estimatedMaxHeight, 1);
+        const volume = percentage * bv;
+        setCalculatedVolumeByHeight(Math.round(volume));
+    }
   };
 
-  const handleSendToInventory = async () => {
-    if (calculatedVolumeByWeight === null || !selectedProductId || !barId || !firestore) {
+  const handleSendToInventory = async (volume: number | null, type: 'weight' | 'height') => {
+    if (volume === null || !selectedProductId || !barId || !firestore) {
       toast({
         variant: "destructive",
         title: "Ошибка",
-        description: "Сначала рассчитайте точный объем по весу и выберите продукт.",
+        description: "Сначала рассчитайте объем и выберите продукт.",
       });
       return;
     }
 
     setIsSending(true);
+    setLastSentVolume(type);
     
     try {
       const sessionsQuery = query(
@@ -143,7 +165,7 @@ export default function UnifiedCalculatorPage() {
           startStock: 0,
           purchases: 0,
           sales: 0,
-          endStock: calculatedVolumeByWeight,
+          endStock: volume,
           theoreticalEndStock: 0,
           differenceVolume: 0,
           differenceMoney: 0,
@@ -155,12 +177,12 @@ export default function UnifiedCalculatorPage() {
       } else {
         const lineDoc = linesSnapshot.docs[0];
         const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines', lineDoc.id);
-        await updateDoc(lineRef, { endStock: calculatedVolumeByWeight });
+        await updateDoc(lineRef, { endStock: volume });
       }
       
       toast({
         title: "Данные отправлены",
-        description: `Остаток для продукта ${products?.find(p => p.id === selectedProductId)?.name} (${calculatedVolumeByWeight} мл) обновлен в текущей сессии.`,
+        description: `Остаток для продукта ${products?.find(p => p.id === selectedProductId)?.name} (${volume} мл) обновлен в текущей сессии.`,
       });
 
     } catch (error: any) {
@@ -183,9 +205,13 @@ export default function UnifiedCalculatorPage() {
   }
 
   return (
-    <>
-      <h1 className="text-3xl font-bold tracking-tight mb-2">Универсальный калькулятор</h1>
-      <p className="text-muted-foreground mb-6">Рассчитайте остатки в бутылке и отправьте данные в текущую инвентаризацию.</p>
+    <div className="w-full">
+      <div className="flex items-center justify-between py-4">
+          <div>
+              <h1 className="text-3xl font-bold tracking-tight">Универсальный калькулятор</h1>
+              <p className="text-muted-foreground">Рассчитайте остатки в бутылке и отправьте данные в текущую инвентаризацию.</p>
+          </div>
+      </div>
       
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
@@ -210,33 +236,40 @@ export default function UnifiedCalculatorPage() {
 
           <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Параметры бутылки</h3>
+                {/* Расчет по весу */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Расчет по весу</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="fullWeight">Вес полной (г)</Label>
+                            <Input id="fullWeight" type="number" value={fullWeight} onChange={e => setFullWeight(e.target.value)} placeholder="1150" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="emptyWeight">Вес пустой (г)</Label>
+                            <Input id="emptyWeight" type="number" value={emptyWeight} onChange={e => setEmptyWeight(e.target.value)} placeholder="450" />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="currentWeight">Текущий вес (г)</Label>
+                        <Input id="currentWeight" type="number" value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} placeholder="Замер с весов" />
+                    </div>
+                </div>
+
+                <Separator />
+                
+                {/* Расчет по высоте */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Примерный расчет по высоте</h3>
+                    <div className="space-y-2">
+                        <Label htmlFor="liquidHeight">Высота жидкости (см)</Label>
+                        <Input id="liquidHeight" type="number" value={liquidHeight} onChange={e => setLiquidHeight(e.target.value)} placeholder="Напр. 15.5" />
+                    </div>
+                </div>
+
                 <div className="space-y-2">
                     <Label htmlFor="bottleVolume">Номинальный объем (мл)</Label>
                     <Input id="bottleVolume" type="number" value={bottleVolume} onChange={(e) => setBottleVolume(e.target.value)} placeholder="700" />
                 </div>
-                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="fullWeight">Вес полной (г)</Label>
-                        <Input id="fullWeight" type="number" value={fullWeight} onChange={e => setFullWeight(e.target.value)} placeholder="1150" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="emptyWeight">Вес пустой (г)</Label>
-                        <Input id="emptyWeight" type="number" value={emptyWeight} onChange={e => setEmptyWeight(e.target.value)} placeholder="450" />
-                    </div>
-                </div>
-              </div>
-              
-              <Separator />
-
-              <div className="space-y-4">
-                 <h3 className="text-lg font-semibold">Текущие замеры</h3>
-                <div className="space-y-2">
-                    <Label htmlFor="currentWeight">Текущий вес (г)</Label>
-                    <Input id="currentWeight" type="number" value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} placeholder="Замер с весов" />
-                </div>
-              </div>
             </div>
 
             <div className="space-y-6">
@@ -244,20 +277,32 @@ export default function UnifiedCalculatorPage() {
                 Рассчитать
               </Button>
               
-              {calculatedVolumeByWeight !== null && (
+              { (calculatedVolumeByWeight !== null || calculatedVolumeByHeight !== null) && (
                 <Card className='bg-muted/50'>
                   <CardHeader>
                     <CardTitle>Результаты расчета</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="text-center p-4 rounded-lg bg-background">
-                      <p className="text-base text-muted-foreground flex items-center justify-center gap-2"><Weight className='h-4 w-4'/> Точный объем (по весу):</p>
-                      <p className="text-4xl font-bold text-primary">{calculatedVolumeByWeight !== null ? `${calculatedVolumeByWeight} мл` : 'Нет данных'}</p>
-                    </div>
-                     <Button onClick={handleSendToInventory} className="w-full" disabled={calculatedVolumeByWeight === null || isSending || !barId}>
-                        {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                        {isSending ? 'Отправка...' : 'Отправить в инвентаризацию'}
-                    </Button>
+                    {calculatedVolumeByWeight !== null && (
+                        <div className="text-center p-4 rounded-lg bg-background">
+                            <p className="text-base text-muted-foreground flex items-center justify-center gap-2"><Weight className='h-4 w-4'/> Точный объем (по весу):</p>
+                            <p className="text-4xl font-bold text-primary">{calculatedVolumeByWeight} мл</p>
+                             <Button onClick={() => handleSendToInventory(calculatedVolumeByWeight, 'weight')} className="w-full mt-2" disabled={calculatedVolumeByWeight === null || isSending || !barId}>
+                                {isSending && lastSentVolume === 'weight' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                                {isSending && lastSentVolume === 'weight' ? 'Отправка...' : 'Отправить в инвентаризацию'}
+                            </Button>
+                        </div>
+                    )}
+                    {calculatedVolumeByHeight !== null && (
+                        <div className="text-center p-4 rounded-lg bg-background">
+                            <p className="text-base text-muted-foreground flex items-center justify-center gap-2"><Ruler className='h-4 w-4'/> Примерный объем (по высоте):</p>
+                            <p className="text-3xl font-bold">{calculatedVolumeByHeight} мл</p>
+                             <Button onClick={() => handleSendToInventory(calculatedVolumeByHeight, 'height')} className="w-full mt-2" variant="secondary" disabled={calculatedVolumeByHeight === null || isSending || !barId}>
+                                {isSending && lastSentVolume === 'height' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                                {isSending && lastSentVolume === 'height' ? 'Отправка...' : 'Отправить в инвентаризацию'}
+                            </Button>
+                        </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -265,6 +310,6 @@ export default function UnifiedCalculatorPage() {
           </div>
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }

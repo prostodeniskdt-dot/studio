@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, BarChart3, Package, Sparkles, Loader2, LineChart } from "lucide-react";
+import { PlusCircle, BarChart3, Package, Sparkles, Loader2, LineChart, Users } from "lucide-react";
 import { SessionsList } from "@/components/dashboard/sessions-list";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -23,12 +23,13 @@ export default function DashboardPage() {
 
   // Query for in-progress or draft sessions for the list
   const sessionsQuery = useMemoFirebase(() => 
-    firestore && barId ? query(
+    firestore && barId && user ? query(
         collection(firestore, 'bars', barId, 'inventorySessions'), 
         where('status', 'in', ['in_progress', 'draft']),
+        where('createdByUserId', '==', user.uid),
         orderBy('createdAt', 'desc')
     ) : null,
-    [firestore, barId]
+    [firestore, barId, user]
   );
   
   const { data: sessions, isLoading: isLoadingSessions, error: sessionsError } = useCollection<InventorySession>(sessionsQuery);
@@ -48,6 +49,7 @@ export default function DashboardPage() {
     const inProgressQuery = query(
         collection(firestore, 'bars', barId, 'inventorySessions'), 
         where('status', '==', 'in_progress'),
+        where('createdByUserId', '==', user.uid),
         orderBy('createdAt', 'desc')
     );
     const inProgressSnapshot = await getDocs(inProgressQuery);
@@ -102,41 +104,35 @@ export default function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 text-sm">
-                <Link href="/dashboard/products">
-                    <div className="flex items-center gap-3 p-2 md:p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
-                        <Package className="h-7 w-7 md:h-8 md:w-8 text-primary" />
-                        <div className="hidden md:block">
-                            <h3 className="font-semibold">Управление продуктами</h3>
-                            <p className="text-muted-foreground">Ведите каталог ваших напитков.</p>
-                        </div>
+             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-4 text-sm">
+                <Link href="/dashboard/products" className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
+                    <Package className="h-7 w-7 md:h-8 md:w-8 text-primary shrink-0" />
+                    <div className="hidden sm:block">
+                        <h3 className="font-semibold">Продукты</h3>
+                        <p className="text-muted-foreground text-xs">Каталог напитков</p>
                     </div>
                 </Link>
-                <Link href="/dashboard/sessions">
-                    <div className="flex items-center gap-3 p-2 md:p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
-                        <BarChart3 className="h-7 w-7 md:h-8 md:w-8 text-primary" />
-                        <div className="hidden md:block">
-                            <h3 className="font-semibold">Проведение инвентаризаций</h3>
-                            <p className="text-muted-foreground">Создавайте сессии для подсчета.</p>
-                        </div>
+                <Link href="/dashboard/sessions" className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
+                    <BarChart3 className="h-7 w-7 md:h-8 md:w-8 text-primary shrink-0" />
+                    <div className="hidden sm:block">
+                        <h3 className="font-semibold">Сессии</h3>
+                        <p className="text-muted-foreground text-xs">Подсчет остатков</p>
                     </div>
                 </Link>
-                <Link href="/dashboard/analytics">
-                    <div className="flex items-center gap-3 p-2 md:p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
-                        <LineChart className="h-7 w-7 md:h-8 md:w-8 text-primary" />
-                        <div className="hidden md:block">
-                            <h3 className="font-semibold">Аналитика</h3>
-                            <p className="text-muted-foreground">Анализируйте данные и отчеты.</p>
-                        </div>
+                <Link href="/dashboard/analytics" className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
+                    <LineChart className="h-7 w-7 md:h-8 md:w-8 text-primary shrink-0" />
+                    <div className="hidden sm:block">
+                        <h3 className="font-semibold">Аналитика</h3>
+                        <p className="text-muted-foreground text-xs">Отчеты и данные</p>
                     </div>
                 </Link>
-                 <div className="flex items-center gap-3 p-2 md:p-3 rounded-lg bg-muted/50">
-                    <Sparkles className="h-7 w-7 md:h-8 md:w-8 text-primary" />
-                    <div className="hidden md:block">
-                        <h3 className="font-semibold">AI-анализ отклонений</h3>
-                        <p className="text-muted-foreground">Используйте ИИ для поиска причин недостач.</p>
+                 <Link href="/dashboard/staff" className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
+                    <Users className="h-7 w-7 md:h-8 md:w-8 text-primary shrink-0" />
+                    <div className="hidden sm:block">
+                        <h3 className="font-semibold">Персонал</h3>
+                        <p className="text-muted-foreground text-xs">Команда бара</p>
                     </div>
-                </div>
+                </Link>
             </div>
         </CardContent>
       </Card>
@@ -155,7 +151,7 @@ export default function DashboardPage() {
       ) : hasDataLoadingError ? (
          <div className="text-center text-destructive bg-destructive/10 p-4 rounded-md">
             <p>Не удалось загрузить данные.</p>
-            <p className="text-xs">Возможно, у вас нет прав на просмотр или данные еще не созданы.</p>
+            <p className="text-xs">{sessionsError?.message || 'Возможно, у вас нет прав на просмотр или данные еще не созданы.'}</p>
          </div>
       ) : (
         <SessionsList sessions={sessions || []} barId={barId} />

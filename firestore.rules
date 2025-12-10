@@ -28,6 +28,9 @@
  * - Bar Subcollection Privacy: All sensitive sub-data (like inventory) is private
  *   to the bar's members. This is enforced using `exists()` and `get()` calls on
  *   the parent bar's `members` subcollection.
+ * - List Queries: `allow list` rules must not rely on `get` or `exists` calls. 
+ *   Therefore, client queries must include `where` clauses that can be validated
+ *   against the `request` object (e.g., `where('createdByUserId', '==', request.auth.uid)`).
  *
  * Denormalization for Authorization:
  * The `ownerUserId` on a `/bars/{barId}` document is the ultimate source of truth
@@ -85,15 +88,6 @@ service cloud.firestore {
       let isExplicitMember = exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid));
       return isBarOwner(barId) || isExplicitMember;
     }
-    
-    /**
-     * Checks if the requesting user is the owner of a specific bar.
-     * This function is intended for `list` queries. It CANNOT check admin status.
-     */
-    function isBarOwnerForList(barDoc) {
-      return barDoc.ownerUserId == request.auth.uid;
-    }
-
 
     // ------------------------------------------------------------------------
     // Authorization Logic Functions
@@ -232,7 +226,6 @@ service cloud.firestore {
      */
     match /users/{userId} {
       // Admins can read any user profile, users can read their own.
-      // Bar owners can read profiles of their members.
       allow get: if isOwner(userId) || isAdmin();
       allow list: if false; // Protect user privacy by default.
       allow create: if isCreatingOwnUser(userId);
@@ -256,8 +249,9 @@ service cloud.firestore {
      * @description Secures the top-level bar documents.
      */
     match /bars/{barId} {
-      // Basic bar info is public for potential discovery features.
+      // Bar info is readable by its members or admins.
       allow get: if isBarMember(barId) || isAdmin();
+      // Public list of bars is allowed for discovery features.
       allow list: if true; 
       allow create: if isSignedIn() && isCreatingOwnBar();
       allow update: if (isBarOwner(barId) || isAdmin()) && resourceExists() && isBarUpdateValid();
@@ -279,7 +273,8 @@ service cloud.firestore {
        */
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        allow list: if isBarOwnerForList(resource.data) || isAdmin();
+        // A user can only list sessions they created.
+        allow list: if (request.query.createdByUserId == request.auth.uid) || isAdmin();
         allow create: if canWriteBarData(barId) && isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteBarData(barId) && resourceExists();
@@ -288,8 +283,7 @@ service cloud.firestore {
          * @description Secures individual line items within an inventory session.
          */
         match /lines/{inventoryLineId} {
-          allow get: if canReadBarData(barId);
-          allow list: if isBarOwner(barId) || isAdmin();
+          allow get, list: if canReadBarData(barId);
           allow create: if canWriteBarData(barId) && isInventoryLineCreateValid(inventorySessionId);
           allow update: if canWriteBarData(barId) && resourceExists() && isInventoryLineUpdateValid();
           allow delete: if canWriteBarData(barId) && resourceExists();

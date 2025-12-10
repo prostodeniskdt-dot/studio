@@ -20,11 +20,12 @@ export default function SessionsPage() {
   const barId = user ? `bar_${user.uid}` : null; 
 
   const sessionsQuery = useMemoFirebase(() => 
-    firestore && barId ? query(
-        collection(firestore, 'bars', barId, 'inventorySessions'), 
+    firestore && barId && user ? query(
+        collection(firestore, 'bars', barId, 'inventorySessions'),
+        where('createdByUserId', '==', user.uid), 
         orderBy('createdAt', 'desc')
     ) : null,
-    [firestore, barId]
+    [firestore, barId, user]
   );
   
   const { data: sessions, isLoading: isLoadingSessions, error: sessionsError } = useCollection<InventorySession>(sessionsQuery);
@@ -44,6 +45,7 @@ export default function SessionsPage() {
     const inProgressQuery = query(
         collection(firestore, 'bars', barId, 'inventorySessions'), 
         where('status', '==', 'in_progress'),
+        where('createdByUserId', '==', user.uid),
         orderBy('createdAt', 'desc')
     );
     const inProgressSnapshot = await getDocs(inProgressQuery);
@@ -103,7 +105,7 @@ export default function SessionsPage() {
       ) : hasDataLoadingError ? (
          <div className="text-center text-destructive bg-destructive/10 p-4 rounded-md">
             <p>Не удалось загрузить данные.</p>
-            <p className="text-xs">Возможно, у вас нет прав на просмотр или данные еще не созданы.</p>
+            <p className="text-xs">{sessionsError?.message || 'Возможно, у вас нет прав на просмотр или данные еще не созданы.'}</p>
          </div>
       ) : (
         <SessionsList sessions={sessions || []} barId={barId} />

@@ -203,7 +203,7 @@ export default function UnifiedCalculatorPage() {
   }
 
   return (
-    <div className="container mx-auto">
+    <>
       <h1 className="text-3xl font-bold tracking-tight mb-2">Универсальный калькулятор</h1>
       <p className="text-muted-foreground mb-6">Рассчитайте остатки в бутылке и отправьте данные в текущую инвентаризацию.</p>
       
@@ -301,6 +301,6 @@ export default function UnifiedCalculatorPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 }

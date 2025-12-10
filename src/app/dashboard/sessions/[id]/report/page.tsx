@@ -179,13 +179,11 @@ export default function SessionReportPage() {
 
 
   return (
-    <div className="container mx-auto">
-      <ReportView 
-        session={{...session, lines: lines}} 
-        products={products}
-        onCreatePurchaseOrder={handleCreatePurchaseOrder}
-        isCreatingOrder={isCreatingOrder}
-      />
-    </div>
+    <ReportView 
+      session={{...session, lines: lines}} 
+      products={products}
+      onCreatePurchaseOrder={handleCreatePurchaseOrder}
+      isCreatingOrder={isCreatingOrder}
+    />
   );
 }

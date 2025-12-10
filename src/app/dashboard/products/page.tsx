@@ -24,8 +24,6 @@ export default function ProductsPage() {
     }
 
     return (
-        <div className="container mx-auto">
-            <ProductsTable products={products || []} />
-        </div>
+        <ProductsTable products={products || []} />
     );
 }

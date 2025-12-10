@@ -32,7 +32,7 @@ export default function DashboardPage() {
     if (!sessions || !user) return [];
     // Filter and sort on the client side
     return sessions
-      .filter(s => s.createdByUserId === user.uid && (s.status === 'in_progress' || s.status === 'draft'))
+      .filter(s => (s.status === 'in_progress' || s.status === 'draft'))
       .sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
   }, [sessions, user]);
 
@@ -48,7 +48,7 @@ export default function DashboardPage() {
     }
     
     // Client-side check for existing in-progress session
-    const inProgressSession = sessions?.find(s => s.status === 'in_progress' && s.createdByUserId === user.uid);
+    const inProgressSession = sessions?.find(s => s.status === 'in_progress');
     if (inProgressSession) {
         toast({
             title: "Активная сессия уже существует",
@@ -90,7 +90,7 @@ export default function DashboardPage() {
   const hasDataLoadingError = sessionsError;
 
   return (
-    <div className="container mx-auto">
+    <>
       <Card className="mb-6 bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
         <CardHeader>
           <CardTitle className="text-2xl md:text-3xl">Добро пожаловать в BarBoss!</CardTitle>
@@ -151,6 +151,6 @@ export default function DashboardPage() {
       ) : (
         <SessionsList sessions={activeSessions} barId={barId} />
       )}
-    </div>
+    </>
   );
 }

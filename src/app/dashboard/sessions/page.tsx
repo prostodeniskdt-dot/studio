@@ -30,7 +30,6 @@ export default function SessionsPage() {
     if (!sessions || !user) return [];
     // Filter and sort on the client side
     return sessions
-        .filter(s => s.createdByUserId === user.uid)
         .sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
   }, [sessions, user]);
 
@@ -46,7 +45,7 @@ export default function SessionsPage() {
     }
     
     // Check for existing in-progress session on the client
-    const inProgressSession = sessions?.find(s => s.status === 'in_progress' && s.createdByUserId === user.uid);
+    const inProgressSession = sessions?.find(s => s.status === 'in_progress');
     if (inProgressSession) {
         toast({
             title: "Активная сессия уже существует",
@@ -87,7 +86,7 @@ export default function SessionsPage() {
   const hasDataLoadingError = sessionsError;
 
   return (
-    <div className="container mx-auto">
+    <>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Сессии инвентаризации</h1>
         <Button onClick={handleCreateSession} disabled={isLoading || hasDataLoadingError || !barId}>
@@ -107,6 +106,6 @@ export default function SessionsPage() {
       ) : (
         <SessionsList sessions={sortedSessions || []} barId={barId} />
       )}
-    </div>
+    </>
   );
 }

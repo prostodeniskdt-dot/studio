@@ -65,7 +65,7 @@ export default function PurchaseOrderPage() {
     }
 
     return (
-        <div className="container mx-auto">
+        <>
              <div className="mb-4">
                 <Button variant="ghost" asChild>
                     <Link href="/dashboard/purchase-orders">
@@ -99,6 +99,6 @@ export default function PurchaseOrderPage() {
                     />
                 </CardContent>
             </Card>
-        </div>
+        </>
     )
 }

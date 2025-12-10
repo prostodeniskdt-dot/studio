@@ -329,7 +329,7 @@ export default function SessionPage() {
   const isEditable = session.status === 'in_progress';
 
   return (
-    <div className="container mx-auto">
+    <>
       <input
         type="file"
         ref={fileInputRef}
@@ -438,6 +438,6 @@ export default function SessionPage() {
             </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

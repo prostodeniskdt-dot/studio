@@ -7,9 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn, formatCurrency, translateCategory, translateSubCategory } from '@/lib/utils';
-import { Sparkles, Loader2, ChevronDown } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 import { VarianceAnalysisModal } from './variance-analysis-modal';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 type InventoryTableProps = {
   lines: InventoryLine[];
@@ -105,76 +104,68 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
               <TableHead className="w-[100px] text-center">Анализ</TableHead>
             </TableRow>
           </TableHeader>
-          
+          <TableBody>
             {Object.entries(groupedAndSortedLines).map(([category, subCategories]) => (
-                 <TableBody key={category}>
-                    <TableRow className="bg-muted/20 hover:bg-muted/20">
-                        <TableCell colSpan={9} className="font-bold text-base text-primary">
-                            {translateCategory(category as any)}
+              <React.Fragment key={category}>
+                <TableRow className="bg-muted/20 hover:bg-muted/20">
+                  <TableCell colSpan={9} className="font-bold text-base text-primary">
+                    {translateCategory(category as any)}
+                  </TableCell>
+                </TableRow>
+                {Object.entries(subCategories).map(([subCategory, subCategoryLines]) => (
+                  <React.Fragment key={subCategory}>
+                    {subCategory !== 'uncategorized' && (
+                      <TableRow className="bg-muted/10 hover:bg-muted/10">
+                        <TableCell colSpan={9} className="py-2 pl-8 font-semibold text-sm">
+                          {translateSubCategory(subCategory as any)}
                         </TableCell>
-                    </TableRow>
-                    {Object.entries(subCategories).map(([subCategory, lines]) => (
-                         <Collapsible asChild key={subCategory} defaultOpen>
-                            <>
-                                {subCategory !== 'uncategorized' && (
-                                    <TableRow className="bg-muted/10 hover:bg-muted/20">
-                                         <TableCell colSpan={9} className="py-2">
-                                            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-semibold w-full">
-                                                <ChevronDown className="h-4 w-4 transition-transform [&[data-state=open]]:-rotate-180" />
-                                                {translateSubCategory(subCategory as any)}
-                                            </CollapsibleTrigger>
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                                <CollapsibleContent asChild>
-                                     <>
-                                        {lines.map(line => (
-                                        <TableRow key={line.id} className={cn(line.differenceVolume !== 0 && isEditable && 'bg-amber-500/10 hover:bg-amber-500/20')}>
-                                            <TableCell className="font-medium pl-10">{line.product?.name}</TableCell>
-                                            <TableCell className="text-right">
-                                            {isEditable ? (
-                                                <Input type="number" value={line.startStock} onChange={e => handleInputChange(line.id!, 'startStock', e.target.value)} className="w-24 text-right ml-auto" />
-                                            ) : line.startStock}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                            {isEditable ? (
-                                                <Input type="number" value={line.purchases} onChange={e => handleInputChange(line.id!, 'purchases', e.target.value)} className="w-24 text-right ml-auto" />
-                                            ) : line.purchases}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                            {isEditable ? (
-                                                <Input type="number" value={line.sales} onChange={e => handleInputChange(line.id!, 'sales', e.target.value)} className="w-24 text-right ml-auto" />
-                                            ) : line.sales}
-                                            </TableCell>
-                                            <TableCell className="text-right font-mono">{Math.round(line.theoreticalEndStock)}</TableCell>
-                                            <TableCell className="text-right">
-                                            {isEditable ? (
-                                                <Input type="number" value={line.endStock} onChange={e => handleInputChange(line.id!, 'endStock', e.target.value)} className="w-24 text-right ml-auto bg-primary/10" />
-                                            ) : line.endStock}
-                                            </TableCell>
-                                            <TableCell className={cn("text-right font-mono", line.differenceVolume > 0 ? 'text-green-600' : line.differenceVolume < 0 ? 'text-destructive' : 'text-muted-foreground')}>
-                                            {Math.round(line.differenceVolume)}
-                                            </TableCell>
-                                            <TableCell className={cn("text-right font-mono", line.differenceMoney > 0 ? 'text-green-600' : line.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground')}>
-                                            {formatCurrency(line.differenceMoney)}
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                {Math.abs(line.differenceVolume) > (line.product?.portionVolumeMl ?? 40) / 4 && (
-                                                    <Button variant="ghost" size="sm" onClick={() => setAnalyzingLine(line)}>
-                                                        <Sparkles className="h-4 w-4" />
-                                                        <span className="sr-only">Анализ</span>
-                                                    </Button>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                        ))}
-                                    </>
-                                </CollapsibleContent>
-                            </>
-                        </Collapsible>
+                      </TableRow>
+                    )}
+                    {subCategoryLines.map(line => (
+                      <TableRow key={line.id} className={cn(line.differenceVolume !== 0 && isEditable && 'bg-amber-500/10 hover:bg-amber-500/20')}>
+                        <TableCell className="font-medium pl-10">{line.product?.name}</TableCell>
+                        <TableCell className="text-right">
+                          {isEditable ? (
+                            <Input type="number" value={line.startStock} onChange={e => handleInputChange(line.id!, 'startStock', e.target.value)} className="w-24 text-right ml-auto" />
+                          ) : line.startStock}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {isEditable ? (
+                            <Input type="number" value={line.purchases} onChange={e => handleInputChange(line.id!, 'purchases', e.target.value)} className="w-24 text-right ml-auto" />
+                          ) : line.purchases}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {isEditable ? (
+                            <Input type="number" value={line.sales} onChange={e => handleInputChange(line.id!, 'sales', e.target.value)} className="w-24 text-right ml-auto" />
+                          ) : line.sales}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">{Math.round(line.theoreticalEndStock)}</TableCell>
+                        <TableCell className="text-right">
+                          {isEditable ? (
+                            <Input type="number" value={line.endStock} onChange={e => handleInputChange(line.id!, 'endStock', e.target.value)} className="w-24 text-right ml-auto bg-primary/10" />
+                          ) : line.endStock}
+                        </TableCell>
+                        <TableCell className={cn("text-right font-mono", line.differenceVolume > 0 ? 'text-green-600' : line.differenceVolume < 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                          {Math.round(line.differenceVolume)}
+                        </TableCell>
+                        <TableCell className={cn("text-right font-mono", line.differenceMoney > 0 ? 'text-green-600' : line.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                          {formatCurrency(line.differenceMoney)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {Math.abs(line.differenceVolume) > (line.product?.portionVolumeMl ?? 40) / 4 && (
+                            <Button variant="ghost" size="sm" onClick={() => setAnalyzingLine(line)}>
+                              <Sparkles className="h-4 w-4" />
+                              <span className="sr-only">Анализ</span>
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
                     ))}
-                 </TableBody>
+                  </React.Fragment>
+                ))}
+              </React.Fragment>
             ))}
+          </TableBody>
           <TableFooter>
             <TableRow>
               <TableCell colSpan={7} className="font-bold text-lg">Общее отклонение</TableCell>

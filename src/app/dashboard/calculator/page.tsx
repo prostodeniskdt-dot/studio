@@ -53,11 +53,9 @@ export default function UnifiedCalculatorPage() {
   const [currentWeight, setCurrentWeight] = React.useState('');
   const [liquidLevel, setLiquidLevel] = React.useState('');
   
-  const [calculatedVolumeByWeight, setCalculatedVolumeByWeight] = React.useState<number | null>(null);
-  const [calculatedVolumeByHeight, setCalculatedVolumeByHeight] = React.useState<number | null>(null);
+  const [calculatedVolume, setCalculatedVolume] = React.useState<number | null>(null);
   
   const [isSending, setIsSending] = React.useState(false);
-  const [lastSentVolume, setLastSentVolume] = React.useState<'weight' | 'height' | null>(null);
 
   const handleProductSelect = (productId: string) => {
     const product = products?.find(p => p.id === productId);
@@ -66,14 +64,14 @@ export default function UnifiedCalculatorPage() {
         setBottleVolume(product.bottleVolumeMl?.toString() ?? '');
         setFullWeight(product.fullBottleWeightG?.toString() ?? '');
         setEmptyWeight(product.emptyBottleWeightG?.toString() ?? '');
-        setCalculatedVolumeByWeight(null);
-        setCalculatedVolumeByHeight(null);
+        setCalculatedVolume(null);
     }
   };
 
   const handleCalculate = () => {
-    setCalculatedVolumeByWeight(null);
-    setCalculatedVolumeByHeight(null);
+    setCalculatedVolume(null);
+    let volumeByWeight: number | null = null;
+    let volumeByHeight: number | null = null;
 
     // Weight calculation
     const bv = parseFloat(bottleVolume);
@@ -85,10 +83,10 @@ export default function UnifiedCalculatorPage() {
         const liquidNetWeight = fw - ew;
         const currentLiquidWeight = cw - ew;
         if (currentLiquidWeight <= 0) {
-            setCalculatedVolumeByWeight(0);
+            volumeByWeight = 0;
         } else {
             const volume = (currentLiquidWeight / liquidNetWeight) * bv;
-            setCalculatedVolumeByWeight(Math.round(volume));
+            volumeByWeight = Math.round(volume);
         }
     }
     
@@ -96,16 +94,20 @@ export default function UnifiedCalculatorPage() {
     const ll = parseFloat(liquidLevel);
     if (ll > 0 && bv > 0) {
         // This is a very rough approximation and assumes a linear shape.
-        // A better approach would use a lookup table or a more complex formula per bottle type.
-        // For now, we'll assume the bottle is mostly cylindrical.
-        // A rough heuristic: 1 cm of liquid is ~35-40ml for a standard 700ml bottle.
         const mlPerCm = bv / 25; // Super rough estimate: 25cm avg height
         const volume = ll * mlPerCm;
-        setCalculatedVolumeByHeight(Math.round(volume > bv ? bv : volume));
+        volumeByHeight = Math.round(volume > bv ? bv : volume);
+    }
+
+    // Prioritize weight calculation as it's more accurate
+    if (volumeByWeight !== null) {
+        setCalculatedVolume(volumeByWeight);
+    } else if (volumeByHeight !== null) {
+        setCalculatedVolume(volumeByHeight);
     }
   };
 
-  const handleSendToInventory = async (volume: number | null, type: 'weight' | 'height') => {
+  const handleSendToInventory = async (volume: number | null) => {
     if (volume === null || !selectedProductId || !barId || !firestore) {
       toast({
         variant: "destructive",
@@ -116,7 +118,6 @@ export default function UnifiedCalculatorPage() {
     }
 
     setIsSending(true);
-    setLastSentVolume(type);
     
     try {
       const sessionsQuery = query(
@@ -203,11 +204,9 @@ export default function UnifiedCalculatorPage() {
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-between py-4">
-          <div>
-              <h1 className="text-3xl font-bold tracking-tight">Универсальный калькулятор</h1>
-              <p className="text-muted-foreground">Рассчитайте остатки в бутылке и отправьте данные в текущую инвентаризацию.</p>
-          </div>
+      <div className="py-4">
+          <h1 className="text-3xl font-bold tracking-tight">Универсальный калькулятор</h1>
+          <p className="text-muted-foreground">Рассчитайте остатки в бутылке и отправьте данные в текущую инвентаризацию.</p>
       </div>
       
       <Card className="max-w-4xl mx-auto">
@@ -256,7 +255,7 @@ export default function UnifiedCalculatorPage() {
                 
                 {/* Расчет по высоте */}
                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Расчет по высоте</h3>
+                    <h3 className="text-lg font-semibold">Расчет по высоте (альтернативный)</h3>
                     <div className="space-y-2">
                         <Label htmlFor="liquidLevel">Уровень жидкости (см)</Label>
                         <Input id="liquidLevel" type="number" value={liquidLevel} onChange={e => setLiquidLevel(e.target.value)} placeholder="Замер линейкой" />
@@ -276,32 +275,20 @@ export default function UnifiedCalculatorPage() {
                 Рассчитать
               </Button>
               
-              { (calculatedVolumeByWeight !== null || calculatedVolumeByHeight !== null) && (
+              { calculatedVolume !== null && (
                 <Card className='bg-muted/50'>
                   <CardHeader>
-                    <CardTitle>Результаты расчета</CardTitle>
+                    <CardTitle>Результат расчета</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {calculatedVolumeByWeight !== null && (
-                        <div className="text-center p-4 rounded-lg bg-background">
-                            <p className="text-base text-muted-foreground flex items-center justify-center gap-2"><Weight className='h-4 w-4'/> Точный объем (по весу):</p>
-                            <p className="text-4xl font-bold text-primary">{calculatedVolumeByWeight} мл</p>
-                             <Button onClick={() => handleSendToInventory(calculatedVolumeByWeight, 'weight')} className="w-full mt-2" disabled={calculatedVolumeByWeight === null || isSending || !barId}>
-                                {isSending && lastSentVolume === 'weight' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                                {isSending && lastSentVolume === 'weight' ? 'Отправка...' : 'Отправить в инвентаризацию'}
-                            </Button>
-                        </div>
-                    )}
-                     {calculatedVolumeByHeight !== null && (
-                        <div className="text-center p-4 rounded-lg bg-background">
-                            <p className="text-base text-muted-foreground flex items-center justify-center gap-2"><Ruler className='h-4 w-4'/> Примерный объем (по высоте):</p>
-                            <p className="text-4xl font-bold text-secondary-foreground">{calculatedVolumeByHeight} мл</p>
-                             <Button onClick={() => handleSendToInventory(calculatedVolumeByHeight, 'height')} className="w-full mt-2" disabled={calculatedVolumeByHeight === null || isSending || !barId}>
-                                {isSending && lastSentVolume === 'height' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                                {isSending && lastSentVolume === 'height' ? 'Отправка...' : 'Отправить в инвентаризацию'}
-                            </Button>
-                        </div>
-                    )}
+                    <div className="text-center p-4 rounded-lg bg-background">
+                        <p className="text-base text-muted-foreground flex items-center justify-center gap-2"><Weight className='h-4 w-4'/> Рассчитанный объем:</p>
+                        <p className="text-4xl font-bold text-primary">{calculatedVolume} мл</p>
+                         <Button onClick={() => handleSendToInventory(calculatedVolume)} className="w-full mt-2" disabled={calculatedVolume === null || isSending || !barId}>
+                            {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                            {isSending ? 'Отправка...' : 'Отправить в инвентаризацию'}
+                        </Button>
+                    </div>
                   </CardContent>
                 </Card>
               )}

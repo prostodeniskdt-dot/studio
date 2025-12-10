@@ -65,7 +65,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="container mx-auto">
+    <>
       <h1 className="text-3xl font-bold tracking-tight mb-2">Аналитика</h1>
       <p className="text-muted-foreground mb-6">Анализируйте данные по инвентаризациям для принятия лучших решений.</p>
 
@@ -80,6 +80,6 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </>
   );
 }

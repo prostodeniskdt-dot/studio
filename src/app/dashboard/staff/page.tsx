@@ -74,7 +74,7 @@ export default function StaffPage() {
   }
 
   return (
-    <div className="container mx-auto">
+    <>
         <div className="flex items-center justify-between py-4">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Персонал</h1>
@@ -87,6 +87,6 @@ export default function StaffPage() {
         </div>
       <StaffTable staff={staffWithProfiles} barId={barId} />
       <AddStaffDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} barId={barId} />
-    </div>
+    </>
   );
 }

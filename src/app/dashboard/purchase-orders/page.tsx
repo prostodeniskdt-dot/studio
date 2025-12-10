@@ -87,8 +87,6 @@ export default function PurchaseOrdersPage() {
   }
 
   return (
-    <div className="container mx-auto">
       <PurchaseOrdersTable orders={ordersWithDetails} barId={barId} suppliers={suppliers || []} />
-    </div>
   );
 }

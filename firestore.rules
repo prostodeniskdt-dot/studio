@@ -285,6 +285,27 @@ service cloud.firestore {
           allow delete: if canWriteBarData(barId) && resourceExists();
         }
       }
+      
+      /**
+       * @description Secures supplier data for a bar.
+       */
+      match /suppliers/{supplierId} {
+        allow get, list, create, update, delete: if canWriteBarData(barId);
+      }
+
+      /**
+       * @description Secures purchase order data for a bar.
+       */
+      match /purchaseOrders/{purchaseOrderId} {
+        allow get, list, create, update, delete: if canWriteBarData(barId);
+
+        /**
+         * @description Secures line items within a purchase order.
+         */
+        match /lines/{purchaseOrderLineId} {
+          allow get, list, create, update, delete: if canWriteBarData(barId);
+        }
+      }
     }
   }
 }

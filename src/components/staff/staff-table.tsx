@@ -7,7 +7,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { MoreHorizontal, User } from 'lucide-react';
+import { MoreHorizontal, User, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -29,9 +29,54 @@ import { Badge } from '@/components/ui/badge';
 import type { BarMember } from '@/lib/types';
 import { translateRole } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { removeStaffMember } from '@/lib/actions';
 
+interface StaffTableProps {
+    staff: BarMember[];
+    barId: string;
+}
 
-export function StaffTable({ staff }: { staff: BarMember[] }) {
+export function StaffTable({ staff, barId }: StaffTableProps) {
+  const { toast } = useToast();
+  const [memberToDelete, setMemberToDelete] = React.useState<BarMember | null>(null);
+
+  const handleDeleteClick = (member: BarMember) => {
+    setMemberToDelete(member);
+  };
+
+  const confirmDelete = async () => {
+    if (!memberToDelete) return;
+    try {
+      const result = await removeStaffMember(barId, memberToDelete.userId);
+      if (result.success) {
+        toast({
+          title: 'Сотрудник удален',
+          description: `Пользователь ${memberToDelete.userProfile?.email} был удален из вашего бара.`,
+        });
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: error.message || 'Не удалось удалить сотрудника.',
+      });
+    } finally {
+      setMemberToDelete(null);
+    }
+  };
 
   const columns: ColumnDef<BarMember>[] = [
     {
@@ -88,8 +133,9 @@ export function StaffTable({ staff }: { staff: BarMember[] }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   className={"text-destructive focus:text-destructive"}
-                  disabled
+                  onClick={() => handleDeleteClick(member)}
                  >
+                  <Trash2 className="mr-2 h-4 w-4" />
                   Удалить из бара
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -107,55 +153,71 @@ export function StaffTable({ staff }: { staff: BarMember[] }) {
   });
 
   return (
-    <div className="rounded-md border">
-        <Table>
-        <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                return (
-                    <TableHead key={header.id}>
-                    {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                        )}
-                    </TableHead>
-                );
-                })}
-            </TableRow>
-            ))}
-        </TableHeader>
-        <TableBody>
-            {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-                <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && 'selected'}
-                >
-                {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                    {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                    )}
-                    </TableCell>
-                ))}
+    <>
+        <div className="rounded-md border">
+            <Table>
+            <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => {
+                    return (
+                        <TableHead key={header.id}>
+                        {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                            )}
+                        </TableHead>
+                    );
+                    })}
                 </TableRow>
-            ))
-            ) : (
-            <TableRow>
-                <TableCell
-                colSpan={columns.length}
-                className="h-24 text-center"
-                >
-                В вашем баре пока нет сотрудников.
-                </TableCell>
-            </TableRow>
-            )}
-        </TableBody>
-        </Table>
-    </div>
+                ))}
+            </TableHeader>
+            <TableBody>
+                {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                    <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && 'selected'}
+                    >
+                    {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                        {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                        )}
+                        </TableCell>
+                    ))}
+                    </TableRow>
+                ))
+                ) : (
+                <TableRow>
+                    <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                    >
+                    В вашем баре пока нет сотрудников.
+                    </TableCell>
+                </TableRow>
+                )}
+            </TableBody>
+            </Table>
+        </div>
+        <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Вы собираетесь удалить сотрудника <span className="font-semibold">{memberToDelete?.userProfile?.displayName}</span> из вашего бара. Это действие нельзя отменить.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Отмена</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Удалить</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    </>
   );
 }

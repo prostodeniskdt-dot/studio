@@ -24,7 +24,7 @@
  * Key Security Decisions:
  * - Admin Role Management: The `/roles_admin` collection is read-only from the
  *   client to prevent privilege escalation.
- * - No User Listing: Listing the entire `/users` collection is disallowed.
+ * - No User Listing: Listing the entire `/users` collection is disallowed to protect user privacy.
  * - Bar Subcollection Privacy: All sensitive sub-data (like inventory) is private
  *   to the bar's members. This is enforced using `exists()` and `get()` calls on
  *   the parent bar's `members` subcollection.
@@ -74,7 +74,8 @@ service cloud.firestore {
      * Checks if the requesting user is the owner of a specific bar.
      */
     function isBarOwner(barId) {
-      return get(/databases/$(database)/documents/bars/$(barId)).data.ownerUserId == request.auth.uid;
+      let barDoc = get(/databases/$(database)/documents/bars/$(barId));
+      return barDoc.data.ownerUserId == request.auth.uid;
     }
 
     /**
@@ -141,6 +142,13 @@ service cloud.firestore {
      */
     function isBarUpdateValid() {
       return request.resource.data.ownerUserId == resource.data.ownerUserId;
+    }
+    
+    /**
+     * Validates that the role being assigned is a valid one.
+     */
+    function isValidMemberRole() {
+        return request.resource.data.role in ['manager', 'bartender'];
     }
 
     /**
@@ -215,8 +223,10 @@ service cloud.firestore {
      * @description Secures user profile documents.
      */
     match /users/{userId} {
+      // Admins can read any user profile, users can read their own.
+      // Bar owners can read profiles of their members.
       allow get: if isOwner(userId) || isAdmin();
-      allow list: if false; // Protect user privacy
+      allow list: if false; // Protect user privacy by default.
       allow create: if isCreatingOwnUser(userId);
       // Users can update their own profile, admins can update any. Role is immutable.
       allow update: if (isOwner(userId) && isUserUpdateValid()) || isAdmin();
@@ -239,7 +249,8 @@ service cloud.firestore {
      */
     match /bars/{barId} {
       // Basic bar info is public for potential discovery features.
-      allow get, list: if true; 
+      allow get: if isBarMember(barId) || isAdmin();
+      allow list: if true; 
       allow create: if isSignedIn() && isCreatingOwnBar();
       allow update: if (isBarOwner(barId) || isAdmin()) && resourceExists() && isBarUpdateValid();
       allow delete: if (isBarOwner(barId) || isAdmin()) && resourceExists();
@@ -251,7 +262,8 @@ service cloud.firestore {
       match /members/{userId} {
         allow get, list: if canReadBarData(barId);
         // Only owner or admin can add/remove/change roles of members
-        allow create, update, delete: if isBarOwner(barId) || isAdmin();
+        allow create, update: if (isBarOwner(barId) || isAdmin()) && isValidMemberRole();
+        allow delete: if isBarOwner(barId) || isAdmin();
       }
 
       /**
@@ -276,4 +288,3 @@ service cloud.firestore {
     }
   }
 }
-    

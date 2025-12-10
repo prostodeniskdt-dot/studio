@@ -1,8 +1,11 @@
 'use server';
 
 import { analyzeInventoryVariance as analyzeInventoryVarianceFlow } from '@/ai/flows/analyze-inventory-variance';
-import type { InventoryLine, Product } from './types';
+import type { InventoryLine, Product, UserRole } from './types';
 import { z } from 'genkit';
+import { getFirestore } from 'firebase-admin/firestore';
+import { initializeAdminApp } from '@/firebase/admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 const AnalyzeInventoryVarianceInputSchema = z.object({
   productName: z.string().describe('The name of the product being analyzed.'),
@@ -25,7 +28,6 @@ export async function runVarianceAnalysis(line: InventoryLine & { product?: Prod
     throw new Error('Данные о продукте отсутствуют для анализа.');
   }
 
-  // Ensure all required fields for the flow are present
   const { name, portionVolumeMl } = line.product;
   const { startStock, purchases, sales, endStock, theoreticalEndStock } = line;
 
@@ -45,7 +47,7 @@ export async function runVarianceAnalysis(line: InventoryLine & { product?: Prod
     productName: name,
     startStock: startStock,
     purchases: purchases,
-    sales: sales * portionVolumeMl, // Convert portions to ml for analysis
+    sales: sales * portionVolumeMl, 
     endStock: endStock,
     theoreticalEndStock: theoreticalEndStock,
   };
@@ -55,7 +57,60 @@ export async function runVarianceAnalysis(line: InventoryLine & { product?: Prod
     return result;
   } catch (error) {
     console.error('Error in runVarianceAnalysis calling Genkit flow:', error);
-    // Propagate a user-friendly error message
     throw new Error('Сбой AI-анализа. Пожалуйста, проверьте свой API-ключ Gemini и повторите попытку.');
   }
 }
+
+// Server action to add a staff member
+export async function addStaffMember(barId: string, email: string, role: 'manager' | 'bartender'): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { db } = initializeAdminApp();
+    
+    // Find user by email
+    const usersRef = db.collection('users');
+    const userQuery = usersRef.where('email', '==', email).limit(1);
+    const userSnapshot = await userQuery.get();
+
+    if (userSnapshot.empty) {
+      return { success: false, error: 'Пользователь с таким email не найден.' };
+    }
+
+    const userDoc = userSnapshot.docs[0];
+    const userId = userDoc.id;
+
+    // Check if user is already a member
+    const memberRef = db.collection('bars').doc(barId).collection('members').doc(userId);
+    const memberDoc = await memberRef.get();
+
+    if (memberDoc.exists) {
+      return { success: false, error: 'Этот пользователь уже является сотрудником бара.' };
+    }
+
+    // Add user to the members subcollection
+    await memberRef.set({
+      userId: userId,
+      role: role,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in addStaffMember server action:", error);
+    return { success: false, error: 'Произошла ошибка на сервере.' };
+  }
+}
+
+// Server action to remove a staff member
+export async function removeStaffMember(barId: string, userId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { db } = initializeAdminApp();
+    const memberRef = db.collection('bars').doc(barId).collection('members').doc(userId);
+    
+    await memberRef.delete();
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Error in removeStaffMember server action:", error);
+    return { success: false, error: 'Произошла ошибка на сервере.' };
+  }
+}
+

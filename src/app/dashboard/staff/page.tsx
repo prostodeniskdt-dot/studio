@@ -2,11 +2,10 @@
 
 import * as React from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, doc, getDoc } from 'firebase/firestore';
 import type { BarMember, UserProfile } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { StaffTable } from '@/components/staff/staff-table';
-import { AddStaffDialog } from '@/components/staff/add-staff-dialog';
 
 export default function StaffPage() {
   const { user } = useUser();

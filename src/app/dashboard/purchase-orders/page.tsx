@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, getDocs } from 'firebase/firestore';
 import type { PurchaseOrder, Supplier, PurchaseOrderLine } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { PurchaseOrdersTable } from '@/components/purchase-orders/purchase-orders-table';
@@ -29,7 +29,6 @@ export default function PurchaseOrdersPage() {
   );
   const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
   
-  // This state will hold all lines for all orders.
   const [allOrderLines, setAllOrderLines] = React.useState<Record<string, PurchaseOrderLine[]>>({});
   const [isLoadingLines, setIsLoadingLines] = React.useState(true);
 
@@ -63,7 +62,11 @@ export default function PurchaseOrdersPage() {
         }
     };
 
-    fetchAllLines();
+    if (orders.length > 0) {
+        fetchAllLines();
+    } else {
+        setIsLoadingLines(false);
+    }
 
   }, [firestore, barId, orders, isLoadingOrders]);
 

@@ -17,6 +17,13 @@ export default function PurchaseOrdersPage() {
   const [ordersWithDetails, setOrdersWithDetails] = React.useState<OrderWithSupplier[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
+  // Fetching suppliers separately for the creation form
+  const suppliersQuery = useMemoFirebase(() =>
+    firestore && barId ? collection(firestore, 'bars', barId, 'suppliers') : null,
+    [firestore, barId]
+  );
+  const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
+
   React.useEffect(() => {
     if (!firestore || !barId) {
       setIsLoading(false);
@@ -27,10 +34,8 @@ export default function PurchaseOrdersPage() {
       setIsLoading(true);
       try {
         // Fetch all suppliers first
-        const suppliersQuery = collection(firestore, 'bars', barId, 'suppliers');
-        const suppliersSnapshot = await getDocs(suppliersQuery);
-        const suppliers = suppliersSnapshot.docs.map(doc => doc.data() as Supplier);
-        const suppliersMap = new Map(suppliers.map(s => [s.id, s]));
+        const suppliersSnapshot = await getDocs(query(collection(firestore, 'bars', barId, 'suppliers')));
+        const suppliersMap = new Map(suppliersSnapshot.docs.map(doc => doc.data() as Supplier).map(s => [s.id, s]));
 
         // Fetch all orders
         const ordersQuery = collection(firestore, 'bars', barId, 'purchaseOrders');
@@ -73,20 +78,13 @@ export default function PurchaseOrdersPage() {
   }, [firestore, barId]);
   
 
-  if (isLoading || !barId) {
+  if (isLoading || isLoadingSuppliers || !barId) {
     return (
       <div className="flex justify-center items-center h-full pt-20">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
-
-  // Fetching suppliers separately for the creation form
-  const suppliersQuery = useMemoFirebase(() =>
-    firestore && barId ? collection(firestore, 'bars', barId, 'suppliers') : null,
-    [firestore, barId]
-  );
-  const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
 
   return (
     <div className="container mx-auto">

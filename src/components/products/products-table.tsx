@@ -246,54 +246,54 @@ export function ProductsTable({ products }: { products: Product[] }) {
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <>
-            <div className="flex items-center justify-between py-4 gap-2 flex-wrap">
-                <div>
+            <div className="flex items-center justify-between py-4 gap-4 flex-wrap">
+                <div className="flex-grow">
                     <h1 className="text-3xl font-bold tracking-tight">Продукты</h1>
                     <p className="text-muted-foreground">Управляйте каталогом товаров и их профилями для калькулятора.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="ml-auto">
-                        Колонки <ChevronDown className="ml-2 h-4 w-4" />
-                    </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                    {table
-                        .getAllColumns()
-                        .filter((column) => column.getCanHide())
-                        .map((column) => {
-                        return (
-                            <DropdownMenuCheckboxItem
-                            key={column.id}
-                            className="capitalize"
-                            checked={column.getIsVisible()}
-                            onCheckedChange={(value) =>
-                                column.toggleVisibility(!!value)
-                            }
-                            >
-                            {
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                        <Button variant="outline">
+                            Колонки <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                        {table
+                            .getAllColumns()
+                            .filter((column) => column.getCanHide())
+                            .map((column) => {
+                            return (
+                                <DropdownMenuCheckboxItem
+                                key={column.id}
+                                className="capitalize"
+                                checked={column.getIsVisible()}
+                                onCheckedChange={(value) =>
+                                    column.toggleVisibility(!!value)
+                                }
+                                >
                                 {
-                                    name: 'Название',
-                                    category: 'Категория',
-                                    subCategory: 'Подкатегория',
-                                    costPerBottle: 'Стоимость',
-                                    bottleVolumeMl: 'Объем',
-                                    isActive: 'Статус',
-                                    id: 'ID'
-                                }[column.id] || column.id
-                            }
-                            </DropdownMenuCheckboxItem>
-                        );
-                        })}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                <SheetTrigger asChild>
-                    <Button onClick={() => handleOpenSheet()}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Добавить
-                    </Button>
-                </SheetTrigger>
+                                    {
+                                        name: 'Название',
+                                        category: 'Категория',
+                                        subCategory: 'Подкатегория',
+                                        costPerBottle: 'Стоимость',
+                                        bottleVolumeMl: 'Объем',
+                                        isActive: 'Статус',
+                                        id: 'ID'
+                                    }[column.id] || column.id
+                                }
+                                </DropdownMenuCheckboxItem>
+                            );
+                            })}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <SheetTrigger asChild>
+                        <Button onClick={() => handleOpenSheet()}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Добавить
+                        </Button>
+                    </SheetTrigger>
                 </div>
             </div>
             <div className="flex items-center gap-2 mb-4">

@@ -21,7 +21,7 @@ export default function SuppliersPage() {
 
   if (isLoading || !barId) {
     return (
-      <div className="flex justify-center items-center h-full pt-20">
+      <div className="flex justify-center items-center h-full">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -37,6 +37,8 @@ export default function SuppliersPage() {
   }
 
   return (
-    <SuppliersTable suppliers={suppliers || []} barId={barId} />
+    <div className="w-full">
+        <SuppliersTable suppliers={suppliers || []} barId={barId} />
+    </div>
   );
 }

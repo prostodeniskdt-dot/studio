@@ -89,10 +89,8 @@ export default function DashboardLayout({
               <UserNav />
             </header>
           </ClientOnly>
-          <main className="flex-1 flex flex-col">
-            <div className="container mx-auto flex-1 overflow-auto p-4 sm:p-6">
+          <main className="flex-1 flex flex-col p-4 sm:p-6">
               {children}
-            </div>
           </main>
         </div>
       </div>

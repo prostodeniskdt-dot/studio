@@ -97,13 +97,15 @@ export default function PurchaseOrdersPage() {
   
   if (isLoading || !barId) {
     return (
-      <div className="flex justify-center items-center h-full pt-20">
+      <div className="flex justify-center items-center h-full">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <PurchaseOrdersTable orders={ordersWithDetails} barId={barId} suppliers={suppliers || []} />
+    <div className="w-full">
+        <PurchaseOrdersTable orders={ordersWithDetails} barId={barId} suppliers={suppliers || []} />
+    </div>
   );
 }

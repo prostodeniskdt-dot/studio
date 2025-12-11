@@ -20,45 +20,48 @@ async function seedInitialData(firestore: Firestore): Promise<void> {
     const productsCollectionRef = collection(firestore, 'products');
     const productsQuery = query(productsCollectionRef, limit(1));
     
-    getDocs(productsQuery).then(productsSnapshot => {
-      if (!productsSnapshot.empty) {
-          return;
-      }
+    try {
+        const productsSnapshot = await getDocs(productsQuery);
+        if (!productsSnapshot.empty) {
+            return;
+        }
 
-      const batch = writeBatch(firestore);
+        const batch = writeBatch(firestore);
 
-      const productsToCreate: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>[] = [
-          { name: 'Jameson', category: 'Whiskey', subCategory: 'Irish', costPerBottle: 1800, sellingPricePerPortion: 350, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1150, emptyBottleWeightG: 450, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'whiskey')?.imageUrl },
-          { name: 'Jack Daniel\'s', category: 'Whiskey', subCategory: 'Bourbon', costPerBottle: 2000, sellingPricePerPortion: 380, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1180, emptyBottleWeightG: 480, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'whiskey')?.imageUrl },
-          { name: 'Havana Club 3', category: 'Rum', subCategory: 'White', costPerBottle: 1500, sellingPricePerPortion: 300, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1120, emptyBottleWeightG: 420, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'rum')?.imageUrl },
-          { name: 'Captain Morgan Spiced', category: 'Rum', subCategory: 'Spiced', costPerBottle: 1600, sellingPricePerPortion: 320, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1130, emptyBottleWeightG: 430, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'rum')?.imageUrl },
-          { name: 'Beefeater', category: 'Gin', subCategory: 'London Dry', costPerBottle: 1700, sellingPricePerPortion: 340, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1140, emptyBottleWeightG: 440, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'gin')?.imageUrl },
-          { name: 'Olmeca Blanco', category: 'Tequila', costPerBottle: 1900, sellingPricePerPortion: 360, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1160, emptyBottleWeightG: 460, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'tequila')?.imageUrl },
-          { name: 'Aperol', category: 'Liqueur', costPerBottle: 1300, sellingPricePerPortion: 280, portionVolumeMl: 50, bottleVolumeMl: 700, fullBottleWeightG: 1200, emptyBottleWeightG: 500, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'liqueur')?.imageUrl },
-          { name: 'Monin Grenadine', category: 'Syrup', costPerBottle: 800, sellingPricePerPortion: 50, portionVolumeMl: 10, bottleVolumeMl: 1000, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'syrup')?.imageUrl },
-          { name: 'Вино красное (дом)', category: 'Wine', subCategory: 'Red', costPerBottle: 900, sellingPricePerPortion: 250, portionVolumeMl: 150, bottleVolumeMl: 750, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'wine')?.imageUrl },
-          { name: 'Пиво светлое (кран)', category: 'Beer', subCategory: 'Lager', costPerBottle: 150, sellingPricePerPortion: 300, portionVolumeMl: 500, bottleVolumeMl: 1000, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'beer')?.imageUrl }
-      ];
+        const productsToCreate: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>[] = [
+            { name: 'Jameson', category: 'Whiskey', subCategory: 'Irish', costPerBottle: 1800, sellingPricePerPortion: 350, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1150, emptyBottleWeightG: 450, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'whiskey')?.imageUrl },
+            { name: 'Jack Daniel\'s', category: 'Whiskey', subCategory: 'Bourbon', costPerBottle: 2000, sellingPricePerPortion: 380, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1180, emptyBottleWeightG: 480, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'whiskey')?.imageUrl },
+            { name: 'Havana Club 3', category: 'Rum', subCategory: 'White', costPerBottle: 1500, sellingPricePerPortion: 300, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1120, emptyBottleWeightG: 420, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'rum')?.imageUrl },
+            { name: 'Captain Morgan Spiced', category: 'Rum', subCategory: 'Spiced', costPerBottle: 1600, sellingPricePerPortion: 320, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1130, emptyBottleWeightG: 430, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'rum')?.imageUrl },
+            { name: 'Beefeater', category: 'Gin', subCategory: 'London Dry', costPerBottle: 1700, sellingPricePerPortion: 340, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1140, emptyBottleWeightG: 440, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'gin')?.imageUrl },
+            { name: 'Olmeca Blanco', category: 'Tequila', costPerBottle: 1900, sellingPricePerPortion: 360, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1160, emptyBottleWeightG: 460, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'tequila')?.imageUrl },
+            { name: 'Aperol', category: 'Liqueur', costPerBottle: 1300, sellingPricePerPortion: 280, portionVolumeMl: 50, bottleVolumeMl: 700, fullBottleWeightG: 1200, emptyBottleWeightG: 500, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'liqueur')?.imageUrl },
+            { name: 'Monin Grenadine', category: 'Syrup', costPerBottle: 800, sellingPricePerPortion: 50, portionVolumeMl: 10, bottleVolumeMl: 1000, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'syrup')?.imageUrl },
+            { name: 'Вино красное (дом)', category: 'Wine', subCategory: 'Red', costPerBottle: 900, sellingPricePerPortion: 250, portionVolumeMl: 150, bottleVolumeMl: 750, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'wine')?.imageUrl },
+            { name: 'Пиво светлое (кран)', category: 'Beer', subCategory: 'Lager', costPerBottle: 150, sellingPricePerPortion: 300, portionVolumeMl: 500, bottleVolumeMl: 1000, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'beer')?.imageUrl }
+        ];
 
-      productsToCreate.forEach(prodData => {
-          const prodRef = doc(productsCollectionRef);
-          batch.set(prodRef, {
-              ...prodData,
-              id: prodRef.id,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-          });
-      });
-      
-      batch.commit().catch(serverError => {
-        const permissionError = new FirestorePermissionError({ path: 'products', operation: 'create', requestResourceData: productsToCreate });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+        productsToCreate.forEach(prodData => {
+            const prodRef = doc(productsCollectionRef);
+            batch.set(prodRef, {
+                ...prodData,
+                id: prodRef.id,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            });
+        });
+        
+        // This is a non-blocking operation on purpose. We don't want to hold up
+        // the UI for this initial data seeding.
+        batch.commit().catch(serverError => {
+            const permissionError = new FirestorePermissionError({ path: 'products', operation: 'create', requestResourceData: productsToCreate });
+            errorEmitter.emit('permission-error', permissionError);
+        });
 
-    }).catch(serverError => {
+    } catch (serverError) {
         const permissionError = new FirestorePermissionError({ path: productsCollectionRef.path, operation: 'list'});
         errorEmitter.emit('permission-error', permissionError);
-    });
+    }
 }
 
 
@@ -73,11 +76,10 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
     const barId = `bar_${user.uid}`;
     const barRef = doc(firestore, 'bars', barId);
 
-    // Fetch both documents in parallel to check their existence.
-    const userDocPromise = getDoc(userRef);
-    const barDocPromise = getDoc(barRef);
-
-    return Promise.all([userDocPromise, barDocPromise]).then(async ([userDoc, barDoc]) => {
+    try {
+        // Fetch both documents in parallel to check their existence.
+        const [userDoc, barDoc] = await Promise.all([getDoc(userRef), getDoc(barRef)]);
+        
         let barExists = barDoc.exists();
 
         // Only write if one of the documents is missing.
@@ -85,11 +87,9 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
             const batch = writeBatch(firestore);
             
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
-            let newUser: any;
-            let newBar: any;
-
+            
             if (!userDoc.exists()) {
-                newUser = {
+                const newUser = {
                     id: user.uid,
                     displayName: displayName,
                     email: user.email,
@@ -100,7 +100,7 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
             }
 
             if (!barExists) {
-                newBar = {
+                const newBar = {
                     id: barId,
                     name: `Бар ${displayName}`,
                     location: 'Не указано',
@@ -109,31 +109,24 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
                 batch.set(barRef, newBar);
             }
             
-            // Non-blocking commit with error handling.
-            batch.commit().catch(serverError => {
-                 // Even though there are two writes, we emit one error for the overall operation.
-                 // A more granular approach could be used if needed.
-                const permissionError = new FirestorePermissionError({
-                    path: '/',
-                    operation: 'write',
-                    requestResourceData: { user: newUser, bar: newBar }
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                // We re-throw so the calling UI knows the operation failed.
-                throw serverError; 
-            });
+            // CRITICAL FIX: Awaiting the commit ensures that these documents
+            // exist before any other part of the app tries to access them.
+            await batch.commit();
         }
 
-        // Seed initial data, non-blocking.
+        // Now that the bar is guaranteed to exist, seed initial data.
         await seedInitialData(firestore);
 
-    }).catch(serverError => {
-        // This will catch errors from getDoc if there are security rule issues on read.
-        const userReadError = new FirestorePermissionError({ path: userRef.path, operation: 'get' });
-        errorEmitter.emit('permission-error', userReadError);
-        // We throw to make sure the calling function knows about the failure.
+    } catch (serverError) {
+        // This will catch errors from getDoc or batch.commit if there are security rule issues.
+        const permissionError = new FirestorePermissionError({ 
+            path: userRef.path, // We use userRef.path as a representative path for the error
+            operation: 'write' 
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        // We re-throw so the calling UI knows the operation failed.
         throw serverError;
-    });
+    }
 }
 
 

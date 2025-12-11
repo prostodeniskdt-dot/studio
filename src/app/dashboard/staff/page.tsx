@@ -84,13 +84,15 @@ export default function StaffPage() {
   
   if (isLoading || !barId) {
     return (
-      <div className="flex justify-center items-center h-full pt-20">
+      <div className="flex justify-center items-center h-full">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <StaffTable staff={staffWithProfiles} barId={barId} />
+    <div className="w-full">
+      <StaffTable staff={staffWithProfiles} barId={barId} />
+    </div>
   );
 }

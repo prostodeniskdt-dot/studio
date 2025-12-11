@@ -211,20 +211,20 @@ export default function UnifiedCalculatorPage() {
 
   if (isLoadingProducts) {
       return (
-          <div className="flex justify-center items-center h-full pt-20">
+          <div className="flex justify-center items-center h-full">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
       )
   }
 
   return (
-    <>
+    <div className="w-full">
       <div className="py-4">
           <h1 className="text-3xl font-bold tracking-tight">Универсальный калькулятор</h1>
           <p className="text-muted-foreground">Рассчитайте остатки в бутылке и отправьте данные в текущую инвентаризацию.</p>
       </div>
       
-      <Card className="max-w-4xl mx-auto">
+      <Card>
         <CardHeader>
           <CardTitle>Расчет объема жидкости</CardTitle>
           <CardDescription>Выберите продукт для автозаполнения, введите замеры и отправьте результат в активную инвентаризацию.</CardDescription>
@@ -311,6 +311,6 @@ export default function UnifiedCalculatorPage() {
           </div>
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }

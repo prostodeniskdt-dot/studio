@@ -31,7 +31,7 @@ import { useRouter } from 'next/navigation';
 
 type SessionsListProps = {
   sessions: InventorySession[];
-  barId: string | null;
+  barId: string;
 };
 
 export function SessionsList({ sessions, barId }: SessionsListProps) {
@@ -74,6 +74,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     if (!sessionToDelete || !barId || !firestore) return;
 
     setIsDeleting(true);
+    const path = `bars/${barId}/inventorySessions/${sessionToDelete.id}`;
 
     try {
         const sessionRef = doc(firestore, 'bars', barId, 'inventorySessions', sessionToDelete.id);
@@ -93,13 +94,23 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
 
         toast({ title: "Инвентаризация удалена." });
         setSessionToDelete(null);
-        router.refresh();
+        // router.refresh(); // This might not be needed if useCollection updates automatically
     } catch (serverError) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/inventorySessions/${sessionToDelete.id}`, operation: 'delete' }));
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: path, operation: 'delete' }));
     } finally {
         setIsDeleting(false);
+        setSessionToDelete(null);
     }
   };
+
+
+  if (!sessions) {
+    return <div className="text-center text-muted-foreground py-10">Инвентаризаций пока нет.</div>;
+  }
+  
+  if (sessions.length === 0) {
+    return <div className="text-center text-muted-foreground py-10">Инвентаризаций пока нет. Начните первую!</div>;
+  }
 
 
   return (

@@ -83,11 +83,19 @@ service cloud.firestore {
 
     /**
      * Checks if the user is a member of the bar (either as staff or owner).
+     * This function is optimized to reduce `get` calls.
      */
     function isBarMember(barId) {
-      let isExplicitMember = exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid));
-      return isBarOwner(barId) || isExplicitMember;
+        // A user is a member if they are the owner OR if they have a member document.
+        // We check ownership first, which involves a `get`.
+        // Then, we check for the member document with `exists`.
+        let barData = get(/databases/$(database)/documents/bars/$(barId)).data;
+        let isOwner = barData.ownerUserId == request.auth.uid;
+        let isExplicitMember = exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid));
+        
+        return isOwner || isExplicitMember;
     }
+
 
     // ------------------------------------------------------------------------
     // Authorization Logic Functions
@@ -107,8 +115,6 @@ service cloud.firestore {
      * Specific role checks (e.g., manager vs. bartender) can be added here.
      */
     function canWriteBarData(barId) {
-      // For now, any member can write. This can be refined with role checks.
-      // e.g., get(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid)).data.role == 'manager'
       return isBarMember(barId) || isAdmin();
     }
 
@@ -183,11 +189,10 @@ service cloud.firestore {
     
     /**
      * On create, validates the session is linked to the correct bar and created by a bar member.
+     * We use request.resource.data.barId because barId from path is not available on collection create.
      */
     function isInventorySessionCreateValid() {
       let data = request.resource.data;
-      // When creating, we must check that the user is a member of the bar they are creating the session for.
-      // This is done by checking the `barId` from the incoming resource data.
       return data.createdByUserId == request.auth.uid &&
              isBarMember(data.barId);
     }
@@ -277,11 +282,9 @@ service cloud.firestore {
        */
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        // IMPORTANT: List queries are secured by client-side logic which MUST
-        // include a where clause to filter by a field (e.g., barId).
-        // The security rule then only needs to check membership for the requested bar.
-        allow list: if canReadBarData(barId);
-        // CREATE uses the barId from the INCOMING data, not the path.
+        // List is secured by a client-side where() clause on barId.
+        // We only need to check if the user is a member of the requested barId.
+        allow list: if canReadBarData(request.query.resource.data.barId);
         allow create: if isInventorySessionCreateValid();
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteBarData(barId) && resourceExists();
@@ -293,6 +296,7 @@ service cloud.firestore {
           allow get, list: if canReadBarData(barId);
           allow create: if canWriteBarData(barId) && isInventoryLineCreateValid(inventorySessionId);
           allow update: if canWriteBarData(barId) && resourceExists() && isInventoryLineUpdateValid();
+          // Allow delete for any bar member during a transaction
           allow delete: if canWriteBarData(barId) && resourceExists();
         }
       }
@@ -301,23 +305,23 @@ service cloud.firestore {
        * @description Secures supplier data for a bar.
        */
       match /suppliers/{supplierId} {
-        allow get: if canReadBarData(barId);
-        allow list, create, update, delete: if canWriteBarData(barId);
+        allow get, list: if canReadBarData(barId);
+        allow create, update, delete: if canWriteBarData(barId);
       }
 
       /**
        * @description Secures purchase order data for a bar.
        */
       match /purchaseOrders/{purchaseOrderId} {
-        allow get: if canReadBarData(barId);
-        allow list, create, update, delete: if canWriteBarData(barId);
+        allow get, list: if canReadBarData(barId);
+        allow create, update, delete: if canWriteBarData(barId);
 
         /**
          * @description Secures line items within a purchase order.
          */
         match /lines/{purchaseOrderLineId} {
-          allow get: if canReadBarData(barId);
-          allow list, create, update, delete: if canWriteBarData(barId);
+          allow get, list: if canReadBarData(barId);
+          allow create, update, delete: if canWriteBarData(barId);
         }
       }
     }

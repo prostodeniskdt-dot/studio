@@ -1,3 +1,4 @@
+'use server';
 import * as admin from 'firebase-admin';
 import { firebaseConfig } from './config';
 
@@ -18,7 +19,13 @@ export function initializeAdminApp() {
 
   // Initialize the app with explicit credentials and project ID for reliability
   const app = admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
+    // CRITICAL FIX: Use the full config for server-side initialization
+    // instead of relying on applicationDefault which may not be configured.
+    credential: admin.credential.cert({
+        projectId: firebaseConfig.projectId,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
     projectId: firebaseConfig.projectId,
   });
 

@@ -22,7 +22,7 @@ const AnalyzeInventoryVarianceInputSchema = z.object({
   endStock: z.number().describe('The actual end stock level of the product.'),
   sales: z.number().describe('The amount of the product sold during the inventory session.'),
   purchases: z.number().describe('The amount of the product purchased during the inventory session.'),
-  startStock: z.number().describe('The starting stock level of the product.'),
+  startStock: z.string().describe('The starting stock level of the product.'),
 });
 export type AnalyzeInventoryVarianceInput = z.infer<typeof AnalyzeInventoryVarianceInputSchema>;
 
@@ -54,7 +54,7 @@ export async function runVarianceAnalysis(line: InventoryLine & { product?: Prod
 
   const input: AnalyzeInventoryVarianceInput = {
     productName: name,
-    startStock: startStock,
+    startStock: startStock.toString(),
     purchases: purchases,
     sales: sales * portionVolumeMl, 
     endStock: endStock,
@@ -109,18 +109,20 @@ export async function deleteInventorySession({ barId, sessionId }: {barId: strin
     try {
         const { db } = initializeAdminApp();
         const sessionRef = db.collection('bars').doc(barId).collection('inventorySessions').doc(sessionId);
+        const linesCollection = sessionRef.collection('lines');
         
-        // Optionally, delete subcollections like 'lines'
-        const linesSnapshot = await sessionRef.collection('lines').get();
-        const batch = db.batch();
+        // Delete all line items in the inventory session first
+        const linesSnapshot = await linesCollection.get();
         if (!linesSnapshot.empty) {
+            const batch = db.batch();
             linesSnapshot.docs.forEach(doc => {
                 batch.delete(doc.ref);
             });
+            await batch.commit();
         }
         
-        batch.delete(sessionRef);
-        await batch.commit();
+        // Then delete the session document itself
+        await sessionRef.delete();
         
         return { success: true };
     } catch (error) {

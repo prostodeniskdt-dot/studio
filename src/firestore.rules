@@ -72,6 +72,10 @@ service cloud.firestore {
     function canWriteBarData(barId) {
       return isBarMemberByRead(barId) || isAdmin();
     }
+    
+    function canWriteSubcollection(barId) {
+       return isBarOwnerByPath(barId) || isAdmin();
+    }
 
     // ------------------------------------------------------------------------
     // Data Validation Functions
@@ -173,41 +177,41 @@ service cloud.firestore {
 
       match /members/{userId} {
         allow get: if canReadBarData(barId);
-        // SAFE LIST RULE: Only bar owner or admin can list staff.
         allow list: if isBarOwnerByPath(barId) || isAdmin();
-        allow create, update: if (isBarOwnerByPath(barId) || isAdmin()) && isValidMemberRole();
-        allow delete: if (isBarOwnerByPath(barId) || isAdmin());
+        allow create, update: if (canWriteSubcollection(barId)) && isValidMemberRole();
+        allow delete: if canWriteSubcollection(barId);
       }
 
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        allow list: if isBarOwnerByPath(barId) || isAdmin();
+        allow list: if isSignedIn(); 
         allow create: if isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
-        allow delete: if canWriteBarData(barId) && resourceExists();
+        // **FIX**: Changed from canWriteBarData to the more restrictive canWriteSubcollection to prevent silent fails
+        allow delete: if canWriteSubcollection(barId) && resourceExists();
 
         match /lines/{inventoryLineId} {
           allow get, list: if canReadBarData(barId);
           allow create: if canWriteBarData(barId) && isInventoryLineCreateValid(inventorySessionId);
           allow update: if canWriteBarData(barId) && resourceExists() && isInventoryLineUpdateValid();
-          allow delete: if canWriteBarData(barId) && resourceExists();
+          allow delete: if canWriteSubcollection(barId) && resourceExists();
         }
       }
       
       match /suppliers/{supplierId} {
         allow get: if canReadBarData(barId);
-        allow list: if isBarOwnerByPath(barId) || isAdmin();
-        allow create, update, delete: if canWriteBarData(barId);
+        allow list: if canWriteSubcollection(barId);
+        allow create, update, delete: if canWriteSubcollection(barId);
       }
 
       match /purchaseOrders/{purchaseOrderId} {
         allow get: if canReadBarData(barId);
-        allow list: if isBarOwnerByPath(barId) || isAdmin();
-        allow create, update, delete: if canWriteBarData(barId);
+        allow list: if canWriteSubcollection(barId);
+        allow create, update, delete: if canWriteSubcollection(barId);
 
         match /lines/{purchaseOrderLineId} {
           allow get, list: if canReadBarData(barId);
-          allow create, update, delete: if canWriteBarData(barId);
+          allow create, update, delete: if canWriteSubcollection(barId);
         }
       }
     }

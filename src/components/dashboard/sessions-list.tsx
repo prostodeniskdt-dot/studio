@@ -74,23 +74,21 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     const sessionRef = doc(firestore, 'bars', barId, 'inventorySessions', sessionToDelete.id);
     
     try {
-        // Attempt to delete the main session document.
-        // The `useCollection` hook in the parent component will reactively
-        // update the UI upon successful deletion.
         await deleteDoc(sessionRef);
         
         toast({ title: "Инвентаризация удалена." });
-        setSessionToDelete(null); // Close dialog on success
+        setSessionToDelete(null); 
         setIsDeleting(false);
 
     } catch (serverError: any) {
-        // If deleteDoc fails due to permissions, emit a global error.
+        setIsDeleting(false); 
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: sessionRef.path,
             operation: 'delete'
         }));
-        // Keep the dialog open, but stop the loading indicator to show the error.
-        setIsDeleting(false);
+        // CRITICAL: Stop execution here to let the error listener handle it.
+        // Do NOT close the dialog or change state further.
+        return;
     }
   };
 

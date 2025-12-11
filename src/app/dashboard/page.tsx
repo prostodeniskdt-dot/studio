@@ -22,8 +22,8 @@ export default function DashboardPage() {
   const barId = user ? `bar_${user.uid}` : null; 
 
   const sessionsQuery = useMemoFirebase(() => 
-    firestore && barId && user ? query(collection(firestore, 'bars', barId, 'inventorySessions'), where('status', 'in', ['in_progress', 'draft']), where('createdByUserId', '==', user.uid)) : null,
-    [firestore, barId, user]
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions'), where('status', 'in', ['in_progress', 'draft']), where('barId', '==', barId)) : null,
+    [firestore, barId]
   );
   
   const { data: sessions, isLoading: isLoadingSessions, error: sessionsError } = useCollection<InventorySession>(sessionsQuery);

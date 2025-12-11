@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { PurchaseOrder, Supplier, PurchaseOrderLine } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { PurchaseOrdersTable } from '@/components/purchase-orders/purchase-orders-table';
@@ -18,13 +18,13 @@ export default function PurchaseOrdersPage() {
   const barId = user ? `bar_${user.uid}` : null;
   
   const ordersQuery = useMemoFirebase(() =>
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'purchaseOrders')) : null,
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'purchaseOrders'), where('barId', '==', barId)) : null,
     [firestore, barId]
   );
   const { data: orders, isLoading: isLoadingOrders } = useCollection<PurchaseOrder>(ordersQuery);
 
   const suppliersQuery = useMemoFirebase(() =>
-    firestore && barId ? collection(firestore, 'bars', barId, 'suppliers') : null,
+    firestore && barId ? collection(firestore, 'bars', barId, 'suppliers'), where('barId', '==', barId) : null,
     [firestore, barId]
   );
   const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);

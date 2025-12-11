@@ -28,9 +28,9 @@
  * - Bar Subcollection Privacy: All sensitive sub-data (like inventory) is private
  *   to the bar's members. This is enforced using `exists()` and `get()` calls on
  *   the parent bar's `members` subcollection.
- * - List Queries: `allow list` rules must not rely on `get` or `exists` calls. 
+ * - List Queries: `allow list` rules MUST NOT rely on `get` or `exists` calls. 
  *   Therefore, client queries must include `where` clauses that can be validated
- *   against the `request` object (e.g., `where('createdByUserId', '==', request.auth.uid)`).
+ *   against the `request` object (e.g., `where('barId', '==', barId)`).
  *
  * Denormalization for Authorization:
  * The `ownerUserId` on a `/bars/{barId}` document is the ultimate source of truth
@@ -86,10 +86,10 @@ service cloud.firestore {
      * This function is optimized to reduce `get` calls.
      */
     function isBarMember(barId) {
-        let isOwner = isBarOwner(barId);
-        let isExplicitMember = exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid));
-        
-        return isOwner || isExplicitMember;
+      let isOwner = isBarOwner(barId);
+      let isExplicitMember = exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid));
+      
+      return isOwner || isExplicitMember;
     }
 
 
@@ -186,10 +186,11 @@ service cloud.firestore {
     /**
      * On create, validates the session is linked to the correct bar and created by a bar member.
      */
-    function isInventorySessionCreateValid() {
+    function isInventorySessionCreateValid(barId) {
       let data = request.resource.data;
       return data.createdByUserId == request.auth.uid &&
-             isBarMember(data.barId);
+             data.barId == barId &&
+             isBarMember(barId);
     }
     
     /**
@@ -266,7 +267,9 @@ service cloud.firestore {
        * Only bar owners and admins can manage the staff list.
        */
       match /members/{userId} {
-        allow get, list: if canReadBarData(barId);
+        allow get: if canReadBarData(barId);
+        // List is only allowed if the query is for the specific barId
+        allow list: if (isAdmin() || isBarMember(barId)) && request.query.barId == barId;
         // Only owner or admin can add/remove/change roles of members
         allow create, update: if (isBarOwner(barId) || isAdmin()) && isValidMemberRole();
         allow delete: if isBarOwner(barId) || isAdmin();
@@ -278,11 +281,10 @@ service cloud.firestore {
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
         
-        // List is allowed IF the query contains a where clause for createdByUserId
-        // This is a common pattern to avoid using get() or exists() in list rules.
-        allow list: if (isAdmin() || isBarMember(barId)) && (request.query.createdByUserId == request.auth.uid || request.query.keysOnly == true);
+        // List is allowed IF the query contains a where clause for barId
+        allow list: if (isAdmin() || isBarMember(barId)) && request.query.barId == barId;
 
-        allow create: if isInventorySessionCreateValid();
+        allow create: if isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteBarData(barId) && resourceExists();
 
@@ -302,7 +304,8 @@ service cloud.firestore {
        * @description Secures supplier data for a bar.
        */
       match /suppliers/{supplierId} {
-        allow get, list: if canReadBarData(barId);
+        allow get: if canReadBarData(barId);
+        allow list: if (isAdmin() || isBarMember(barId)) && request.query.barId == barId;
         allow create, update, delete: if canWriteBarData(barId);
       }
 
@@ -310,7 +313,8 @@ service cloud.firestore {
        * @description Secures purchase order data for a bar.
        */
       match /purchaseOrders/{purchaseOrderId} {
-        allow get, list: if canReadBarData(barId);
+        allow get: if canReadBarData(barId);
+        allow list: if (isAdmin() || isBarMember(barId)) && request.query.barId == barId;
         allow create, update, delete: if canWriteBarData(barId);
 
         /**

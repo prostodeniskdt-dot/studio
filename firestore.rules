@@ -173,7 +173,7 @@ service cloud.firestore {
 
       match /members/{userId} {
         allow get: if canReadBarData(barId);
-        // SAFE LIST RULE: Only bar owner can list staff.
+        // SAFE LIST RULE: Only bar owner or admin can list staff.
         allow list: if isBarOwnerByPath(barId) || isAdmin();
         allow create, update: if (isBarOwnerByPath(barId) || isAdmin()) && isValidMemberRole();
         allow delete: if (isBarOwnerByPath(barId) || isAdmin());
@@ -181,16 +181,15 @@ service cloud.firestore {
 
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        // SAFE LIST RULE: Owner can list all sessions for their bar, if they filter by barId client-side.
-        allow list: if request.query.barId == barId && (isBarOwnerByPath(barId) || isAdmin());
-
+        // SAFE LIST RULE: Owner or admin can list all sessions for their bar.
+        allow list: if isBarOwnerByPath(barId) || isAdmin();
         allow create: if isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteBarData(barId) && resourceExists();
 
         match /lines/{inventoryLineId} {
           allow get: if canReadBarData(barId);
-          // SAFE LIST RULE: Owner can list lines for their bar's sessions.
+          // SAFE LIST RULE: Owner or admin can list lines for their bar's sessions.
           allow list: if isBarOwnerByPath(barId) || isAdmin();
           allow create: if canWriteBarData(barId) && isInventoryLineCreateValid(inventorySessionId);
           allow update: if canWriteBarData(barId) && resourceExists() && isInventoryLineUpdateValid();
@@ -200,20 +199,20 @@ service cloud.firestore {
       
       match /suppliers/{supplierId} {
         allow get: if canReadBarData(barId);
-        // SAFE LIST RULE: Owner can list all suppliers for their bar, if they filter by barId client-side.
-        allow list: if request.query.barId == barId && (isBarOwnerByPath(barId) || isAdmin());
+        // SAFE LIST RULE: Owner or admin can list all suppliers for their bar.
+        allow list: if isBarOwnerByPath(barId) || isAdmin();
         allow create, update, delete: if canWriteBarData(barId);
       }
 
       match /purchaseOrders/{purchaseOrderId} {
         allow get: if canReadBarData(barId);
-        // SAFE LIST RULE: Owner can list all purchase orders for their bar, if they filter by barId client-side.
-        allow list: if request.query.barId == barId && (isBarOwnerByPath(barId) || isAdmin());
+        // SAFE LIST RULE: Owner or admin can list all purchase orders for their bar.
+        allow list: if isBarOwnerByPath(barId) || isAdmin();
         allow create, update, delete: if canWriteBarData(barId);
 
         match /lines/{purchaseOrderLineId} {
           allow get: if canReadBarData(barId);
-          // SAFE LIST RULE: Owner can list lines for their bar's orders.
+          // SAFE LIST RULE: Owner or admin can list lines for their bar's orders.
           allow list: if isBarOwnerByPath(barId) || isAdmin();
           allow create, update, delete: if canWriteBarData(barId);
         }
@@ -221,5 +220,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

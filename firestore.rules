@@ -271,8 +271,8 @@ service cloud.firestore {
        */
       match /members/{userId} {
         allow get: if canReadBarData(barId);
-        // List is only allowed if the query is for the specific barId
-        allow list: if isBarOwner(barId) || isAdmin();
+        // List is only allowed if the query is for the specific barId and user is member
+        allow list: if (isBarOwner(barId) || isAdmin());
         // Only owner or admin can add/remove/change roles of members
         allow create, update: if (isBarOwner(barId) || isAdmin()) && isValidMemberRole();
         allow delete: if isBarOwner(barId) || isAdmin();
@@ -284,8 +284,8 @@ service cloud.firestore {
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
         
-        // SAFE LIST RULE: Query must be filtered by barId
-        allow list: if request.query.barId == barId;
+        // SAFE LIST RULE: Query must be filtered by barId and user must be a member
+        allow list: if request.query.barId == barId && (isBarMember(barId) || isAdmin());
 
         allow create: if isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
@@ -309,7 +309,7 @@ service cloud.firestore {
       match /suppliers/{supplierId} {
         allow get: if canReadBarData(barId);
         // SAFE LIST RULE: Query must be filtered by barId
-        allow list: if request.query.barId == barId;
+        allow list: if request.query.barId == barId && (isBarMember(barId) || isAdmin());
         allow create, update, delete: if canWriteBarData(barId);
       }
 
@@ -319,7 +319,7 @@ service cloud.firestore {
       match /purchaseOrders/{purchaseOrderId} {
         allow get: if canReadBarData(barId);
         // SAFE LIST RULE: Query must be filtered by barId
-        allow list: if request.query.barId == barId;
+        allow list: if request.query.barId == barId && (isBarMember(barId) || isAdmin());
         allow create, update, delete: if canWriteBarData(barId);
 
         /**

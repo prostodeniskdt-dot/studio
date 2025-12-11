@@ -21,7 +21,7 @@ export default function SessionsPage() {
   const barId = user ? `bar_${user.uid}` : null; 
 
   const sessionsQuery = useMemoFirebase(() => 
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions'), orderBy('createdAt', 'desc')) : null,
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions'), where('barId', '==', barId), orderBy('createdAt', 'desc')) : null,
     [firestore, barId]
   );
   
@@ -48,7 +48,7 @@ export default function SessionsPage() {
 
     try {
         const inventoriesCollection = collection(firestore, 'bars', barId, 'inventorySessions');
-        const inProgressQuery = query(inventoriesCollection, where('status', '==', 'in_progress'), where('createdByUserId', '==', user.uid));
+        const inProgressQuery = query(inventoriesCollection, where('status', '==', 'in_progress'), where('barId', '==', barId));
         const querySnapshot = await getDocs(inProgressQuery);
 
         let sessionId;

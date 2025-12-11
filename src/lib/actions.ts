@@ -99,9 +99,9 @@ export async function createInventorySession({ barId, userId }: {barId: string, 
     await newSessionRef.set(newSessionData);
     
     return { success: true, data: { sessionId: newSessionRef.id, isNew: true } };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in createInventorySession server action:", error);
-    return { success: false, error: 'Произошла ошибка на сервере при создании инвентаризации.' };
+    return { success: false, error: error.message || 'Произошла ошибка на сервере при создании инвентаризации.' };
   }
 }
 
@@ -125,9 +125,9 @@ export async function deleteInventorySession({ barId, sessionId }: {barId: strin
         await sessionRef.delete();
         
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error in deleteInventorySession server action:", error);
-        return { success: false, error: 'Произошла ошибка на сервере при удалении инвентаризации.' };
+        return { success: false, error: error.message || 'Произошла ошибка на сервере при удалении инвентаризации.' };
     }
 }
 

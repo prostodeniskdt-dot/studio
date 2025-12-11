@@ -117,7 +117,7 @@ export default function DashboardPage() {
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Текущие инвентаризации</h1>
-        <Button onClick={handleCreateSession} disabled={isLoading || isCreating || hasDataLoadingError || !barId}>
+        <Button onClick={handleCreateSession} disabled={isLoading || isCreating || !!hasDataLoadingError || !barId}>
           {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
           Начать
         </Button>

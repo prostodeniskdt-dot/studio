@@ -184,8 +184,12 @@ service cloud.firestore {
     /**
      * On create, validates the session is linked to the correct bar and created by a bar member.
      */
-    function isInventorySessionCreateValid(barId) {
-      return request.resource.data.barId == barId && request.resource.data.createdByUserId == request.auth.uid;
+    function isInventorySessionCreateValid() {
+      let data = request.resource.data;
+      return data.barId is string && 
+             data.createdByUserId == request.auth.uid &&
+             // Ensure the user is a member of the bar they are creating a session for
+             isBarMember(data.barId);
     }
     
     /**
@@ -273,11 +277,8 @@ service cloud.firestore {
        */
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        // CRITICAL FIX: The ONLY secure way to handle list operations is to
-        // ensure the client query filters by something the rule can check without a `get`.
-        // The client MUST now query `where('createdByUserId', '==', request.auth.uid)`.
         allow list: if canReadBarData(barId);
-        allow create: if canWriteBarData(barId) && isInventorySessionCreateValid(barId);
+        allow create: if isInventorySessionCreateValid();
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteBarData(barId) && resourceExists();
 

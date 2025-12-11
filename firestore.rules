@@ -27,7 +27,7 @@
  * - No User Listing: Listing the entire `/users` collection is disallowed to protect user privacy.
  * - Bar Subcollection Privacy: All sensitive sub-data (like inventory) is private
  *   to the bar's members. This is enforced using `exists()` and `get()` calls on
- *   the parent bar's `members` subcollection.
+ *   the parent bar's `members` subcollection for single document reads.
  * - List Queries: `allow list` rules MUST NOT rely on `get` or `exists` calls. 
  *   Therefore, client queries must include `where` clauses that can be validated
  *   against the `request` object (e.g., `where('barId', '==', barId)`).
@@ -75,6 +75,7 @@ service cloud.firestore {
 
     /**
      * Checks if the requesting user is the owner of a specific bar.
+     * SAFE to use in get, create, update, delete. UNSAFE for list.
      */
     function isBarOwner(barId) {
       let barDoc = get(/databases/$(database)/documents/bars/$(barId));
@@ -83,7 +84,7 @@ service cloud.firestore {
 
     /**
      * Checks if the user is a member of the bar (either as staff or owner).
-     * This function is optimized to reduce `get` calls.
+     * SAFE to use in get, create, update, delete. UNSAFE for list.
      */
     function isBarMember(barId) {
       let isOwner = isBarOwner(barId);
@@ -100,6 +101,7 @@ service cloud.firestore {
     /**
      * Determines if a user can read sensitive data within a specific bar's subcollections.
      * Access is granted to the bar members or an admin.
+     * SAFE to use in get, create, update, delete. UNSAFE for list.
      */
     function canReadBarData(barId) {
       return isBarMember(barId) || isAdmin();
@@ -109,6 +111,7 @@ service cloud.firestore {
      * Determines if a user can write sensitive data within a specific bar's subcollections.
      * Access is granted to the bar members or an admin.
      * Specific role checks (e.g., manager vs. bartender) can be added here.
+     * SAFE to use in get, create, update, delete. UNSAFE for list.
      */
     function canWriteBarData(barId) {
       return isBarMember(barId) || isAdmin();
@@ -255,9 +258,9 @@ service cloud.firestore {
      */
     match /bars/{barId} {
       // Bar info is readable by its members or admins.
-      allow get: if isBarMember(barId) || isAdmin();
+      allow get: if canReadBarData(barId) || isAdmin();
       // Public list of bars is allowed for discovery features.
-      allow list: if true; 
+      allow list: if isSignedIn();
       allow create: if isSignedIn() && isCreatingOwnBar();
       allow update: if (isBarOwner(barId) || isAdmin()) && resourceExists() && isBarUpdateValid();
       allow delete: if (isBarOwner(barId) || isAdmin()) && resourceExists();
@@ -269,7 +272,7 @@ service cloud.firestore {
       match /members/{userId} {
         allow get: if canReadBarData(barId);
         // List is only allowed if the query is for the specific barId
-        allow list: if (isAdmin() || isBarMember(barId)) && request.query.barId == barId;
+        allow list: if isBarOwner(barId) || isAdmin();
         // Only owner or admin can add/remove/change roles of members
         allow create, update: if (isBarOwner(barId) || isAdmin()) && isValidMemberRole();
         allow delete: if isBarOwner(barId) || isAdmin();
@@ -281,8 +284,8 @@ service cloud.firestore {
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
         
-        // List is allowed IF the query contains a where clause for barId
-        allow list: if (isAdmin() || isBarMember(barId)) && request.query.barId == barId;
+        // SAFE LIST RULE: Query must be filtered by barId
+        allow list: if request.query.barId == barId;
 
         allow create: if isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
@@ -305,7 +308,8 @@ service cloud.firestore {
        */
       match /suppliers/{supplierId} {
         allow get: if canReadBarData(barId);
-        allow list: if (isAdmin() || isBarMember(barId)) && request.query.barId == barId;
+        // SAFE LIST RULE: Query must be filtered by barId
+        allow list: if request.query.barId == barId;
         allow create, update, delete: if canWriteBarData(barId);
       }
 
@@ -314,7 +318,8 @@ service cloud.firestore {
        */
       match /purchaseOrders/{purchaseOrderId} {
         allow get: if canReadBarData(barId);
-        allow list: if (isAdmin() || isBarMember(barId)) && request.query.barId == barId;
+        // SAFE LIST RULE: Query must be filtered by barId
+        allow list: if request.query.barId == barId;
         allow create, update, delete: if canWriteBarData(barId);
 
         /**

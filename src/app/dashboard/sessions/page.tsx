@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, query, getDocs, where, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, getDocs, where, doc, setDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 
 
 export default function SessionsPage() {
@@ -21,7 +21,7 @@ export default function SessionsPage() {
   const barId = user ? `bar_${user.uid}` : null; 
 
   const sessionsQuery = useMemoFirebase(() => 
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions')) : null,
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions'), where('barId', '==', barId), orderBy('createdAt', 'desc')) : null,
     [firestore, barId]
   );
   
@@ -29,9 +29,8 @@ export default function SessionsPage() {
 
   const sortedSessions = React.useMemo(() => {
     if (!sessions) return [];
-    // Sort on the client side
-    return sessions
-        .sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
+    // The query already sorts by date, but we can keep this for safety
+    return sessions;
   }, [sessions]);
 
 

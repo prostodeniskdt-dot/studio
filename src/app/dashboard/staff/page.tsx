@@ -42,6 +42,10 @@ export default function StaffPage() {
         setIsLoading(true);
         try {
             const userIds = members.map(m => m.userId);
+            if (userIds.length === 0) {
+              setStaffWithProfiles([]);
+              return;
+            }
             
             // Firestore 'in' query is limited to 30 items.
             // We chunk the userIds to handle more than 30 staff members efficiently.

@@ -188,8 +188,7 @@ service cloud.firestore {
       let data = request.resource.data;
       // When creating, we must check that the user is a member of the bar they are creating the session for.
       // This is done by checking the `barId` from the incoming resource data.
-      return data.barId is string && 
-             data.createdByUserId == request.auth.uid &&
+      return data.createdByUserId == request.auth.uid &&
              isBarMember(data.barId);
     }
     

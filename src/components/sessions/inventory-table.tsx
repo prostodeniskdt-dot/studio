@@ -5,10 +5,8 @@ import type { InventoryLine, Product, CalculatedInventoryLine } from '@/lib/type
 import { calculateLineFields } from '@/lib/calculations';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { cn, formatCurrency, translateCategory, translateSubCategory } from '@/lib/utils';
-import { Sparkles, Loader2 } from 'lucide-react';
-import { VarianceAnalysisModal } from './variance-analysis-modal';
+import { Loader2 } from 'lucide-react';
 
 type InventoryTableProps = {
   lines: InventoryLine[];
@@ -22,8 +20,6 @@ type GroupedLines = Record<string, Record<string, CalculatedInventoryLine[]>>;
 
 export function InventoryTable({ lines, setLines, products, isEditable }: InventoryTableProps) {
   
-  const [analyzingLine, setAnalyzingLine] = React.useState<CalculatedInventoryLine | null>(null);
-
   // This combines the line data with its corresponding product and calculated fields
   const getCalculatedLine = React.useCallback((line: InventoryLine): CalculatedInventoryLine | null => {
     const product = products.find(p => p.id === line.productId);
@@ -97,14 +93,13 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
               <TableHead className="text-right">Факт. (мл)</TableHead>
               <TableHead className="text-right hidden sm:table-cell">Разн. (мл)</TableHead>
               <TableHead className="text-right hidden sm:table-cell">Разн. (руб.)</TableHead>
-              <TableHead className="w-[100px] text-center hidden sm:table-cell">Анализ</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {Object.entries(groupedAndSortedLines).map(([category, subCategories]) => (
               <React.Fragment key={category}>
                 <TableRow className="bg-muted/20 hover:bg-muted/20">
-                  <TableCell colSpan={9} className="font-bold text-base text-primary">
+                  <TableCell colSpan={8} className="font-bold text-base text-primary">
                     {translateCategory(category as any)}
                   </TableCell>
                 </TableRow>
@@ -112,7 +107,7 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                   <React.Fragment key={subCategory}>
                     {subCategory !== 'uncategorized' && (
                       <TableRow className="bg-muted/10 hover:bg-muted/10">
-                        <TableCell colSpan={9} className="py-2 pl-8 font-semibold text-sm">
+                        <TableCell colSpan={8} className="py-2 pl-8 font-semibold text-sm">
                           {translateSubCategory(subCategory as any)}
                         </TableCell>
                       </TableRow>
@@ -147,14 +142,6 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                         <TableCell className={cn("text-right font-mono hidden sm:table-cell", line.differenceMoney > 0 ? 'text-green-600' : line.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground')}>
                           {formatCurrency(line.differenceMoney)}
                         </TableCell>
-                        <TableCell className="text-center hidden sm:table-cell">
-                          {Math.abs(line.differenceVolume) > (line.product?.portionVolumeMl ?? 40) / 4 && (
-                            <Button variant="ghost" size="sm" onClick={() => setAnalyzingLine(line)}>
-                              <Sparkles className="h-4 w-4" />
-                              <span className="sr-only">Анализ</span>
-                            </Button>
-                          )}
-                        </TableCell>
                       </TableRow>
                     ))}
                   </React.Fragment>
@@ -170,20 +157,10 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
               <TableCell className={cn("text-right font-bold text-lg", totals.differenceMoney > 0 ? 'text-green-600' : totals.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground')}>
                 {formatCurrency(totals.differenceMoney)}
               </TableCell>
-              <TableCell className="hidden sm:table-cell" />
             </TableRow>
           </TableFooter>
         </Table>
       </div>
-      {analyzingLine && (
-        <VarianceAnalysisModal 
-          line={analyzingLine}
-          open={!!analyzingLine}
-          onOpenChange={() => setAnalyzingLine(null)}
-        />
-      )}
     </>
   );
 }
-
-    

@@ -7,10 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn, formatCurrency, translateCategory, translateSubCategory } from '@/lib/utils';
-import { Download, Sparkles, FileType, FileJson, Loader2, ShoppingCart } from 'lucide-react';
+import { Download, FileType, FileJson, Loader2, ShoppingCart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Timestamp } from 'firebase/firestore';
-import { VarianceAnalysisModal } from '../sessions/variance-analysis-modal';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Pie, PieChart, Cell } from 'recharts';
 import {
   DropdownMenu,
@@ -34,7 +33,6 @@ type GroupedLines = Record<string, Record<string, CalculatedInventoryLine[]>>;
 
 export function ReportView({ session, products, onCreatePurchaseOrder, isCreatingOrder }: ReportViewProps) {
   const { toast } = useToast();
-  const [analyzingLine, setAnalyzingLine] = React.useState<CalculatedInventoryLine | null>(null);
 
   const groupedAndSortedLines = React.useMemo(() => {
     if (!session.lines) return {};
@@ -253,14 +251,13 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
                     <TableHead className="text-right">Разн. (мл)</TableHead>
                     <TableHead className="text-right">Разн. (%)</TableHead>
                     <TableHead className="text-right">Разн. (руб.)</TableHead>
-                    <TableHead className="w-[100px] text-center">Анализ</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {Object.entries(groupedAndSortedLines).map(([category, subCategories]) => (
                     <React.Fragment key={category}>
                         <TableRow className="bg-muted/20 hover:bg-muted/20">
-                            <TableCell colSpan={7} className="font-bold text-base">
+                            <TableCell colSpan={6} className="font-bold text-base">
                                 {translateCategory(category as any)}
                             </TableCell>
                         </TableRow>
@@ -268,7 +265,7 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
                             <React.Fragment key={subCategory}>
                                 {subCategory !== 'uncategorized' && (
                                      <TableRow className="bg-muted/10 hover:bg-muted/10">
-                                        <TableCell colSpan={7} className="py-2 pl-8 font-semibold text-sm">
+                                        <TableCell colSpan={6} className="py-2 pl-8 font-semibold text-sm">
                                             {translateSubCategory(subCategory as any)}
                                         </TableCell>
                                     </TableRow>
@@ -287,14 +284,6 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
                                         <TableCell className={cn("text-right font-mono", line.differenceMoney >= 0 ? 'text-green-600' : 'text-destructive')}>
                                             {formatCurrency(line.differenceMoney)}
                                         </TableCell>
-                                        <TableCell className="text-center">
-                                            {Math.abs(line.differenceVolume) > (line.product?.portionVolumeMl ?? 40) / 4 && (
-                                                <Button variant="ghost" size="icon" onClick={() => setAnalyzingLine(line)}>
-                                                    <Sparkles className="h-4 w-4" />
-                                                    <span className="sr-only">Анализ</span>
-                                                </Button>
-                                            )}
-                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </React.Fragment>
@@ -308,18 +297,10 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
                     <TableCell className={cn("text-right font-bold text-lg", totals.totalVariance >= 0 ? 'text-green-600' : 'text-destructive')}>
                         {formatCurrency(totals.totalVariance)}
                     </TableCell>
-                     <TableCell />
                 </TableRow>
             </TableFooter>
             </Table>
         </div>
-        {analyzingLine && (
-            <VarianceAnalysisModal 
-            line={analyzingLine}
-            open={!!analyzingLine}
-            onOpenChange={() => setAnalyzingLine(null)}
-            />
-      )}
     </div>
   );
 }

@@ -1,8 +1,6 @@
 'use server';
 
-import { analyzeInventoryVariance as analyzeInventoryVarianceFlow } from '@/ai/flows/analyze-inventory-variance';
 import type { InventoryLine, Product, Supplier, UserRole, PurchaseOrder, PurchaseOrderLine } from './types';
-import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeAdminApp } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -15,60 +13,6 @@ export type ServerActionResponse<T = any> = {
   error?: string;
 };
 
-
-const AnalyzeInventoryVarianceInputSchema = z.object({
-  productName: z.string().describe('The name of the product being analyzed.'),
-  theoreticalEndStock: z.number().describe('The theoretical end stock level of the product.'),
-  endStock: z.number().describe('The actual end stock level of the product.'),
-  sales: z.number().describe('The amount of the product sold during the inventory session.'),
-  purchases: z.number().describe('The amount of the product purchased during the inventory session.'),
-  startStock: z.string().describe('The starting stock level of the product.'),
-});
-export type AnalyzeInventoryVarianceInput = z.infer<typeof AnalyzeInventoryVarianceInputSchema>;
-
-const AnalyzeInventoryVarianceOutputSchema = z.object({
-  analysis: z.string().describe('An analysis of potential causes for the inventory variance.'),
-});
-export type AnalyzeInventoryVarianceOutput = z.infer<typeof AnalyzeInventoryVarianceOutputSchema>;
-
-
-export async function runVarianceAnalysis(line: InventoryLine & { product?: Product }): Promise<ServerActionResponse<AnalyzeInventoryVarianceOutput>> {
-  if (!line.product) {
-    return { success: false, error: 'Данные о продукте отсутствуют для анализа.' };
-  }
-
-  const { name, portionVolumeMl } = line.product;
-  const { startStock, purchases, sales, endStock, theoreticalEndStock } = line;
-
-  if (
-    name === undefined ||
-    startStock === undefined ||
-    purchases === undefined ||
-    sales === undefined ||
-    endStock === undefined ||
-    theoreticalEndStock === undefined ||
-    portionVolumeMl === undefined
-  ) {
-    return { success: false, error: 'Неполные данные для анализа.' };
-  }
-
-  const input: AnalyzeInventoryVarianceInput = {
-    productName: name,
-    startStock: startStock.toString(),
-    purchases: purchases,
-    sales: sales * portionVolumeMl, 
-    endStock: endStock,
-    theoreticalEndStock: theoreticalEndStock,
-  };
-
-  try {
-    const result = await analyzeInventoryVarianceFlow(input);
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Error in runVarianceAnalysis calling Genkit flow:', error);
-    return { success: false, error: 'Сбой AI-анализа. Пожалуйста, проверьте свой API-ключ Gemini и повторите попытку.'};
-  }
-}
 
 export async function createInventorySession({ barId, userId }: {barId: string, userId: string}): Promise<ServerActionResponse<{sessionId: string, isNew: boolean}>> {
   try {

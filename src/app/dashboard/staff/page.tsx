@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { BarMember, UserProfile } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { StaffTable } from '@/components/staff/staff-table';
@@ -23,44 +23,64 @@ export default function StaffPage() {
   const { data: members, isLoading: isLoadingMembers } = useCollection<BarMember>(membersQuery);
 
   React.useEffect(() => {
-    if (isLoadingMembers) {
-        setIsLoadingProfiles(true);
+    if (isLoadingMembers || !members || !firestore) {
+      if (!isLoadingMembers) setIsLoadingProfiles(false);
+      return;
+    }
+
+    if (members.length === 0) {
+        setStaffWithProfiles([]);
+        setIsLoadingProfiles(false);
         return;
     }
-    if (!members || !firestore) {
-      setIsLoadingProfiles(false);
-      setStaffWithProfiles([]);
-      return;
-    };
     
     const fetchMemberProfiles = async () => {
         setIsLoadingProfiles(true);
         try {
-          const membersWithProfiles = await Promise.all(members.map(async (member) => {
-              const userDocRef = doc(firestore, 'users', member.userId);
-              const userDocSnap = await getDoc(userDocRef);
-              
-              if (userDocSnap.exists()) {
-                  const userProfile = userDocSnap.data() as UserProfile;
-                  return { ...member, userProfile };
-              }
-              // Return member even if profile not found, so they still appear in the list
-              return { ...member, userProfile: { email: 'Не найден', displayName: 'Пользователь не найден' } as UserProfile };
-          }));
-          setStaffWithProfiles(membersWithProfiles);
+            const userIds = members.map(m => m.userId);
+            if (userIds.length === 0) {
+                setStaffWithProfiles([]);
+                setIsLoadingProfiles(false);
+                return;
+            }
+
+            // Firestore 'in' query is limited to 30 items per query.
+            // We chunk the userIds to handle more than 30 staff members.
+            const chunks = [];
+            for (let i = 0; i < userIds.length; i += 30) {
+                chunks.push(userIds.slice(i, i + 30));
+            }
+
+            const profilePromises = chunks.map(chunk => 
+                getDocs(query(collection(firestore, 'users'), where('id', 'in', chunk)))
+            );
+
+            const snapshotResults = await Promise.all(profilePromises);
+            const profilesMap = new Map<string, UserProfile>();
+            snapshotResults.forEach(snapshot => {
+                snapshot.docs.forEach(doc => {
+                    profilesMap.set(doc.id, doc.data() as UserProfile);
+                });
+            });
+
+            const membersWithProfiles = members.map(member => {
+                const userProfile = profilesMap.get(member.userId);
+                return { 
+                    ...member, 
+                    userProfile: userProfile || { email: 'Не найден', displayName: 'Пользователь не найден' } as UserProfile
+                };
+            });
+
+            setStaffWithProfiles(membersWithProfiles);
         } catch (error) {
           console.error("Error fetching member profiles:", error);
           setStaffWithProfiles(members); // Fallback to members without profiles
         } finally {
           setIsLoadingProfiles(false);
         }
-    }
-    if (members.length > 0) {
-      fetchMemberProfiles();
-    } else {
-        setStaffWithProfiles([]);
-        setIsLoadingProfiles(false);
-    }
+    };
+    
+    fetchMemberProfiles();
 
   }, [members, firestore, isLoadingMembers]);
   

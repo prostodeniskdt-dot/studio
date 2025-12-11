@@ -29,20 +29,36 @@ export default function AnalyticsPage() {
       return;
     }
 
+    if (sessions.length === 0) {
+      setSessionsWithLines([]);
+      setIsLoadingLines(false);
+      return;
+    }
+
     setIsLoadingLines(true);
     const fetchLinesForSessions = async () => {
       try {
-        const populatedSessions = await Promise.all(
-          sessions.map(async (session) => {
+        const linesPromises = sessions.map(session => {
             const linesQuery = collection(firestore, 'bars', barId, 'inventorySessions', session.id, 'lines');
-            const linesSnapshot = await getDocs(linesQuery);
-            const linesData = linesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as InventoryLine[];
-            return { ...session, lines: linesData };
-          })
-        );
+            return getDocs(linesQuery).then(snapshot => ({
+                sessionId: session.id,
+                lines: snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as InventoryLine)
+            }));
+        });
+
+        const results = await Promise.all(linesPromises);
+        const linesBySession = results.reduce((acc, result) => {
+            acc[result.sessionId] = result.lines;
+            return acc;
+        }, {} as Record<string, InventoryLine[]>);
+
+        const populatedSessions = sessions.map(session => ({
+          ...session,
+          lines: linesBySession[session.id] || []
+        })).sort((a, b) => (a.closedAt?.toMillis() ?? 0) - (b.closedAt?.toMillis() ?? 0));
         
-        populatedSessions.sort((a, b) => (a.closedAt?.toMillis() ?? 0) - (b.closedAt?.toMillis() ?? 0));
         setSessionsWithLines(populatedSessions);
+
       } catch (error) {
         console.error("Error fetching lines for sessions:", error);
       } finally {
@@ -50,11 +66,8 @@ export default function AnalyticsPage() {
       }
     };
 
-    if (sessions.length > 0) {
-      fetchLinesForSessions();
-    } else {
-      setIsLoadingLines(false);
-    }
+    fetchLinesForSessions();
+    
   }, [firestore, barId, sessions, isLoadingSessions]);
 
   const isLoading = isLoadingSessions || isLoadingLines;

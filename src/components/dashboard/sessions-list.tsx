@@ -97,12 +97,16 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
 
         toast({ title: "Инвентаризация удалена." });
 
-    } catch (serverError) {
-        // If getting the lines fails, it will be caught here.
-        if (serverError instanceof Error && serverError.message.includes('permission-denied')) {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linesCollectionRef.path, operation: 'list' }));
+    } catch (serverError: any) {
+        if (serverError.code === 'permission-denied') {
+             errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linesCollectionRef.path, operation: 'list' }));
         } else {
-             errorEmitter.emit('permission-error', new FirestorePermissionError({ path: sessionRef.path, operation: 'delete' }));
+            console.error("An unexpected error occurred during deletion:", serverError);
+            toast({
+                variant: 'destructive',
+                title: 'Произошла ошибка',
+                description: 'Не удалось удалить инвентаризацию. Попробуйте снова.'
+            });
         }
     } finally {
         setIsDeleting(false);

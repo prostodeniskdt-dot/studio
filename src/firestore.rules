@@ -184,7 +184,7 @@ service cloud.firestore {
 
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        allow list: if request.query.limit <= 1;
+        allow list: if isSignedIn(); // Allow list for any signed-in user, client MUST filter by barId
         allow create: if isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteSubcollection(barId) && resourceExists();

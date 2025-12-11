@@ -131,7 +131,7 @@ export default function UnifiedCalculatorPage() {
         if (sessionsSnapshot.empty) {
             toast({
                 variant: "destructive",
-                title: "Нет активной сессии",
+                title: "Нет активной инвентаризации",
                 description: "Пожалуйста, начните новую инвентаризацию на главной панели.",
             });
             setIsSending(false);
@@ -171,7 +171,7 @@ export default function UnifiedCalculatorPage() {
                 batch.commit().then(() => {
                     toast({
                         title: "Данные отправлены",
-                        description: `Остаток для продукта ${product.name} (${volume} мл) добавлен в текущую сессию.`,
+                        description: `Остаток для продукта ${product.name} (${volume} мл) добавлен в текущую инвентаризацию.`,
                     });
                 }).catch(serverError => {
                     const permissionError = new FirestorePermissionError({ path: newLineRef.path, operation: 'create', requestResourceData: newLineData });
@@ -187,7 +187,7 @@ export default function UnifiedCalculatorPage() {
                 updateDoc(lineRef, updateData).then(() => {
                      toast({
                         title: "Данные отправлены",
-                        description: `Остаток для продукта ${products?.find(p => p.id === selectedProductId)?.name} (${volume} мл) обновлен в текущей сессии.`,
+                        description: `Остаток для продукта ${products?.find(p => p.id === selectedProductId)?.name} (${volume} мл) обновлен в текущей инвентаризации.`,
                     });
                 }).catch(serverError => {
                     const permissionError = new FirestorePermissionError({ path: lineRef.path, operation: 'update', requestResourceData: updateData });
@@ -227,7 +227,7 @@ export default function UnifiedCalculatorPage() {
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle>Расчет объема жидкости</CardTitle>
-          <CardDescription>Выберите продукт для автозаполнения, введите замеры и отправьте результат в активную сессию.</CardDescription>
+          <CardDescription>Выберите продукт для автозаполнения, введите замеры и отправьте результат в активную инвентаризацию.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
 

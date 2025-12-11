@@ -35,13 +35,13 @@ export default function DashboardPage() {
         
         if (data.isNew) {
             toast({
-                title: "Сессия создана",
-                description: "Новая сессия инвентаризации была успешно создана.",
+                title: "Инвентаризация создана",
+                description: "Новая инвентаризация была успешно создана.",
             });
         } else {
             toast({
-                title: "Активная сессия уже существует",
-                description: "Вы будете перенаправлены на существующую сессию.",
+                title: "Активная инвентаризация уже существует",
+                description: "Вы будете перенаправлены на существующую инвентаризацию.",
             });
         }
         router.push(`/dashboard/sessions/${data.sessionId}`);
@@ -62,7 +62,7 @@ export default function DashboardPage() {
       toast({
         variant: "destructive",
         title: "Ошибка",
-        description: "Не удалось загрузить данные для создания сессии.",
+        description: "Не удалось загрузить данные для создания инвентаризации.",
       });
       return;
     }
@@ -93,7 +93,7 @@ export default function DashboardPage() {
                 <Link href="/dashboard/sessions" className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
                     <BarChart3 className="h-7 w-7 md:h-8 md:w-8 text-primary shrink-0" />
                     <div className="hidden sm:block">
-                        <h3 className="font-semibold">Сессии</h3>
+                        <h3 className="font-semibold">Инвентаризации</h3>
                         <p className="text-muted-foreground text-xs">Подсчет остатков</p>
                     </div>
                 </Link>
@@ -116,7 +116,7 @@ export default function DashboardPage() {
       </Card>
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Активные сессии</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Текущие инвентаризации</h1>
         <Button onClick={handleCreateSession} disabled={isLoading || isCreating || hasDataLoadingError || !barId}>
           {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
           Начать
@@ -137,5 +137,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    

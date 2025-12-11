@@ -17,7 +17,7 @@ import { AppLogo } from '@/components/app-logo';
 const menuItems = [
   { href: '/dashboard', label: 'Панель', icon: Home },
   { href: '/dashboard/products', label: 'Продукты', icon: Package },
-  { href: '/dashboard/sessions', label: 'Сессии', icon: BarChart3 },
+  { href: '/dashboard/sessions', label: 'Инвентаризации', icon: BarChart3 },
   { href: '/dashboard/analytics', label: 'Аналитика', icon: LineChart },
   { href: '/dashboard/suppliers', label: 'Поставщики', icon: Truck },
   { href: '/dashboard/purchase-orders', label: 'Закупки', icon: ShoppingCart },

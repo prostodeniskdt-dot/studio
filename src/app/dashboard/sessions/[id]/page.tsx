@@ -89,7 +89,7 @@ export default function SessionPage() {
   const { execute: runCompleteSession, isLoading: isCompleting } = useServerAction(completeInventorySession, {
      onSuccess: () => {
         toast({
-            title: "Сессия завершена",
+            title: "Инвентаризация завершена",
             description: "Инвентаризация завершена и отчет готов.",
         });
         router.push(`/dashboard/sessions/${id}/report`);
@@ -169,7 +169,7 @@ export default function SessionPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast({ title: "Экспорт завершен", description: "Данные сессии выгружены в CSV файл." });
+    toast({ title: "Экспорт завершен", description: "Данные инвентаризации выгружены в CSV файл." });
   };
 
   const handleImportClick = () => {
@@ -327,14 +327,14 @@ export default function SessionPage() {
                         <AlertDialogTrigger asChild>
                             <Button disabled={!isEditable || isCompleting}>
                                 {isCompleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Завершить сессию
+                                Завершить инвентаризацию
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                            <AlertDialogTitle>Завершить сессию инвентаризации?</AlertDialogTitle>
+                            <AlertDialogTitle>Завершить инвентаризацию?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Все текущие данные будут сохранены. После завершения сессии вы не сможете вносить изменения.
+                                Все текущие данные будут сохранены. После завершения инвентаризации вы не сможете вносить изменения.
                                 Вы будете перенаправлены на страницу отчета.
                             </AlertDialogDescription>
                             </AlertDialogHeader>
@@ -361,7 +361,7 @@ export default function SessionPage() {
        <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
         <DialogContent>
             <DialogHeader>
-            <DialogTitle>Добавить продукт в сессию</DialogTitle>
+            <DialogTitle>Добавить продукт в инвентаризацию</DialogTitle>
             <DialogDescription>
                 Выберите продукт из общего каталога, чтобы добавить его в текущую инвентаризацию.
             </DialogDescription>
@@ -383,5 +383,3 @@ export default function SessionPage() {
     </>
   );
 }
-
-    

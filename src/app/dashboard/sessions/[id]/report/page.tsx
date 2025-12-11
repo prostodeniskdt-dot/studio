@@ -112,9 +112,9 @@ export default function SessionReportPage() {
                 <BarChart3 className="h-4 w-4" />
                 <AlertTitle>Отчет недоступен</AlertTitle>
                 <AlertDescription>
-                    Эта сессия инвентаризации еще не завершена. Пожалуйста, завершите сессию для просмотра отчета.
+                    Эта инвентаризация еще не завершена. Пожалуйста, завершите ее для просмотра отчета.
                     <Button asChild variant="link" className="p-0 h-auto ml-1">
-                        <Link href={`/dashboard/sessions/${session.id}`}>Вернуться к сессии</Link>
+                        <Link href={`/dashboard/sessions/${session.id}`}>Вернуться к инвентаризации</Link>
                     </Button>
                 </AlertDescription>
             </Alert>
@@ -132,5 +132,3 @@ export default function SessionReportPage() {
     />
   );
 }
-
-    

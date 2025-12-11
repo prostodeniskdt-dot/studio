@@ -38,8 +38,8 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
 
   const { execute: runDeleteSession } = useServerAction(deleteInventorySession, {
     onSuccess: () => setSessionToDelete(null),
-    successMessage: "Сессия удалена.",
-    errorMessage: "При удалении сессии произошла ошибка."
+    successMessage: "Инвентаризация удалена.",
+    errorMessage: "При удалении инвентаризации произошла ошибка."
   });
 
 
@@ -113,7 +113,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
           <CardFooter>
             <Button asChild variant="ghost" className="w-full justify-start">
               <Link href={`/dashboard/sessions/${session.id}`}>
-                {session.status === 'in_progress' ? 'Продолжить' : 'Смотреть'} сессию
+                {session.status === 'in_progress' ? 'Продолжить' : 'Смотреть'} инвентаризацию
                 <ArrowRight className="ml-auto" />
               </Link>
             </Button>
@@ -126,7 +126,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
             <AlertDialogDescription>
-              Вы собираетесь безвозвратно удалить сессию инвентаризации "{sessionToDelete?.name}". Это действие нельзя отменить.
+              Вы собираетесь безвозвратно удалить инвентаризацию "{sessionToDelete?.name}". Это действие нельзя отменить.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -138,5 +138,3 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     </>
   );
 }
-
-    

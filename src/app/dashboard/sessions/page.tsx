@@ -33,13 +33,13 @@ export default function SessionsPage() {
       if (!data) return;
       if (data.isNew) {
         toast({
-          title: "Сессия создана",
-          description: "Новая сессия инвентаризации была успешно создана.",
+          title: "Инвентаризация создана",
+          description: "Новая инвентаризация была успешно создана.",
         });
       } else {
         toast({
-          title: "Активная сессия уже существует",
-          description: "Вы будете перенаправлены на существующую сессию.",
+          title: "Активная инвентаризация уже существует",
+          description: "Вы будете перенаправлены на существующую инвентаризацию.",
            action: <Button onClick={() => router.push(`/dashboard/sessions/${data.sessionId}`)}>Перейти</Button>
         });
       }
@@ -60,7 +60,7 @@ export default function SessionsPage() {
       toast({
         variant: "destructive",
         title: "Ошибка",
-        description: "Не удалось загрузить данные для создания сессии.",
+        description: "Не удалось загрузить данные для создания инвентаризации.",
       });
       return;
     }
@@ -73,7 +73,7 @@ export default function SessionsPage() {
   return (
     <>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Сессии инвентаризации</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Инвентаризации</h1>
         <Button onClick={handleCreateSession} disabled={isLoading || isCreating || hasDataLoadingError || !barId}>
           {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
           Начать инвентаризацию
@@ -94,5 +94,3 @@ export default function SessionsPage() {
     </>
   );
 }
-
-    

@@ -73,10 +73,10 @@ export async function runVarianceAnalysis(line: InventoryLine & { product?: Prod
 export async function createInventorySession({ barId, userId }: {barId: string, userId: string}): Promise<ServerActionResponse<{sessionId: string, isNew: boolean}>> {
   try {
     const { db } = initializeAdminApp();
-    const sessionsCollection = db.collection('bars').doc(barId).collection('inventorySessions');
+    const inventoriesCollection = db.collection('bars').doc(barId).collection('inventorySessions');
 
     // Check for existing in-progress session
-    const inProgressQuery = sessionsCollection.where('status', '==', 'in_progress').limit(1);
+    const inProgressQuery = inventoriesCollection.where('status', '==', 'in_progress').limit(1);
     const inProgressSnapshot = await inProgressQuery.get();
 
     if (!inProgressSnapshot.empty) {
@@ -85,7 +85,7 @@ export async function createInventorySession({ barId, userId }: {barId: string, 
     }
 
     // Create a new session
-    const newSessionRef = sessionsCollection.doc();
+    const newSessionRef = inventoriesCollection.doc();
     const newSessionData = {
         id: newSessionRef.id,
         barId: barId,

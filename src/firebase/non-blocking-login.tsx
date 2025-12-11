@@ -28,10 +28,52 @@ async function seedInitialData(firestore: Firestore): Promise<void> {
 
         const batch = writeBatch(firestore);
 
-        const vodkaImage = PlaceHolderImages.find(p => p.id === 'vodka')?.imageUrl;
-
         const productsToCreate: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>[] = [
-            // Vodkas
+            { name: 'Jameson', category: 'Whiskey', subCategory: 'Irish', costPerBottle: 1800, sellingPricePerPortion: 350, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1150, emptyBottleWeightG: 450, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'whiskey')?.imageUrl },
+            { name: 'Jack Daniel\'s', category: 'Whiskey', subCategory: 'Bourbon', costPerBottle: 2000, sellingPricePerPortion: 380, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1180, emptyBottleWeightG: 480, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'whiskey')?.imageUrl },
+            { name: 'Havana Club 3', category: 'Rum', subCategory: 'White', costPerBottle: 1500, sellingPricePerPortion: 300, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1120, emptyBottleWeightG: 420, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'rum')?.imageUrl },
+            { name: 'Captain Morgan Spiced', category: 'Rum', subCategory: 'Spiced', costPerBottle: 1600, sellingPricePerPortion: 320, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1130, emptyBottleWeightG: 430, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'rum')?.imageUrl },
+            { name: 'Beefeater', category: 'Gin', subCategory: 'London Dry', costPerBottle: 1700, sellingPricePerPortion: 340, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1140, emptyBottleWeightG: 440, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'gin')?.imageUrl },
+            { name: 'Olmeca Blanco', category: 'Tequila', costPerBottle: 1900, sellingPricePerPortion: 360, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1160, emptyBottleWeightG: 460, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'tequila')?.imageUrl },
+            { name: 'Aperol', category: 'Liqueur', costPerBottle: 1300, sellingPricePerPortion: 280, portionVolumeMl: 50, bottleVolumeMl: 700, fullBottleWeightG: 1200, emptyBottleWeightG: 500, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'liqueur')?.imageUrl },
+            { name: 'Monin Grenadine', category: 'Syrup', costPerBottle: 800, sellingPricePerPortion: 50, portionVolumeMl: 10, bottleVolumeMl: 1000, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'syrup')?.imageUrl },
+            { name: 'Вино красное (дом)', category: 'Wine', subCategory: 'Red', costPerBottle: 900, sellingPricePerPortion: 250, portionVolumeMl: 150, bottleVolumeMl: 750, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'wine')?.imageUrl },
+            { name: 'Пиво светлое (кран)', category: 'Beer', subCategory: 'Lager', costPerBottle: 150, sellingPricePerPortion: 300, portionVolumeMl: 500, bottleVolumeMl: 1000, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'beer')?.imageUrl }
+        ];
+
+        productsToCreate.forEach(prodData => {
+            const prodRef = doc(productsCollectionRef);
+            batch.set(prodRef, {
+                ...prodData,
+                id: prodRef.id,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            });
+        });
+        
+        await batch.commit();
+
+    } catch (serverError) {
+        const permissionError = new FirestorePermissionError({ path: productsCollectionRef.path, operation: 'list'});
+        errorEmitter.emit('permission-error', permissionError);
+        throw serverError;
+    }
+}
+
+async function seedMissingVodka(firestore: Firestore): Promise<void> {
+    const productsCollectionRef = collection(firestore, 'products');
+    const firstVodkaQuery = query(productsCollectionRef, where('name', '==', 'Русский Стандарт Original'), limit(1));
+
+    try {
+        const vodkaSnapshot = await getDocs(firstVodkaQuery);
+        if (!vodkaSnapshot.empty) {
+            // Водка уже есть, ничего не делаем
+            return;
+        }
+
+        const batch = writeBatch(firestore);
+        const vodkaImage = PlaceHolderImages.find(p => p.id === 'vodka')?.imageUrl;
+        const vodkasToAdd: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>[] = [
             { name: 'Русский Стандарт Original', category: 'Vodka', costPerBottle: 700, sellingPricePerPortion: 250, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
             { name: 'Русский Стандарт Platinum', category: 'Vodka', costPerBottle: 1000, sellingPricePerPortion: 350, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
             { name: 'Beluga Noble', category: 'Vodka', costPerBottle: 1500, sellingPricePerPortion: 500, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
@@ -72,21 +114,9 @@ async function seedInitialData(firestore: Firestore): Promise<void> {
             { name: 'Ketel One', category: 'Vodka', costPerBottle: 2400, sellingPricePerPortion: 800, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
             { name: 'Belvedere', category: 'Vodka', costPerBottle: 2800, sellingPricePerPortion: 950, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
             { name: 'Morosha', category: 'Vodka', costPerBottle: 430, sellingPricePerPortion: 170, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
-            
-            // Other spirits
-            { name: 'Jameson', category: 'Whiskey', subCategory: 'Irish', costPerBottle: 1800, sellingPricePerPortion: 350, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1150, emptyBottleWeightG: 450, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'whiskey')?.imageUrl },
-            { name: 'Jack Daniel\'s', category: 'Whiskey', subCategory: 'Bourbon', costPerBottle: 2000, sellingPricePerPortion: 380, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1180, emptyBottleWeightG: 480, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'whiskey')?.imageUrl },
-            { name: 'Havana Club 3', category: 'Rum', subCategory: 'White', costPerBottle: 1500, sellingPricePerPortion: 300, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1120, emptyBottleWeightG: 420, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'rum')?.imageUrl },
-            { name: 'Captain Morgan Spiced', category: 'Rum', subCategory: 'Spiced', costPerBottle: 1600, sellingPricePerPortion: 320, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1130, emptyBottleWeightG: 430, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'rum')?.imageUrl },
-            { name: 'Beefeater', category: 'Gin', subCategory: 'London Dry', costPerBottle: 1700, sellingPricePerPortion: 340, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1140, emptyBottleWeightG: 440, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'gin')?.imageUrl },
-            { name: 'Olmeca Blanco', category: 'Tequila', costPerBottle: 1900, sellingPricePerPortion: 360, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1160, emptyBottleWeightG: 460, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'tequila')?.imageUrl },
-            { name: 'Aperol', category: 'Liqueur', costPerBottle: 1300, sellingPricePerPortion: 280, portionVolumeMl: 50, bottleVolumeMl: 700, fullBottleWeightG: 1200, emptyBottleWeightG: 500, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'liqueur')?.imageUrl },
-            { name: 'Monin Grenadine', category: 'Syrup', costPerBottle: 800, sellingPricePerPortion: 50, portionVolumeMl: 10, bottleVolumeMl: 1000, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'syrup')?.imageUrl },
-            { name: 'Вино красное (дом)', category: 'Wine', subCategory: 'Red', costPerBottle: 900, sellingPricePerPortion: 250, portionVolumeMl: 150, bottleVolumeMl: 750, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'wine')?.imageUrl },
-            { name: 'Пиво светлое (кран)', category: 'Beer', subCategory: 'Lager', costPerBottle: 150, sellingPricePerPortion: 300, portionVolumeMl: 500, bottleVolumeMl: 1000, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'beer')?.imageUrl }
         ];
 
-        productsToCreate.forEach(prodData => {
+        vodkasToAdd.forEach(prodData => {
             const prodRef = doc(productsCollectionRef);
             batch.set(prodRef, {
                 ...prodData,
@@ -95,14 +125,12 @@ async function seedInitialData(firestore: Firestore): Promise<void> {
                 updatedAt: serverTimestamp(),
             });
         });
-        
+
         await batch.commit();
 
     } catch (serverError) {
-        const permissionError = new FirestorePermissionError({ path: productsCollectionRef.path, operation: 'list'});
-        errorEmitter.emit('permission-error', permissionError);
-        // Re-throw the error to be caught by the caller
-        throw serverError;
+        // Ошибки здесь не критичны для основного потока, просто логируем их
+        console.error("Error seeding missing vodka:", serverError);
     }
 }
 
@@ -122,7 +150,8 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
         const [userDoc, barDoc] = await Promise.all([getDoc(userRef), getDoc(barRef)]);
         
         if (userDoc.exists() && barDoc.exists()) {
-            await seedInitialData(firestore);
+            // Данные пользователя и бара уже есть, просто проверяем и до-заполняем водкой
+            await seedMissingVodka(firestore);
             return; 
         }
 
@@ -153,6 +182,7 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
         
         await batch.commit();
         await seedInitialData(firestore);
+        await seedMissingVodka(firestore); // Добавляем водку после создания основных данных
 
     } catch (serverError: any) {
         const permissionError = new FirestorePermissionError({ 

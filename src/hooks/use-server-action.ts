@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { ServerActionResponse } from '@/lib/actions';
 
 interface UseServerActionOptions<T> {
-    onSuccess?: (data: T | undefined) => void;
+    onSuccess?: (data: T | boolean) => void;
     onError?: (error: string | undefined) => void;
     successMessage?: string;
     errorMessage?: string;
@@ -33,7 +33,8 @@ export function useServerAction<TInput, TData>(
                 if (options.successMessage) {
                     toast({ title: options.successMessage });
                 }
-                options.onSuccess?.(result.data);
+                // For actions that don't return data (like delete), we can still signal success.
+                options.onSuccess?.(result.data === undefined ? true : result.data);
             } else {
                 setError(result.error);
                 toast({
@@ -59,5 +60,3 @@ export function useServerAction<TInput, TData>(
 
     return { execute, isLoading, error, data };
 }
-
-    

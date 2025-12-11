@@ -93,7 +93,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
 
         toast({ title: "Инвентаризация удалена." });
         setSessionToDelete(null);
-        // We don't need to refresh, useCollection will do it automatically
+        router.refresh();
     } catch (serverError) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/inventorySessions/${sessionToDelete.id}`, operation: 'delete' }));
     } finally {

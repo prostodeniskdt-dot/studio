@@ -86,6 +86,8 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <AnalyticsView data={sessionsWithLines} />
+    <div className="w-full">
+        <AnalyticsView data={sessionsWithLines} />
+    </div>
   );
 }

@@ -138,7 +138,7 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
   });
 
   return (
-    <div className="w-full">
+    <>
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <div className="flex items-center justify-between py-4">
           <div>
@@ -209,6 +209,6 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
-    </div>
+    </>
   );
 }

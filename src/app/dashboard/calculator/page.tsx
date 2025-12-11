@@ -203,7 +203,7 @@ export default function UnifiedCalculatorPage() {
   }
 
   return (
-    <div className="w-full">
+    <>
       <div className="py-4">
           <h1 className="text-3xl font-bold tracking-tight">Универсальный калькулятор</h1>
           <p className="text-muted-foreground">Рассчитайте остатки в бутылке и отправьте данные в текущую инвентаризацию.</p>
@@ -296,6 +296,6 @@ export default function UnifiedCalculatorPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 }

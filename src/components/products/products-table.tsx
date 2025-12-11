@@ -248,7 +248,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
 
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <div className="w-full">
+        <>
             <div className="flex items-center justify-between py-4 gap-2 flex-wrap">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Продукты</h1>
@@ -393,7 +393,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
             </Button>
             </div>
         </div>
-        </div>
+        </>
          <SheetContent className="w-full sm:w-[480px] sm:max-w-none overflow-y-auto">
             <SheetHeader>
                 <SheetTitle>{editingProduct ? 'Редактировать продукт' : 'Добавить новый продукт'}</SheetTitle>

@@ -176,7 +176,7 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
   });
 
   return (
-    <div className="w-full">
+    <>
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <div className="flex items-center justify-between py-4">
           <div>
@@ -247,6 +247,6 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
               </AlertDialogFooter>
           </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }

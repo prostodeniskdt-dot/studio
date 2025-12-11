@@ -6,7 +6,7 @@ import { useParams, notFound, useRouter } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { BarChart3, Loader2 } from "lucide-react";
+import { BarChart3, Loader2, ShoppingCart } from "lucide-react";
 import type { InventorySession, Product, InventoryLine, PurchaseOrder } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, collection, query, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
@@ -65,6 +65,7 @@ export default function SessionReportPage() {
 
         if (productsToOrder.length === 0) {
             toast({ title: 'Заказ не требуется', description: 'Остатки всех продуктов выше минимального уровня.' });
+            setIsCreatingOrder(false);
             return;
         }
 
@@ -179,3 +180,5 @@ export default function SessionReportPage() {
     />
   );
 }
+
+    

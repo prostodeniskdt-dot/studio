@@ -322,7 +322,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Поставщик по умолчанию</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value ?? ''}>
                   <FormControl>
                     <SelectTrigger disabled={isLoadingSuppliers}>
                       <SelectValue placeholder={isLoadingSuppliers ? "Загрузка..." : "Выберите поставщика"} />
@@ -372,3 +372,5 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     </Form>
   );
 }
+
+    

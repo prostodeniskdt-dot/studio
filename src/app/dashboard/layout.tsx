@@ -47,6 +47,8 @@ export default function DashboardLayout({
         } catch (err: any) {
           console.error("Failed to ensure user/bar documents:", err);
           setError(err.message || "Не удалось инициализировать данные пользователя.");
+          // We still set data ready to true to show the error message in the UI
+          setIsDataReady(true);
         }
       })();
     }
@@ -58,10 +60,19 @@ export default function DashboardLayout({
      return (
       <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background">
         <Loader2 className="h-8 w-8 animate-spin" />
-        {error ? <p className="text-destructive">{error}</p> : <p>Подготовка вашей панели управления...</p>}
+        <p>Подготовка вашей панели управления...</p>
       </div>
     );
   }
+  
+  if (error) {
+     return (
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background">
+        <p className="text-destructive">{error}</p>
+      </div>
+    );
+  }
+
 
   // Once ready, render the full layout with children.
   return (

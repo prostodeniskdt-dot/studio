@@ -255,7 +255,7 @@ export default function UnifiedCalculatorPage() {
                 
                 {/* Расчет по высоте */}
                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Расчет по высоте (альтернативный)</h3>
+                    <h3 className="text-lg font-semibold">Расчет по высоте</h3>
                     <div className="space-y-2">
                         <Label htmlFor="liquidLevel">Уровень жидкости (см)</Label>
                         <Input id="liquidLevel" type="number" value={liquidLevel} onChange={e => setLiquidLevel(e.target.value)} placeholder="Замер линейкой" />

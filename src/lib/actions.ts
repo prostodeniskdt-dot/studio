@@ -1,9 +1,8 @@
 'use server';
 
 import type { InventoryLine, Product, Supplier, UserRole, PurchaseOrder, PurchaseOrderLine } from './types';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { initializeAdminApp } from '@/firebase/admin';
-import { FieldValue } from 'firebase-admin/firestore';
 import { calculateLineFields } from './calculations';
 
 // This defines a standard response format for all server actions.

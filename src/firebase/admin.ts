@@ -1,5 +1,5 @@
-
 import * as admin from 'firebase-admin';
+import { firebaseConfig } from './config';
 
 /**
  * Ensures the Firebase Admin app is initialized, but only once.
@@ -16,9 +16,10 @@ export function initializeAdminApp() {
     };
   }
 
-  // Initialize the app. In a hosted Google environment (like Firebase App Hosting),
-  // this will automatically use the service account credentials.
-  const app = admin.initializeApp();
+  // Initialize the app with the project ID for explicit configuration.
+  const app = admin.initializeApp({
+    projectId: firebaseConfig.projectId,
+  });
 
   return {
     app,

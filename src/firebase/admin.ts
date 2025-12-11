@@ -1,7 +1,5 @@
-'use server';
 
 import * as admin from 'firebase-admin';
-import { firebaseConfig } from './config';
 
 /**
  * Ensures the Firebase Admin app is initialized, but only once.

@@ -6,13 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Combobox, type GroupedComboboxOption } from '@/components/ui/combobox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Weight, Send, Loader2, Ruler } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import type { InventorySession, Product } from '@/lib/types';
+import type { InventorySession, Product, ProductCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
-import { translateCategory } from '@/lib/utils';
+import { translateCategory, productCategories, productSubCategories, translateSubCategory } from '@/lib/utils';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 
 export default function UnifiedCalculatorPage() {
@@ -27,25 +28,8 @@ export default function UnifiedCalculatorPage() {
   );
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsQuery);
 
-  const groupedProductOptions = React.useMemo<GroupedComboboxOption[]>(() => {
-    if (!products) return [];
-
-    const groups: Record<string, { value: string; label: string }[]> = {};
-    
-    products.filter(p => p.isActive).forEach(p => {
-      const category = translateCategory(p.category);
-      if (!groups[category]) {
-        groups[category] = [];
-      }
-      groups[category].push({ value: p.id, label: p.name });
-    });
-
-    return Object.entries(groups)
-      .map(([label, options]) => ({ label, options }))
-      .sort((a,b) => a.label.localeCompare(b.label));
-
-  }, [products]);
-
+  const [selectedCategory, setSelectedCategory] = React.useState<ProductCategory | undefined>();
+  const [selectedSubCategory, setSelectedSubCategory] = React.useState<string | undefined>();
   const [selectedProductId, setSelectedProductId] = React.useState<string | undefined>(undefined);
 
   const [bottleVolume, setBottleVolume] = React.useState('');
@@ -58,6 +42,29 @@ export default function UnifiedCalculatorPage() {
   
   const [isSending, setIsSending] = React.useState(false);
 
+  const filteredProducts = React.useMemo(() => {
+    if (!products) return [];
+    return products.filter(p => {
+      const categoryMatch = !selectedCategory || p.category === selectedCategory;
+      const subCategoryMatch = !selectedSubCategory || p.subCategory === selectedSubCategory;
+      return categoryMatch && subCategoryMatch;
+    });
+  }, [products, selectedCategory, selectedSubCategory]);
+
+  const productOptions = React.useMemo<GroupedComboboxOption[]>(() => {
+    if (filteredProducts.length === 0) return [];
+    return [{
+      label: 'Продукты',
+      options: filteredProducts.map(p => ({ value: p.id, label: p.name }))
+    }];
+  }, [filteredProducts]);
+
+  const subCategoryOptions = React.useMemo(() => {
+    if (!selectedCategory || !productSubCategories[selectedCategory]) return [];
+    return productSubCategories[selectedCategory];
+  }, [selectedCategory]);
+
+
   const handleProductSelect = (productId: string) => {
     const product = products?.find(p => p.id === productId);
     setSelectedProductId(productId);
@@ -68,6 +75,27 @@ export default function UnifiedCalculatorPage() {
         setCalculatedVolume(null);
     }
   };
+  
+  const handleCategoryChange = (category: ProductCategory) => {
+    setSelectedCategory(category);
+    setSelectedSubCategory(undefined);
+    setSelectedProductId(undefined);
+    resetInputs();
+  };
+
+  const handleSubCategoryChange = (subCategory: string) => {
+    setSelectedSubCategory(subCategory);
+    setSelectedProductId(undefined);
+    resetInputs();
+  }
+
+  const resetInputs = () => {
+    setBottleVolume('');
+    setFullWeight('');
+    setEmptyWeight('');
+    setCalculatedVolume(null);
+  };
+
 
   const handleCalculate = () => {
     setCalculatedVolume(null);
@@ -121,16 +149,14 @@ export default function UnifiedCalculatorPage() {
     setIsSending(true);
     
     const sessionsQuery = query(
-        collection(firestore, 'bars', barId, 'inventorySessions')
+        collection(firestore, 'bars', barId, 'inventorySessions'),
+        where('status', '==', 'in_progress'),
+        orderBy('createdAt', 'desc'),
+        limit(1)
     );
 
     getDocs(sessionsQuery).then(sessionsSnapshot => {
-        const activeSession = sessionsSnapshot.docs
-            .map(doc => doc.data() as InventorySession)
-            .filter(s => s.status === 'in_progress')
-            .sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0))[0];
-
-        if (!activeSession) {
+        if (sessionsSnapshot.empty) {
             toast({
                 variant: "destructive",
                 title: "Нет активной инвентаризации",
@@ -139,8 +165,10 @@ export default function UnifiedCalculatorPage() {
             setIsSending(false);
             return;
         }
-      
+
+        const activeSession = sessionsSnapshot.docs[0].data() as InventorySession;
         const activeSessionId = activeSession.id;
+      
         const linesColRef = collection(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines');
         const linesQuery = query(linesColRef, where('productId', '==', selectedProductId), limit(1));
       
@@ -231,18 +259,45 @@ export default function UnifiedCalculatorPage() {
           <CardDescription>Выберите продукт для автозаполнения, введите замеры и отправьте результат в активную инвентаризацию.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-
-          <div className="space-y-2">
-            <Label htmlFor="product-select">Выберите продукт (профиль бутылки)</Label>
-            <Combobox 
-              options={groupedProductOptions}
-              value={selectedProductId}
-              onSelect={handleProductSelect}
-              placeholder={isLoadingProducts ? "Загрузка продуктов..." : "Выберите продукт из каталога..."}
-              searchPlaceholder='Поиск продукта...'
-              notFoundText='Продукт не найден.'
-            />
+          <div className="space-y-4">
+            <Label>Фильтр продуктов</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+               <Select onValueChange={(val) => handleCategoryChange(val as ProductCategory)} value={selectedCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="1. Выберите категорию" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {productCategories.map(cat => (
+                      <SelectItem key={cat} value={cat}>{translateCategory(cat)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select 
+                    onValueChange={handleSubCategoryChange} 
+                    value={selectedSubCategory} 
+                    disabled={!subCategoryOptions || subCategoryOptions.length === 0}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="2. Выберите подкатегорию" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subCategoryOptions?.map(subCat => (
+                        <SelectItem key={subCat} value={subCat}>{translateSubCategory(subCat)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Combobox 
+                  options={productOptions}
+                  value={selectedProductId}
+                  onSelect={handleProductSelect}
+                  placeholder="3. Выберите продукт"
+                  searchPlaceholder='Поиск продукта...'
+                  notFoundText='Продукт не найден.'
+                  triggerClassName='lg:col-span-1'
+                  disabled={!selectedCategory}
+                />
+            </div>
           </div>
+
 
           <Separator />
 
@@ -254,16 +309,16 @@ export default function UnifiedCalculatorPage() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="fullWeight">Вес полной (г)</Label>
-                            <Input id="fullWeight" type="number" value={fullWeight} onChange={e => setFullWeight(e.target.value)} placeholder="1150" />
+                            <Input id="fullWeight" type="number" value={fullWeight} onChange={e => setFullWeight(e.target.value)} placeholder="1150" disabled={!selectedProductId} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="emptyWeight">Вес пустой (г)</Label>
-                            <Input id="emptyWeight" type="number" value={emptyWeight} onChange={e => setEmptyWeight(e.target.value)} placeholder="450" />
+                            <Input id="emptyWeight" type="number" value={emptyWeight} onChange={e => setEmptyWeight(e.target.value)} placeholder="450" disabled={!selectedProductId} />
                         </div>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="currentWeight">Текущий вес (г)</Label>
-                        <Input id="currentWeight" type="number" value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} placeholder="Замер с весов" />
+                        <Input id="currentWeight" type="number" value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} placeholder="Замер с весов" disabled={!selectedProductId} />
                     </div>
                 </div>
 
@@ -274,7 +329,7 @@ export default function UnifiedCalculatorPage() {
                     <h3 className="text-lg font-semibold">Расчет по высоте</h3>
                     <div className="space-y-2">
                         <Label htmlFor="liquidLevel">Уровень жидкости (см)</Label>
-                        <Input id="liquidLevel" type="number" value={liquidLevel} onChange={e => setLiquidLevel(e.target.value)} placeholder="Замер линейкой" />
+                        <Input id="liquidLevel" type="number" value={liquidLevel} onChange={e => setLiquidLevel(e.target.value)} placeholder="Замер линейкой" disabled={!selectedProductId} />
                     </div>
                  </div>
 
@@ -282,12 +337,12 @@ export default function UnifiedCalculatorPage() {
                 
                 <div className="space-y-2">
                     <Label htmlFor="bottleVolume">Номинальный объем (мл)</Label>
-                    <Input id="bottleVolume" type="number" value={bottleVolume} onChange={(e) => setBottleVolume(e.target.value)} placeholder="700" />
+                    <Input id="bottleVolume" type="number" value={bottleVolume} onChange={(e) => setBottleVolume(e.target.value)} placeholder="700" disabled={!selectedProductId} />
                 </div>
             </div>
 
             <div className="space-y-6">
-               <Button onClick={handleCalculate} className="w-full h-12 text-lg">
+               <Button onClick={handleCalculate} className="w-full h-12 text-lg" disabled={!selectedProductId}>
                 Рассчитать
               </Button>
               
@@ -315,3 +370,5 @@ export default function UnifiedCalculatorPage() {
     </div>
   );
 }
+
+    

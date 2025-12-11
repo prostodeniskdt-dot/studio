@@ -184,10 +184,9 @@ service cloud.firestore {
 
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        allow list: if isSignedIn(); 
+        allow list: if request.query.limit <= 1;
         allow create: if isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
-        // **FIX**: Changed from canWriteBarData to the more restrictive canWriteSubcollection to prevent silent fails
         allow delete: if canWriteSubcollection(barId) && resourceExists();
 
         match /lines/{inventoryLineId} {

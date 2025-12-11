@@ -21,7 +21,7 @@ export default function SessionsPage() {
   const barId = user ? `bar_${user.uid}` : null; 
 
   const sessionsQuery = useMemoFirebase(() => 
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions'), where('barId', '==', barId)) : null,
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions')) : null,
     [firestore, barId]
   );
   
@@ -49,11 +49,10 @@ export default function SessionsPage() {
 
     try {
         const inventoriesCollection = collection(firestore, 'bars', barId, 'inventorySessions');
-        const inProgressQuery = query(inventoriesCollection, where('status', '==', 'in_progress'), where('barId', '==', barId), where('createdByUserId', '==', user.uid));
+        const inProgressQuery = query(inventoriesCollection, where('status', '==', 'in_progress'), where('createdByUserId', '==', user.uid));
         const querySnapshot = await getDocs(inProgressQuery);
 
         let sessionId;
-        let isNew = false;
 
         if (!querySnapshot.empty) {
             sessionId = querySnapshot.docs[0].id;
@@ -76,7 +75,6 @@ export default function SessionsPage() {
             await setDoc(newSessionRef, newSessionData);
 
             sessionId = newSessionRef.id;
-            isNew = true;
             toast({
                 title: "Инвентаризация создана",
                 description: "Новая инвентаризация была успешно создана.",

@@ -86,11 +86,7 @@ service cloud.firestore {
      * This function is optimized to reduce `get` calls.
      */
     function isBarMember(barId) {
-        // A user is a member if they are the owner OR if they have a member document.
-        // We check ownership first, which involves a `get`.
-        // Then, we check for the member document with `exists`.
-        let barData = get(/databases/$(database)/documents/bars/$(barId)).data;
-        let isOwner = barData.ownerUserId == request.auth.uid;
+        let isOwner = isBarOwner(barId);
         let isExplicitMember = exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid));
         
         return isOwner || isExplicitMember;
@@ -189,7 +185,6 @@ service cloud.firestore {
     
     /**
      * On create, validates the session is linked to the correct bar and created by a bar member.
-     * We use request.resource.data.barId because barId from path is not available on collection create.
      */
     function isInventorySessionCreateValid() {
       let data = request.resource.data;
@@ -282,9 +277,11 @@ service cloud.firestore {
        */
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        // List is secured by a client-side where() clause on barId.
-        // The query MUST contain `where('barId', '==', barId)`
-        allow list: if (isBarMember(barId) || isAdmin()) && request.query.barId == barId;
+        
+        // List is allowed IF the query contains a where clause for createdByUserId
+        // This is a common pattern to avoid using get() or exists() in list rules.
+        allow list: if (isAdmin() || isBarMember(barId)) && (request.query.createdByUserId == request.auth.uid || request.query.keysOnly == true);
+
         allow create: if isInventorySessionCreateValid();
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteBarData(barId) && resourceExists();

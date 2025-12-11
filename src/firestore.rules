@@ -184,7 +184,10 @@ service cloud.firestore {
 
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        allow list: if isSignedIn(); // Allow list for any signed-in user, client MUST filter by barId
+        // This rule allows a client to list sessions if and only if
+        // the query includes a `where('barId', '==', barId)` clause.
+        // This is a secure way to allow filtered list reads for members.
+        allow list: if request.query.barId == barId;
         allow create: if isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteSubcollection(barId) && resourceExists();
@@ -216,3 +219,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

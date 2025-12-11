@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn, translateStatus } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MoreVertical, Trash2, Loader2 } from "lucide-react";
-import { Timestamp, doc, deleteDoc } from "firebase/firestore";
+import { Timestamp, doc, deleteDoc, writeBatch, getDocs, collection } from "firebase/firestore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,24 +74,32 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     const sessionRef = doc(firestore, 'bars', barId, 'inventorySessions', sessionToDelete.id);
     
     try {
-        await deleteDoc(sessionRef);
-        toast({ title: "Инвентаризация удалена." });
-        // The useCollection hook in the parent component will automatically update the UI.
+        const linesCollectionRef = collection(sessionRef, 'lines');
+        const linesSnapshot = await getDocs(linesCollectionRef);
+
+        const batch = writeBatch(firestore);
+        linesSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        batch.delete(sessionRef);
+
+        await batch.commit();
+        
+        toast({ title: "Инвентаризация и все ее записи удалены." });
+        setSessionToDelete(null);
+
     } catch (serverError: any) {
-        // Emit a permission error so the global handler can catch it.
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: sessionRef.path,
             operation: 'delete'
         }));
-        // CRITICAL: Stop execution here on error to prevent UI freeze
-        setIsDeleting(false); // Reset loading state
-        setSessionToDelete(null); // Close the dialog
-        return; // Exit function
-    } finally {
-        // This will only run on success now, due to the return in the catch block.
+        // Do not close the dialog on error, allow the global error handler to act.
+        // But do stop the loading indicator.
         setIsDeleting(false);
-        setSessionToDelete(null);
+        return; // IMPORTANT: Stop execution here
     }
+    // This part now only runs on SUCCESS
+    setIsDeleting(false);
   };
 
 

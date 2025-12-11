@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn, translateStatus } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MoreVertical, Trash2, Loader2 } from "lucide-react";
-import { Timestamp, doc, deleteDoc, getDocs, collection, writeBatch } from "firebase/firestore";
+import { Timestamp, doc, deleteDoc } from "firebase/firestore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,23 +73,22 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     setIsDeleting(true);
     const sessionRef = doc(firestore, 'bars', barId, 'inventorySessions', sessionToDelete.id);
     
-    // We will attempt to delete the parent session document.
-    // The subcollection of lines will become "orphaned" but inaccessible, which is safe.
-    // A proper cleanup should be done with a server-side function, but for client-side deletion,
-    // this is the most robust way to avoid permission errors on listing the subcollection.
     try {
         await deleteDoc(sessionRef);
-
         toast({ title: "Инвентаризация удалена." });
         // The useCollection hook in the parent component will automatically update the UI.
-
     } catch (serverError: any) {
         // Emit a permission error so the global handler can catch it.
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: sessionRef.path,
             operation: 'delete'
         }));
+        // CRITICAL: Stop execution here on error to prevent UI freeze
+        setIsDeleting(false); // Reset loading state
+        setSessionToDelete(null); // Close the dialog
+        return; // Exit function
     } finally {
+        // This will only run on success now, due to the return in the catch block.
         setIsDeleting(false);
         setSessionToDelete(null);
     }

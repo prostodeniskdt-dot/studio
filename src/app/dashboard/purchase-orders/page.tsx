@@ -34,12 +34,19 @@ export default function PurchaseOrdersPage() {
 
   React.useEffect(() => {
     if (!firestore || !barId || !orders) {
-      if (!isLoadingOrders) setIsLoadingLines(false);
+      if(!isLoadingOrders) setIsLoadingLines(false);
       return;
     };
     
+    // Only fetch lines if there are orders to process
+    if (orders.length === 0) {
+        setIsLoadingLines(false);
+        return;
+    }
+    
     setIsLoadingLines(true);
     const fetchAllLines = async () => {
+        // Create an array of promises, where each promise fetches the lines for one order.
         const linesPromises = orders.map(order => {
             const linesQuery = query(collection(firestore, 'bars', barId, 'purchaseOrders', order.id, 'lines'));
             return getDocs(linesQuery).then(snapshot => ({
@@ -49,24 +56,25 @@ export default function PurchaseOrdersPage() {
         });
         
         try {
+            // Wait for all the promises to resolve.
             const results = await Promise.all(linesPromises);
+            
+            // Transform the array of results into a dictionary for easy lookup.
             const linesByOrder = results.reduce((acc, result) => {
                 acc[result.orderId] = result.lines;
                 return acc;
             }, {} as Record<string, PurchaseOrderLine[]>);
+            
             setAllOrderLines(linesByOrder);
         } catch (error) {
             console.error("Error fetching all order lines:", error);
+            // Optionally, handle the error state in the UI
         } finally {
             setIsLoadingLines(false);
         }
     };
 
-    if (orders.length > 0) {
-        fetchAllLines();
-    } else {
-        setIsLoadingLines(false);
-    }
+    fetchAllLines();
 
   }, [firestore, barId, orders, isLoadingOrders]);
 

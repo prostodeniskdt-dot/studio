@@ -21,7 +21,7 @@ export default function SessionsPage() {
   const barId = user ? `bar_${user.uid}` : null; 
 
   const sessionsQuery = useMemoFirebase(() => 
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions'), where('barId', '==', barId)) : null,
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions')) : null,
     [firestore, barId]
   );
   

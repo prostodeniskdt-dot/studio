@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import type { Supplier } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { SuppliersTable } from '@/components/suppliers/suppliers-table';
@@ -13,7 +13,7 @@ export default function SuppliersPage() {
   const barId = user ? `bar_${user.uid}` : null;
 
   const suppliersQuery = useMemoFirebase(() => 
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'suppliers'), where('barId', '==', barId)) : null,
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'suppliers')) : null,
     [firestore, barId]
   );
   

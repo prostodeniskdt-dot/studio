@@ -20,7 +20,7 @@ export default function AnalyticsPage() {
   const barId = user ? `bar_${user.uid}` : null;
   
   const sessionsQuery = useMemoFirebase(() =>
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions'), where('status', '==', 'completed'), where('barId', '==', barId)) : null,
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions'), where('status', '==', 'completed')) : null,
     [firestore, barId]
   );
   const { data: sessions, isLoading: isLoadingSessions } = useCollection<InventorySession>(sessionsQuery);

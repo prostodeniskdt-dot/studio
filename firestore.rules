@@ -114,17 +114,6 @@ service cloud.firestore {
              data.isActive == true;
     }
     
-    function isProductUpdateValid() {
-       let data = request.resource.data;
-       let oldData = resource.data;
-       return data.name == oldData.name &&
-              data.category == oldData.category &&
-              data.bottleVolumeMl == oldData.bottleVolumeMl &&
-              data.costPerBottle == oldData.costPerBottle &&
-              data.portionVolumeMl == oldData.portionVolumeMl &&
-              data.sellingPricePerPortion == oldData.sellingPricePerPortion;
-    }
-    
     function isInventorySessionCreateValid(barId) {
       let data = request.resource.data;
       return data.createdByUserId == request.auth.uid &&
@@ -164,7 +153,7 @@ service cloud.firestore {
     match /products/{productId} {
         allow read, list: if isSignedIn();
         allow create: if isSignedIn() && isProductCreateValid();
-        allow update: if resourceExists() && isAdmin();
+        allow update: if resourceExists() && isSignedIn();
         allow delete: if isAdmin() && resourceExists();
     }
 

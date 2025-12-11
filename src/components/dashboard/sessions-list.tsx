@@ -75,35 +75,35 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
 
     setIsDeleting(true);
     const sessionRef = doc(firestore, 'bars', barId, 'inventorySessions', sessionToDelete.id);
-    const linesCollection = collection(sessionRef, 'lines');
+    const linesCollectionRef = collection(sessionRef, 'lines');
     
     try {
-        const linesSnapshot = await getDocs(linesCollection).catch(serverError => {
-            // This catch block is crucial. If we can't LIST the lines, we can't delete them.
-            // Throw a specific error for this case.
-            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linesCollection.path, operation: 'list' }));
-            throw serverError; // Re-throw to be caught by the outer try-catch
-        });
+        // First, get all the documents in the 'lines' subcollection.
+        const linesSnapshot = await getDocs(linesCollectionRef);
         
+        // Create a new batch
         const batch = writeBatch(firestore);
 
-        if (!linesSnapshot.empty) {
-            linesSnapshot.docs.forEach(doc => {
-                batch.delete(doc.ref);
-            });
-        }
+        // Add all 'lines' documents to the batch for deletion.
+        linesSnapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
         
+        // Add the parent session document to the batch for deletion.
         batch.delete(sessionRef);
+        
+        // Commit the batch to delete all documents atomically.
         await batch.commit();
 
         toast({ title: "Инвентаризация удалена." });
 
     } catch (serverError) {
-        // This will catch the re-thrown error from getDocs or errors from batch.commit
-        if (!(serverError instanceof FirestorePermissionError)) {
+        // If getting the lines fails, it will be caught here.
+        if (serverError instanceof Error && serverError.message.includes('permission-denied')) {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linesCollectionRef.path, operation: 'list' }));
+        } else {
              errorEmitter.emit('permission-error', new FirestorePermissionError({ path: sessionRef.path, operation: 'delete' }));
         }
-        // The error is already emitted, so we just need to handle UI state.
     } finally {
         setIsDeleting(false);
         setSessionToDelete(null);

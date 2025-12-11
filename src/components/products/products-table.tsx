@@ -298,29 +298,29 @@ export function ProductsTable({ products }: { products: Product[] }) {
             </div>
             <div className="flex items-center gap-2 mb-4">
                  <Select
-                    value={(table.getColumn('category')?.getFilterValue() as string) ?? ''}
-                    onValueChange={(value) => table.getColumn('category')?.setFilterValue(value || undefined)}
+                    value={(table.getColumn('category')?.getFilterValue() as string) ?? '_all_'}
+                    onValueChange={(value) => table.getColumn('category')?.setFilterValue(value === '_all_' ? undefined : value)}
                   >
                     <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder="Все категории" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Все категории</SelectItem>
+                      <SelectItem value="_all_">Все категории</SelectItem>
                       {productCategories.map((cat) => (
                         <SelectItem key={cat} value={cat}>{translateCategory(cat)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   <Select
-                    value={(table.getColumn('subCategory')?.getFilterValue() as string) ?? ''}
-                    onValueChange={(value) => table.getColumn('subCategory')?.setFilterValue(value || undefined)}
+                    value={(table.getColumn('subCategory')?.getFilterValue() as string) ?? '_all_'}
+                    onValueChange={(value) => table.getColumn('subCategory')?.setFilterValue(value === '_all_' ? undefined : value)}
                     disabled={!subCategoryOptions || subCategoryOptions.length === 0}
                   >
                     <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder="Все подкатегории" />
                     </SelectTrigger>
                     <SelectContent>
-                       <SelectItem value="">Все подкатегории</SelectItem>
+                       <SelectItem value="_all_">Все подкатегории</SelectItem>
                        {subCategoryOptions?.map(subCat => (
                             <SelectItem key={subCat} value={subCat}>{translateSubCategory(subCat)}</SelectItem>
                         ))}

@@ -27,10 +27,9 @@
  * - No User Listing: Listing the entire `/users` collection is disallowed to protect user privacy.
  * - Bar Subcollection Privacy: All sensitive sub-data (like inventory) is private
  *   to the bar's members. This is enforced using `exists()` and `get()` calls on
- *   the parent bar's `members` subcollection.
- * - List Queries: `allow list` rules MUST NOT rely on `get` or `exists` calls. 
- *   Therefore, client queries must include `where` clauses that can be validated
- *   against the `request` object (e.g., `where('barId', '==', barId)`).
+ *   the parent bar's `members` subcollection for single document reads.
+ * - List Queries: `allow list` rules MUST NOT rely on `get` or `exists` calls for performance, UNLESS
+ *   the get is on the parent document. 
  *
  * Denormalization for Authorization:
  * The `ownerUserId` on a `/bars/{barId}` document is the ultimate source of truth
@@ -75,6 +74,7 @@ service cloud.firestore {
 
     /**
      * Checks if the requesting user is the owner of a specific bar.
+     * SAFE to use in get, create, update, delete. UNSAFE for list rules that are not parent-aware.
      */
     function isBarOwner(barId) {
       let barDoc = get(/databases/$(database)/documents/bars/$(barId));
@@ -83,11 +83,13 @@ service cloud.firestore {
 
     /**
      * Checks if the user is a member of the bar (either as staff or owner).
-     * This function is optimized to reduce `get` calls.
+     * SAFE to use in get, create, update, delete. UNSAFE for list.
      */
     function isBarMember(barId) {
-      // This is safe for get/create/update/delete, but NOT for list.
-      return isBarOwner(barId) || exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid));
+      let isOwner = isBarOwner(barId);
+      let isExplicitMember = exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid));
+      
+      return isOwner || isExplicitMember;
     }
 
 
@@ -98,6 +100,7 @@ service cloud.firestore {
     /**
      * Determines if a user can read sensitive data within a specific bar's subcollections.
      * Access is granted to the bar members or an admin.
+     * SAFE to use in get, create, update, delete. UNSAFE for list.
      */
     function canReadBarData(barId) {
       return isBarMember(barId) || isAdmin();
@@ -107,6 +110,7 @@ service cloud.firestore {
      * Determines if a user can write sensitive data within a specific bar's subcollections.
      * Access is granted to the bar members or an admin.
      * Specific role checks (e.g., manager vs. bartender) can be added here.
+     * SAFE to use in get, create, update, delete. UNSAFE for list.
      */
     function canWriteBarData(barId) {
       return isBarMember(barId) || isAdmin();
@@ -253,9 +257,9 @@ service cloud.firestore {
      */
     match /bars/{barId} {
       // Bar info is readable by its members or admins.
-      allow get: if isBarMember(barId) || isAdmin();
+      allow get: if canReadBarData(barId) || isAdmin();
       // Public list of bars is allowed for discovery features.
-      allow list: if true; 
+      allow list: if isSignedIn();
       allow create: if isSignedIn() && isCreatingOwnBar();
       allow update: if (isBarOwner(barId) || isAdmin()) && resourceExists() && isBarUpdateValid();
       allow delete: if (isBarOwner(barId) || isAdmin()) && resourceExists();
@@ -266,7 +270,7 @@ service cloud.firestore {
        */
       match /members/{userId} {
         allow get: if canReadBarData(barId);
-        // List is only allowed if the user is a member of the bar
+        // List is only allowed if the query is for the specific barId and user is owner
         allow list: if isBarOwner(barId) || isAdmin();
         // Only owner or admin can add/remove/change roles of members
         allow create, update: if (isBarOwner(barId) || isAdmin()) && isValidMemberRole();
@@ -279,9 +283,8 @@ service cloud.firestore {
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
         
-        // List is allowed IF the user is the owner of the parent bar.
-        // This avoids get/exists calls in list queries which is forbidden.
-        allow list: if request.auth.uid == get(/databases/$(database)/documents/bars/$(barId)).data.ownerUserId || isAdmin();
+        // SAFE LIST RULE: The get() call on the parent document is a supported exception for list queries.
+        allow list: if get(/databases/$(database)/documents/bars/$(barId)).data.ownerUserId == request.auth.uid || isAdmin();
 
         allow create: if isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();

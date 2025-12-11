@@ -184,7 +184,7 @@ service cloud.firestore {
 
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        allow list: if isSignedIn(); 
+        allow list: if isBarOwnerByPath(barId) || isAdmin();
         allow create: if isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteSubcollection(barId) && resourceExists();

@@ -48,11 +48,11 @@ export default function SessionsPage() {
   });
 
   const sortedSessions = React.useMemo(() => {
-    if (!sessions || !user) return [];
-    // Filter and sort on the client side
+    if (!sessions) return [];
+    // Sort on the client side
     return sessions
         .sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
-  }, [sessions, user]);
+  }, [sessions]);
 
 
   const handleCreateSession = async () => {
@@ -89,7 +89,7 @@ export default function SessionsPage() {
             <p className="text-xs">{sessionsError?.message || 'Возможно, у вас нет прав на просмотр или данные еще не созданы.'}</p>
          </div>
       ) : (
-        <SessionsList sessions={sortedSessions || []} barId={barId} />
+        <SessionsList sessions={sortedSessions || []} barId={barId!} />
       )}
     </>
   );

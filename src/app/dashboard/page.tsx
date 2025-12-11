@@ -10,7 +10,7 @@ import Link from 'next/link';
 import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { createInventorySession } from '@/lib/actions';
 import { useServerAction } from '@/hooks/use-server-action';
 
@@ -19,12 +19,13 @@ export default function DashboardPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();
+  const firestore = useFirestore();
 
   const barId = user ? `bar_${user.uid}` : null; 
 
   const sessionsQuery = useMemoFirebase(() => 
-    user?.uid && barId ? query(collection(user.firestore, 'bars', barId, 'inventorySessions')) : null,
-    [user, barId]
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions'), where('status', 'in', ['in_progress', 'draft'])) : null,
+    [firestore, barId]
   );
   
   const { data: sessions, isLoading: isLoadingSessions, error: sessionsError } = useCollection<InventorySession>(sessionsQuery);
@@ -49,12 +50,11 @@ export default function DashboardPage() {
   });
   
   const activeSessions = React.useMemo(() => {
-    if (!sessions || !user) return [];
-    // Filter and sort on the client side
+    if (!sessions) return [];
+    // Sort on the client side
     return sessions
-      .filter(s => (s.status === 'in_progress' || s.status === 'draft'))
       .sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
-  }, [sessions, user]);
+  }, [sessions]);
 
 
   const handleCreateSession = async () => {
@@ -132,7 +132,7 @@ export default function DashboardPage() {
             <p className="text-xs">{sessionsError?.message || 'Возможно, у вас нет прав на просмотр или данные еще не созданы.'}</p>
          </div>
       ) : (
-        <SessionsList sessions={activeSessions} barId={barId} />
+        <SessionsList sessions={activeSessions} barId={barId!} />
       )}
     </>
   );

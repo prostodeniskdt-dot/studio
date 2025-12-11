@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn, translateStatus } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MoreVertical, Trash2, Loader2 } from "lucide-react";
-import { Timestamp, doc, deleteDoc, writeBatch, getDocs, collection } from "firebase/firestore";
+import { Timestamp, doc, deleteDoc } from "firebase/firestore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,22 +74,17 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     const sessionRef = doc(firestore, 'bars', barId, 'inventorySessions', sessionToDelete.id);
     
     try {
-        // We will only delete the session document.
-        // The subcollection of lines will become "orphaned" but inaccessible,
-        // which is secure. A backend cleanup function could be implemented later if needed.
         await deleteDoc(sessionRef);
         
         toast({ title: "Инвентаризация удалена." });
         setSessionToDelete(null); // Close dialog on success
+        setIsDeleting(false);
 
     } catch (serverError: any) {
-        // If deleting the session fails, emit the permission error
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: sessionRef.path,
             operation: 'delete'
         }));
-    } finally {
-        // This will run regardless of success or failure, ensuring the loading state is always reset.
         setIsDeleting(false);
     }
   };

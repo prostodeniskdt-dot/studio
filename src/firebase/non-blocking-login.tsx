@@ -14,6 +14,7 @@ import type { Firestore } from 'firebase/firestore';
 import type { Product, InventorySession, InventoryLine } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
+import { calculateLineFields } from '@/lib/calculations';
 
 
 async function seedInitialData(firestore: Firestore): Promise<void> {
@@ -287,6 +288,73 @@ async function seedMissingRum(firestore: Firestore): Promise<void> {
     }
 }
 
+async function seedInventorySessions(firestore: Firestore, barId: string, userId: string, products: Product[]): Promise<void> {
+    const sessionsCollectionRef = collection(firestore, 'bars', barId, 'inventorySessions');
+    const sessionsQuery = query(sessionsCollectionRef, limit(1));
+
+    try {
+        const sessionsSnapshot = await getDocs(sessionsQuery);
+        if (!sessionsSnapshot.empty) {
+            return; // Сессии уже существуют
+        }
+
+        const batch = writeBatch(firestore);
+        
+        const now = new Date();
+        const dates = [
+            new Date(now.getFullYear(), now.getMonth(), now.getDate() - 14),
+            new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7),
+            new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1),
+        ];
+
+        const productsForSession = products.slice(0, 5); // Берем первые 5 продуктов для примера
+
+        for (let i = 0; i < dates.length; i++) {
+            const sessionRef = doc(sessionsCollectionRef);
+            const sessionDate = dates[i];
+            
+            const sessionData: Omit<InventorySession, 'id'> = {
+                barId,
+                name: `Инвентаризация от ${sessionDate.toLocaleDateString('ru-RU')}`,
+                status: 'completed',
+                createdByUserId: userId,
+                createdAt: Timestamp.fromDate(sessionDate),
+                closedAt: Timestamp.fromDate(new Date(sessionDate.getTime() + 86400000)), // +1 day
+            };
+            batch.set(sessionRef, { ...sessionData, id: sessionRef.id });
+
+            for (const product of productsForSession) {
+                const lineRef = doc(collection(sessionRef, 'lines'));
+
+                // Генерируем "случайные" правдоподобные данные
+                const startStock = Math.floor(Math.random() * 1000) + 700; // от 1 до 2 бутылок
+                const purchases = (i > 0 && Math.random() > 0.5) ? 700 : 0; // Иногда "покупаем" бутылку
+                const sales = Math.floor(Math.random() * 20) + 10; // от 10 до 30 продаж
+                const theoreticalEndStock = startStock + purchases - (sales * product.portionVolumeMl);
+                
+                // Вносим небольшое отклонение
+                const variance = (Math.random() - 0.5) * 100; // +/- 50ml
+                const endStock = Math.max(0, Math.round(theoreticalEndStock + variance));
+
+                const partialLine = { id: lineRef.id, productId: product.id, inventorySessionId: sessionRef.id, startStock, purchases, sales, endStock };
+                const calculatedFields = calculateLineFields(partialLine, product);
+
+                const lineData: InventoryLine = {
+                    ...partialLine,
+                    ...calculatedFields
+                };
+                batch.set(lineRef, lineData);
+            }
+        }
+
+        await batch.commit();
+
+    } catch (error) {
+        console.error("Error seeding inventory sessions:", error);
+    }
+}
+
+
 /**
  * Ensures user and bar documents exist, creating them if necessary.
  * This is a critical setup step for any authenticated user.
@@ -303,10 +371,14 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
         
         if (userDoc.exists() && barDoc.exists()) {
             // Данные пользователя и бара уже есть, просто проверяем и до-заполняем
+            const productsSnapshot = await getDocs(collection(firestore, 'products'));
+            const products = productsSnapshot.docs.map(doc => doc.data() as Product);
+
             await Promise.all([
                 seedMissingVodka(firestore),
                 seedMissingWhiskey(firestore),
-                seedMissingRum(firestore)
+                seedMissingRum(firestore),
+                seedInventorySessions(firestore, barId, user.uid, products)
             ]);
             return; 
         }
@@ -338,10 +410,15 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
         
         await batch.commit();
         await seedInitialData(firestore);
+
+        const productsSnapshot = await getDocs(collection(firestore, 'products'));
+        const products = productsSnapshot.docs.map(doc => doc.data() as Product);
+
         await Promise.all([
             seedMissingVodka(firestore),
             seedMissingWhiskey(firestore),
-            seedMissingRum(firestore)
+            seedMissingRum(firestore),
+            seedInventorySessions(firestore, barId, user.uid, products)
         ]);
 
     } catch (serverError: any) {

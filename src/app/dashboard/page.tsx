@@ -50,40 +50,35 @@ export default function DashboardPage() {
     setIsCreating(true);
 
     try {
-        const inventoriesCollection = collection(firestore, 'bars', barId, 'inventorySessions');
-        const inProgressQuery = query(inventoriesCollection, where('status', '==', 'in_progress'), where('barId', '==', barId));
-        const querySnapshot = await getDocs(inProgressQuery);
-
-        let sessionId;
-
-        if (!querySnapshot.empty) {
-            sessionId = querySnapshot.docs[0].id;
+        if (activeSessions.length > 0) {
             toast({
                 title: "Активная инвентаризация уже существует",
                 description: "Вы будете перенаправлены на существующую инвентаризацию.",
             });
-        } else {
-            const newSessionRef = doc(inventoriesCollection);
-            const newSessionData = {
-                id: newSessionRef.id,
-                barId: barId,
-                name: `Инвентаризация от ${new Date().toLocaleDateString('ru-RU')}`,
-                status: 'in_progress' as const,
-                createdByUserId: user.uid,
-                createdAt: serverTimestamp(),
-                closedAt: null,
-            };
-            
-            await setDoc(newSessionRef, newSessionData);
-
-            sessionId = newSessionRef.id;
-            toast({
-                title: "Инвентаризация создана",
-                description: "Новая инвентаризация была успешно создана.",
-            });
+            router.push(`/dashboard/sessions/${activeSessions[0].id}`);
+            return;
         }
+
+        const inventoriesCollection = collection(firestore, 'bars', barId, 'inventorySessions');
+        const newSessionRef = doc(inventoriesCollection);
+        const newSessionData = {
+            id: newSessionRef.id,
+            barId: barId,
+            name: `Инвентаризация от ${new Date().toLocaleDateString('ru-RU')}`,
+            status: 'in_progress' as const,
+            createdByUserId: user.uid,
+            createdAt: serverTimestamp(),
+            closedAt: null,
+        };
         
-        router.push(`/dashboard/sessions/${sessionId}`);
+        await setDoc(newSessionRef, newSessionData);
+
+        toast({
+            title: "Инвентаризация создана",
+            description: "Новая инвентаризация была успешно создана.",
+        });
+        
+        router.push(`/dashboard/sessions/${newSessionRef.id}`);
     } catch (serverError) {
         const permissionError = new FirestorePermissionError({ path: `bars/${barId}/inventorySessions`, operation: 'create' });
         errorEmitter.emit('permission-error', permissionError);

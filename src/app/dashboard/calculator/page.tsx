@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Combobox, type GroupedComboboxOption } from '@/components/ui/combobox';
 import { Weight, Send, Loader2, Ruler } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import type { Product } from '@/lib/types';
+import type { InventorySession, Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
@@ -121,14 +121,16 @@ export default function UnifiedCalculatorPage() {
     setIsSending(true);
     
     const sessionsQuery = query(
-        collection(firestore, 'bars', barId, 'inventorySessions'), 
-        where('status', '==', 'in_progress'),
-        orderBy('createdAt', 'desc'),
-        limit(1)
+        collection(firestore, 'bars', barId, 'inventorySessions')
     );
 
     getDocs(sessionsQuery).then(sessionsSnapshot => {
-        if (sessionsSnapshot.empty) {
+        const activeSession = sessionsSnapshot.docs
+            .map(doc => doc.data() as InventorySession)
+            .filter(s => s.status === 'in_progress')
+            .sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0))[0];
+
+        if (!activeSession) {
             toast({
                 variant: "destructive",
                 title: "Нет активной инвентаризации",
@@ -138,7 +140,6 @@ export default function UnifiedCalculatorPage() {
             return;
         }
       
-        const activeSession = sessionsSnapshot.docs[0];
         const activeSessionId = activeSession.id;
         const linesColRef = collection(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines');
         const linesQuery = query(linesColRef, where('productId', '==', selectedProductId), limit(1));

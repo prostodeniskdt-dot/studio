@@ -290,12 +290,12 @@ async function seedMissingRum(firestore: Firestore): Promise<void> {
 
 async function seedInventorySessions(firestore: Firestore, barId: string, userId: string, products: Product[]): Promise<void> {
     const sessionsCollectionRef = collection(firestore, 'bars', barId, 'inventorySessions');
-    const sessionsQuery = query(sessionsCollectionRef, limit(1));
+    const sessionsQuery = query(sessionsCollectionRef, where('status', '==', 'completed'), limit(1));
 
     try {
         const sessionsSnapshot = await getDocs(sessionsQuery);
         if (!sessionsSnapshot.empty) {
-            return; // Сессии уже существуют
+            return; // Завершенные сессии уже существуют
         }
 
         const batch = writeBatch(firestore);
@@ -307,7 +307,8 @@ async function seedInventorySessions(firestore: Firestore, barId: string, userId
             new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1),
         ];
 
-        const productsForSession = products.slice(0, 5); // Берем первые 5 продуктов для примера
+        const productsForSession = products.slice(0, 10); 
+        if (productsForSession.length === 0) return;
 
         for (let i = 0; i < dates.length; i++) {
             const sessionRef = doc(sessionsCollectionRef);
@@ -367,23 +368,16 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
     const barRef = doc(firestore, 'bars', barId);
 
     try {
-        const [userDoc, barDoc] = await Promise.all([getDoc(userRef), getDoc(barRef)]);
+        const userDocPromise = getDoc(userRef);
+        const barDocPromise = getDoc(barRef);
         
-        if (userDoc.exists() && barDoc.exists()) {
-            // Данные пользователя и бара уже есть, просто проверяем и до-заполняем
-            const productsSnapshot = await getDocs(collection(firestore, 'products'));
-            const products = productsSnapshot.docs.map(doc => doc.data() as Product);
+        let productsPromise = getDocs(query(collection(firestore, 'products'), limit(1)));
+        let completedSessionsPromise = getDocs(query(collection(firestore, 'bars', barId, 'inventorySessions'), where('status', '==', 'completed'), limit(1)));
 
-            await Promise.all([
-                seedMissingVodka(firestore),
-                seedMissingWhiskey(firestore),
-                seedMissingRum(firestore),
-                seedInventorySessions(firestore, barId, user.uid, products)
-            ]);
-            return; 
-        }
+        const [userDoc, barDoc, initialProducts, completedSessions] = await Promise.all([userDocPromise, barDocPromise, productsPromise, completedSessionsPromise]);
 
         const batch = writeBatch(firestore);
+        let batchHasWrites = false;
         
         const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
         
@@ -396,6 +390,7 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
                 createdAt: serverTimestamp(),
             };
             batch.set(userRef, newUser);
+            batchHasWrites = true;
         }
 
         if (!barDoc.exists()) {
@@ -406,20 +401,35 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
                 ownerUserId: user.uid,
             };
             batch.set(barRef, newBar);
+            batchHasWrites = true;
         }
         
-        await batch.commit();
-        await seedInitialData(firestore);
+        if (batchHasWrites) {
+            await batch.commit();
+        }
 
-        const productsSnapshot = await getDocs(collection(firestore, 'products'));
-        const products = productsSnapshot.docs.map(doc => doc.data() as Product);
+        // --- Data Seeding ---
+        // These will run in parallel and only add data if it's missing.
+        const seedingPromises: Promise<void>[] = [];
 
-        await Promise.all([
-            seedMissingVodka(firestore),
-            seedMissingWhiskey(firestore),
-            seedMissingRum(firestore),
-            seedInventorySessions(firestore, barId, user.uid, products)
-        ]);
+        if (initialProducts.empty) {
+           seedingPromises.push(seedInitialData(firestore));
+        }
+
+        seedingPromises.push(seedMissingVodka(firestore));
+        seedingPromises.push(seedMissingWhiskey(firestore));
+        seedingPromises.push(seedMissingRum(firestore));
+
+        if (completedSessions.empty) {
+            // We need to wait for products to be available before seeding sessions
+            await Promise.all(seedingPromises);
+            const allProductsSnapshot = await getDocs(collection(firestore, 'products'));
+            const allProducts = allProductsSnapshot.docs.map(doc => doc.data() as Product);
+            await seedInventorySessions(firestore, barId, user.uid, allProducts);
+        } else {
+             await Promise.all(seedingPromises);
+        }
+
 
     } catch (serverError: any) {
         const permissionError = new FirestorePermissionError({ 

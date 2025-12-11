@@ -164,7 +164,7 @@ service cloud.firestore {
     match /products/{productId} {
         allow read, list: if isSignedIn();
         allow create: if isSignedIn() && isProductCreateValid();
-        allow update: if resourceExists() && (isAdmin() || isProductUpdateValid());
+        allow update: if resourceExists() && isAdmin();
         allow delete: if isAdmin() && resourceExists();
     }
 
@@ -184,7 +184,7 @@ service cloud.firestore {
 
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        allow list: if isSignedIn(); // Allow list for any signed-in user, client MUST filter by barId
+        allow list: if isSignedIn();
         allow create: if isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteSubcollection(barId) && resourceExists();

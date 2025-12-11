@@ -162,7 +162,6 @@ export default function UnifiedCalculatorPage() {
         collection(firestore, 'bars', barId, 'inventorySessions'),
         where('barId', '==', barId),
         where('status', '==', 'in_progress'),
-        orderBy('createdAt', 'desc'),
         limit(1)
     );
 

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,12 +31,12 @@ import { format } from "date-fns"
 import { ru } from "date-fns/locale"
 
 import type { PurchaseOrder, PurchaseOrderStatus, Supplier } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
 import { upsertPurchaseOrder } from '@/lib/actions';
 import { doc, collection, Timestamp } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { useServerAction } from '@/hooks/use-server-action';
 
 const orderStatuses: PurchaseOrderStatus[] = ['draft', 'ordered', 'partially_received', 'received', 'cancelled'];
 const statusTranslations: Record<PurchaseOrderStatus, string> = {
@@ -66,8 +66,18 @@ interface PurchaseOrderFormProps {
 export function PurchaseOrderForm({ barId, order, suppliers, onFormSubmit }: PurchaseOrderFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
-  const { toast } = useToast();
   const router = useRouter();
+
+  const { execute: runUpsertOrder, isLoading: isSaving } = useServerAction(upsertPurchaseOrder, {
+    onSuccess: (data) => {
+      onFormSubmit();
+      if (!order && data?.id) {
+          router.push(`/dashboard/purchase-orders/${data.id}`);
+      }
+    },
+    successMessage: order ? 'Заказ обновлен' : 'Заказ создан',
+    errorMessage: 'Не удалось сохранить заказ.'
+  });
 
   const form = useForm<PurchaseOrderFormValues>({
     resolver: zodResolver(formSchema),
@@ -82,11 +92,10 @@ export function PurchaseOrderForm({ barId, order, suppliers, onFormSubmit }: Pur
     },
   });
 
-  const { isSubmitting } = form.formState;
-
   async function onSubmit(data: PurchaseOrderFormValues) {
     if (!firestore || !user) {
-      toast({ variant: "destructive", title: "Ошибка", description: "Не удалось подключиться к базе данных или определить пользователя." });
+      // This should ideally be caught by UI state, but as a safeguard:
+      runUpsertOrder({} as any); // Will fail and show error toast
       return;
     }
     
@@ -100,24 +109,7 @@ export function PurchaseOrderForm({ barId, order, suppliers, onFormSubmit }: Pur
       createdByUserId: user.uid,
     };
 
-    const result = await upsertPurchaseOrder(barId, newOrderData);
-
-    if (result.success && result.id) {
-      toast({
-        title: order ? 'Заказ обновлен' : 'Заказ создан',
-        description: `Заказ для поставщика был сохранен.`,
-      });
-      onFormSubmit();
-      if (!order) {
-        router.push(`/dashboard/purchase-orders/${result.id}`);
-      }
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Ошибка",
-        description: result.error || "Не удалось сохранить заказ.",
-      });
-    }
+    await runUpsertOrder(newOrderData);
   }
 
   return (
@@ -208,11 +200,13 @@ export function PurchaseOrderForm({ barId, order, suppliers, onFormSubmit }: Pur
               </FormItem>
             )}
           />
-        <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSubmitting ? 'Сохранение...' : (order ? 'Сохранить изменения' : 'Создать и перейти к заказу')}
+        <Button type="submit" disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSaving ? 'Сохранение...' : (order ? 'Сохранить изменения' : 'Создать и перейти к заказу')}
         </Button>
       </form>
     </Form>
   );
 }
+
+    

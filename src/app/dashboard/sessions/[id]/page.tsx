@@ -11,7 +11,6 @@ import { translateStatus } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query } from 'firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +39,8 @@ import {
 import { Combobox } from '@/components/ui/combobox';
 import { translateCategory } from '@/lib/utils';
 import { addProductToSession, saveInventoryLines, completeInventorySession } from '@/lib/actions';
-
+import { useServerAction } from '@/hooks/use-server-action';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SessionPage() {
   const params = useParams();
@@ -71,10 +71,31 @@ export default function SessionPage() {
   const { data: allProducts, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
 
   const [localLines, setLocalLines] = React.useState<InventoryLine[] | null>(null);
-  const [isSaving, setIsSaving] = React.useState(false);
-  const [isCompleting, setIsCompleting] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isAddProductOpen, setIsAddProductOpen] = React.useState(false);
+
+  const { execute: runAddProductToSession } = useServerAction(addProductToSession, {
+    onSuccess: (data) => {
+      setIsAddProductOpen(false);
+      const product = allProducts?.find(p => p.id === (data as any)?.productId);
+      toast({ title: "Продукт добавлен", description: `"${product?.name}" добавлен в инвентаризацию.` });
+    }
+  });
+
+  const { execute: runSaveLines, isLoading: isSaving } = useServerAction(saveInventoryLines, {
+    successMessage: "Изменения сохранены",
+  });
+  
+  const { execute: runCompleteSession, isLoading: isCompleting } = useServerAction(completeInventorySession, {
+     onSuccess: () => {
+        toast({
+            title: "Сессия завершена",
+            description: "Инвентаризация завершена и отчет готов.",
+        });
+        router.push(`/dashboard/sessions/${id}/report`);
+     }
+  });
+
 
   React.useEffect(() => {
     if (lines) {
@@ -107,65 +128,19 @@ export default function SessionPage() {
 
 
   const handleAddProductToSession = async (productId: string) => {
-    if (!productId || !barId) {
-        toast({ variant: "destructive", title: "Ошибка", description: "Невозможно добавить продукт." });
-        return;
-    }
-    
-    setIsAddProductOpen(false);
-    const result = await addProductToSession(barId, id, productId);
-
-    if (result.success) {
-      const product = allProducts?.find(p => p.id === productId);
-      toast({ title: "Продукт добавлен", description: `"${product?.name}" добавлен в инвентаризацию.` });
-    } else {
-      toast({ variant: "destructive", title: "Ошибка", description: result.error });
-    }
+    if (!productId || !barId) return;
+    await runAddProductToSession({ barId, sessionId: id, productId });
   };
   
   const handleSaveChanges = async () => {
     if (!localLines || !barId) return;
-
-    setIsSaving(true);
-    const result = await saveInventoryLines(barId, id, localLines);
-    
-    if (result.success) {
-        toast({
-            title: "Изменения сохранены",
-            description: "Все данные в инвентаризации обновлены.",
-        });
-    } else {
-        toast({
-            variant: "destructive",
-            title: "Ошибка сохранения",
-            description: result.error,
-        });
-    }
-    setIsSaving(false);
+    await runSaveLines({ barId, sessionId: id, lines: localLines });
   };
 
   const handleCompleteSession = async () => {
     if (!sessionRef || !barId) return;
-
-    setIsCompleting(true);
     await handleSaveChanges(); // First, save any pending changes
-
-    const result = await completeInventorySession(barId, id);
-
-    if (result.success) {
-        toast({
-            title: "Сессия завершена",
-            description: "Инвентаризация завершена и отчет готов.",
-        });
-        router.push(`/dashboard/sessions/${id}/report`);
-    } else {
-        toast({
-            variant: "destructive",
-            title: "Ошибка",
-            description: result.error,
-        });
-    }
-    setIsCompleting(false);
+    await runCompleteSession({ barId, sessionId: id });
   };
   
   const handleExportCSV = () => {
@@ -408,3 +383,5 @@ export default function SessionPage() {
     </>
   );
 }
+
+    

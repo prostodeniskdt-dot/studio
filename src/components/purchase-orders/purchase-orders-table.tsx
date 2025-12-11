@@ -28,12 +28,12 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import type { PurchaseOrder, Supplier } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
 import { PurchaseOrderForm } from './purchase-order-form';
 import { deletePurchaseOrder } from '@/lib/actions';
 import { formatCurrency, translateStatus } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import Link from 'next/link';
+import { useServerAction } from '@/hooks/use-server-action';
 
 interface OrderWithSupplier extends PurchaseOrder {
   supplier?: Supplier;
@@ -47,11 +47,16 @@ interface PurchaseOrdersTableProps {
 }
 
 export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrdersTableProps) {
-  const { toast } = useToast();
   const router = useRouter();
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [editingOrder, setEditingOrder] = React.useState<PurchaseOrder | undefined>(undefined);
   const [orderToDelete, setOrderToDelete] = React.useState<PurchaseOrder | null>(null);
+
+  const { execute: runDeleteOrder } = useServerAction(deletePurchaseOrder, {
+    onSuccess: () => setOrderToDelete(null),
+    successMessage: "Заказ удален.",
+    errorMessage: "Не удалось удалить заказ."
+  });
 
   const handleOpenSheet = (order?: PurchaseOrder) => {
     setEditingOrder(order);
@@ -69,25 +74,7 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
 
   const confirmDelete = async () => {
     if (!orderToDelete) return;
-    try {
-      const result = await deletePurchaseOrder(barId, orderToDelete.id);
-      if (result.success) {
-        toast({
-          title: 'Заказ удален',
-          description: `Заказ №${orderToDelete.id.substring(0, 6)} был удален.`,
-        });
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: error.message || 'Не удалось удалить заказ.',
-      });
-    } finally {
-      setOrderToDelete(null);
-    }
+    await runDeleteOrder({ barId, orderId: orderToDelete.id });
   };
 
   const columns: ColumnDef<OrderWithSupplier>[] = [
@@ -250,3 +237,5 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
     </>
   );
 }
+
+    

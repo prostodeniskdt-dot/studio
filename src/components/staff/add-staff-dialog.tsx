@@ -22,11 +22,10 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { addStaffMember } from '@/lib/actions';
-import type { UserRole } from '@/lib/types';
 import { translateRole } from '@/lib/utils';
+import { useServerAction } from '@/hooks/use-server-action';
 
 const addStaffSchema = z.object({
   email: z.string().email('Неверный формат email.'),
@@ -42,13 +41,12 @@ interface AddStaffDialogProps {
 }
 
 export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProps) {
-  const { toast } = useToast();
   const {
     register,
     handleSubmit,
     control,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<AddStaffFormValues>({
     resolver: zodResolver(addStaffSchema),
     defaultValues: {
@@ -57,26 +55,18 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
     },
   });
 
+  const { execute: runAddStaff, isLoading: isSubmitting } = useServerAction(addStaffMember, {
+    onSuccess: () => {
+      onOpenChange(false);
+      reset();
+    },
+    successMessage: "Сотрудник добавлен",
+    errorMessage: "Ошибка при добавлении сотрудника"
+  });
+
+
   const onSubmit = async (data: AddStaffFormValues) => {
-    try {
-      const result = await addStaffMember(barId, data.email, data.role);
-      if (result.success) {
-        toast({
-          title: 'Сотрудник добавлен',
-          description: `Пользователь ${data.email} был добавлен в ваш бар.`,
-        });
-        onOpenChange(false);
-        reset();
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: error.message || 'Не удалось добавить сотрудника.',
-      });
-    }
+    await runAddStaff({ barId, email: data.email, role: data.role });
   };
 
   return (
@@ -130,3 +120,5 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
     </Dialog>
   );
 }
+
+    

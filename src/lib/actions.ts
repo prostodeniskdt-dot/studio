@@ -8,6 +8,14 @@ import { initializeAdminApp } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { calculateLineFields } from './calculations';
 
+// This defines a standard response format for all server actions.
+export type ServerActionResponse<T = any> = {
+  success: boolean;
+  data?: T;
+  error?: string;
+};
+
+
 const AnalyzeInventoryVarianceInputSchema = z.object({
   productName: z.string().describe('The name of the product being analyzed.'),
   theoreticalEndStock: z.number().describe('The theoretical end stock level of the product.'),
@@ -24,9 +32,9 @@ const AnalyzeInventoryVarianceOutputSchema = z.object({
 export type AnalyzeInventoryVarianceOutput = z.infer<typeof AnalyzeInventoryVarianceOutputSchema>;
 
 
-export async function runVarianceAnalysis(line: InventoryLine & { product?: Product }) {
+export async function runVarianceAnalysis(line: InventoryLine & { product?: Product }): Promise<ServerActionResponse<AnalyzeInventoryVarianceOutput>> {
   if (!line.product) {
-    throw new Error('Данные о продукте отсутствуют для анализа.');
+    return { success: false, error: 'Данные о продукте отсутствуют для анализа.' };
   }
 
   const { name, portionVolumeMl } = line.product;
@@ -41,7 +49,7 @@ export async function runVarianceAnalysis(line: InventoryLine & { product?: Prod
     theoreticalEndStock === undefined ||
     portionVolumeMl === undefined
   ) {
-    throw new Error('Неполные данные для анализа.');
+    return { success: false, error: 'Неполные данные для анализа.' };
   }
 
   const input: AnalyzeInventoryVarianceInput = {
@@ -55,14 +63,14 @@ export async function runVarianceAnalysis(line: InventoryLine & { product?: Prod
 
   try {
     const result = await analyzeInventoryVarianceFlow(input);
-    return result;
+    return { success: true, data: result };
   } catch (error) {
     console.error('Error in runVarianceAnalysis calling Genkit flow:', error);
-    throw new Error('Сбой AI-анализа. Пожалуйста, проверьте свой API-ключ Gemini и повторите попытку.');
+    return { success: false, error: 'Сбой AI-анализа. Пожалуйста, проверьте свой API-ключ Gemini и повторите попытку.'};
   }
 }
 
-export async function createInventorySession(barId: string, userId: string): Promise<{ success: boolean; sessionId: string; isNew: boolean; error?: string }> {
+export async function createInventorySession(barId: string, userId: string): Promise<ServerActionResponse<{sessionId: string, isNew: boolean}>> {
   try {
     const { db } = initializeAdminApp();
     const sessionsCollection = db.collection('bars').doc(barId).collection('inventorySessions');
@@ -73,7 +81,7 @@ export async function createInventorySession(barId: string, userId: string): Pro
 
     if (!inProgressSnapshot.empty) {
       const existingSessionId = inProgressSnapshot.docs[0].id;
-      return { success: true, sessionId: existingSessionId, isNew: false };
+      return { success: true, data: { sessionId: existingSessionId, isNew: false } };
     }
 
     // Create a new session
@@ -90,16 +98,16 @@ export async function createInventorySession(barId: string, userId: string): Pro
     
     await newSessionRef.set(newSessionData);
     
-    return { success: true, sessionId: newSessionRef.id, isNew: true };
+    return { success: true, data: { sessionId: newSessionRef.id, isNew: true } };
   } catch (error) {
     console.error("Error in createInventorySession server action:", error);
-    return { success: false, sessionId: '', isNew: false, error: 'Произошла ошибка на сервере при создании сессии.' };
+    return { success: false, error: 'Произошла ошибка на сервере при создании сессии.' };
   }
 }
 
 
 // Server action to add a staff member
-export async function addStaffMember(barId: string, email: string, role: 'manager' | 'bartender'): Promise<{ success: boolean; error?: string }> {
+export async function addStaffMember(barId: string, email: string, role: 'manager' | 'bartender'): Promise<ServerActionResponse> {
   try {
     const { db } = initializeAdminApp();
     
@@ -137,7 +145,7 @@ export async function addStaffMember(barId: string, email: string, role: 'manage
 }
 
 // Server action to remove a staff member
-export async function removeStaffMember(barId: string, userId: string): Promise<{ success: boolean; error?: string }> {
+export async function removeStaffMember(barId: string, userId: string): Promise<ServerActionResponse> {
   try {
     const { db } = initializeAdminApp();
     const memberRef = db.collection('bars').doc(barId).collection('members').doc(userId);
@@ -151,7 +159,7 @@ export async function removeStaffMember(barId: string, userId: string): Promise<
   }
 }
 
-export async function upsertSupplier(barId: string, supplier: Omit<Supplier, 'barId'>): Promise<{ success: boolean; error?: string }> {
+export async function upsertSupplier(barId: string, supplier: Omit<Supplier, 'barId'>): Promise<ServerActionResponse> {
     try {
         const { db } = initializeAdminApp();
         const supplierRef = db.collection('bars').doc(barId).collection('suppliers').doc(supplier.id);
@@ -168,7 +176,7 @@ export async function upsertSupplier(barId: string, supplier: Omit<Supplier, 'ba
     }
 }
 
-export async function deleteSupplier(barId: string, supplierId: string): Promise<{ success: boolean; error?: string }> {
+export async function deleteSupplier(barId: string, supplierId: string): Promise<ServerActionResponse> {
     try {
         const { db } = initializeAdminApp();
         const supplierRef = db.collection('bars').doc(barId).collection('suppliers').doc(supplierId);
@@ -182,7 +190,7 @@ export async function deleteSupplier(barId: string, supplierId: string): Promise
     }
 }
 
-export async function upsertPurchaseOrder(barId: string, order: Omit<PurchaseOrder, 'barId' | 'createdAt' | 'createdByUserId'> & { createdByUserId: string }): Promise<{ success: boolean; error?: string, id?: string }> {
+export async function upsertPurchaseOrder(barId: string, order: Omit<PurchaseOrder, 'barId' | 'createdAt' | 'createdByUserId'> & { createdByUserId: string }): Promise<ServerActionResponse<{id: string}>> {
     try {
         const { db } = initializeAdminApp();
         const orderRef = db.collection('bars').doc(barId).collection('purchaseOrders').doc(order.id);
@@ -200,14 +208,14 @@ export async function upsertPurchaseOrder(barId: string, order: Omit<PurchaseOrd
 
         await orderRef.set(dataToSet, { merge: true });
 
-        return { success: true, id: order.id };
+        return { success: true, data: {id: order.id} };
     } catch (error) {
         console.error("Error in upsertPurchaseOrder server action:", error);
         return { success: false, error: 'Произошла ошибка на сервере при сохранении заказа.' };
     }
 }
 
-export async function deletePurchaseOrder(barId: string, orderId: string): Promise<{ success: boolean; error?: string }> {
+export async function deletePurchaseOrder(barId: string, orderId: string): Promise<ServerActionResponse> {
     try {
         const { db } = initializeAdminApp();
         const orderRef = db.collection('bars').doc(barId).collection('purchaseOrders').doc(orderId);
@@ -228,7 +236,7 @@ export async function deletePurchaseOrder(barId: string, orderId: string): Promi
     }
 }
 
-export async function addPurchaseOrderLine(barId: string, orderId: string, product: Product): Promise<{ success: boolean; error?: string, id?: string }> {
+export async function addPurchaseOrderLine(barId: string, orderId: string, product: Product): Promise<ServerActionResponse<{id: string}>> {
     try {
         const { db } = initializeAdminApp();
         const linesCollection = db.collection('bars').doc(barId).collection('purchaseOrders').doc(orderId).collection('lines');
@@ -250,14 +258,14 @@ export async function addPurchaseOrderLine(barId: string, orderId: string, produ
             receivedQuantity: 0,
         };
         await newLineRef.set(newLineData);
-        return { success: true, id: newLineRef.id };
+        return { success: true, data: {id: newLineRef.id} };
     } catch (error) {
         console.error("Error in addPurchaseOrderLine server action:", error);
         return { success: false, error: 'Произошла ошибка на сервере.' };
     }
 }
 
-export async function updatePurchaseOrderLines(barId: string, orderId: string, lines: PurchaseOrderLine[]): Promise<{ success: boolean; error?: string }> {
+export async function updatePurchaseOrderLines(barId: string, orderId: string, lines: PurchaseOrderLine[]): Promise<ServerActionResponse> {
     try {
         const { db } = initializeAdminApp();
         const batch = db.batch();
@@ -280,7 +288,7 @@ export async function updatePurchaseOrderLines(barId: string, orderId: string, l
     }
 }
 
-export async function deletePurchaseOrderLine(barId: string, orderId: string, lineId: string): Promise<{ success: boolean; error?: string }> {
+export async function deletePurchaseOrderLine(barId: string, orderId: string, lineId: string): Promise<ServerActionResponse> {
     try {
         const { db } = initializeAdminApp();
         const lineRef = db.collection('bars').doc(barId).collection('purchaseOrders').doc(orderId).collection('lines').doc(lineId);
@@ -293,7 +301,7 @@ export async function deletePurchaseOrderLine(barId: string, orderId: string, li
 }
 
 
-export async function saveInventoryLines(barId: string, sessionId: string, lines: InventoryLine[]): Promise<{ success: boolean; error?: string }> {
+export async function saveInventoryLines(barId: string, sessionId: string, lines: InventoryLine[]): Promise<ServerActionResponse> {
     try {
         const { db } = initializeAdminApp();
         const batch = db.batch();
@@ -328,7 +336,7 @@ export async function saveInventoryLines(barId: string, sessionId: string, lines
     }
 }
 
-export async function completeInventorySession(barId: string, sessionId: string): Promise<{ success: boolean; error?: string }> {
+export async function completeInventorySession(barId: string, sessionId: string): Promise<ServerActionResponse> {
     try {
         const { db } = initializeAdminApp();
         const sessionRef = db.collection('bars').doc(barId).collection('inventorySessions').doc(sessionId);
@@ -345,7 +353,7 @@ export async function completeInventorySession(barId: string, sessionId: string)
     }
 }
 
-export async function addProductToSession(barId: string, sessionId: string, productId: string): Promise<{ success: boolean; error?: string; id?: string }> {
+export async function addProductToSession(barId: string, sessionId: string, productId: string): Promise<ServerActionResponse<{id: string}>> {
     try {
         const { db } = initializeAdminApp();
         const linesCollection = db.collection('bars').doc(barId).collection('inventorySessions').doc(sessionId).collection('lines');
@@ -369,7 +377,7 @@ export async function addProductToSession(barId: string, sessionId: string, prod
 
         await newLineRef.set({ ...line, id: newLineRef.id });
 
-        return { success: true, id: newLineRef.id };
+        return { success: true, data: {id: newLineRef.id} };
     } catch (error) {
         console.error("Error in addProductToSession server action:", error);
         return { success: false, error: 'Произошла ошибка на сервере.' };
@@ -377,7 +385,7 @@ export async function addProductToSession(barId: string, sessionId: string, prod
 }
 
 
-export async function upsertProduct(productData: Partial<Product>): Promise<{ success: boolean; error?: string; id?: string }> {
+export async function upsertProduct(productData: Partial<Product>): Promise<ServerActionResponse<{id: string}>> {
   try {
     const { db } = initializeAdminApp();
     const productsCollection = db.collection('products');
@@ -388,7 +396,7 @@ export async function upsertProduct(productData: Partial<Product>): Promise<{ su
       // Update
       const productRef = productsCollection.doc(productId);
       await productRef.set({ ...productData, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-      return { success: true, id: productId };
+      return { success: true, data: {id: productId }};
     } else {
       // Create
       const newProductRef = productsCollection.doc();
@@ -399,7 +407,7 @@ export async function upsertProduct(productData: Partial<Product>): Promise<{ su
         updatedAt: FieldValue.serverTimestamp(),
       };
       await newProductRef.set(newProduct);
-      return { success: true, id: newProductRef.id };
+      return { success: true, data: { id: newProductRef.id } };
     }
   } catch (error) {
     console.error("Error in upsertProduct server action:", error);
@@ -407,7 +415,7 @@ export async function upsertProduct(productData: Partial<Product>): Promise<{ su
   }
 }
 
-export async function archiveProduct(productId: string, archive: boolean): Promise<{ success: boolean; error?: string }> {
+export async function archiveProduct(productId: string, archive: boolean): Promise<ServerActionResponse> {
     try {
         const { db } = initializeAdminApp();
         const productRef = db.collection('products').doc(productId);
@@ -418,3 +426,5 @@ export async function archiveProduct(productId: string, archive: boolean): Promi
         return { success: false, error: 'Произошла ошибка на сервере.' };
     }
 }
+
+    

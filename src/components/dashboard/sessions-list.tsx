@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, MoreVertical, Trash2 } from "lucide-react";
 import { Timestamp, doc, deleteDoc } from "firebase/firestore";
 import { useFirestore } from "@/firebase";
-import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +26,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import * as React from "react";
-
+import { useServerAction } from "@/hooks/use-server-action";
+import { deleteInventorySession } from "@/lib/actions";
 
 type SessionsListProps = {
   sessions: InventorySession[];
@@ -35,10 +35,14 @@ type SessionsListProps = {
 };
 
 export function SessionsList({ sessions, barId }: SessionsListProps) {
-  const firestore = useFirestore();
-  const { toast } = useToast();
-  const [dialogOpen, setDialogOpen] = React.useState(false);
   const [sessionToDelete, setSessionToDelete] = React.useState<InventorySession | null>(null);
+
+  const { execute: runDeleteSession } = useServerAction(deleteInventorySession, {
+    onSuccess: () => setSessionToDelete(null),
+    successMessage: "Сессия удалена.",
+    errorMessage: "При удалении сессии произошла ошибка."
+  });
+
 
   const getStatusVariant = (status: InventorySession['status']) => {
     switch (status) {
@@ -66,24 +70,11 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
 
   const handleDeleteClick = (session: InventorySession) => {
     setSessionToDelete(session);
-    setDialogOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (!sessionToDelete || !barId || !firestore) {
-        toast({ variant: "destructive", title: "Ошибка", description: "Не удалось удалить сессию." });
-        return;
-    }
-    try {
-        const sessionRef = doc(firestore, 'bars', barId, 'inventorySessions', sessionToDelete.id);
-        await deleteDoc(sessionRef);
-        toast({ title: "Сессия удалена", description: `Сессия "${sessionToDelete.name}" была успешно удалена.` });
-    } catch (error) {
-        toast({ variant: "destructive", title: "Ошибка", description: "При удалении сессии произошла ошибка." });
-    } finally {
-        setDialogOpen(false);
-        setSessionToDelete(null);
-    }
+    if (!sessionToDelete || !barId) return;
+    await runDeleteSession({ barId, sessionId: sessionToDelete.id });
   };
 
 
@@ -131,7 +122,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
         </Card>
       ))}
     </div>
-     <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+     <AlertDialog open={!!sessionToDelete} onOpenChange={(open) => !open && setSessionToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
@@ -148,3 +139,5 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     </>
   );
 }
+
+    

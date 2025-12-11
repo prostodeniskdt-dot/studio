@@ -40,11 +40,10 @@ import type { Product } from '@/lib/types';
 import { formatCurrency, translateCategory, translateSubCategory } from '@/lib/utils';
 import { ProductForm } from './product-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Combobox, type GroupedComboboxOption } from '../ui/combobox';
 import { archiveProduct } from '@/lib/actions';
-
+import { useServerAction } from '@/hooks/use-server-action';
 
 export function ProductsTable({ products }: { products: Product[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -59,7 +58,9 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | undefined>(undefined);
   
-  const { toast } = useToast();
+  const { execute: runArchiveProduct } = useServerAction(archiveProduct, {
+      successMessage: "Статус продукта изменен.",
+  });
 
   const handleOpenSheet = (product?: Product) => {
     setEditingProduct(product);
@@ -72,19 +73,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
   }
 
   const handleArchiveAction = async (product: Product) => {
-    const result = await archiveProduct(product.id, product.isActive);
-    if(result.success) {
-      toast({
-        title: `Продукт ${product.isActive ? 'архивирован' : 'восстановлен'}`,
-        description: `"${product.name}" был ${product.isActive ? 'архивирован' : 'восстановлен'}.`,
-      });
-    } else {
-       toast({
-        variant: "destructive",
-        title: "Ошибка",
-        description: result.error,
-      });
-    }
+    await runArchiveProduct({ productId: product.id, archive: product.isActive });
   }
 
   const groupedProductOptions = React.useMemo<GroupedComboboxOption[]>(() => {
@@ -403,3 +392,5 @@ export function ProductsTable({ products }: { products: Product[] }) {
     </Sheet>
   );
 }
+
+    

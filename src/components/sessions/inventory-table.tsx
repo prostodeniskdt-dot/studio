@@ -61,11 +61,7 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
         return currentLines.map(line => {
             if (line.id === lineId) {
                 const updatedLine = { ...line, [field]: value === '' ? 0 : numericValue };
-                const product = products.find(p => p.id === updatedLine.productId);
-                if (product) {
-                    const { theoreticalEndStock, differenceVolume, differenceMoney, differencePercent } = calculateLineFields(updatedLine, product);
-                    return { ...updatedLine, theoreticalEndStock, differenceVolume, differenceMoney, differencePercent };
-                }
+                // No need to recalculate here, it happens in the memoized calculations
                 return updatedLine;
             }
             return line;
@@ -189,3 +185,5 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
     </>
   );
 }
+
+    

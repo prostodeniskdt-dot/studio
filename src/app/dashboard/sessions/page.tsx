@@ -10,13 +10,13 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { createInventorySession } from '@/lib/actions';
+import { useServerAction } from '@/hooks/use-server-action';
 
 
 export default function SessionsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();
-  const [isCreating, setIsCreating] = React.useState(false);
   const firestore = useFirestore();
 
   const barId = user ? `bar_${user.uid}` : null; 
@@ -27,6 +27,25 @@ export default function SessionsPage() {
   );
   
   const { data: sessions, isLoading: isLoadingSessions, error: sessionsError } = useCollection<InventorySession>(sessionsQuery);
+
+  const { execute: runCreateSession, isLoading: isCreating } = useServerAction(createInventorySession, {
+    onSuccess: (data) => {
+      if (!data) return;
+      if (data.isNew) {
+        toast({
+          title: "Сессия создана",
+          description: "Новая сессия инвентаризации была успешно создана.",
+        });
+      } else {
+        toast({
+          title: "Активная сессия уже существует",
+          description: "Вы будете перенаправлены на существующую сессию.",
+           action: <Button onClick={() => router.push(`/dashboard/sessions/${data.sessionId}`)}>Перейти</Button>
+        });
+      }
+      router.push(`/dashboard/sessions/${data.sessionId}`);
+    },
+  });
 
   const sortedSessions = React.useMemo(() => {
     if (!sessions || !user) return [];
@@ -45,37 +64,7 @@ export default function SessionsPage() {
       });
       return;
     }
-    
-    setIsCreating(true);
-    try {
-      const result = await createInventorySession(barId, user.uid);
-
-      if (result.success) {
-        if (result.isNew) {
-          toast({
-            title: "Сессия создана",
-            description: "Новая сессия инвентаризации была успешно создана.",
-          });
-        } else {
-          toast({
-            title: "Активная сессия уже существует",
-            description: "Вы будете перенаправлены на существующую сессию.",
-            action: <Button onClick={() => router.push(`/dashboard/sessions/${result.sessionId}`)}>Перейти</Button>
-          });
-        }
-        router.push(`/dashboard/sessions/${result.sessionId}`);
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error: any) {
-       toast({
-          variant: "destructive",
-          title: "Ошибка создания сессии",
-          description: error.message || "Не удалось создать новую сессию. Попробуйте снова.",
-      });
-    } finally {
-        setIsCreating(false);
-    }
+    await runCreateSession({ barId, userId: user.uid });
   };
 
   const isLoading = isLoadingSessions;
@@ -105,3 +94,5 @@ export default function SessionsPage() {
     </>
   );
 }
+
+    

@@ -39,10 +39,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
 import { removeStaffMember } from '@/lib/actions';
 import { AddStaffDialog } from './add-staff-dialog';
 import type { StaffWithProfile } from '@/app/dashboard/staff/page';
+import { useServerAction } from '@/hooks/use-server-action';
 
 interface StaffTableProps {
     staff: StaffWithProfile[];
@@ -50,35 +50,24 @@ interface StaffTableProps {
 }
 
 export function StaffTable({ staff, barId }: StaffTableProps) {
-  const { toast } = useToast();
-  const [memberToDelete, setMemberToDelete] = React.useState<BarMember | null>(null);
+  const [memberToDelete, setMemberToDelete] = React.useState<StaffWithProfile | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
 
-  const handleDeleteClick = (member: BarMember) => {
+  const { execute: runRemoveStaff } = useServerAction(removeStaffMember, {
+    onSuccess: () => {
+        setMemberToDelete(null);
+    },
+    successMessage: "Сотрудник удален.",
+    errorMessage: "Не удалось удалить сотрудника."
+  });
+
+  const handleDeleteClick = (member: StaffWithProfile) => {
     setMemberToDelete(member);
   };
 
   const confirmDelete = async () => {
     if (!memberToDelete) return;
-    try {
-      const result = await removeStaffMember(barId, memberToDelete.userId);
-      if (result.success) {
-        toast({
-          title: 'Сотрудник удален',
-          description: `Пользователь ${memberToDelete.userProfile?.email} был удален из вашего бара.`,
-        });
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: error.message || 'Не удалось удалить сотрудника.',
-      });
-    } finally {
-      setMemberToDelete(null);
-    }
+    await runRemoveStaff({ barId, userId: memberToDelete.userId });
   };
 
   const columns: ColumnDef<StaffWithProfile>[] = [
@@ -235,3 +224,5 @@ export function StaffTable({ staff, barId }: StaffTableProps) {
     </>
   );
 }
+
+    

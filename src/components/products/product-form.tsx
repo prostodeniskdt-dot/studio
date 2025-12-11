@@ -28,10 +28,10 @@ import { productCategories, productSubCategories, translateCategory, translateSu
 import { Separator } from '../ui/separator';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Loader2 } from 'lucide-react';
 import { upsertProduct } from '@/lib/actions';
+import { useServerAction } from '@/hooks/use-server-action';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
@@ -64,7 +64,6 @@ interface ProductFormProps {
 export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
-  const { toast } = useToast();
   const barId = user ? `bar_${user.uid}` : null;
 
   const suppliersQuery = useMemoFirebase(() => 
@@ -72,6 +71,14 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     [firestore, barId]
   );
   const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
+
+  const { execute: runUpsertProduct, isLoading: isSaving } = useServerAction(upsertProduct, {
+      onSuccess: () => {
+          onFormSubmit();
+      },
+      successMessage: product ? "Продукт обновлен" : "Продукт создан",
+      errorMessage: "Не удалось сохранить продукт"
+  });
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(formSchema),
@@ -112,15 +119,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         ...data,
         id: product?.id,
     };
-
-    const result = await upsertProduct(productData);
-
-    if (result.success) {
-        toast({ title: product ? "Продукт обновлен" : "Продукт создан", description: `Данные о "${data.name}" сохранены.` });
-        onFormSubmit();
-    } else {
-        toast({ variant: "destructive", title: "Ошибка", description: result.error || "Не удалось сохранить продукт." });
-    }
+    await runUpsertProduct(productData);
   }
 
   return (
@@ -358,11 +357,13 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <Button type="submit" disabled={isSaving}>
+          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Сохранить продукт
         </Button>
       </form>
     </Form>
   );
 }
+
+    

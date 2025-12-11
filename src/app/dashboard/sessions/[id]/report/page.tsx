@@ -9,8 +9,10 @@ import Link from "next/link";
 import { BarChart3, Loader2 } from "lucide-react";
 import type { InventorySession, Product, InventoryLine, PurchaseOrder } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, writeBatch, Timestamp, addDoc } from 'firebase/firestore';
+import { doc, collection, query } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { createPurchaseOrderFromReport } from '@/lib/actions';
+import { useServerAction } from '@/hooks/use-server-action';
 
 const ReportView = dynamic(() => import('@/components/reports/report-view').then(mod => mod.ReportView), {
     ssr: false,
@@ -25,7 +27,6 @@ export default function SessionReportPage() {
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
-  const [isCreatingOrder, setIsCreatingOrder] = React.useState(false);
 
   const barId = user ? `bar_${user.uid}` : null;
   
@@ -47,92 +48,31 @@ export default function SessionReportPage() {
   );
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
 
-  const handleCreatePurchaseOrder = async () => {
-    if (!firestore || !barId || !user || !lines || !products) {
-        toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось загрузить все необходимые данные.' });
-        return;
-    }
-
-    setIsCreatingOrder(true);
-
-    // 1. Find products that need reordering
-    const productsToReorder = lines.map(line => {
-        const product = products.find(p => p.id === line.productId);
-        if (!product || !product.reorderPointMl || !product.defaultSupplierId) return null;
-        if (line.endStock < product.reorderPointMl) {
-            return product;
-        }
-        return null;
-    }).filter((p): p is Product => p !== null);
-
-    if (productsToReorder.length === 0) {
-        toast({ title: 'Заказ не требуется', description: 'Остатки всех продуктов выше минимального уровня.' });
-        setIsCreatingOrder(false);
-        return;
-    }
-
-    // 2. Group products by supplier
-    const ordersBySupplier: Record<string, Product[]> = productsToReorder.reduce((acc, product) => {
-        const supplierId = product.defaultSupplierId!;
-        if (!acc[supplierId]) {
-            acc[supplierId] = [];
-        }
-        acc[supplierId].push(product);
-        return acc;
-    }, {} as Record<string, Product[]>);
-
-    try {
-        const orderIds: string[] = [];
-        const batch = writeBatch(firestore);
-
-        for (const supplierId in ordersBySupplier) {
-            const productsForOrder = ordersBySupplier[supplierId];
-            
-            // Create Purchase Order
-            const orderRef = doc(collection(firestore, 'bars', barId, 'purchaseOrders'));
-            const newOrder: Omit<PurchaseOrder, 'id' | 'createdAt'> = {
-                barId: barId,
-                supplierId: supplierId,
-                status: 'draft',
-                orderDate: Timestamp.now(),
-                createdByUserId: user.uid,
-            };
-            batch.set(orderRef, { ...newOrder, id: orderRef.id, createdAt: Timestamp.now() });
-
-            // Create Purchase Order Lines
-            productsForOrder.forEach(product => {
-                const lineRef = doc(collection(orderRef, 'lines'));
-                const newLine = {
-                    id: lineRef.id,
-                    purchaseOrderId: orderRef.id,
-                    productId: product.id,
-                    quantity: product.reorderQuantity || 1,
-                    costPerItem: product.costPerBottle,
-                    receivedQuantity: 0
-                };
-                batch.set(lineRef, newLine);
+  const { execute: runCreatePurchaseOrder, isLoading: isCreatingOrder } = useServerAction(createPurchaseOrderFromReport, {
+    onSuccess: (data) => {
+        if (!data) return;
+        if (data.orderIds.length === 0) {
+            toast({ title: 'Заказ не требуется', description: 'Остатки всех продуктов выше минимального уровня.' });
+        } else {
+             toast({
+                title: 'Заказы успешно созданы',
+                description: `Создано ${data.orderIds.length} черновиков заказов.`,
             });
-            orderIds.push(orderRef.id);
+            // Navigate to the first created order
+            router.push(`/dashboard/purchase-orders/${data.orderIds[0]}`);
         }
-
-        await batch.commit();
-
-        toast({
-            title: 'Заказы успешно созданы',
-            description: `Создано ${orderIds.length} черновиков заказов.`,
-        });
-
-        // Navigate to the first created order
-        if (orderIds.length > 0) {
-            router.push(`/dashboard/purchase-orders/${orderIds[0]}`);
-        }
-
-    } catch (error) {
-        console.error("Failed to create purchase orders:", error);
-        toast({ variant: 'destructive', title: 'Ошибка создания заказов', description: 'Произошла ошибка при создании черновиков.' });
-    } finally {
-        setIsCreatingOrder(false);
     }
+  });
+
+
+  const handleCreatePurchaseOrder = async () => {
+    if (!user || !lines || !products || !barId) return;
+    await runCreatePurchaseOrder({
+        barId,
+        userId: user.uid,
+        lines,
+        products
+    });
   };
 
 
@@ -192,3 +132,5 @@ export default function SessionReportPage() {
     />
   );
 }
+
+    

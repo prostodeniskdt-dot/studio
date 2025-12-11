@@ -15,10 +15,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PlusCircle, Trash2, Loader2 } from 'lucide-react';
 import { formatCurrency, translateCategory } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
 import { addPurchaseOrderLine, updatePurchaseOrderLines, deletePurchaseOrderLine } from '@/lib/actions';
 import { Combobox, GroupedComboboxOption } from '../ui/combobox';
 import Image from 'next/image';
+import { useServerAction } from '@/hooks/use-server-action';
 
 interface PurchaseOrderLinesTableProps {
   lines: PurchaseOrderLine[];
@@ -29,11 +29,22 @@ interface PurchaseOrderLinesTableProps {
 }
 
 export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEditable }: PurchaseOrderLinesTableProps) {
-  const { toast } = useToast();
   const [localLines, setLocalLines] = React.useState(lines);
   const [isAdding, setIsAdding] = React.useState(false);
-  const [isSaving, setIsSaving] = React.useState(false);
-  const [isProcessing, setIsProcessing] = React.useState(false);
+
+  const { execute: runUpdateLines, isLoading: isSaving } = useServerAction(updatePurchaseOrderLines, {
+    successMessage: "Позиции заказа обновлены",
+  });
+  const { execute: runAddLine, isLoading: isAddingLine } = useServerAction(addPurchaseOrderLine, {
+    onSuccess: () => setIsAdding(false),
+    successMessage: "Продукт добавлен в заказ",
+  });
+  const { execute: runRemoveLine, isLoading: isRemovingLine } = useServerAction(deletePurchaseOrderLine, {
+    successMessage: "Позиция удалена",
+  });
+
+  const isProcessing = isAddingLine || isRemovingLine;
+
 
   React.useEffect(() => {
     setLocalLines(lines);
@@ -51,44 +62,17 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
   };
   
   const handleSaveLines = async () => {
-    setIsSaving(true);
-    const result = await updatePurchaseOrderLines(barId, orderId, localLines);
-    if (result.success) {
-        toast({ title: 'Позиции заказа обновлены' });
-    } else {
-        toast({ variant: 'destructive', title: 'Ошибка при сохранении', description: result.error });
-    }
-    setIsSaving(false);
+    await runUpdateLines({ barId, orderId, lines: localLines });
   };
 
   const handleRemoveLine = async (lineId: string) => {
-    setIsProcessing(true);
-    const result = await deletePurchaseOrderLine(barId, orderId, lineId);
-    if (result.success) {
-        toast({ title: 'Позиция удалена' });
-    } else {
-        toast({ variant: 'destructive', title: 'Ошибка при удалении', description: result.error });
-    }
-    setIsProcessing(false);
+    await runRemoveLine({ barId, orderId, lineId });
   };
   
   const handleAddProduct = async (productId: string) => {
-    setIsAdding(false);
-    setIsProcessing(true);
     const product = products.find(p => p.id === productId);
-    if (!product) {
-        setIsProcessing(false);
-        return;
-    };
-
-    const result = await addPurchaseOrderLine(barId, orderId, product);
-
-    if (result.success) {
-        toast({ title: 'Продукт добавлен в заказ' });
-    } else {
-        toast({ variant: 'destructive', title: 'Ошибка', description: result.error });
-    }
-    setIsProcessing(false);
+    if (!product) return;
+    await runAddLine({ barId, orderId, product });
   };
 
   const linesWithProducts = React.useMemo(() => {
@@ -243,3 +227,5 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
     </div>
   );
 }
+
+    

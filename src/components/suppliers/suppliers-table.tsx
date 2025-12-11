@@ -28,9 +28,9 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import type { Supplier } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
 import { SupplierForm } from './supplier-form';
 import { deleteSupplier } from '@/lib/actions';
+import { useServerAction } from '@/hooks/use-server-action';
 
 interface SuppliersTableProps {
   suppliers: Supplier[];
@@ -38,10 +38,15 @@ interface SuppliersTableProps {
 }
 
 export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
-  const { toast } = useToast();
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [editingSupplier, setEditingSupplier] = React.useState<Supplier | undefined>(undefined);
   const [supplierToDelete, setSupplierToDelete] = React.useState<Supplier | null>(null);
+
+  const { execute: runDeleteSupplier } = useServerAction(deleteSupplier, {
+    onSuccess: () => setSupplierToDelete(null),
+    successMessage: "Поставщик удален.",
+    errorMessage: "Не удалось удалить поставщика."
+  });
 
   const handleOpenSheet = (supplier?: Supplier) => {
     setEditingSupplier(supplier);
@@ -59,25 +64,7 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
 
   const confirmDelete = async () => {
     if (!supplierToDelete) return;
-    try {
-      const result = await deleteSupplier(barId, supplierToDelete.id);
-      if (result.success) {
-        toast({
-          title: 'Поставщик удален',
-          description: `Поставщик "${supplierToDelete.name}" был удален.`,
-        });
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: error.message || 'Не удалось удалить поставщика.',
-      });
-    } finally {
-      setSupplierToDelete(null);
-    }
+    await runDeleteSupplier({barId, supplierId: supplierToDelete.id});
   };
 
   const columns: ColumnDef<Supplier>[] = [
@@ -212,3 +199,5 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
     </>
   );
 }
+
+    

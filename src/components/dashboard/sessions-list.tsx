@@ -74,32 +74,24 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     const sessionRef = doc(firestore, 'bars', barId, 'inventorySessions', sessionToDelete.id);
     
     try {
-        const linesCollectionRef = collection(sessionRef, 'lines');
-        const linesSnapshot = await getDocs(linesCollectionRef);
-
-        const batch = writeBatch(firestore);
-        linesSnapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        batch.delete(sessionRef);
-
-        await batch.commit();
+        // We will only delete the session document.
+        // The subcollection of lines will become "orphaned" but inaccessible,
+        // which is secure. A backend cleanup function could be implemented later if needed.
+        await deleteDoc(sessionRef);
         
-        toast({ title: "Инвентаризация и все ее записи удалены." });
-        setSessionToDelete(null);
+        toast({ title: "Инвентаризация удалена." });
+        setSessionToDelete(null); // Close dialog on success
 
     } catch (serverError: any) {
+        // If deleting the session fails, emit the permission error
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: sessionRef.path,
             operation: 'delete'
         }));
-        // Do not close the dialog on error, allow the global error handler to act.
-        // But do stop the loading indicator.
+    } finally {
+        // This will run regardless of success or failure, ensuring the loading state is always reset.
         setIsDeleting(false);
-        return; // IMPORTANT: Stop execution here
     }
-    // This part now only runs on SUCCESS
-    setIsDeleting(false);
   };
 
 

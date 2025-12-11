@@ -283,8 +283,8 @@ service cloud.firestore {
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
         // List is secured by a client-side where() clause on barId.
-        // We only need to check if the user is a member of the requested barId.
-        allow list: if canReadBarData(request.query.resource.data.barId);
+        // The query MUST contain `where('barId', '==', barId)`
+        allow list: if (isBarMember(barId) || isAdmin()) && request.query.barId == barId;
         allow create: if isInventorySessionCreateValid();
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteBarData(barId) && resourceExists();

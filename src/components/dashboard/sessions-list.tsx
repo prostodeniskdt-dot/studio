@@ -74,13 +74,17 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     if (!sessionToDelete || !barId || !firestore) return;
 
     setIsDeleting(true);
-    const path = `bars/${barId}/inventorySessions/${sessionToDelete.id}`;
-
+    const sessionRef = doc(firestore, 'bars', barId, 'inventorySessions', sessionToDelete.id);
+    const linesCollection = collection(sessionRef, 'lines');
+    
     try {
-        const sessionRef = doc(firestore, 'bars', barId, 'inventorySessions', sessionToDelete.id);
-        const linesCollection = collection(sessionRef, 'lines');
+        const linesSnapshot = await getDocs(linesCollection).catch(serverError => {
+            // This catch block is crucial. If we can't LIST the lines, we can't delete them.
+            // Throw a specific error for this case.
+            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linesCollection.path, operation: 'list' }));
+            throw serverError; // Re-throw to be caught by the outer try-catch
+        });
         
-        const linesSnapshot = await getDocs(linesCollection);
         const batch = writeBatch(firestore);
 
         if (!linesSnapshot.empty) {
@@ -93,10 +97,13 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
         await batch.commit();
 
         toast({ title: "Инвентаризация удалена." });
-        setSessionToDelete(null);
-        // router.refresh(); // This might not be needed if useCollection updates automatically
+
     } catch (serverError) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: path, operation: 'delete' }));
+        // This will catch the re-thrown error from getDocs or errors from batch.commit
+        if (!(serverError instanceof FirestorePermissionError)) {
+             errorEmitter.emit('permission-error', new FirestorePermissionError({ path: sessionRef.path, operation: 'delete' }));
+        }
+        // The error is already emitted, so we just need to handle UI state.
     } finally {
         setIsDeleting(false);
         setSessionToDelete(null);

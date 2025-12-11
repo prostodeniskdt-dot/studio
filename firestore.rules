@@ -188,9 +188,7 @@ service cloud.firestore {
         allow delete: if canWriteBarData(barId) && resourceExists();
 
         match /lines/{inventoryLineId} {
-          allow get: if canReadBarData(barId);
-          // SAFE LIST RULE: Owner or admin can list lines for their bar's sessions.
-          allow list: if isBarOwnerByPath(barId) || isAdmin();
+          allow get, list: if canReadBarData(barId);
           allow create: if canWriteBarData(barId) && isInventoryLineCreateValid(inventorySessionId);
           allow update: if canWriteBarData(barId) && resourceExists() && isInventoryLineUpdateValid();
           allow delete: if canWriteBarData(barId) && resourceExists();
@@ -211,9 +209,7 @@ service cloud.firestore {
         allow create, update, delete: if canWriteBarData(barId);
 
         match /lines/{purchaseOrderLineId} {
-          allow get: if canReadBarData(barId);
-          // SAFE LIST RULE: Owner or admin can list lines for their bar's orders.
-          allow list: if isBarOwnerByPath(barId) || isAdmin();
+          allow get, list: if canReadBarData(barId);
           allow create, update, delete: if canWriteBarData(barId);
         }
       }

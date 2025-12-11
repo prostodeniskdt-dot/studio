@@ -60,7 +60,7 @@ export default function AnalyticsPage() {
         const populatedSessions = sessions.map(session => ({
           ...session,
           lines: linesBySession[session.id] || []
-        })).sort((a, b) => (a.closedAt?.toMillis() ?? 0) - (b.closedAt?.toMillis() ?? 0));
+        })).sort((a, b) => (a.closedAt ? a.closedAt.toMillis() : 0) - (b.closedAt ? b.closedAt.toMillis() : 0));
         
         setSessionsWithLines(populatedSessions);
 

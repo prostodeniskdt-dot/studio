@@ -13,7 +13,7 @@ export default function SuppliersPage() {
   const barId = user ? `bar_${user.uid}` : null;
 
   const suppliersQuery = useMemoFirebase(() => 
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'suppliers'), where('barId', '==', barId)) : null,
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'suppliers')) : null,
     [firestore, barId]
   );
   

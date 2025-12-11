@@ -7,13 +7,15 @@ import type { BarMember, UserProfile } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { StaffTable } from '@/components/staff/staff-table';
 
+export type StaffWithProfile = BarMember & { userProfile?: UserProfile };
+
 export default function StaffPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const barId = user ? `bar_${user.uid}` : null;
   
-  const [staffWithProfiles, setStaffWithProfiles] = React.useState<BarMember[]>([]);
-  const [isLoadingProfiles, setIsLoadingProfiles] = React.useState(true);
+  const [staffWithProfiles, setStaffWithProfiles] = React.useState<StaffWithProfile[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   const membersQuery = useMemoFirebase(() => 
     firestore && barId ? collection(firestore, 'bars', barId, 'members') : null,
@@ -23,30 +25,27 @@ export default function StaffPage() {
   const { data: members, isLoading: isLoadingMembers } = useCollection<BarMember>(membersQuery);
 
   React.useEffect(() => {
+    // Exit if core data isn't loaded yet.
     if (isLoadingMembers || !members || !firestore) {
-      if (!isLoadingMembers) setIsLoadingProfiles(false);
+      if (!isLoadingMembers) setIsLoading(false);
       return;
     }
 
+    // If there are no members, we are done.
     if (members.length === 0) {
         setStaffWithProfiles([]);
-        setIsLoadingProfiles(false);
+        setIsLoading(false);
         return;
     }
     
     const fetchMemberProfiles = async () => {
-        setIsLoadingProfiles(true);
+        setIsLoading(true);
         try {
             const userIds = members.map(m => m.userId);
-            if (userIds.length === 0) {
-                setStaffWithProfiles([]);
-                setIsLoadingProfiles(false);
-                return;
-            }
-
-            // Firestore 'in' query is limited to 30 items per query.
-            // We chunk the userIds to handle more than 30 staff members.
-            const chunks = [];
+            
+            // Firestore 'in' query is limited to 30 items.
+            // We chunk the userIds to handle more than 30 staff members efficiently.
+            const chunks: string[][] = [];
             for (let i = 0; i < userIds.length; i += 30) {
                 chunks.push(userIds.slice(i, i + 30));
             }
@@ -56,6 +55,7 @@ export default function StaffPage() {
             );
 
             const snapshotResults = await Promise.all(profilePromises);
+            
             const profilesMap = new Map<string, UserProfile>();
             snapshotResults.forEach(snapshot => {
                 snapshot.docs.forEach(doc => {
@@ -63,20 +63,18 @@ export default function StaffPage() {
                 });
             });
 
-            const membersWithProfiles = members.map(member => {
-                const userProfile = profilesMap.get(member.userId);
-                return { 
-                    ...member, 
-                    userProfile: userProfile || { email: 'Не найден', displayName: 'Пользователь не найден' } as UserProfile
-                };
-            });
+            // Combine member data with the fetched profiles.
+            const membersWithProfiles = members.map(member => ({
+                ...member, 
+                userProfile: profilesMap.get(member.userId),
+            }));
 
             setStaffWithProfiles(membersWithProfiles);
         } catch (error) {
           console.error("Error fetching member profiles:", error);
-          setStaffWithProfiles(members); // Fallback to members without profiles
+          setStaffWithProfiles(members); // Fallback to members without profiles on error
         } finally {
-          setIsLoadingProfiles(false);
+          setIsLoading(false);
         }
     };
     
@@ -84,8 +82,6 @@ export default function StaffPage() {
 
   }, [members, firestore, isLoadingMembers]);
   
-  const isLoading = isLoadingMembers || isLoadingProfiles;
-
   if (isLoading || !barId) {
     return (
       <div className="flex justify-center items-center h-full pt-20">

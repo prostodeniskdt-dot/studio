@@ -42,9 +42,10 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { removeStaffMember } from '@/lib/actions';
 import { AddStaffDialog } from './add-staff-dialog';
+import type { StaffWithProfile } from '@/app/dashboard/staff/page';
 
 interface StaffTableProps {
-    staff: BarMember[];
+    staff: StaffWithProfile[];
     barId: string;
 }
 
@@ -80,7 +81,7 @@ export function StaffTable({ staff, barId }: StaffTableProps) {
     }
   };
 
-  const columns: ColumnDef<BarMember>[] = [
+  const columns: ColumnDef<StaffWithProfile>[] = [
     {
       accessorKey: 'userProfile.displayName',
       header: 'Сотрудник',
@@ -94,12 +95,12 @@ export function StaffTable({ staff, barId }: StaffTableProps) {
         return (
             <div className="flex items-center gap-4">
                  <Avatar>
-                    {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
+                    {avatarUrl && <AvatarImage src={avatarUrl} alt={name || 'avatar'} />}
                     <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
                 <div>
                     <div className="font-medium">{name || 'Имя не указано'}</div>
-                    <div className="text-sm text-muted-foreground">{email}</div>
+                    <div className="text-sm text-muted-foreground">{email || 'Email не найден'}</div>
                 </div>
             </div>
         )

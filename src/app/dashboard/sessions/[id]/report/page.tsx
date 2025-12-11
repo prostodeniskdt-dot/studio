@@ -11,6 +11,7 @@ import type { InventorySession, Product, InventoryLine, PurchaseOrder } from '@/
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, collection, query, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { russianHolidays2024, getUpcomingHoliday } from '@/lib/holidays';
 
 const ReportView = dynamic(() => import('@/components/reports/report-view').then(mod => mod.ReportView), {
     ssr: false,
@@ -54,11 +55,28 @@ export default function SessionReportPage() {
 
     setIsCreatingOrder(true);
     try {
+        const HOLIDAY_MULTIPLIER = 2; // Увеличиваем заказ в 2 раза перед праздниками
+        const PRE_HOLIDAY_DAYS = 5; // За сколько дней до праздника начинаем увеличивать заказ
+
+        const today = new Date();
+        const upcomingHoliday = getUpcomingHoliday(today, russianHolidays2024, PRE_HOLIDAY_DAYS);
+        const multiplier = upcomingHoliday ? HOLIDAY_MULTIPLIER : 1;
+
+        if (upcomingHoliday) {
+            toast({
+                title: `Приближается праздник: ${upcomingHoliday}!`,
+                description: `Рекомендации по заказу увеличены в ${multiplier} раза.`,
+                duration: 5000,
+            });
+        }
+
         const productsToOrder = lines.map(line => {
             const product = products.find(p => p.id === line.productId);
             if (!product || !product.reorderPointMl || !product.reorderQuantity) return null;
             if (line.endStock < product.reorderPointMl) {
-                return { product, quantity: product.reorderQuantity };
+                // Применяем множитель к рекомендованному количеству
+                const recommendedQuantity = Math.ceil(product.reorderQuantity * multiplier);
+                return { product, quantity: recommendedQuantity };
             }
             return null;
         }).filter((p): p is NonNullable<typeof p> => p !== null);
@@ -180,5 +198,3 @@ export default function SessionReportPage() {
     />
   );
 }
-
-    

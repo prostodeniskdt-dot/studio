@@ -138,4 +138,9 @@ export interface PurchaseOrderLine {
     receivedQuantity: number;
 }
 
-    
+
+// --- New Type for Holiday Calendar ---
+export interface Holiday {
+    date: string; // YYYY-MM-DD
+    name: string;
+}

@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { translateCategory } from '@/lib/utils';
+import { errorEmitter, FirestorePermissionError } from '@/firebase';
 
 export default function UnifiedCalculatorPage() {
   const { toast } = useToast();
@@ -119,79 +120,93 @@ export default function UnifiedCalculatorPage() {
 
     setIsSending(true);
     
-    try {
-      const sessionsQuery = query(
-          collection(firestore, 'bars', barId, 'inventorySessions'), 
-          where('status', '==', 'in_progress'),
-          orderBy('createdAt', 'desc'),
-          limit(1)
-      );
-
-      const sessionsSnapshot = await getDocs(sessionsQuery);
-
-      if (sessionsSnapshot.empty) {
-        toast({
-          variant: "destructive",
-          title: "Нет активной сессии",
-          description: "Пожалуйста, начните новую инвентаризацию на главной панели.",
-        });
-        setIsSending(false);
-        return;
-      }
-      
-      const activeSession = sessionsSnapshot.docs[0];
-      const activeSessionId = activeSession.id;
-
-      const linesQuery = query(
-        collection(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines'),
-        where('productId', '==', selectedProductId),
+    const sessionsQuery = query(
+        collection(firestore, 'bars', barId, 'inventorySessions'), 
+        where('status', '==', 'in_progress'),
+        orderBy('createdAt', 'desc'),
         limit(1)
-      );
+    );
+
+    getDocs(sessionsQuery).then(sessionsSnapshot => {
+        if (sessionsSnapshot.empty) {
+            toast({
+                variant: "destructive",
+                title: "Нет активной сессии",
+                description: "Пожалуйста, начните новую инвентаризацию на главной панели.",
+            });
+            setIsSending(false);
+            return;
+        }
       
-      const linesSnapshot = await getDocs(linesQuery);
-
-      if (linesSnapshot.empty) {
-        const product = products?.find(p => p.id === selectedProductId);
-        if (!product) return;
-
-        const batch = writeBatch(firestore);
-        const newLineRef = doc(collection(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines'));
-        const newLineData = {
-          id: newLineRef.id,
-          productId: selectedProductId,
-          inventorySessionId: activeSessionId,
-          startStock: 0,
-          purchases: 0,
-          sales: 0,
-          endStock: volume,
-          theoreticalEndStock: 0,
-          differenceVolume: 0,
-          differenceMoney: 0,
-          differencePercent: 0,
-        };
-        batch.set(newLineRef, newLineData);
-        await batch.commit();
-
-      } else {
-        const lineDoc = linesSnapshot.docs[0];
-        const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines', lineDoc.id);
-        await updateDoc(lineRef, { endStock: volume });
-      }
+        const activeSession = sessionsSnapshot.docs[0];
+        const activeSessionId = activeSession.id;
+        const linesColRef = collection(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines');
+        const linesQuery = query(linesColRef, where('productId', '==', selectedProductId), limit(1));
       
-      toast({
-        title: "Данные отправлены",
-        description: `Остаток для продукта ${products?.find(p => p.id === selectedProductId)?.name} (${volume} мл) обновлен в текущей сессии.`,
-      });
+        return getDocs(linesQuery).then(linesSnapshot => {
+            if (linesSnapshot.empty) {
+                const product = products?.find(p => p.id === selectedProductId);
+                if (!product) {
+                    setIsSending(false);
+                    return;
+                };
 
-    } catch (error: any) {
-       toast({
-          variant: "destructive",
-          title: "Ошибка отправки данных",
-          description: "Не удалось обновить данные в сессии.",
-      });
-    } finally {
+                const batch = writeBatch(firestore);
+                const newLineRef = doc(linesColRef);
+                const newLineData = {
+                  id: newLineRef.id,
+                  productId: selectedProductId,
+                  inventorySessionId: activeSessionId,
+                  startStock: 0,
+                  purchases: 0,
+                  sales: 0,
+                  endStock: volume,
+                  theoreticalEndStock: 0,
+                  differenceVolume: 0,
+                  differenceMoney: 0,
+                  differencePercent: 0,
+                };
+                batch.set(newLineRef, newLineData);
+                
+                batch.commit().then(() => {
+                    toast({
+                        title: "Данные отправлены",
+                        description: `Остаток для продукта ${product.name} (${volume} мл) добавлен в текущую сессию.`,
+                    });
+                }).catch(serverError => {
+                    const permissionError = new FirestorePermissionError({ path: newLineRef.path, operation: 'create', requestResourceData: newLineData });
+                    errorEmitter.emit('permission-error', permissionError);
+                }).finally(() => {
+                    setIsSending(false);
+                });
+
+            } else {
+                const lineDoc = linesSnapshot.docs[0];
+                const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines', lineDoc.id);
+                const updateData = { endStock: volume };
+                updateDoc(lineRef, updateData).then(() => {
+                     toast({
+                        title: "Данные отправлены",
+                        description: `Остаток для продукта ${products?.find(p => p.id === selectedProductId)?.name} (${volume} мл) обновлен в текущей сессии.`,
+                    });
+                }).catch(serverError => {
+                    const permissionError = new FirestorePermissionError({ path: lineRef.path, operation: 'update', requestResourceData: updateData });
+                    errorEmitter.emit('permission-error', permissionError);
+                }).finally(() => {
+                    setIsSending(false);
+                });
+            }
+        }).catch(serverError => {
+            const permissionError = new FirestorePermissionError({ path: linesColRef.path, operation: 'list' });
+            errorEmitter.emit('permission-error', permissionError);
+            setIsSending(false);
+        });
+
+    }).catch(serverError => {
+        const permissionError = new FirestorePermissionError({ path: `bars/${barId}/inventorySessions`, operation: 'list' });
+        errorEmitter.emit('permission-error', permissionError);
         setIsSending(false);
-    }
+    });
   };
 
   if (isLoadingProducts) {

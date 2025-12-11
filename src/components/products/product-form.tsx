@@ -93,6 +93,11 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
       portionVolumeMl: 40,
       isActive: true,
       imageUrl: PlaceHolderImages.find(p => p.id.toLowerCase() === 'other')?.imageUrl,
+      fullBottleWeightG: undefined,
+      emptyBottleWeightG: undefined,
+      reorderPointMl: undefined,
+      reorderQuantity: undefined,
+      defaultSupplierId: undefined,
     },
   });
 
@@ -263,7 +268,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
                 <FormItem>
                 <FormLabel>Вес полной (г)</FormLabel>
                 <FormControl>
-                    <Input type="number" {...field} placeholder="1150"/>
+                    <Input type="number" {...field} value={field.value ?? ''} placeholder="1150"/>
                 </FormControl>
                 <FormMessage />
                 </FormItem>
@@ -276,7 +281,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
                 <FormItem>
                 <FormLabel>Вес пустой (г)</FormLabel>
                 <FormControl>
-                    <Input type="number" {...field} placeholder="450"/>
+                    <Input type="number" {...field} value={field.value ?? ''} placeholder="450"/>
                 </FormControl>
                 <FormMessage />
                 </FormItem>
@@ -294,7 +299,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
                     <FormItem>
                     <FormLabel>Минимальный остаток (мл)</FormLabel>
                     <FormControl>
-                        <Input type="number" {...field} placeholder="Например, 350"/>
+                        <Input type="number" {...field} value={field.value ?? ''} placeholder="Например, 350"/>
                     </FormControl>
                     <FormDescription>Когда остаток упадет ниже этого значения, товар попадет в автозаказ.</FormDescription>
                     <FormMessage />
@@ -308,7 +313,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
                     <FormItem>
                     <FormLabel>Количество для заказа (бут.)</FormLabel>
                     <FormControl>
-                        <Input type="number" {...field} placeholder="Например, 6"/>
+                        <Input type="number" {...field} value={field.value ?? ''} placeholder="Например, 6"/>
                     </FormControl>
                     <FormDescription>Сколько бутылок заказывать, когда остаток низкий.</FormDescription>
                     <FormMessage />
@@ -372,5 +377,3 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     </Form>
   );
 }
-
-    

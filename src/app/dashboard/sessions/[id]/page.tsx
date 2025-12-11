@@ -313,17 +313,19 @@ export default function SessionPage() {
         className="hidden"
         accept=".csv"
       />
-      <div className="flex items-center justify-between mb-2">
-        <div>
-            <h1 className="text-3xl font-bold tracking-tight">{session.name}</h1>
-            <p className="text-muted-foreground">
-                {session.createdAt && `Создано ${session.createdAt?.toDate().toLocaleDateString('ru-RU')}`}
-            </p>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{session.name}</h1>
+              <p className="text-muted-foreground">
+                  {session.createdAt && `Создано ${session.createdAt?.toDate().toLocaleDateString('ru-RU')}`}
+              </p>
+            </div>
             <Badge variant={getStatusVariant(session.status)} className="capitalize text-base px-3 py-1">
                 {translateStatus(session.status)}
             </Badge>
+        </div>
+        <div className="flex items-center gap-2">
             {session.status === 'completed' ? (
                 <Button asChild>
                     <Link href={`/dashboard/sessions/${session.id}/report`}>
@@ -332,7 +334,7 @@ export default function SessionPage() {
                     </Link>
                 </Button>
             ) : (
-                <div className="flex gap-2">
+                <>
                     <Button variant="outline" onClick={() => setIsAddProductOpen(true)} disabled={!isEditable}>
                       <PlusCircle className="mr-2 h-4 w-4"/>
                       Добавить продукт
@@ -363,15 +365,14 @@ export default function SessionPage() {
                         <AlertDialogTrigger asChild>
                             <Button disabled={!isEditable || isCompleting}>
                                 {isCompleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Завершить инвентаризацию
+                                Завершить
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
                             <AlertDialogTitle>Завершить инвентаризацию?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Все текущие данные будут сохранены. После завершения инвентаризации вы не сможете вносить изменения.
-                                Вы будете перенаправлены на страницу отчета.
+                                Все текущие данные будут сохранены. После завершения вы не сможете вносить изменения и будете перенаправлены на страницу отчета.
                             </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -380,7 +381,7 @@ export default function SessionPage() {
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
-                </div>
+                </>
             )}
         </div>
       </div>

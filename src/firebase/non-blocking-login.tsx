@@ -9,7 +9,7 @@ import {
   UserCredential,
   User,
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, writeBatch, getDoc, getDocs, collection, query, limit, Timestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, writeBatch, getDoc, getDocs, collection, query, limit, Timestamp, where } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 import type { Product, InventorySession, InventoryLine } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';

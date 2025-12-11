@@ -27,7 +27,6 @@ import {
 import * as React from "react";
 import { useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from 'next/navigation';
 
 type SessionsListProps = {
   sessions: InventorySession[];
@@ -40,7 +39,6 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
   const [isDeleting, setIsDeleting] = React.useState(false);
   const firestore = useFirestore();
   const { toast } = useToast();
-  const router = useRouter();
 
   React.useEffect(() => {
     setLocalSessions(sessions);
@@ -91,7 +89,6 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
         batch.delete(sessionRef);
         await batch.commit();
 
-        // Update local state to remove the deleted session immediately
         setLocalSessions(prev => prev.filter(s => s.id !== sessionToDelete.id));
         toast({ title: "Инвентаризация удалена." });
 

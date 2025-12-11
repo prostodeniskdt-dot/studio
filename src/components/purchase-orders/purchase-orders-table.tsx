@@ -177,7 +177,7 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
   return (
     <>
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <div className="flex items-center justify-between py-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 py-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Заказы на закупку</h1>
             <p className="text-muted-foreground">Управляйте вашими закупками у поставщиков.</p>

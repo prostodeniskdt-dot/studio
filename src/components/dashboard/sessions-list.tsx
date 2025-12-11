@@ -7,8 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn, translateStatus } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MoreVertical, Trash2 } from "lucide-react";
-import { Timestamp, doc, deleteDoc } from "firebase/firestore";
-import { useFirestore } from "@/firebase";
+import { Timestamp } from "firebase/firestore";
 import {
   DropdownMenu,
   DropdownMenuContent,

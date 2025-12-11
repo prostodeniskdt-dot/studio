@@ -70,7 +70,7 @@ export async function runVarianceAnalysis(line: InventoryLine & { product?: Prod
   }
 }
 
-export async function createInventorySession(barId: string, userId: string): Promise<ServerActionResponse<{sessionId: string, isNew: boolean}>> {
+export async function createInventorySession({ barId, userId }: {barId: string, userId: string}): Promise<ServerActionResponse<{sessionId: string, isNew: boolean}>> {
   try {
     const { db } = initializeAdminApp();
     const sessionsCollection = db.collection('bars').doc(barId).collection('inventorySessions');
@@ -105,9 +105,33 @@ export async function createInventorySession(barId: string, userId: string): Pro
   }
 }
 
+export async function deleteInventorySession({ barId, sessionId }: {barId: string, sessionId: string}): Promise<ServerActionResponse> {
+    try {
+        const { db } = initializeAdminApp();
+        const sessionRef = db.collection('bars').doc(barId).collection('inventorySessions').doc(sessionId);
+        
+        // Optionally, delete subcollections like 'lines'
+        const linesSnapshot = await sessionRef.collection('lines').get();
+        if (!linesSnapshot.empty) {
+            const batch = db.batch();
+            linesSnapshot.docs.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            await batch.commit();
+        }
+        
+        await sessionRef.delete();
+        
+        return { success: true };
+    } catch (error) {
+        console.error("Error in deleteInventorySession server action:", error);
+        return { success: false, error: 'Произошла ошибка на сервере при удалении сессии.' };
+    }
+}
+
 
 // Server action to add a staff member
-export async function addStaffMember(barId: string, email: string, role: 'manager' | 'bartender'): Promise<ServerActionResponse> {
+export async function addStaffMember({ barId, email, role }: {barId: string, email: string, role: 'manager' | 'bartender'}): Promise<ServerActionResponse> {
   try {
     const { db } = initializeAdminApp();
     
@@ -145,7 +169,7 @@ export async function addStaffMember(barId: string, email: string, role: 'manage
 }
 
 // Server action to remove a staff member
-export async function removeStaffMember(barId: string, userId: string): Promise<ServerActionResponse> {
+export async function removeStaffMember({ barId, userId }: {barId: string, userId: string}): Promise<ServerActionResponse> {
   try {
     const { db } = initializeAdminApp();
     const memberRef = db.collection('bars').doc(barId).collection('members').doc(userId);
@@ -159,7 +183,7 @@ export async function removeStaffMember(barId: string, userId: string): Promise<
   }
 }
 
-export async function upsertSupplier(barId: string, supplier: Omit<Supplier, 'barId'>): Promise<ServerActionResponse> {
+export async function upsertSupplier({ barId, supplier }: {barId: string, supplier: Supplier}): Promise<ServerActionResponse> {
     try {
         const { db } = initializeAdminApp();
         const supplierRef = db.collection('bars').doc(barId).collection('suppliers').doc(supplier.id);
@@ -176,7 +200,7 @@ export async function upsertSupplier(barId: string, supplier: Omit<Supplier, 'ba
     }
 }
 
-export async function deleteSupplier(barId: string, supplierId: string): Promise<ServerActionResponse> {
+export async function deleteSupplier({ barId, supplierId }: {barId: string, supplierId: string}): Promise<ServerActionResponse> {
     try {
         const { db } = initializeAdminApp();
         const supplierRef = db.collection('bars').doc(barId).collection('suppliers').doc(supplierId);
@@ -190,13 +214,18 @@ export async function deleteSupplier(barId: string, supplierId: string): Promise
     }
 }
 
-export async function upsertPurchaseOrder(barId: string, order: Omit<PurchaseOrder, 'barId' | 'createdAt' | 'createdByUserId'> & { createdByUserId: string }): Promise<ServerActionResponse<{id: string}>> {
+export async function upsertPurchaseOrder(orderData: {barId: string} & Partial<PurchaseOrder>): Promise<ServerActionResponse<{id: string}>> {
     try {
         const { db } = initializeAdminApp();
-        const orderRef = db.collection('bars').doc(barId).collection('purchaseOrders').doc(order.id);
+        const { barId, id, ...rest } = orderData;
+        const orderRef = id 
+            ? db.collection('bars').doc(barId).collection('purchaseOrders').doc(id)
+            : db.collection('bars').doc(barId).collection('purchaseOrders').doc();
+
 
         const dataToSet: any = {
-            ...order,
+            ...rest,
+            id: orderRef.id,
             barId: barId,
             updatedAt: FieldValue.serverTimestamp(),
         };
@@ -208,14 +237,14 @@ export async function upsertPurchaseOrder(barId: string, order: Omit<PurchaseOrd
 
         await orderRef.set(dataToSet, { merge: true });
 
-        return { success: true, data: {id: order.id} };
+        return { success: true, data: {id: orderRef.id} };
     } catch (error) {
         console.error("Error in upsertPurchaseOrder server action:", error);
         return { success: false, error: 'Произошла ошибка на сервере при сохранении заказа.' };
     }
 }
 
-export async function deletePurchaseOrder(barId: string, orderId: string): Promise<ServerActionResponse> {
+export async function deletePurchaseOrder({ barId, orderId }: {barId: string, orderId: string}): Promise<ServerActionResponse> {
     try {
         const { db } = initializeAdminApp();
         const orderRef = db.collection('bars').doc(barId).collection('purchaseOrders').doc(orderId);
@@ -236,7 +265,7 @@ export async function deletePurchaseOrder(barId: string, orderId: string): Promi
     }
 }
 
-export async function addPurchaseOrderLine(barId: string, orderId: string, product: Product): Promise<ServerActionResponse<{id: string}>> {
+export async function addPurchaseOrderLine({ barId, orderId, product }: {barId: string, orderId: string, product: Product}): Promise<ServerActionResponse<{id: string}>> {
     try {
         const { db } = initializeAdminApp();
         const linesCollection = db.collection('bars').doc(barId).collection('purchaseOrders').doc(orderId).collection('lines');
@@ -265,7 +294,7 @@ export async function addPurchaseOrderLine(barId: string, orderId: string, produ
     }
 }
 
-export async function updatePurchaseOrderLines(barId: string, orderId: string, lines: PurchaseOrderLine[]): Promise<ServerActionResponse> {
+export async function updatePurchaseOrderLines({ barId, orderId, lines }: {barId: string, orderId: string, lines: PurchaseOrderLine[]}): Promise<ServerActionResponse> {
     try {
         const { db } = initializeAdminApp();
         const batch = db.batch();
@@ -288,7 +317,7 @@ export async function updatePurchaseOrderLines(barId: string, orderId: string, l
     }
 }
 
-export async function deletePurchaseOrderLine(barId: string, orderId: string, lineId: string): Promise<ServerActionResponse> {
+export async function deletePurchaseOrderLine({ barId, orderId, lineId }: {barId: string, orderId: string, lineId: string}): Promise<ServerActionResponse> {
     try {
         const { db } = initializeAdminApp();
         const lineRef = db.collection('bars').doc(barId).collection('purchaseOrders').doc(orderId).collection('lines').doc(lineId);
@@ -301,7 +330,7 @@ export async function deletePurchaseOrderLine(barId: string, orderId: string, li
 }
 
 
-export async function saveInventoryLines(barId: string, sessionId: string, lines: InventoryLine[]): Promise<ServerActionResponse> {
+export async function saveInventoryLines({ barId, sessionId, lines }: {barId: string, sessionId: string, lines: InventoryLine[]}): Promise<ServerActionResponse> {
     try {
         const { db } = initializeAdminApp();
         const batch = db.batch();
@@ -310,6 +339,9 @@ export async function saveInventoryLines(barId: string, sessionId: string, lines
         
         // Fetch all necessary products in one go
         const productIds = lines.map(line => line.productId);
+        if (productIds.length === 0) {
+            return { success: true }; // No lines to save
+        }
         const productDocs = await db.getAll(...productIds.map(id => productsCollection.doc(id)));
         const productsMap = new Map(productDocs.map(doc => [doc.id, doc.data() as Product]));
 
@@ -336,7 +368,7 @@ export async function saveInventoryLines(barId: string, sessionId: string, lines
     }
 }
 
-export async function completeInventorySession(barId: string, sessionId: string): Promise<ServerActionResponse> {
+export async function completeInventorySession({ barId, sessionId }: {barId: string, sessionId: string}): Promise<ServerActionResponse> {
     try {
         const { db } = initializeAdminApp();
         const sessionRef = db.collection('bars').doc(barId).collection('inventorySessions').doc(sessionId);
@@ -353,7 +385,7 @@ export async function completeInventorySession(barId: string, sessionId: string)
     }
 }
 
-export async function addProductToSession(barId: string, sessionId: string, productId: string): Promise<ServerActionResponse<{id: string}>> {
+export async function addProductToSession({ barId, sessionId, productId }: {barId: string, sessionId: string, productId: string}): Promise<ServerActionResponse<{id: string}>> {
     try {
         const { db } = initializeAdminApp();
         const linesCollection = db.collection('bars').doc(barId).collection('inventorySessions').doc(sessionId).collection('lines');
@@ -415,7 +447,7 @@ export async function upsertProduct(productData: Partial<Product>): Promise<Serv
   }
 }
 
-export async function archiveProduct(productId: string, archive: boolean): Promise<ServerActionResponse> {
+export async function archiveProduct({ productId, archive }: { productId: string, archive: boolean }): Promise<ServerActionResponse> {
     try {
         const { db } = initializeAdminApp();
         const productRef = db.collection('products').doc(productId);
@@ -427,4 +459,71 @@ export async function archiveProduct(productId: string, archive: boolean): Promi
     }
 }
 
-    
+
+export async function createPurchaseOrderFromReport({ barId, userId, lines, products }: {barId: string, userId: string, lines: InventoryLine[], products: Product[]}): Promise<ServerActionResponse<{orderIds: string[]}>> {
+    try {
+        const { db } = initializeAdminApp();
+        const ordersToCreate = new Map<string, { product: Product, quantity: number }[]>();
+
+        // Group products by supplier
+        for (const line of lines) {
+            const product = products.find(p => p.id === line.productId);
+            if (product && product.reorderPointMl !== undefined && product.reorderQuantity !== undefined && product.defaultSupplierId) {
+                const calculated = calculateLineFields(line, product);
+                if (calculated.endStock < product.reorderPointMl) {
+                    if (!ordersToCreate.has(product.defaultSupplierId)) {
+                        ordersToCreate.set(product.defaultSupplierId, []);
+                    }
+                    ordersToCreate.get(product.defaultSupplierId)?.push({ product, quantity: product.reorderQuantity });
+                }
+            }
+        }
+        
+        if (ordersToCreate.size === 0) {
+            return { success: true, data: { orderIds: [] } };
+        }
+
+        const batch = db.batch();
+        const orderIds: string[] = [];
+        const purchaseOrdersCol = db.collection('bars').doc(barId).collection('purchaseOrders');
+
+        for (const [supplierId, items] of ordersToCreate.entries()) {
+            const orderRef = purchaseOrdersCol.doc();
+            orderIds.push(orderRef.id);
+
+            const newOrder: Omit<PurchaseOrder, 'id' | 'createdAt'> = {
+                barId,
+                supplierId,
+                status: 'draft',
+                orderDate: new Date() as any, // Will be converted by Timestamp
+                createdByUserId: userId,
+            };
+            batch.set(orderRef, {
+                ...newOrder,
+                id: orderRef.id,
+                createdAt: FieldValue.serverTimestamp(),
+                orderDate: FieldValue.serverTimestamp(), // Use server time for consistency
+            });
+
+            const linesCol = orderRef.collection('lines');
+            for (const { product, quantity } of items) {
+                const lineRef = linesCol.doc();
+                const newLine: Omit<PurchaseOrderLine, 'id'> = {
+                    purchaseOrderId: orderRef.id,
+                    productId: product.id,
+                    quantity: quantity,
+                    costPerItem: product.costPerBottle,
+                    receivedQuantity: 0,
+                };
+                batch.set(lineRef, {...newLine, id: lineRef.id});
+            }
+        }
+        
+        await batch.commit();
+
+        return { success: true, data: { orderIds } };
+    } catch (error) {
+        console.error("Error in createPurchaseOrderFromReport server action:", error);
+        return { success: false, error: 'Произошла ошибка на сервере при создании заказа на закупку.' };
+    }
+}

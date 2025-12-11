@@ -167,7 +167,7 @@ export default function SessionReportPage() {
 
   if (session.status !== 'completed') {
     return (
-        <div className="container mx-auto flex items-center justify-center h-full pt-20">
+        <div className="flex items-center justify-center h-full pt-20">
             <Alert className="max-w-md">
                 <BarChart3 className="h-4 w-4" />
                 <AlertTitle>Отчет недоступен</AlertTitle>

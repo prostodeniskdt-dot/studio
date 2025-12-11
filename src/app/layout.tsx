@@ -17,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" className="h-full dark">
+    <html lang="ru" className="h-full">
       <body className={`${inter.variable} font-sans antialiased h-full bg-background`}>
         <FirebaseClientProvider>
           {children}

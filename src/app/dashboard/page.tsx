@@ -22,7 +22,7 @@ export default function DashboardPage() {
   const barId = user ? `bar_${user.uid}` : null; 
 
   const sessionsQuery = useMemoFirebase(() => 
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions'), where('barId', '==', barId), where('status', 'in', ['in_progress', 'draft'])) : null,
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions'), where('barId', '==', barId)) : null,
     [firestore, barId]
   );
   
@@ -32,6 +32,7 @@ export default function DashboardPage() {
   const activeSessions = React.useMemo(() => {
     if (!sessions) return [];
     return sessions
+      .filter(s => s.status === 'in_progress' || s.status === 'draft')
       .sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
   }, [sessions]);
 

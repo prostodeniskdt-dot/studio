@@ -1,8 +1,8 @@
 import * as admin from 'firebase-admin';
+import { firebaseConfig } from './config';
 
 /**
  * Ensures the Firebase Admin app is initialized, but only once.
- * Subsequent calls will return the existing initialized instances.
  * This is the standard pattern for Next.js server-side environments.
  */
 export function initializeAdminApp() {
@@ -15,9 +15,12 @@ export function initializeAdminApp() {
     };
   }
 
-  // Initialize the app. In a managed environment like App Hosting,
-  // initializeApp() automatically discovers credentials.
-  const app = admin.initializeApp();
+  // In a managed environment like App Hosting, initializeApp() with applicationDefault
+  // automatically discovers credentials.
+  const app = admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+    projectId: firebaseConfig.projectId,
+  });
 
   return {
     app,

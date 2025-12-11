@@ -1,9 +1,8 @@
 'use server';
 
 import type { InventoryLine, Product, Supplier, UserRole, PurchaseOrder, PurchaseOrderLine } from './types';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 import { initializeAdminApp } from '@/firebase/admin';
-import { calculateLineFields } from './calculations';
 
 // This defines a standard response format for all server actions.
 export type ServerActionResponse<T = any> = {
@@ -35,7 +34,7 @@ export async function createInventorySession({ barId, userId }: {barId: string, 
         name: `Инвентаризация от ${new Date().toLocaleDateString('ru-RU')}`,
         status: 'in_progress' as const,
         createdByUserId: userId,
-        createdAt: FieldValue.serverTimestamp(),
+        createdAt: getFirestore().FieldValue.serverTimestamp(),
         closedAt: null,
     };
     
@@ -172,12 +171,12 @@ export async function upsertPurchaseOrder(orderData: {barId: string} & Partial<P
             ...rest,
             id: orderRef.id,
             barId: barId,
-            updatedAt: FieldValue.serverTimestamp(),
+            updatedAt: getFirestore().FieldValue.serverTimestamp(),
         };
 
         const docSnap = await orderRef.get();
         if (!docSnap.exists) {
-            dataToSet.createdAt = FieldValue.serverTimestamp();
+            dataToSet.createdAt = getFirestore().FieldValue.serverTimestamp();
         }
 
         await orderRef.set(dataToSet, { merge: true });
@@ -294,13 +293,11 @@ export async function saveInventoryLines({ barId, sessionId, lines }: {barId: st
             const product = productsMap.get(line.productId);
             if (product) {
                 const lineRef = linesCollection.doc(line.id);
-                const calculatedFields = calculateLineFields(line, product);
                 batch.update(lineRef, {
                     startStock: line.startStock,
                     purchases: line.purchases,
                     sales: line.sales,
                     endStock: line.endStock,
-                    ...calculatedFields
                 });
             }
         }
@@ -320,7 +317,7 @@ export async function completeInventorySession({ barId, sessionId }: {barId: str
         
         await sessionRef.update({
             status: 'completed',
-            closedAt: FieldValue.serverTimestamp(),
+            closedAt: getFirestore().FieldValue.serverTimestamp(),
         });
         
         return { success: true };
@@ -349,7 +346,10 @@ export async function addProductToSession({ barId, sessionId, productId }: {barI
             purchases: 0,
             sales: 0,
             endStock: 0,
-            ...calculateLineFields({ startStock: 0, purchases: 0, sales: 0, endStock: 0 } as InventoryLine, product),
+            theoreticalEndStock: 0,
+            differenceVolume: 0,
+            differenceMoney: 0,
+            differencePercent: 0,
         };
 
         await newLineRef.set({ ...line, id: newLineRef.id });
@@ -372,7 +372,7 @@ export async function upsertProduct(productData: Partial<Product>): Promise<Serv
     if (productId) {
       // Update
       const productRef = productsCollection.doc(productId);
-      await productRef.set({ ...productData, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      await productRef.set({ ...productData, updatedAt: getFirestore().FieldValue.serverTimestamp() }, { merge: true });
       return { success: true, data: {id: productId }};
     } else {
       // Create
@@ -380,8 +380,8 @@ export async function upsertProduct(productData: Partial<Product>): Promise<Serv
       const newProduct = {
         ...productData,
         id: newProductRef.id,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
+        createdAt: getFirestore().FieldValue.serverTimestamp(),
+        updatedAt: getFirestore().FieldValue.serverTimestamp(),
       };
       await newProductRef.set(newProduct);
       return { success: true, data: { id: newProductRef.id } };
@@ -414,8 +414,7 @@ export async function createPurchaseOrderFromReport({ barId, userId, lines, prod
         for (const line of lines) {
             const product = products.find(p => p.id === line.productId);
             if (product && product.reorderPointMl !== undefined && product.reorderQuantity !== undefined && product.defaultSupplierId) {
-                const calculated = calculateLineFields(line, product);
-                if (calculated.endStock < product.reorderPointMl) {
+                if (line.endStock < product.reorderPointMl) {
                     if (!ordersToCreate.has(product.defaultSupplierId)) {
                         ordersToCreate.set(product.defaultSupplierId, []);
                     }
@@ -446,8 +445,8 @@ export async function createPurchaseOrderFromReport({ barId, userId, lines, prod
             batch.set(orderRef, {
                 ...newOrder,
                 id: orderRef.id,
-                createdAt: FieldValue.serverTimestamp(),
-                orderDate: FieldValue.serverTimestamp(), // Use server time for consistency
+                createdAt: getFirestore().FieldValue.serverTimestamp(),
+                orderDate: getFirestore().FieldValue.serverTimestamp(), // Use server time for consistency
             });
 
             const linesCol = orderRef.collection('lines');

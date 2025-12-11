@@ -5,7 +5,8 @@ import type { InventoryLine, Product } from '@/lib/types';
  */
 export function calculateTheoreticalEndStock(line: InventoryLine, product: Product): number {
   if (!product) return 0;
-  return line.startStock + line.purchases - (line.sales * product.portionVolumeMl);
+  const salesVolume = line.sales * (product.portionVolumeMl || 0);
+  return line.startStock + line.purchases - salesVolume;
 }
 
 /**
@@ -20,8 +21,8 @@ export function calculateDifferenceVolume(endStock: number, theoreticalEndStock:
  * Calculates the monetary value of the variance.
  */
 export function calculateDifferenceMoney(differenceVolume: number, product: Product): number {
-  if (!product || product.bottleVolumeMl === 0) return 0;
-  const costPerMl = product.costPerBottle / product.bottleVolumeMl;
+  if (!product || !product.bottleVolumeMl || product.bottleVolumeMl === 0) return 0;
+  const costPerMl = (product.costPerBottle || 0) / product.bottleVolumeMl;
   return differenceVolume * costPerMl;
 }
 
@@ -30,18 +31,15 @@ export function calculateDifferenceMoney(differenceVolume: number, product: Prod
  */
 export function calculateDifferencePercent(differenceVolume: number, line: InventoryLine, product: Product): number {
   if (!product) return 0;
-  const volumeSold = line.sales * product.portionVolumeMl;
+  const volumeSold = line.sales * (product.portionVolumeMl || 0);
   if (volumeSold === 0) {
       if (differenceVolume !== 0) {
-          // Handle case where there are no sales, but there is a variance
-          // (e.g., from starting stock vs. ending stock)
-          // We can compare it to the starting stock
           if (line.startStock > 0) {
               return (differenceVolume / line.startStock) * 100;
           }
-          return differenceVolume > 0 ? 100 : -100; // Or some other indicator of total loss/gain
+          return differenceVolume > 0 ? 100 : -100;
       }
-      return 0; // No sales and no difference
+      return 0;
   }
   return (differenceVolume / volumeSold) * 100;
 }
@@ -49,11 +47,19 @@ export function calculateDifferencePercent(differenceVolume: number, line: Inven
 /**
  * A wrapper function to perform all calculations for a given inventory line and returns the calculated fields.
  */
-export function calculateLineFields(line: InventoryLine, product: Product) {
-  const theoreticalEndStock = calculateTheoreticalEndStock(line, product);
-  const differenceVolume = calculateDifferenceVolume(line.endStock, theoreticalEndStock);
+export function calculateLineFields(line: Partial<InventoryLine>, product: Product) {
+  const safeLine = {
+    startStock: 0,
+    purchases: 0,
+    sales: 0,
+    endStock: 0,
+    ...line,
+  } as InventoryLine;
+
+  const theoreticalEndStock = calculateTheoreticalEndStock(safeLine, product);
+  const differenceVolume = calculateDifferenceVolume(safeLine.endStock, theoreticalEndStock);
   const differenceMoney = calculateDifferenceMoney(differenceVolume, product);
-  const differencePercent = calculateDifferencePercent(differenceVolume, line, product);
+  const differencePercent = calculateDifferencePercent(differenceVolume, safeLine, product);
 
   return {
     theoreticalEndStock,

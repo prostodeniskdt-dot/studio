@@ -53,10 +53,20 @@ export default function UnifiedCalculatorPage() {
 
   const productOptions = React.useMemo<GroupedComboboxOption[]>(() => {
     if (filteredProducts.length === 0) return [];
-    return [{
-      label: 'Продукты',
-      options: filteredProducts.map(p => ({ value: p.id, label: p.name }))
-    }];
+    const groups: Record<string, { value: string; label: string }[]> = {};
+    
+    filteredProducts.forEach(p => {
+      const category = translateCategory(p.category);
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push({ value: p.id, label: p.name });
+    });
+
+    return Object.entries(groups)
+      .map(([label, options]) => ({ label, options }))
+      .sort((a,b) => a.label.localeCompare(b.label));
+
   }, [filteredProducts]);
 
   const subCategoryOptions = React.useMemo(() => {
@@ -261,7 +271,7 @@ export default function UnifiedCalculatorPage() {
         <CardContent className="space-y-6">
           <div className="space-y-4">
             <Label>Фильтр продуктов</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
                <Select onValueChange={(val) => handleCategoryChange(val as ProductCategory)} value={selectedCategory}>
                   <SelectTrigger>
                     <SelectValue placeholder="1. Выберите категорию" />
@@ -274,12 +284,13 @@ export default function UnifiedCalculatorPage() {
                 </Select>
                 <Select 
                     onValueChange={handleSubCategoryChange} 
-                    value={selectedSubCategory} 
+                    value={selectedSubCategory ?? '_all_'} 
                     disabled={!subCategoryOptions || subCategoryOptions.length === 0}>
                   <SelectTrigger>
                     <SelectValue placeholder="2. Выберите подкатегорию" />
                   </SelectTrigger>
                   <SelectContent>
+                     <SelectItem value="_all_">Все подкатегории</SelectItem>
                     {subCategoryOptions?.map(subCat => (
                         <SelectItem key={subCat} value={subCat}>{translateSubCategory(subCat)}</SelectItem>
                     ))}
@@ -370,5 +381,3 @@ export default function UnifiedCalculatorPage() {
     </div>
   );
 }
-
-    

@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { useParams, notFound, useRouter } from "next/navigation";
-import { ReportView } from "@/components/reports/report-view";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -11,6 +11,11 @@ import type { InventorySession, Product, InventoryLine, PurchaseOrder } from '@/
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, writeBatch, Timestamp, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+
+const ReportView = dynamic(() => import('@/components/reports/report-view').then(mod => mod.ReportView), {
+    ssr: false,
+    loading: () => <div className="flex items-center justify-center h-full pt-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+});
 
 
 export default function SessionReportPage() {

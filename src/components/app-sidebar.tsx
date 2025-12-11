@@ -59,19 +59,7 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              tooltip={{ children: 'Настройки' }}
-            >
-              <Link href="#">
-                <Settings />
-                <span>Настройки</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {/* Settings button is removed for now */}
       </SidebarFooter>
     </>
   );

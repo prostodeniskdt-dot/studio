@@ -1,11 +1,16 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { InventorySession, InventoryLine } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
-import { AnalyticsView } from '@/components/analytics/analytics-view';
+
+const AnalyticsView = dynamic(() => import('@/components/analytics/analytics-view').then(mod => mod.AnalyticsView), {
+  ssr: false,
+  loading: () => <div className="flex justify-center items-center h-full pt-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+});
 
 export type SessionWithLines = InventorySession & { lines: InventoryLine[] };
 

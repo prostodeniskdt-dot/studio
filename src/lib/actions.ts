@@ -112,15 +112,15 @@ export async function deleteInventorySession({ barId, sessionId }: {barId: strin
         
         // Optionally, delete subcollections like 'lines'
         const linesSnapshot = await sessionRef.collection('lines').get();
+        const batch = db.batch();
         if (!linesSnapshot.empty) {
-            const batch = db.batch();
             linesSnapshot.docs.forEach(doc => {
                 batch.delete(doc.ref);
             });
-            await batch.commit();
         }
         
-        await sessionRef.delete();
+        batch.delete(sessionRef);
+        await batch.commit();
         
         return { success: true };
     } catch (error) {

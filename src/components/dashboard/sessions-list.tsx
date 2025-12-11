@@ -35,11 +35,16 @@ type SessionsListProps = {
 };
 
 export function SessionsList({ sessions, barId }: SessionsListProps) {
+  const [localSessions, setLocalSessions] = React.useState(sessions);
   const [sessionToDelete, setSessionToDelete] = React.useState<InventorySession | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
+
+  React.useEffect(() => {
+    setLocalSessions(sessions);
+  }, [sessions]);
 
 
   const getStatusVariant = (status: InventorySession['status']) => {
@@ -78,23 +83,16 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     const linesCollectionRef = collection(sessionRef, 'lines');
     
     try {
-        // First, get all the documents in the 'lines' subcollection.
         const linesSnapshot = await getDocs(linesCollectionRef);
-        
-        // Create a new batch
         const batch = writeBatch(firestore);
-
-        // Add all 'lines' documents to the batch for deletion.
         linesSnapshot.docs.forEach(doc => {
             batch.delete(doc.ref);
         });
-        
-        // Add the parent session document to the batch for deletion.
         batch.delete(sessionRef);
-        
-        // Commit the batch to delete all documents atomically.
         await batch.commit();
 
+        // Update local state to remove the deleted session immediately
+        setLocalSessions(prev => prev.filter(s => s.id !== sessionToDelete.id));
         toast({ title: "Инвентаризация удалена." });
 
     } catch (serverError: any) {
@@ -115,11 +113,11 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
   };
 
 
-  if (!sessions) {
+  if (!localSessions) {
     return <div className="text-center text-muted-foreground py-10">Инвентаризаций пока нет.</div>;
   }
   
-  if (sessions.length === 0) {
+  if (localSessions.length === 0) {
     return <div className="text-center text-muted-foreground py-10">Инвентаризаций пока нет. Начните первую!</div>;
   }
 
@@ -127,7 +125,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
   return (
     <>
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {sessions.map((session) => (
+      {localSessions.map((session) => (
         <Card key={session.id} className="flex flex-col">
           <CardHeader>
             <div className="flex justify-between items-start">

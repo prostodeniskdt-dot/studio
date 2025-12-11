@@ -44,7 +44,7 @@ export default function AnalyticsPage() {
     const fetchLinesForSessions = async () => {
       try {
         const linesPromises = sessions.map(session => {
-            const linesQuery = collection(firestore, 'bars', barId, 'inventorySessions', session.id, 'lines');
+            const linesQuery = query(collection(firestore, 'bars', barId, 'inventorySessions', session.id, 'lines'));
             return getDocs(linesQuery).then(snapshot => ({
                 sessionId: session.id,
                 lines: snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as InventoryLine)
@@ -91,5 +91,3 @@ export default function AnalyticsPage() {
     </div>
   );
 }
-
-    

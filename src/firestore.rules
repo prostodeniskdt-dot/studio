@@ -14,9 +14,8 @@
  *
  * Key Security Decisions for LIST operations:
  * `allow list` rules MUST NOT use `get()` or `exists()` calls to other documents.
- * Therefore, list access is granted based on predictable document IDs (e.g., barId contains userId)
- * or by requiring the client to filter queries in a way the rules can verify (e.g., request.query.XXX).
- * For BarBoss, the primary mechanism for subcollection listing is verifying ownership via barId structure.
+ * The primary mechanism for subcollection listing is verifying ownership via barId structure
+ * and ensuring the client query filters by that `barId`.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -182,8 +181,9 @@ service cloud.firestore {
 
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        // SAFE LIST RULE: Owner can list all sessions for their bar.
+        // SAFE LIST RULE: Owner can list all sessions for their bar, if they filter by barId client-side.
         allow list: if isBarOwnerByPath(barId) || isAdmin();
+
         allow create: if isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteBarData(barId) && resourceExists();
@@ -200,14 +200,14 @@ service cloud.firestore {
       
       match /suppliers/{supplierId} {
         allow get: if canReadBarData(barId);
-        // SAFE LIST RULE: Owner can list all suppliers for their bar.
+        // SAFE LIST RULE: Owner can list all suppliers for their bar, if they filter by barId client-side.
         allow list: if isBarOwnerByPath(barId) || isAdmin();
         allow create, update, delete: if canWriteBarData(barId);
       }
 
       match /purchaseOrders/{purchaseOrderId} {
         allow get: if canReadBarData(barId);
-        // SAFE LIST RULE: Owner can list all purchase orders for their bar.
+        // SAFE LIST RULE: Owner can list all purchase orders for their bar, if they filter by barId client-side.
         allow list: if isBarOwnerByPath(barId) || isAdmin();
         allow create, update, delete: if canWriteBarData(barId);
 

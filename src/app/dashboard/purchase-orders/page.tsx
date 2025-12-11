@@ -18,13 +18,13 @@ export default function PurchaseOrdersPage() {
   const barId = user ? `bar_${user.uid}` : null;
   
   const ordersQuery = useMemoFirebase(() =>
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'purchaseOrders')) : null,
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'purchaseOrders'), where('barId', '==', barId)) : null,
     [firestore, barId]
   );
   const { data: orders, isLoading: isLoadingOrders } = useCollection<PurchaseOrder>(ordersQuery);
 
   const suppliersQuery = useMemoFirebase(() =>
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'suppliers')) : null,
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'suppliers'), where('barId', '==', barId)) : null,
     [firestore, barId]
   );
   const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
@@ -109,3 +109,5 @@ export default function PurchaseOrdersPage() {
     </div>
   );
 }
+
+    

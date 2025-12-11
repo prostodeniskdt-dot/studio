@@ -34,16 +34,10 @@ type SessionsListProps = {
 };
 
 export function SessionsList({ sessions, barId }: SessionsListProps) {
-  const [localSessions, setLocalSessions] = React.useState(sessions);
   const [sessionToDelete, setSessionToDelete] = React.useState<InventorySession | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const firestore = useFirestore();
   const { toast } = useToast();
-
-  React.useEffect(() => {
-    setLocalSessions(sessions);
-  }, [sessions]);
-
 
   const getStatusVariant = (status: InventorySession['status']) => {
     switch (status) {
@@ -89,8 +83,9 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
         batch.delete(sessionRef);
         await batch.commit();
 
-        setLocalSessions(prev => prev.filter(s => s.id !== sessionToDelete.id));
         toast({ title: "Инвентаризация удалена." });
+        // The useCollection hook in the parent component will automatically update the sessions prop.
+        // No need to manage local state here.
 
     } catch (serverError: any) {
         if (serverError.code === 'permission-denied') {
@@ -110,11 +105,11 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
   };
 
 
-  if (!localSessions) {
-    return <div className="text-center text-muted-foreground py-10">Инвентаризаций пока нет.</div>;
+  if (!sessions) {
+    return <div className="text-center text-muted-foreground py-10">Загрузка инвентаризаций...</div>;
   }
   
-  if (localSessions.length === 0) {
+  if (sessions.length === 0) {
     return <div className="text-center text-muted-foreground py-10">Инвентаризаций пока нет. Начните первую!</div>;
   }
 
@@ -122,13 +117,13 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
   return (
     <>
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {localSessions.map((session) => (
+      {sessions.map((session) => (
         <Card key={session.id} className="flex flex-col">
           <CardHeader>
             <div className="flex justify-between items-start">
               <CardTitle className="text-lg pr-2">{session.name}</CardTitle>
               <div className="flex items-center gap-2">
-                <Badge variant={getStatusVariant(session.status)} className="capitalize">
+                <Badge variant={getStatusVariant(session.status)} className="capitalize whitespace-nowrap">
                     {translateStatus(session.status)}
                 </Badge>
                 <DropdownMenu>

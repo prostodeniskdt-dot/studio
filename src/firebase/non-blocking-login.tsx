@@ -51,16 +51,13 @@ async function seedInitialData(firestore: Firestore): Promise<void> {
             });
         });
         
-        // This is a non-blocking operation on purpose. We don't want to hold up
-        // the UI for this initial data seeding.
-        batch.commit().catch(serverError => {
-            const permissionError = new FirestorePermissionError({ path: 'products', operation: 'create', requestResourceData: productsToCreate });
-            errorEmitter.emit('permission-error', permissionError);
-        });
+        await batch.commit();
 
     } catch (serverError) {
         const permissionError = new FirestorePermissionError({ path: productsCollectionRef.path, operation: 'list'});
         errorEmitter.emit('permission-error', permissionError);
+        // Re-throw the error to be caught by the caller
+        throw serverError;
     }
 }
 
@@ -70,62 +67,57 @@ async function seedInitialData(firestore: Firestore): Promise<void> {
  * This is a critical setup step for any authenticated user.
  */
 export async function ensureUserAndBarDocuments(firestore: Firestore, user: User): Promise<void> {
-    if (!firestore || !user) return Promise.resolve();
+    if (!firestore || !user) return;
 
     const userRef = doc(firestore, 'users', user.uid);
     const barId = `bar_${user.uid}`;
     const barRef = doc(firestore, 'bars', barId);
 
     try {
-        // Fetch both documents in parallel to check their existence.
         const [userDoc, barDoc] = await Promise.all([getDoc(userRef), getDoc(barRef)]);
         
-        let barExists = barDoc.exists();
-
-        // Only write if one of the documents is missing.
-        if (!userDoc.exists() || !barExists) {
-            const batch = writeBatch(firestore);
-            
-            const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
-            
-            if (!userDoc.exists()) {
-                const newUser = {
-                    id: user.uid,
-                    displayName: displayName,
-                    email: user.email,
-                    role: 'manager',
-                    createdAt: serverTimestamp(),
-                };
-                batch.set(userRef, newUser);
-            }
-
-            if (!barExists) {
-                const newBar = {
-                    id: barId,
-                    name: `Бар ${displayName}`,
-                    location: 'Не указано',
-                    ownerUserId: user.uid,
-                };
-                batch.set(barRef, newBar);
-            }
-            
-            // CRITICAL FIX: Awaiting the commit ensures that these documents
-            // exist before any other part of the app tries to access them.
-            await batch.commit();
+        if (userDoc.exists() && barDoc.exists()) {
+            await seedInitialData(firestore);
+            return; 
         }
 
-        // Now that the bar is guaranteed to exist, seed initial data.
+        const batch = writeBatch(firestore);
+        
+        const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
+        
+        if (!userDoc.exists()) {
+            const newUser = {
+                id: user.uid,
+                displayName: displayName,
+                email: user.email,
+                role: 'manager',
+                createdAt: serverTimestamp(),
+            };
+            batch.set(userRef, newUser);
+        }
+
+        if (!barDoc.exists()) {
+            const newBar = {
+                id: barId,
+                name: `Бар ${displayName}`,
+                location: 'Не указано',
+                ownerUserId: user.uid,
+            };
+            batch.set(barRef, newBar);
+        }
+        
+        await batch.commit();
         await seedInitialData(firestore);
 
-    } catch (serverError) {
-        // This will catch errors from getDoc or batch.commit if there are security rule issues.
+    } catch (serverError: any) {
         const permissionError = new FirestorePermissionError({ 
-            path: userRef.path, // We use userRef.path as a representative path for the error
+            path: userRef.path,
             operation: 'write' 
         });
         errorEmitter.emit('permission-error', permissionError);
-        // We re-throw so the calling UI knows the operation failed.
-        throw serverError;
+        
+        // Re-throw a more user-friendly error to be displayed in the UI
+        throw new Error(serverError.message || `Не удалось создать необходимые документы в базе данных. Возможно, у вас недостаточно прав. Пожалуйста, проверьте правила безопасности Firestore.`);
     }
 }
 

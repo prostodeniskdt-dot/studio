@@ -27,35 +27,44 @@ export default function DashboardLayout({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // If auth state is done loading and there's no user, redirect to login.
-    if (!isUserLoading && !user) {
+    if (isUserLoading) {
+      // Пока проверяется статус аутентификации, ничего не делаем.
+      return;
+    }
+
+    if (!user) {
+      // Если загрузка завершена и пользователя нет, перенаправляем на главную.
       router.replace('/');
       return;
     }
 
-    // If we have a user and firestore instance, ensure their documents exist.
+    // Если есть пользователь и firestore, убеждаемся в наличии документов.
     if (user && firestore) {
-      // Use an async IIFE (Immediately Invoked Function Expression)
-      // to handle the async operation within useEffect.
-      (async () => {
-        try {
-          // CRITICAL FIX: Added `await` here.
-          // This ensures we wait for the documents to be created/verified
-          // before we try to render any pages that depend on them.
-          await ensureUserAndBarDocuments(firestore, user);
-          setIsDataReady(true);
-        } catch (err: any) {
-          console.error("Failed to ensure user/bar documents:", err);
-          setError(err.message || "Не удалось инициализировать данные пользователя.");
-          // We still set data ready to true to show the error message in the UI
-          setIsDataReady(true);
-        }
-      })();
+      let isMounted = true;
+      
+      ensureUserAndBarDocuments(firestore, user)
+        .then(() => {
+          if (isMounted) {
+            setIsDataReady(true);
+          }
+        })
+        .catch((err: any) => {
+          if (isMounted) {
+            console.error("Failed to ensure user/bar documents:", err);
+            setError(err.message || "Не удалось инициализировать данные пользователя.");
+            // Мы все равно устанавливаем data ready, чтобы показать сообщение об ошибке
+            setIsDataReady(true);
+          }
+        });
+
+      return () => {
+        isMounted = false;
+      };
     }
   }, [user, isUserLoading, firestore, router]);
 
 
-  // While loading auth state OR ensuring documents, show a loader.
+  // Пока загружается статус пользователя ИЛИ мы ждем создания документов, показываем загрузчик.
   if (isUserLoading || !isDataReady) {
      return (
       <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background">
@@ -65,16 +74,19 @@ export default function DashboardLayout({
     );
   }
   
+  // Если при инициализации произошла ошибка, показываем ее.
   if (error) {
      return (
-      <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background">
-        <p className="text-destructive">{error}</p>
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background p-4 text-center">
+        <h2 className="text-xl font-semibold text-destructive">Ошибка инициализации</h2>
+        <p className="text-destructive-foreground bg-destructive/10 p-4 rounded-md">{error}</p>
+        <p className="text-muted-foreground">Пожалуйста, попробуйте обновить страницу. Если ошибка повторится, свяжитесь с поддержкой.</p>
       </div>
     );
   }
 
 
-  // Once ready, render the full layout with children.
+  // Как только все готово, рендерим полный layout с дочерними элементами.
   return (
     <SidebarProvider>
       <div className="flex min-h-screen">

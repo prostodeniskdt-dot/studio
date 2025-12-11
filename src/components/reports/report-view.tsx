@@ -7,10 +7,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn, formatCurrency, translateCategory, translateSubCategory } from '@/lib/utils';
-import { Download, FileType, FileJson, Loader2, ShoppingCart } from 'lucide-react';
+import { Download, FileType, FileJson, Loader2, ShoppingCart, BarChart, PieChart as PieChartIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Timestamp } from 'firebase/firestore';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Pie, PieChart, Cell } from 'recharts';
+import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Pie, PieChart as RechartsPieChart, Cell } from 'recharts';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,7 +66,8 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
   const totals = React.useMemo(() => {
     return allCalculatedLines.reduce(
       (acc, line) => {
-        acc.totalCost += (line.sales * (line.product?.costPerBottle ?? 0) / (line.product?.bottleVolumeMl ?? 1)) * (line.product?.portionVolumeMl ?? 0);
+        const costPerPortion = ((line.product?.costPerBottle ?? 0) / (line.product?.bottleVolumeMl ?? 1)) * (line.product?.portionVolumeMl ?? 0);
+        acc.totalCost += line.sales * costPerPortion;
         acc.totalRevenue += line.sales * (line.product?.sellingPricePerPortion ?? 0);
         acc.totalVariance += line.differenceMoney;
         if (line.differenceMoney < 0) acc.totalLoss += line.differenceMoney;
@@ -80,9 +81,9 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
   const topLosses = allCalculatedLines.filter(l => l.differenceMoney < 0).sort((a, b) => a.differenceMoney - b.differenceMoney).slice(0, 5);
 
   const varianceCompositionData = [
-      { name: 'Потери', value: Math.abs(totals.totalLoss), fill: 'hsl(var(--destructive))' },
       { name: 'Излишки', value: totals.totalSurplus, fill: 'hsl(var(--chart-2))' },
-  ];
+      { name: 'Потери', value: Math.abs(totals.totalLoss), fill: 'hsl(var(--destructive))' },
+  ].filter(item => item.value > 0);
   
   const handleExportCSV = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
@@ -196,30 +197,32 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
 
         <div className="grid md:grid-cols-2 gap-6 mb-6">
             <Card>
-                <CardHeader>
+                <CardHeader className='flex-row items-center justify-between'>
                     <CardTitle>Топ 5 потерь</CardTitle>
+                    <BarChart className='h-5 w-5 text-muted-foreground'/>
                 </CardHeader>
                 <CardContent>
                     {topLosses.length > 0 ? (
                         <ResponsiveContainer width="100%" height={250}>
-                            <BarChart data={topLosses.map(l => ({ ...l, loss: -l.differenceMoney }))} layout="vertical" margin={{ left: 20, right: 20 }}>
+                            <RechartsBarChart data={topLosses.map(l => ({ ...l, loss: -l.differenceMoney }))} layout="vertical" margin={{ left: 20, right: 20 }}>
                                 <XAxis type="number" hide />
                                 <YAxis dataKey="product.name" type="category" interval={0} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} width={120} axisLine={false} tickLine={false}/>
                                 <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} formatter={(value: number) => [formatCurrency(value), 'Потеря']} />
                                 <Bar dataKey="loss" fill="hsl(var(--destructive))" radius={[0, 4, 4, 0]} />
-                            </BarChart>
+                            </RechartsBarChart>
                         </ResponsiveContainer>
                     ) : <p className="text-muted-foreground text-center py-10">Значительных потерь не зафиксировано.</p>}
                 </CardContent>
             </Card>
             <Card>
-                <CardHeader>
+                <CardHeader  className='flex-row items-center justify-between'>
                     <CardTitle>Состав отклонений</CardTitle>
+                    <PieChartIcon className='h-5 w-5 text-muted-foreground'/>
                 </CardHeader>
                 <CardContent>
-                    {totals.totalLoss !== 0 || totals.totalSurplus !== 0 ? (
+                    {varianceCompositionData.length > 0 ? (
                         <ResponsiveContainer width="100%" height={250}>
-                             <PieChart>
+                             <RechartsPieChart>
                                 <Pie data={varianceCompositionData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, value, index }) => {
                                     const RADIAN = Math.PI / 180;
                                     const radius = innerRadius + (outerRadius - innerRadius) * 1.3;
@@ -234,7 +237,7 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
                                     {varianceCompositionData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
                                 </Pie>
                                 <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                            </PieChart>
+                            </RechartsPieChart>
                         </ResponsiveContainer>
                     ) : <p className="text-muted-foreground text-center py-10">Отклонений нет.</p>}
                 </CardContent>

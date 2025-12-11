@@ -15,11 +15,10 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import type { Supplier } from '@/lib/types';
-import { upsertSupplier } from '@/lib/actions';
-import { doc, collection } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { doc, collection, setDoc } from 'firebase/firestore';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Loader2 } from 'lucide-react';
-import { useServerAction } from '@/hooks/use-server-action';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
@@ -38,12 +37,9 @@ interface SupplierFormProps {
 
 export function SupplierForm({ barId, supplier, onFormSubmit }: SupplierFormProps) {
   const firestore = useFirestore();
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = React.useState(false);
 
-  const { execute: runUpsertSupplier, isLoading: isSaving } = useServerAction(upsertSupplier, {
-      onSuccess: onFormSubmit,
-      successMessage: supplier ? 'Поставщик обновлен' : 'Поставщик создан',
-      errorMessage: 'Не удалось сохранить поставщика.'
-  });
 
   const form = useForm<SupplierFormValues>({
     resolver: zodResolver(formSchema),
@@ -62,16 +58,24 @@ export function SupplierForm({ barId, supplier, onFormSubmit }: SupplierFormProp
 
   async function onSubmit(data: SupplierFormValues) {
     if (!firestore) return;
+    setIsSaving(true);
     
-    const supplierId = supplier?.id || doc(collection(firestore, 'bars', barId, 'suppliers')).id;
-    
-    const newSupplierData: Supplier = {
-      id: supplierId,
-      barId, // This will be overwritten by the server action but good to have
-      ...data,
-    };
+    try {
+        const supplierRef = supplier ? doc(firestore, 'bars', barId, 'suppliers', supplier.id) : doc(collection(firestore, 'bars', barId, 'suppliers'));
+        const supplierData = {
+          ...data,
+          id: supplierRef.id,
+          barId: barId,
+        };
 
-    await runUpsertSupplier({barId, supplier: newSupplierData});
+        await setDoc(supplierRef, supplierData, { merge: true });
+        toast({ title: supplier ? 'Поставщик обновлен' : 'Поставщик создан' });
+        onFormSubmit();
+    } catch(error) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/suppliers`, operation: 'write' }));
+    } finally {
+        setIsSaving(false);
+    }
   }
 
   return (
@@ -137,5 +141,3 @@ export function SupplierForm({ barId, supplier, onFormSubmit }: SupplierFormProp
     </Form>
   );
 }
-
-    

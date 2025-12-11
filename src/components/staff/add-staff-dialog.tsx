@@ -23,9 +23,10 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
-import { addStaffMember } from '@/lib/actions';
 import { translateRole } from '@/lib/utils';
-import { useServerAction } from '@/hooks/use-server-action';
+import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { collection, getDocs, query, where, doc, setDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 const addStaffSchema = z.object({
   email: z.string().email('Неверный формат email.'),
@@ -55,18 +56,39 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
     },
   });
 
-  const { execute: runAddStaff, isLoading: isSubmitting } = useServerAction(addStaffMember, {
-    onSuccess: () => {
-      onOpenChange(false);
-      reset();
-    },
-    successMessage: "Сотрудник добавлен",
-    errorMessage: "Ошибка при добавлении сотрудника"
-  });
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
 
   const onSubmit = async (data: AddStaffFormValues) => {
-    await runAddStaff({ barId, email: data.email, role: data.role });
+    if (!firestore) return;
+    setIsSubmitting(true);
+    try {
+        const usersRef = collection(firestore, 'users');
+        const q = query(usersRef, where('email', '==', data.email), limit(1));
+        const userSnapshot = await getDocs(q);
+
+        if (userSnapshot.empty) {
+            toast({ variant: 'destructive', title: "Пользователь не найден", description: "Пользователь с таким email не зарегистрирован." });
+            return;
+        }
+
+        const userDoc = userSnapshot.docs[0];
+        const userId = userDoc.id;
+        const memberRef = doc(firestore, 'bars', barId, 'members', userId);
+        
+        await setDoc(memberRef, { userId, role: data.role });
+
+        toast({ title: "Сотрудник добавлен" });
+        onOpenChange(false);
+        reset();
+    } catch(error) {
+        toast({ variant: 'destructive', title: "Ошибка", description: "Не удалось добавить сотрудника." });
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/members`, operation: 'create' }));
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   return (
@@ -120,5 +142,3 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
     </Dialog>
   );
 }
-
-    

@@ -9,8 +9,8 @@ import { FileText, Loader2, Save, XCircle, Download, Upload, PlusCircle } from "
 import Link from "next/link";
 import { translateStatus } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine } from '@/lib/types';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { doc, collection, query, setDoc, writeBatch, serverTimestamp, updateDoc } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,9 +38,8 @@ import {
 } from "@/components/ui/dialog";
 import { Combobox } from '@/components/ui/combobox';
 import { translateCategory } from '@/lib/utils';
-import { addProductToSession, saveInventoryLines, completeInventorySession } from '@/lib/actions';
-import { useServerAction } from '@/hooks/use-server-action';
 import { useToast } from '@/hooks/use-toast';
+import { calculateLineFields } from '@/lib/calculations';
 
 export default function SessionPage() {
   const params = useParams();
@@ -74,27 +73,9 @@ export default function SessionPage() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isAddProductOpen, setIsAddProductOpen] = React.useState(false);
 
-  const { execute: runAddProductToSession } = useServerAction(addProductToSession, {
-    onSuccess: (data) => {
-      setIsAddProductOpen(false);
-      const product = allProducts?.find(p => p.id === (data as any)?.productId);
-      toast({ title: "Продукт добавлен", description: `"${product?.name}" добавлен в инвентаризацию.` });
-    }
-  });
-
-  const { execute: runSaveLines, isLoading: isSaving } = useServerAction(saveInventoryLines, {
-    successMessage: "Изменения сохранены",
-  });
-  
-  const { execute: runCompleteSession, isLoading: isCompleting } = useServerAction(completeInventorySession, {
-     onSuccess: () => {
-        toast({
-            title: "Инвентаризация завершена",
-            description: "Инвентаризация завершена и отчет готов.",
-        });
-        router.push(`/dashboard/sessions/${id}/report`);
-     }
-  });
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [isCompleting, setIsCompleting] = React.useState(false);
+  const [isAddingProduct, setIsAddingProduct] = React.useState(false);
 
 
   React.useEffect(() => {
@@ -128,19 +109,74 @@ export default function SessionPage() {
 
 
   const handleAddProductToSession = async (productId: string) => {
-    if (!productId || !barId) return;
-    await runAddProductToSession({ barId, sessionId: id, productId });
+    if (!productId || !barId || !firestore) return;
+    setIsAddingProduct(true);
+    try {
+        const product = allProducts?.find(p => p.id === productId);
+        if (!product) throw new Error("Продукт не найден");
+
+        const newLineRef = doc(collection(firestore, 'bars', barId, 'inventorySessions', id, 'lines'));
+        const newLineData = {
+            id: newLineRef.id,
+            productId: productId,
+            inventorySessionId: id,
+            startStock: 0,
+            purchases: 0,
+            sales: 0,
+            endStock: 0,
+            ...calculateLineFields({}, product),
+        };
+        await setDoc(newLineRef, newLineData);
+        toast({ title: "Продукт добавлен", description: `"${product?.name}" добавлен в инвентаризацию.` });
+        setIsAddProductOpen(false);
+    } catch (serverError) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/inventorySessions/${id}/lines`, operation: 'create' }));
+    } finally {
+        setIsAddingProduct(false);
+    }
   };
   
   const handleSaveChanges = async () => {
-    if (!localLines || !barId) return;
-    await runSaveLines({ barId, sessionId: id, lines: localLines });
+    if (!localLines || !barId || !firestore) return;
+    setIsSaving(true);
+    try {
+        const batch = writeBatch(firestore);
+        localLines.forEach(line => {
+            const product = allProducts?.find(p => p.id === line.productId);
+            if (!product) return;
+            
+            const calculatedFields = calculateLineFields(line, product);
+            const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', id, 'lines', line.id);
+            batch.update(lineRef, { ...line, ...calculatedFields });
+        });
+        await batch.commit();
+        toast({ title: "Изменения сохранены" });
+    } catch (serverError) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/inventorySessions/${id}/lines`, operation: 'update' }));
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const handleCompleteSession = async () => {
-    if (!sessionRef || !barId) return;
-    await handleSaveChanges(); // First, save any pending changes
-    await runCompleteSession({ barId, sessionId: id });
+    if (!sessionRef || !barId || !firestore) return;
+    setIsCompleting(true);
+    try {
+      await handleSaveChanges(); // First, save any pending changes
+      await updateDoc(sessionRef, {
+        status: 'completed',
+        closedAt: serverTimestamp(),
+      });
+      toast({
+          title: "Инвентаризация завершена",
+          description: "Инвентаризация завершена и отчет готов.",
+      });
+      router.push(`/dashboard/sessions/${id}/report`);
+    } catch(serverError) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: sessionRef.path, operation: 'update' }));
+    } finally {
+      setIsCompleting(false);
+    }
   };
   
   const handleExportCSV = () => {

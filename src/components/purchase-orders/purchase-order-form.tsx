@@ -31,12 +31,11 @@ import { format } from "date-fns"
 import { ru } from "date-fns/locale"
 
 import type { PurchaseOrder, PurchaseOrderStatus, Supplier } from '@/lib/types';
-import { upsertPurchaseOrder } from '@/lib/actions';
-import { doc, collection, Timestamp } from 'firebase/firestore';
-import { useFirestore, useUser } from '@/firebase';
+import { doc, collection, Timestamp, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { useServerAction } from '@/hooks/use-server-action';
+import { useToast } from '@/hooks/use-toast';
 
 const orderStatuses: PurchaseOrderStatus[] = ['draft', 'ordered', 'partially_received', 'received', 'cancelled'];
 const statusTranslations: Record<PurchaseOrderStatus, string> = {
@@ -67,17 +66,8 @@ export function PurchaseOrderForm({ barId, order, suppliers, onFormSubmit }: Pur
   const firestore = useFirestore();
   const { user } = useUser();
   const router = useRouter();
-
-  const { execute: runUpsertOrder, isLoading: isSaving } = useServerAction(upsertPurchaseOrder, {
-    onSuccess: (data) => {
-      onFormSubmit();
-      if (!order && data?.id) {
-          router.push(`/dashboard/purchase-orders/${data.id}`);
-      }
-    },
-    successMessage: order ? 'Заказ обновлен' : 'Заказ создан',
-    errorMessage: 'Не удалось сохранить заказ.'
-  });
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = React.useState(false);
 
   const form = useForm<PurchaseOrderFormValues>({
     resolver: zodResolver(formSchema),
@@ -93,23 +83,32 @@ export function PurchaseOrderForm({ barId, order, suppliers, onFormSubmit }: Pur
   });
 
   async function onSubmit(data: PurchaseOrderFormValues) {
-    if (!firestore || !user) {
-      // This should ideally be caught by UI state, but as a safeguard:
-      runUpsertOrder({} as any); // Will fail and show error toast
-      return;
-    }
+    if (!firestore || !user) return;
+    setIsSaving(true);
     
-    const orderId = order?.id || doc(collection(firestore, 'bars', barId, 'purchaseOrders')).id;
-    
-    const newOrderData = {
-      id: orderId,
-      supplierId: data.supplierId,
-      orderDate: Timestamp.fromDate(data.orderDate),
-      status: data.status,
-      createdByUserId: user.uid,
-    };
+    try {
+        const orderRef = order ? doc(firestore, 'bars', barId, 'purchaseOrders', order.id) : doc(collection(firestore, 'bars', barId, 'purchaseOrders'));
+        const orderData = {
+          ...data,
+          id: orderRef.id,
+          barId,
+          createdByUserId: user.uid,
+          orderDate: Timestamp.fromDate(data.orderDate),
+          createdAt: order?.createdAt || serverTimestamp(),
+        };
 
-    await runUpsertOrder(newOrderData);
+        await setDoc(orderRef, orderData, { merge: true });
+        
+        toast({ title: order ? 'Заказ обновлен' : 'Заказ создан' });
+        onFormSubmit();
+        if (!order) {
+            router.push(`/dashboard/purchase-orders/${orderRef.id}`);
+        }
+    } catch(serverError) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/purchaseOrders`, operation: 'write' }));
+    } finally {
+        setIsSaving(false);
+    }
   }
 
   return (
@@ -208,5 +207,3 @@ export function PurchaseOrderForm({ barId, order, suppliers, onFormSubmit }: Pur
     </Form>
   );
 }
-
-    

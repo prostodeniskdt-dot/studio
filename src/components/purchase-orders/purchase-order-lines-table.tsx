@@ -15,10 +15,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PlusCircle, Trash2, Loader2 } from 'lucide-react';
 import { formatCurrency, translateCategory } from '@/lib/utils';
-import { addPurchaseOrderLine, updatePurchaseOrderLines, deletePurchaseOrderLine } from '@/lib/actions';
 import { Combobox, GroupedComboboxOption } from '../ui/combobox';
 import Image from 'next/image';
-import { useServerAction } from '@/hooks/use-server-action';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { doc, writeBatch, collection, setDoc, deleteDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 interface PurchaseOrderLinesTableProps {
   lines: PurchaseOrderLine[];
@@ -31,20 +32,11 @@ interface PurchaseOrderLinesTableProps {
 export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEditable }: PurchaseOrderLinesTableProps) {
   const [localLines, setLocalLines] = React.useState(lines);
   const [isAdding, setIsAdding] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
-  const { execute: runUpdateLines, isLoading: isSaving } = useServerAction(updatePurchaseOrderLines, {
-    successMessage: "Позиции заказа обновлены",
-  });
-  const { execute: runAddLine, isLoading: isAddingLine } = useServerAction(addPurchaseOrderLine, {
-    onSuccess: () => setIsAdding(false),
-    successMessage: "Продукт добавлен в заказ",
-  });
-  const { execute: runRemoveLine, isLoading: isRemovingLine } = useServerAction(deletePurchaseOrderLine, {
-    successMessage: "Позиция удалена",
-  });
-
-  const isProcessing = isAddingLine || isRemovingLine;
-
+  const firestore = useFirestore();
+  const { toast } = useToast();
 
   React.useEffect(() => {
     setLocalLines(lines);
@@ -62,17 +54,63 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
   };
   
   const handleSaveLines = async () => {
-    await runUpdateLines({ barId, orderId, lines: localLines });
+    if (!firestore) return;
+    setIsSaving(true);
+    try {
+        const batch = writeBatch(firestore);
+        localLines.forEach(line => {
+            const lineRef = doc(firestore, 'bars', barId, 'purchaseOrders', orderId, 'lines', line.id);
+            batch.update(lineRef, {
+                quantity: line.quantity,
+                costPerItem: line.costPerItem,
+                receivedQuantity: line.receivedQuantity,
+            });
+        });
+        await batch.commit();
+        toast({ title: 'Позиции заказа обновлены' });
+    } catch (error) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/purchaseOrders/${orderId}/lines`, operation: 'update' }));
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const handleRemoveLine = async (lineId: string) => {
-    await runRemoveLine({ barId, orderId, lineId });
+    if (!firestore) return;
+    setIsProcessing(true);
+    try {
+        const lineRef = doc(firestore, 'bars', barId, 'purchaseOrders', orderId, 'lines', lineId);
+        await deleteDoc(lineRef);
+        toast({ title: 'Позиция удалена' });
+    } catch (error) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/purchaseOrders/${orderId}/lines/${lineId}`, operation: 'delete' }));
+    } finally {
+        setIsProcessing(false);
+    }
   };
   
   const handleAddProduct = async (productId: string) => {
     const product = products.find(p => p.id === productId);
-    if (!product) return;
-    await runAddLine({ barId, orderId, product });
+    if (!product || !firestore) return;
+    setIsProcessing(true);
+    setIsAdding(false);
+    try {
+        const lineRef = doc(collection(firestore, 'bars', barId, 'purchaseOrders', orderId, 'lines'));
+        const newLineData = {
+            id: lineRef.id,
+            purchaseOrderId: orderId,
+            productId: product.id,
+            quantity: 1,
+            costPerItem: product.costPerBottle,
+            receivedQuantity: 0,
+        };
+        await setDoc(lineRef, newLineData);
+        toast({ title: 'Продукт добавлен в заказ' });
+    } catch (error) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/purchaseOrders/${orderId}/lines`, operation: 'create' }));
+    } finally {
+        setIsProcessing(false);
+    }
   };
 
   const linesWithProducts = React.useMemo(() => {
@@ -227,5 +265,3 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
     </div>
   );
 }
-
-    

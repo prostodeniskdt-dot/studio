@@ -29,8 +29,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import type { Supplier } from '@/lib/types';
 import { SupplierForm } from './supplier-form';
-import { deleteSupplier } from '@/lib/actions';
-import { useServerAction } from '@/hooks/use-server-action';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 interface SuppliersTableProps {
   suppliers: Supplier[];
@@ -42,11 +43,8 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
   const [editingSupplier, setEditingSupplier] = React.useState<Supplier | undefined>(undefined);
   const [supplierToDelete, setSupplierToDelete] = React.useState<Supplier | null>(null);
 
-  const { execute: runDeleteSupplier } = useServerAction(deleteSupplier, {
-    onSuccess: () => setSupplierToDelete(null),
-    successMessage: "Поставщик удален.",
-    errorMessage: "Не удалось удалить поставщика."
-  });
+  const firestore = useFirestore();
+  const { toast } = useToast();
 
   const handleOpenSheet = (supplier?: Supplier) => {
     setEditingSupplier(supplier);
@@ -63,8 +61,16 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
   };
 
   const confirmDelete = async () => {
-    if (!supplierToDelete) return;
-    await runDeleteSupplier({barId, supplierId: supplierToDelete.id});
+    if (!supplierToDelete || !firestore) return;
+    try {
+        const supplierRef = doc(firestore, 'bars', barId, 'suppliers', supplierToDelete.id);
+        await deleteDoc(supplierRef);
+        toast({ title: "Поставщик удален." });
+    } catch (error) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/suppliers/${supplierToDelete.id}`, operation: 'delete' }));
+    } finally {
+        setSupplierToDelete(null);
+    }
   };
 
   const columns: ColumnDef<Supplier>[] = [
@@ -199,5 +205,3 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
     </>
   );
 }
-
-    

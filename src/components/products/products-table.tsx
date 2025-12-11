@@ -14,7 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { MoreHorizontal, ArrowUpDown, ChevronDown, PlusCircle } from 'lucide-react';
+import { MoreHorizontal, ArrowUpDown, ChevronDown, PlusCircle, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -42,8 +42,9 @@ import { ProductForm } from './product-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { Combobox, type GroupedComboboxOption } from '../ui/combobox';
-import { archiveProduct } from '@/lib/actions';
-import { useServerAction } from '@/hooks/use-server-action';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export function ProductsTable({ products }: { products: Product[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -57,10 +58,10 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | undefined>(undefined);
+  const [isArchiving, setIsArchiving] = React.useState<string | null>(null);
   
-  const { execute: runArchiveProduct } = useServerAction(archiveProduct, {
-      successMessage: "Статус продукта изменен.",
-  });
+  const firestore = useFirestore();
+  const { toast } = useToast();
 
   const handleOpenSheet = (product?: Product) => {
     setEditingProduct(product);
@@ -73,7 +74,17 @@ export function ProductsTable({ products }: { products: Product[] }) {
   }
 
   const handleArchiveAction = async (product: Product) => {
-    await runArchiveProduct({ productId: product.id, archive: product.isActive });
+    if (!firestore) return;
+    setIsArchiving(product.id);
+    try {
+        const productRef = doc(firestore, 'products', product.id);
+        await updateDoc(productRef, { isActive: !product.isActive });
+        toast({ title: "Статус продукта изменен." });
+    } catch (serverError) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `products/${product.id}`, operation: 'update' }));
+    } finally {
+        setIsArchiving(null);
+    }
   }
 
   const groupedProductOptions = React.useMemo<GroupedComboboxOption[]>(() => {
@@ -194,9 +205,9 @@ export function ProductsTable({ products }: { products: Product[] }) {
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
+              <Button variant="ghost" className="h-8 w-8 p-0" disabled={isArchiving === product.id}>
+                {isArchiving === product.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
                 <span className="sr-only">Открыть меню</span>
-                <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -392,5 +403,3 @@ export function ProductsTable({ products }: { products: Product[] }) {
     </Sheet>
   );
 }
-
-    

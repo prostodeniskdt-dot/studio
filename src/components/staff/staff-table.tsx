@@ -39,10 +39,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { removeStaffMember } from '@/lib/actions';
 import { AddStaffDialog } from './add-staff-dialog';
 import type { StaffWithProfile } from '@/app/dashboard/staff/page';
-import { useServerAction } from '@/hooks/use-server-action';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 interface StaffTableProps {
     staff: StaffWithProfile[];
@@ -53,21 +54,25 @@ export function StaffTable({ staff, barId }: StaffTableProps) {
   const [memberToDelete, setMemberToDelete] = React.useState<StaffWithProfile | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
 
-  const { execute: runRemoveStaff } = useServerAction(removeStaffMember, {
-    onSuccess: () => {
-        setMemberToDelete(null);
-    },
-    successMessage: "Сотрудник удален.",
-    errorMessage: "Не удалось удалить сотрудника."
-  });
+  const firestore = useFirestore();
+  const { toast } = useToast();
 
   const handleDeleteClick = (member: StaffWithProfile) => {
     setMemberToDelete(member);
   };
 
   const confirmDelete = async () => {
-    if (!memberToDelete) return;
-    await runRemoveStaff({ barId, userId: memberToDelete.userId });
+    if (!memberToDelete || !firestore) return;
+    try {
+        const memberRef = doc(firestore, 'bars', barId, 'members', memberToDelete.userId);
+        await deleteDoc(memberRef);
+        toast({ title: "Сотрудник удален." });
+    } catch(error) {
+        toast({ variant: 'destructive', title: "Ошибка", description: "Не удалось удалить сотрудника." });
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/members/${memberToDelete.userId}`, operation: 'delete' }));
+    } finally {
+        setMemberToDelete(null);
+    }
   };
 
   const columns: ColumnDef<StaffWithProfile>[] = [
@@ -224,5 +229,3 @@ export function StaffTable({ staff, barId }: StaffTableProps) {
     </>
   );
 }
-
-    

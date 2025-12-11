@@ -29,11 +29,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import type { PurchaseOrder, Supplier } from '@/lib/types';
 import { PurchaseOrderForm } from './purchase-order-form';
-import { deletePurchaseOrder } from '@/lib/actions';
 import { formatCurrency, translateStatus } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import Link from 'next/link';
-import { useServerAction } from '@/hooks/use-server-action';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { doc, deleteDoc, getDocs, collection, writeBatch } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 interface OrderWithSupplier extends PurchaseOrder {
   supplier?: Supplier;
@@ -52,11 +53,8 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
   const [editingOrder, setEditingOrder] = React.useState<PurchaseOrder | undefined>(undefined);
   const [orderToDelete, setOrderToDelete] = React.useState<PurchaseOrder | null>(null);
 
-  const { execute: runDeleteOrder } = useServerAction(deletePurchaseOrder, {
-    onSuccess: () => setOrderToDelete(null),
-    successMessage: "Заказ удален.",
-    errorMessage: "Не удалось удалить заказ."
-  });
+  const firestore = useFirestore();
+  const { toast } = useToast();
 
   const handleOpenSheet = (order?: PurchaseOrder) => {
     setEditingOrder(order);
@@ -73,8 +71,22 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
   };
 
   const confirmDelete = async () => {
-    if (!orderToDelete) return;
-    await runDeleteOrder({ barId, orderId: orderToDelete.id });
+    if (!orderToDelete || !firestore) return;
+    try {
+        const orderRef = doc(firestore, 'bars', barId, 'purchaseOrders', orderToDelete.id);
+        // Also delete subcollection of lines
+        const linesRef = collection(orderRef, 'lines');
+        const linesSnapshot = await getDocs(linesRef);
+        const batch = writeBatch(firestore);
+        linesSnapshot.forEach(lineDoc => batch.delete(lineDoc.ref));
+        batch.delete(orderRef);
+        await batch.commit();
+        toast({ title: "Заказ удален." });
+    } catch (error) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/purchaseOrders/${orderToDelete.id}`, operation: 'delete' }));
+    } finally {
+        setOrderToDelete(null);
+    }
   };
 
   const columns: ColumnDef<OrderWithSupplier>[] = [
@@ -237,5 +249,3 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
     </>
   );
 }
-
-    

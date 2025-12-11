@@ -26,12 +26,11 @@ import { Switch } from '@/components/ui/switch';
 import type { Product, Supplier } from '@/lib/types';
 import { productCategories, productSubCategories, translateCategory, translateSubCategory } from '@/lib/utils';
 import { Separator } from '../ui/separator';
-import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useFirestore, useUser, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Loader2 } from 'lucide-react';
-import { upsertProduct } from '@/lib/actions';
-import { useServerAction } from '@/hooks/use-server-action';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
@@ -65,20 +64,14 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const barId = user ? `bar_${user.uid}` : null;
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = React.useState(false);
 
   const suppliersQuery = useMemoFirebase(() => 
     firestore && barId ? collection(firestore, 'bars', barId, 'suppliers') : null,
     [firestore, barId]
   );
   const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
-
-  const { execute: runUpsertProduct, isLoading: isSaving } = useServerAction(upsertProduct, {
-      onSuccess: () => {
-          onFormSubmit();
-      },
-      successMessage: product ? "Продукт обновлен" : "Продукт создан",
-      errorMessage: "Не удалось сохранить продукт"
-  });
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(formSchema),
@@ -115,11 +108,25 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   }, [watchedCategory, form]);
 
   async function onSubmit(data: ProductFormValues) {
-    const productData = {
-        ...data,
-        id: product?.id,
-    };
-    await runUpsertProduct(productData);
+    if (!firestore) return;
+    setIsSaving(true);
+    try {
+        const productRef = product ? doc(firestore, 'products', product.id) : doc(collection(firestore, 'products'));
+        const productData = {
+            ...data,
+            id: productRef.id,
+            updatedAt: serverTimestamp(),
+            createdAt: product?.createdAt || serverTimestamp(),
+        };
+
+        await setDoc(productRef, productData, { merge: true });
+        toast({ title: product ? "Продукт обновлен" : "Продукт создан" });
+        onFormSubmit();
+    } catch (serverError) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `products/${product?.id || ''}`, operation: 'write' }));
+    } finally {
+        setIsSaving(false);
+    }
   }
 
   return (
@@ -365,5 +372,3 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     </Form>
   );
 }
-
-    

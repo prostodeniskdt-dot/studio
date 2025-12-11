@@ -6,8 +6,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/comp
 import { Badge } from "@/components/ui/badge";
 import { cn, translateStatus } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MoreVertical, Trash2 } from "lucide-react";
-import { Timestamp } from "firebase/firestore";
+import { ArrowRight, MoreVertical, Trash2, Loader2 } from "lucide-react";
+import { Timestamp, doc, deleteDoc, getDocs, collection, writeBatch } from "firebase/firestore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,8 +25,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import * as React from "react";
-import { useServerAction } from "@/hooks/use-server-action";
-import { deleteInventorySession } from "@/lib/actions";
+import { useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from 'next/navigation';
 
 type SessionsListProps = {
   sessions: InventorySession[];
@@ -35,12 +36,10 @@ type SessionsListProps = {
 
 export function SessionsList({ sessions, barId }: SessionsListProps) {
   const [sessionToDelete, setSessionToDelete] = React.useState<InventorySession | null>(null);
-
-  const { execute: runDeleteSession } = useServerAction(deleteInventorySession, {
-    onSuccess: () => setSessionToDelete(null),
-    successMessage: "Инвентаризация удалена.",
-    errorMessage: "При удалении инвентаризации произошла ошибка."
-  });
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const router = useRouter();
 
 
   const getStatusVariant = (status: InventorySession['status']) => {
@@ -72,8 +71,34 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
   };
 
   const confirmDelete = async () => {
-    if (!sessionToDelete || !barId) return;
-    await runDeleteSession({ barId, sessionId: sessionToDelete.id });
+    if (!sessionToDelete || !barId || !firestore) return;
+
+    setIsDeleting(true);
+
+    try {
+        const sessionRef = doc(firestore, 'bars', barId, 'inventorySessions', sessionToDelete.id);
+        const linesCollection = collection(sessionRef, 'lines');
+        
+        const linesSnapshot = await getDocs(linesCollection);
+        const batch = writeBatch(firestore);
+
+        if (!linesSnapshot.empty) {
+            linesSnapshot.docs.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+        }
+        
+        batch.delete(sessionRef);
+        await batch.commit();
+
+        toast({ title: "Инвентаризация удалена." });
+        setSessionToDelete(null);
+        // We don't need to refresh, useCollection will do it automatically
+    } catch (serverError) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/inventorySessions/${sessionToDelete.id}`, operation: 'delete' }));
+    } finally {
+        setIsDeleting(false);
+    }
   };
 
 
@@ -131,7 +156,10 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Отмена</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Удалить</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+              {isDeleting ? 'Удаление...' : 'Удалить'}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

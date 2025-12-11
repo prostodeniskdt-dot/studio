@@ -7,10 +7,8 @@ import { SessionsList } from "@/components/dashboard/sessions-list";
 import { useRouter } from 'next/navigation';
 import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
-import { createInventorySession } from '@/lib/actions';
-import { useServerAction } from '@/hooks/use-server-action';
+import { useUser, useFirestore, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { collection, query, getDocs, where, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 
 export default function SessionsPage() {
@@ -18,6 +16,7 @@ export default function SessionsPage() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+  const [isCreating, setIsCreating] = React.useState(false);
 
   const barId = user ? `bar_${user.uid}` : null; 
 
@@ -28,25 +27,6 @@ export default function SessionsPage() {
   
   const { data: sessions, isLoading: isLoadingSessions, error: sessionsError } = useCollection<InventorySession>(sessionsQuery);
 
-  const { execute: runCreateSession, isLoading: isCreating } = useServerAction(createInventorySession, {
-    onSuccess: (data) => {
-      if (!data) return;
-      if (data.isNew) {
-        toast({
-          title: "Инвентаризация создана",
-          description: "Новая инвентаризация была успешно создана.",
-        });
-      } else {
-        toast({
-          title: "Активная инвентаризация уже существует",
-          description: "Вы будете перенаправлены на существующую инвентаризацию.",
-           action: <Button onClick={() => router.push(`/dashboard/sessions/${data.sessionId}`)}>Перейти</Button>
-        });
-      }
-      router.push(`/dashboard/sessions/${data.sessionId}`);
-    },
-  });
-
   const sortedSessions = React.useMemo(() => {
     if (!sessions) return [];
     // Sort on the client side
@@ -56,7 +36,7 @@ export default function SessionsPage() {
 
 
   const handleCreateSession = async () => {
-    if (!user || !barId) {
+    if (!user || !barId || !firestore) {
       toast({
         variant: "destructive",
         title: "Ошибка",
@@ -64,7 +44,52 @@ export default function SessionsPage() {
       });
       return;
     }
-    await runCreateSession({ barId, userId: user.uid });
+    
+    setIsCreating(true);
+
+    try {
+        const inventoriesCollection = collection(firestore, 'bars', barId, 'inventorySessions');
+        const inProgressQuery = query(inventoriesCollection, where('status', '==', 'in_progress'), where('barId', '==', barId), where('createdByUserId', '==', user.uid));
+        const querySnapshot = await getDocs(inProgressQuery);
+
+        let sessionId;
+        let isNew = false;
+
+        if (!querySnapshot.empty) {
+            sessionId = querySnapshot.docs[0].id;
+            toast({
+                title: "Активная инвентаризация уже существует",
+                description: "Вы будете перенаправлены на существующую инвентаризацию.",
+            });
+        } else {
+            const newSessionRef = doc(inventoriesCollection);
+            const newSessionData = {
+                id: newSessionRef.id,
+                barId: barId,
+                name: `Инвентаризация от ${new Date().toLocaleDateString('ru-RU')}`,
+                status: 'in_progress' as const,
+                createdByUserId: user.uid,
+                createdAt: serverTimestamp(),
+                closedAt: null,
+            };
+            
+            await setDoc(newSessionRef, newSessionData);
+
+            sessionId = newSessionRef.id;
+            isNew = true;
+            toast({
+                title: "Инвентаризация создана",
+                description: "Новая инвентаризация была успешно создана.",
+            });
+        }
+        
+        router.push(`/dashboard/sessions/${sessionId}`);
+    } catch (serverError) {
+        const permissionError = new FirestorePermissionError({ path: `bars/${barId}/inventorySessions`, operation: 'create' });
+        errorEmitter.emit('permission-error', permissionError);
+    } finally {
+        setIsCreating(false);
+    }
   };
 
   const isLoading = isLoadingSessions;
@@ -74,7 +99,7 @@ export default function SessionsPage() {
     <>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Инвентаризации</h1>
-        <Button onClick={handleCreateSession} disabled={isLoading || isCreating || hasDataLoadingError || !barId}>
+        <Button onClick={handleCreateSession} disabled={isLoading || isCreating || !!hasDataLoadingError || !barId}>
           {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
           Начать инвентаризацию
         </Button>

@@ -28,7 +28,52 @@ async function seedInitialData(firestore: Firestore): Promise<void> {
 
         const batch = writeBatch(firestore);
 
+        const vodkaImage = PlaceHolderImages.find(p => p.id === 'vodka')?.imageUrl;
+
         const productsToCreate: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>[] = [
+            // Vodkas
+            { name: 'Русский Стандарт Original', category: 'Vodka', costPerBottle: 700, sellingPricePerPortion: 250, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Русский Стандарт Platinum', category: 'Vodka', costPerBottle: 1000, sellingPricePerPortion: 350, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Beluga Noble', category: 'Vodka', costPerBottle: 1500, sellingPricePerPortion: 500, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Beluga Gold Line', category: 'Vodka', costPerBottle: 5000, sellingPricePerPortion: 1500, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Царская Оригинальная', category: 'Vodka', costPerBottle: 800, sellingPricePerPortion: 280, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Царская Золотая', category: 'Vodka', costPerBottle: 1200, sellingPricePerPortion: 400, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Пять Озёр', category: 'Vodka', costPerBottle: 450, sellingPricePerPortion: 180, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Хаски', category: 'Vodka', costPerBottle: 500, sellingPricePerPortion: 200, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Талка', category: 'Vodka', costPerBottle: 480, sellingPricePerPortion: 190, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Зеленая Марка', category: 'Vodka', costPerBottle: 400, sellingPricePerPortion: 160, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Байкал', category: 'Vodka', costPerBottle: 550, sellingPricePerPortion: 220, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Мамонт', category: 'Vodka', costPerBottle: 2500, sellingPricePerPortion: 800, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Kremlin Award', category: 'Vodka', costPerBottle: 2000, sellingPricePerPortion: 700, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Absolut', category: 'Vodka', costPerBottle: 1300, sellingPricePerPortion: 450, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Finlandia', category: 'Vodka', costPerBottle: 1200, sellingPricePerPortion: 420, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Grey Goose', category: 'Vodka', costPerBottle: 3000, sellingPricePerPortion: 1000, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Smirnoff No. 21', category: 'Vodka', costPerBottle: 900, sellingPricePerPortion: 300, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Stolichnaya', category: 'Vodka', costPerBottle: 850, sellingPricePerPortion: 290, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Чистые Росы', category: 'Vodka', costPerBottle: 1100, sellingPricePerPortion: 380, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Архангельская Северная Выдержка', category: 'Vodka', costPerBottle: 600, sellingPricePerPortion: 240, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Воздух', category: 'Vodka', costPerBottle: 520, sellingPricePerPortion: 210, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Белая Березка', category: 'Vodka', costPerBottle: 580, sellingPricePerPortion: 230, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Хортиця', category: 'Vodka', costPerBottle: 530, sellingPricePerPortion: 215, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Мягков', category: 'Vodka', costPerBottle: 470, sellingPricePerPortion: 185, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Журавли', category: 'Vodka', costPerBottle: 490, sellingPricePerPortion: 195, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Saimaa', category: 'Vodka', costPerBottle: 1400, sellingPricePerPortion: 480, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Organika', category: 'Vodka', costPerBottle: 1600, sellingPricePerPortion: 550, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Onegin', category: 'Vodka', costPerBottle: 2800, sellingPricePerPortion: 900, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Kauffman', category: 'Vodka', costPerBottle: 4500, sellingPricePerPortion: 1400, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Nerpa', category: 'Vodka', costPerBottle: 1300, sellingPricePerPortion: 450, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Солодовая', category: 'Vodka', costPerBottle: 510, sellingPricePerPortion: 205, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Легенда Кремля', category: 'Vodka', costPerBottle: 2200, sellingPricePerPortion: 750, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Снежная Королева', category: 'Vodka', costPerBottle: 1100, sellingPricePerPortion: 380, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Diamond Ice', category: 'Vodka', costPerBottle: 460, sellingPricePerPortion: 180, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Алтай', category: 'Vodka', costPerBottle: 440, sellingPricePerPortion: 175, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Медведь', category: 'Vodka', costPerBottle: 480, sellingPricePerPortion: 190, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            { name: 'Ciroc', category: 'Vodka', costPerBottle: 3200, sellingPricePerPortion: 1100, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Ketel One', category: 'Vodka', costPerBottle: 2400, sellingPricePerPortion: 800, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Belvedere', category: 'Vodka', costPerBottle: 2800, sellingPricePerPortion: 950, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: vodkaImage },
+            { name: 'Morosha', category: 'Vodka', costPerBottle: 430, sellingPricePerPortion: 170, portionVolumeMl: 40, bottleVolumeMl: 500, isActive: true, imageUrl: vodkaImage },
+            
+            // Other spirits
             { name: 'Jameson', category: 'Whiskey', subCategory: 'Irish', costPerBottle: 1800, sellingPricePerPortion: 350, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1150, emptyBottleWeightG: 450, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'whiskey')?.imageUrl },
             { name: 'Jack Daniel\'s', category: 'Whiskey', subCategory: 'Bourbon', costPerBottle: 2000, sellingPricePerPortion: 380, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1180, emptyBottleWeightG: 480, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'whiskey')?.imageUrl },
             { name: 'Havana Club 3', category: 'Rum', subCategory: 'White', costPerBottle: 1500, sellingPricePerPortion: 300, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1120, emptyBottleWeightG: 420, isActive: true, imageUrl: PlaceHolderImages.find(p => p.id === 'rum')?.imageUrl },

@@ -186,9 +186,10 @@ service cloud.firestore {
      */
     function isInventorySessionCreateValid() {
       let data = request.resource.data;
+      // When creating, we must check that the user is a member of the bar they are creating the session for.
+      // This is done by checking the `barId` from the incoming resource data.
       return data.barId is string && 
              data.createdByUserId == request.auth.uid &&
-             // Ensure the user is a member of the bar they are creating a session for
              isBarMember(data.barId);
     }
     
@@ -277,7 +278,11 @@ service cloud.firestore {
        */
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
+        // IMPORTANT: List queries are secured by client-side logic which MUST
+        // include a where clause to filter by a field (e.g., barId).
+        // The security rule then only needs to check membership for the requested bar.
         allow list: if canReadBarData(barId);
+        // CREATE uses the barId from the INCOMING data, not the path.
         allow create: if isInventorySessionCreateValid();
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteBarData(barId) && resourceExists();

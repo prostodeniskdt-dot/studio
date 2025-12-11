@@ -208,6 +208,85 @@ async function seedMissingWhiskey(firestore: Firestore): Promise<void> {
 }
 
 
+async function seedMissingRum(firestore: Firestore): Promise<void> {
+    const productsCollectionRef = collection(firestore, 'products');
+    const firstRumQuery = query(productsCollectionRef, where('name', '==', 'Bacardi Carta Blanca'), limit(1));
+
+    try {
+        const rumSnapshot = await getDocs(firstRumQuery);
+        if (!rumSnapshot.empty) {
+            return; // Ром уже есть
+        }
+
+        const batch = writeBatch(firestore);
+        const rumImage = PlaceHolderImages.find(p => p.id === 'rum')?.imageUrl;
+        const rumsToAdd: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>[] = [
+            // Белый Ром
+            { name: 'Bacardi Carta Blanca', category: 'Rum', subCategory: 'White', costPerBottle: 1600, sellingPricePerPortion: 320, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Havana Club Añejo 3 Años', category: 'Rum', subCategory: 'White', costPerBottle: 1700, sellingPricePerPortion: 340, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Plantation 3 Stars', category: 'Rum', subCategory: 'White', costPerBottle: 2000, sellingPricePerPortion: 380, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Angostura Reserva', category: 'Rum', subCategory: 'White', costPerBottle: 1800, sellingPricePerPortion: 350, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Mount Gay Silver', category: 'Rum', subCategory: 'White', costPerBottle: 1900, sellingPricePerPortion: 360, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Brugal Blanco Supremo', category: 'Rum', subCategory: 'White', costPerBottle: 1850, sellingPricePerPortion: 355, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'El Dorado 3 Year Old', category: 'Rum', subCategory: 'White', costPerBottle: 2100, sellingPricePerPortion: 400, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Wray & Nephew White Overproof', category: 'Rum', subCategory: 'White', costPerBottle: 3000, sellingPricePerPortion: 500, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Flor de Caña 4 Extra Seco', category: 'Rum', subCategory: 'White', costPerBottle: 1950, sellingPricePerPortion: 370, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Caney Carta Blanca', category: 'Rum', subCategory: 'White', costPerBottle: 1500, sellingPricePerPortion: 300, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            
+            // Золотой Ром
+            { name: 'Bacardi Carta Oro', category: 'Rum', subCategory: 'Gold', costPerBottle: 1700, sellingPricePerPortion: 340, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Havana Club Añejo Especial', category: 'Rum', subCategory: 'Gold', costPerBottle: 1900, sellingPricePerPortion: 360, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Mount Gay Eclipse', category: 'Rum', subCategory: 'Gold', costPerBottle: 2200, sellingPricePerPortion: 400, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Brugal Añejo', category: 'Rum', subCategory: 'Gold', costPerBottle: 2000, sellingPricePerPortion: 380, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Appleton Estate Signature Blend', category: 'Rum', subCategory: 'Gold', costPerBottle: 2500, sellingPricePerPortion: 450, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Barcelo Dorado', category: 'Rum', subCategory: 'Gold', costPerBottle: 1800, sellingPricePerPortion: 350, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Plantation Original Dark', category: 'Rum', subCategory: 'Gold', costPerBottle: 2300, sellingPricePerPortion: 420, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'El Dorado 5 Year Old', category: 'Rum', subCategory: 'Gold', costPerBottle: 2600, sellingPricePerPortion: 480, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Flor de Caña 7 Gran Reserva', category: 'Rum', subCategory: 'Gold', costPerBottle: 2800, sellingPricePerPortion: 500, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Angostura 5 Year Old', category: 'Rum', subCategory: 'Gold', costPerBottle: 2400, sellingPricePerPortion: 430, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            
+            // Темный Ром
+            { name: 'Bacardi Carta Negra', category: 'Rum', subCategory: 'Dark', costPerBottle: 1800, sellingPricePerPortion: 350, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Havana Club Añejo 7 Años', category: 'Rum', subCategory: 'Dark', costPerBottle: 2800, sellingPricePerPortion: 500, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Kraken Black Spiced Rum', category: 'Rum', subCategory: 'Dark', costPerBottle: 2900, sellingPricePerPortion: 520, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Gosling\'s Black Seal', category: 'Rum', subCategory: 'Dark', costPerBottle: 2700, sellingPricePerPortion: 490, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Meyers\'s Original Dark', category: 'Rum', subCategory: 'Dark', costPerBottle: 2600, sellingPricePerPortion: 480, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Zacapa Centenario 23', category: 'Rum', subCategory: 'Dark', costPerBottle: 7000, sellingPricePerPortion: 1000, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Diplomatico Reserva Exclusiva', category: 'Rum', subCategory: 'Dark', costPerBottle: 5500, sellingPricePerPortion: 800, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Pyrat XO Reserve', category: 'Rum', subCategory: 'Dark', costPerBottle: 4500, sellingPricePerPortion: 700, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'El Dorado 12 Year Old', category: 'Rum', subCategory: 'Dark', costPerBottle: 4800, sellingPricePerPortion: 750, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Angostura 1919', category: 'Rum', subCategory: 'Dark', costPerBottle: 4200, sellingPricePerPortion: 650, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            
+            // Пряный Ром
+            { name: 'Captain Morgan Spiced Gold', category: 'Rum', subCategory: 'Spiced', costPerBottle: 1700, sellingPricePerPortion: 340, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Sailor Jerry Spiced', category: 'Rum', subCategory: 'Spiced', costPerBottle: 2000, sellingPricePerPortion: 380, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Bacardi Spiced', category: 'Rum', subCategory: 'Spiced', costPerBottle: 1800, sellingPricePerPortion: 350, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Dead Man\'s Fingers Spiced', category: 'Rum', subCategory: 'Spiced', costPerBottle: 2400, sellingPricePerPortion: 430, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'RedLeg Spiced Rum', category: 'Rum', subCategory: 'Spiced', costPerBottle: 2300, sellingPricePerPortion: 420, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Oakhart Spiced', category: 'Rum', subCategory: 'Spiced', costPerBottle: 1750, sellingPricePerPortion: 345, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Matusalem Solera 7', category: 'Rum', subCategory: 'Spiced', costPerBottle: 2200, sellingPricePerPortion: 410, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Old Monk The Legend', category: 'Rum', subCategory: 'Dark', costPerBottle: 3000, sellingPricePerPortion: 550, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Pusser\'s Blue Label', category: 'Rum', subCategory: 'Dark', costPerBottle: 3500, sellingPricePerPortion: 600, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+            { name: 'Chairman\'s Reserve Spiced', category: 'Rum', subCategory: 'Spiced', costPerBottle: 2700, sellingPricePerPortion: 490, portionVolumeMl: 40, bottleVolumeMl: 700, isActive: true, imageUrl: rumImage },
+        ];
+        
+        rumsToAdd.forEach(prodData => {
+            const prodRef = doc(productsCollectionRef);
+            batch.set(prodRef, {
+                ...prodData,
+                id: prodRef.id,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            });
+        });
+
+        await batch.commit();
+
+    } catch (serverError) {
+        console.error("Error seeding missing rum:", serverError);
+    }
+}
+
 /**
  * Ensures user and bar documents exist, creating them if necessary.
  * This is a critical setup step for any authenticated user.
@@ -226,7 +305,8 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
             // Данные пользователя и бара уже есть, просто проверяем и до-заполняем
             await Promise.all([
                 seedMissingVodka(firestore),
-                seedMissingWhiskey(firestore)
+                seedMissingWhiskey(firestore),
+                seedMissingRum(firestore)
             ]);
             return; 
         }
@@ -260,7 +340,8 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
         await seedInitialData(firestore);
         await Promise.all([
             seedMissingVodka(firestore),
-            seedMissingWhiskey(firestore)
+            seedMissingWhiskey(firestore),
+            seedMissingRum(firestore)
         ]);
 
     } catch (serverError: any) {

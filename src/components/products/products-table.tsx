@@ -35,13 +35,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import type { Product } from '@/lib/types';
-import { formatCurrency, translateCategory, translateSubCategory } from '@/lib/utils';
+import type { Product, ProductCategory } from '@/lib/types';
+import { formatCurrency, translateCategory, translateSubCategory, productCategories, productSubCategories } from '@/lib/utils';
 import { ProductForm } from './product-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { Combobox, type GroupedComboboxOption } from '../ui/combobox';
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -52,7 +52,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
     costPerBottle: false,
     id: false, 
-    category: false,
+    subCategory: false,
     bottleVolumeMl: false,
   });
   const [rowSelection, setRowSelection] = React.useState({});
@@ -86,25 +86,6 @@ export function ProductsTable({ products }: { products: Product[] }) {
         setIsArchiving(null);
     }
   }
-
-  const groupedProductOptions = React.useMemo<GroupedComboboxOption[]>(() => {
-    if (!products) return [];
-
-    const groups: Record<string, { value: string; label: string }[]> = {};
-    
-    products.forEach(p => {
-      const category = translateCategory(p.category);
-      if (!groups[category]) {
-        groups[category] = [];
-      }
-      groups[category].push({ value: p.id, label: p.name });
-    });
-
-    return Object.entries(groups)
-      .map(([label, options]) => ({ label, options }))
-      .sort((a,b) => a.label.localeCompare(b.label));
-
-  }, [products]);
 
 
   const columns: ColumnDef<Product>[] = [
@@ -159,14 +140,18 @@ export function ProductsTable({ products }: { products: Product[] }) {
       header: 'Категория',
       cell: ({ row }) => {
           const category = row.getValue('category') as Product['category'];
+          return <div>{translateCategory(category)}</div>;
+      },
+      filterFn: 'equals',
+    },
+    {
+      accessorKey: 'subCategory',
+      header: 'Подкатегория',
+      cell: ({ row }) => {
           const subCategory = row.original.subCategory;
-          return (
-              <div>
-                  <div>{translateCategory(category)}</div>
-                  {subCategory && <div className="text-xs text-muted-foreground">{translateSubCategory(subCategory)}</div>}
-              </div>
-          )
-      }
+          return subCategory ? <div>{translateSubCategory(subCategory)}</div> : null
+      },
+       filterFn: 'equals',
     },
     {
       accessorKey: 'costPerBottle',
@@ -245,6 +230,18 @@ export function ProductsTable({ products }: { products: Product[] }) {
       rowSelection,
     },
   });
+  
+  const selectedCategory = table.getColumn('category')?.getFilterValue() as ProductCategory | undefined;
+  const subCategoryOptions = selectedCategory ? productSubCategories[selectedCategory] : [];
+
+  React.useEffect(() => {
+      // Reset sub-category filter if category changes and the current sub-category is not valid for the new category
+      const currentSubCategory = table.getColumn('subCategory')?.getFilterValue();
+      if (selectedCategory && currentSubCategory && !productSubCategories[selectedCategory]?.includes(currentSubCategory as string)) {
+          table.getColumn('subCategory')?.setFilterValue(undefined);
+      }
+  }, [selectedCategory, table]);
+
 
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -255,17 +252,6 @@ export function ProductsTable({ products }: { products: Product[] }) {
                     <p className="text-muted-foreground">Управляйте каталогом товаров и их профилями для калькулятора.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                <Combobox 
-                  options={groupedProductOptions}
-                  onSelect={(value) => {
-                    table.getColumn('id')?.setFilterValue(value || undefined);
-                  }}
-                  value={table.getColumn('id')?.getFilterValue() as string}
-                  placeholder="Поиск по названию..."
-                  searchPlaceholder="Введите название продукта..."
-                  notFoundText="Продукт не найден."
-                  triggerClassName='w-[200px] sm:w-[250px]'
-                />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="ml-auto">
@@ -290,6 +276,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
                                 {
                                     name: 'Название',
                                     category: 'Категория',
+                                    subCategory: 'Подкатегория',
                                     costPerBottle: 'Стоимость',
                                     bottleVolumeMl: 'Объем',
                                     isActive: 'Статус',
@@ -309,6 +296,37 @@ export function ProductsTable({ products }: { products: Product[] }) {
                 </SheetTrigger>
                 </div>
             </div>
+            <div className="flex items-center gap-2 mb-4">
+                 <Select
+                    value={(table.getColumn('category')?.getFilterValue() as string) ?? ''}
+                    onValueChange={(value) => table.getColumn('category')?.setFilterValue(value || undefined)}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Все категории" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Все категории</SelectItem>
+                      {productCategories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{translateCategory(cat)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={(table.getColumn('subCategory')?.getFilterValue() as string) ?? ''}
+                    onValueChange={(value) => table.getColumn('subCategory')?.setFilterValue(value || undefined)}
+                    disabled={!subCategoryOptions || subCategoryOptions.length === 0}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Все подкатегории" />
+                    </SelectTrigger>
+                    <SelectContent>
+                       <SelectItem value="">Все подкатегории</SelectItem>
+                       {subCategoryOptions?.map(subCat => (
+                            <SelectItem key={subCat} value={subCat}>{translateSubCategory(subCat)}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+            </div>
         <div className="rounded-md border">
             <Table>
             <TableHeader>
@@ -319,7 +337,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
                         <TableHead key={header.id} 
                         className={cn({
                             'hidden sm:table-cell': ['costPerBottle', 'bottleVolumeMl'].includes(header.column.id),
-                            'hidden lg:table-cell': ['category'].includes(header.column.id)
+                            'hidden lg:table-cell': ['category', 'subCategory'].includes(header.column.id)
                         })}
                         >
                         {header.isPlaceholder
@@ -345,7 +363,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
                         <TableCell key={cell.id}
                         className={cn({
                             'hidden sm:table-cell': ['costPerBottle', 'bottleVolumeMl'].includes(cell.column.id),
-                            'hidden lg:table-cell': ['category'].includes(cell.column.id)
+                             'hidden lg:table-cell': ['category', 'subCategory'].includes(cell.column.id)
                         })}
                         >
                         {flexRender(

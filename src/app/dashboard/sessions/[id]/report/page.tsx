@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { BarChart3, Loader2, ShoppingCart } from "lucide-react";
 import type { InventorySession, Product, InventoryLine, PurchaseOrder } from '@/lib/types';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, collection, query, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, collection, query } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { russianHolidays2024, getUpcomingHoliday } from '@/lib/holidays';
+import { useServerAction } from '@/hooks/use-server-action';
+import { createPurchaseOrdersFromSession } from '@/lib/actions';
+
 
 const ReportView = dynamic(() => import('@/components/reports/report-view').then(mod => mod.ReportView), {
     ssr: false,
@@ -47,98 +49,37 @@ export default function SessionReportPage() {
   );
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
 
-  const [isCreatingOrder, setIsCreatingOrder] = React.useState(false);
 
-
-  const handleCreatePurchaseOrder = async () => {
-    if (!user || !lines || !products || !barId || !firestore) return;
-
-    setIsCreatingOrder(true);
-    try {
-        const HOLIDAY_MULTIPLIER = 2; // Увеличиваем заказ в 2 раза перед праздниками
-        const PRE_HOLIDAY_DAYS = 5; // За сколько дней до праздника начинаем увеличивать заказ
-
-        const today = new Date();
-        const upcomingHoliday = getUpcomingHoliday(today, russianHolidays2024, PRE_HOLIDAY_DAYS);
-        const multiplier = upcomingHoliday ? HOLIDAY_MULTIPLIER : 1;
-
-        if (upcomingHoliday) {
+  const { execute: createOrders, isLoading: isCreatingOrder } = useServerAction(createPurchaseOrdersFromSession, {
+    onSuccess: (result) => {
+        if (result.holidayBonus) {
             toast({
-                title: `Приближается праздник: ${upcomingHoliday}!`,
-                description: `Рекомендации по заказу увеличены в ${multiplier} раза.`,
+                title: `Приближается праздник: ${result.holidayName}!`,
+                description: `Рекомендации по заказу были увеличены.`,
                 duration: 5000,
             });
         }
-
-        const productsToOrder = lines.map(line => {
-            const product = products.find(p => p.id === line.productId);
-            if (!product || !product.reorderPointMl || !product.reorderQuantity) return null;
-            if (line.endStock < product.reorderPointMl) {
-                // Применяем множитель к рекомендованному количеству
-                const recommendedQuantity = Math.ceil(product.reorderQuantity * multiplier);
-                return { product, quantity: recommendedQuantity };
-            }
-            return null;
-        }).filter((p): p is NonNullable<typeof p> => p !== null);
-
-        if (productsToOrder.length === 0) {
-            toast({ title: 'Заказ не требуется', description: 'Остатки всех продуктов выше минимального уровня.' });
-            setIsCreatingOrder(false);
-            return;
-        }
-
-        const ordersBySupplier: Record<string, { product: Product, quantity: number }[]> = {};
-        productsToOrder.forEach(item => {
-            const supplierId = item.product.defaultSupplierId || 'unknown';
-            if (!ordersBySupplier[supplierId]) {
-                ordersBySupplier[supplierId] = [];
-            }
-            ordersBySupplier[supplierId].push(item);
-        });
-
-        const batch = writeBatch(firestore);
-        const orderIds: string[] = [];
-
-        for (const supplierId in ordersBySupplier) {
-            const orderRef = doc(collection(firestore, 'bars', barId, 'purchaseOrders'));
-            orderIds.push(orderRef.id);
-
-            const orderData = {
-                id: orderRef.id,
-                barId,
-                supplierId,
-                status: 'draft' as const,
-                orderDate: serverTimestamp(),
-                createdAt: serverTimestamp(),
-                createdByUserId: user.uid,
-            };
-            batch.set(orderRef, orderData);
-
-            ordersBySupplier[supplierId].forEach(item => {
-                const lineRef = doc(collection(orderRef, 'lines'));
-                const lineData = {
-                    id: lineRef.id,
-                    purchaseOrderId: orderRef.id,
-                    productId: item.product.id,
-                    quantity: item.quantity,
-                    costPerItem: item.product.costPerBottle,
-                    receivedQuantity: 0,
-                };
-                batch.set(lineRef, lineData);
-            });
-        }
-        await batch.commit();
         toast({
             title: 'Заказы успешно созданы',
-            description: `Создано ${orderIds.length} черновиков заказов.`,
+            description: `Создано ${result.createdCount} черновиков заказов.`,
         });
-        router.push(`/dashboard/purchase-orders/${orderIds[0]}`);
-
-    } catch (serverError) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/purchaseOrders`, operation: 'create' }));
-    } finally {
-        setIsCreatingOrder(false);
+        if (result.orderIds.length > 0) {
+            router.push(`/dashboard/purchase-orders/${result.orderIds[0]}`);
+        }
+    },
+    onError: (error) => {
+        toast({
+            variant: 'destructive',
+            title: 'Ошибка при создании заказа',
+            description: error,
+        });
     }
+  });
+
+
+  const handleCreatePurchaseOrder = () => {
+    if (!user || !lines || !products || !barId) return;
+    createOrders({ lines, products, barId, userId: user.uid });
   };
 
 

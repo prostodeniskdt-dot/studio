@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Lightbulb } from 'lucide-react';
 import type { CalculatedInventoryLine } from '@/lib/types';
-import { runVarianceAnalysis } from '@/lib/actions';
+import { analyzeVariance } from '@/lib/actions';
 import { formatCurrency } from '@/lib/utils';
 import { useServerAction } from '@/hooks/use-server-action';
 
@@ -19,19 +19,17 @@ type VarianceAnalysisModalProps = {
 
 export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnalysisModalProps) {
   
-  const { execute: performAnalysis, isLoading, data, error } = useServerAction(runVarianceAnalysis);
+  const { execute: performAnalysis, isLoading, data, error } = useServerAction(analyzeVariance);
 
   const analysisCallback = React.useCallback(() => {
-    if (line) {
+    if (open && line) {
         performAnalysis(line);
     }
-  }, [line, performAnalysis]);
+  }, [line, open, performAnalysis]);
 
   React.useEffect(() => {
-    if (open) {
-      analysisCallback();
-    }
-  }, [open, analysisCallback]);
+     analysisCallback();
+  }, [analysisCallback]);
 
   const varianceType = line.differenceVolume > 0 ? 'Излишек' : 'Недостача';
   const varianceColor = line.differenceVolume > 0 ? 'text-green-600' : 'text-destructive';
@@ -70,7 +68,7 @@ export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnal
         </div>
         <DialogFooter>
           <Button onClick={() => onOpenChange(false)} variant="outline">Закрыть</Button>
-          <Button onClick={analysisCallback} disabled={isLoading}>
+          <Button onClick={() => performAnalysis(line)} disabled={isLoading}>
             {isLoading ? "Анализ..." : "Повторить анализ"}
           </Button>
         </DialogFooter>

@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn, formatCurrency, translateCategory, translateSubCategory } from '@/lib/utils';
-import { Download, FileType, FileJson, Loader2, ShoppingCart, BarChart, PieChart as PieChartIcon } from 'lucide-react';
+import { Download, FileType, FileJson, Loader2, ShoppingCart, BarChart, PieChart as PieChartIcon, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Timestamp } from 'firebase/firestore';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Pie, PieChart as RechartsPieChart, Cell } from 'recharts';
@@ -19,6 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { VarianceAnalysisModal } from '../sessions/variance-analysis-modal';
 
 
 type ReportViewProps = {
@@ -33,6 +34,7 @@ type GroupedLines = Record<string, Record<string, CalculatedInventoryLine[]>>;
 
 export function ReportView({ session, products, onCreatePurchaseOrder, isCreatingOrder }: ReportViewProps) {
   const { toast } = useToast();
+  const [analyzingLine, setAnalyzingLine] = React.useState<CalculatedInventoryLine | null>(null);
 
   const groupedAndSortedLines = React.useMemo(() => {
     if (!session.lines) return {};
@@ -84,6 +86,11 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
       { name: 'Излишки', value: totals.totalSurplus, fill: 'hsl(var(--chart-2))' },
       { name: 'Потери', value: Math.abs(totals.totalLoss), fill: 'hsl(var(--destructive))' },
   ].filter(item => item.value > 0);
+
+  const needsReorder = React.useMemo(() =>
+    allCalculatedLines.some(line => line.product?.reorderPointMl && line.endStock < line.product.reorderPointMl),
+    [allCalculatedLines]
+  );
   
   const handleExportCSV = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
@@ -137,7 +144,7 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
                 <p className="text-muted-foreground">{session.name} - {session.closedAt && <>Закрыто {formatDate(session.closedAt)}</>}</p>
             </div>
             <div className="flex gap-2">
-                <Button onClick={onCreatePurchaseOrder} disabled={isCreatingOrder}>
+                <Button onClick={onCreatePurchaseOrder} disabled={isCreatingOrder || !needsReorder}>
                   {isCreatingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
                   {isCreatingOrder ? 'Создание...' : 'Создать заказ на закупку'}
                 </Button>
@@ -254,13 +261,14 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
                     <TableHead className="text-right">Разн. (мл)</TableHead>
                     <TableHead className="text-right">Разн. (%)</TableHead>
                     <TableHead className="text-right">Разн. (руб.)</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {Object.entries(groupedAndSortedLines).map(([category, subCategories]) => (
                     <React.Fragment key={category}>
                         <TableRow className="bg-muted/20 hover:bg-muted/20">
-                            <TableCell colSpan={6} className="font-bold text-base">
+                            <TableCell colSpan={7} className="font-bold text-base">
                                 {translateCategory(category as any)}
                             </TableCell>
                         </TableRow>
@@ -268,7 +276,7 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
                             <React.Fragment key={subCategory}>
                                 {subCategory !== 'uncategorized' && (
                                      <TableRow className="bg-muted/10 hover:bg-muted/10">
-                                        <TableCell colSpan={6} className="py-2 pl-8 font-semibold text-sm">
+                                        <TableCell colSpan={7} className="py-2 pl-8 font-semibold text-sm">
                                             {translateSubCategory(subCategory as any)}
                                         </TableCell>
                                     </TableRow>
@@ -287,6 +295,13 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
                                         <TableCell className={cn("text-right font-mono", line.differenceMoney >= 0 ? 'text-green-600' : 'text-destructive')}>
                                             {formatCurrency(line.differenceMoney)}
                                         </TableCell>
+                                        <TableCell>
+                                            {line.differenceVolume !== 0 && (
+                                                <Button variant="ghost" size="icon" onClick={() => setAnalyzingLine(line)}>
+                                                    <Lightbulb className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </React.Fragment>
@@ -296,7 +311,7 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
             </TableBody>
              <TableFooter>
                 <TableRow>
-                    <TableCell colSpan={5} className="font-bold text-lg">Общее отклонение</TableCell>
+                    <TableCell colSpan={6} className="font-bold text-lg">Общее отклонение</TableCell>
                     <TableCell className={cn("text-right font-bold text-lg", totals.totalVariance >= 0 ? 'text-green-600' : 'text-destructive')}>
                         {formatCurrency(totals.totalVariance)}
                     </TableCell>
@@ -304,6 +319,13 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
             </TableFooter>
             </Table>
         </div>
+        {analyzingLine && (
+            <VarianceAnalysisModal 
+                line={analyzingLine}
+                open={!!analyzingLine}
+                onOpenChange={(open) => !open && setAnalyzingLine(null)}
+            />
+        )}
     </div>
   );
 }

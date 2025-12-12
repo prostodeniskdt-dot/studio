@@ -78,11 +78,11 @@ export default function UnifiedCalculatorPage() {
   const handleProductSelect = (productId: string) => {
     const product = products?.find(p => p.id === productId);
     setSelectedProductId(productId);
+    setCalculatedVolume(null);
     if (product) {
         setBottleVolume(product.bottleVolumeMl?.toString() ?? '');
         setFullWeight(product.fullBottleWeightG?.toString() ?? '');
         setEmptyWeight(product.emptyBottleWeightG?.toString() ?? '');
-        setCalculatedVolume(null);
     }
   };
   

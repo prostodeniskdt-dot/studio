@@ -82,12 +82,13 @@ service cloud.firestore {
     // ------------------------------------------------------------------------
 
     function isCreatingOwnUser(userId) {
-      let isRoleValid = request.resource.data.role == 'manager';
+      // The user can only create their own user document.
       // This is the key fix: the request data MUST include the 'id' field.
-      return isOwner(userId) && request.resource.data.id == userId && isRoleValid;
+      return isOwner(userId) && request.resource.data.id == userId;
     }
 
     function isUserUpdateValid() {
+      // Prevent users from changing their own ID or role.
       return request.resource.data.id == resource.data.id && request.resource.data.role == resource.data.role;
     }
 
@@ -97,6 +98,7 @@ service cloud.firestore {
     }
 
     function isBarUpdateValid() {
+      // Prevent the owner of the bar from being changed.
       return request.resource.data.ownerUserId == resource.data.ownerUserId;
     }
     

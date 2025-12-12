@@ -114,6 +114,19 @@ service cloud.firestore {
              data.isActive == true;
     }
     
+     function isProductUpdateValid() {
+      let data = request.resource.data;
+      let oldData = resource.data;
+      // Only allow non-critical fields to be updated by non-admins
+      return data.name == oldData.name &&
+             data.category == oldData.category &&
+             data.subCategory == oldData.subCategory &&
+             data.bottleVolumeMl == oldData.bottleVolumeMl &&
+             data.costPerBottle == oldData.costPerBottle &&
+             data.portionVolumeMl == oldData.portionVolumeMl &&
+             data.sellingPricePerPortion == oldData.sellingPricePerPortion;
+    }
+    
     function isInventorySessionCreateValid(barId) {
       let data = request.resource.data;
       return data.createdByUserId == request.auth.uid &&
@@ -153,7 +166,7 @@ service cloud.firestore {
     match /products/{productId} {
         allow read, list: if isSignedIn();
         allow create: if isSignedIn() && isProductCreateValid();
-        allow update: if resourceExists() && isSignedIn();
+        allow update: if resourceExists() && (isAdmin() || isProductUpdateValid());
         allow delete: if isAdmin() && resourceExists();
     }
 
@@ -173,7 +186,7 @@ service cloud.firestore {
 
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        allow list: if isSignedIn();
+        allow list: if isBarOwnerByPath(barId) || isAdmin();
         allow create: if isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteSubcollection(barId) && resourceExists();

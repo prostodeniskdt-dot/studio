@@ -3,7 +3,7 @@
 import * as React from 'react';
 import dynamic from 'next/dynamic';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import type { InventorySession, InventoryLine } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 
@@ -60,7 +60,11 @@ export default function AnalyticsPage() {
         const populatedSessions = sessions.map(session => ({
           ...session,
           lines: linesBySession[session.id] || []
-        })).sort((a, b) => (a.closedAt ? a.closedAt.toMillis() : 0) - (b.closedAt ? b.closedAt.toMillis() : 0));
+        })).sort((a, b) => {
+            const dateA = a.closedAt instanceof Timestamp ? a.closedAt.toMillis() : 0;
+            const dateB = b.closedAt instanceof Timestamp ? b.closedAt.toMillis() : 0;
+            return dateA - dateB;
+        });
         
         setSessionsWithLines(populatedSessions);
 

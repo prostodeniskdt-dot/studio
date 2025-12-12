@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn, translateStatus } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MoreVertical, Trash2, Loader2 } from "lucide-react";
-import { Timestamp, doc, deleteDoc } from "firebase/firestore";
+import { Timestamp, doc, deleteDoc, writeBatch, collection, getDocs } from "firebase/firestore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,22 +74,33 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     const sessionRef = doc(firestore, 'bars', barId, 'inventorySessions', sessionToDelete.id);
     
     try {
-        await deleteDoc(sessionRef);
+        // Atomically delete the session document and all of its line items.
+        const linesRef = collection(sessionRef, 'lines');
+        const linesSnapshot = await getDocs(linesRef);
+        const batch = writeBatch(firestore);
+
+        // Delete all line items in the subcollection
+        linesSnapshot.forEach(lineDoc => batch.delete(lineDoc.ref));
+        
+        // Delete the main session document
+        batch.delete(sessionRef);
+
+        await batch.commit();
         
         toast({ title: "Инвентаризация удалена." });
         setSessionToDelete(null); 
-        setIsDeleting(false);
 
     } catch (serverError: any) {
-        setIsDeleting(false); 
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: sessionRef.path,
             operation: 'delete'
         }));
         // CRITICAL: Stop execution here to let the error listener handle it.
         // Do NOT close the dialog or change state further.
+        setIsDeleting(false); 
         return;
     }
+    setIsDeleting(false);
   };
 
 
@@ -151,7 +162,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
             <AlertDialogDescription>
-              Вы собираетесь безвозвратно удалить инвентаризацию "{sessionToDelete?.name}". Это действие нельзя отменить.
+              Вы собираетесь безвозвратно удалить инвентаризацию "{sessionToDelete?.name}" и все связанные с ней данные. Это действие нельзя отменить.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

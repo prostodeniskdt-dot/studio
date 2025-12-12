@@ -96,9 +96,9 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
             operation: 'delete'
         }));
         // CRITICAL: Stop execution here to let the error listener handle it.
-        // Do NOT close the dialog or change state further.
+        // We also stop the loading state but keep the dialog open.
         setIsDeleting(false); 
-        return;
+        return; // Halt further execution
     }
     setIsDeleting(false);
   };

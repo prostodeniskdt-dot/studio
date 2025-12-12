@@ -129,12 +129,14 @@ export default function UnifiedCalculatorPage() {
         }
     }
     
-    // Height calculation
+    // Height calculation - assuming a simple cylindrical bottle shape
     const ll = parseFloat(liquidLevel);
     if (ll > 0 && bv > 0) {
-        // This is a very rough approximation and assumes a linear shape.
-        const mlPerCm = bv / 25; // Super rough estimate: 25cm avg height
-        const volume = ll * mlPerCm;
+        // This is a rough approximation. A better approach would require bottle dimensions.
+        // Assuming height of liquid part of bottle is ~25-30cm
+        const bottleLiquidHeightCm = 25; 
+        const percentage = Math.min(ll / bottleLiquidHeightCm, 1);
+        const volume = bv * percentage;
         volumeByHeight = Math.round(volume > bv ? bv : volume);
     }
 

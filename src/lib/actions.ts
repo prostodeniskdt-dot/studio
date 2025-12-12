@@ -15,9 +15,12 @@ export type AnalyzeInventoryVarianceOutput = { analysis: string; };
 
 export async function runVarianceAnalysis(line: CalculatedInventoryLine): Promise<AnalyzeInventoryVarianceOutput> {
   try {
+    if (!line.product) {
+      throw new Error("Product data is missing for analysis.");
+    }
     // Ensure we only pass the fields defined in the Zod schema to the AI flow.
     const analysisInput: AnalyzeInventoryVarianceInput = {
-      productName: line.product?.name ?? 'Unknown Product',
+      productName: line.product.name,
       theoreticalEndStock: line.theoreticalEndStock,
       endStock: line.endStock,
       sales: line.sales,

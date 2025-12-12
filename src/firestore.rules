@@ -114,15 +114,24 @@ service cloud.firestore {
              data.isActive == true;
     }
     
-    function isProductUpdateValid() {
-       let data = request.resource.data;
-       let oldData = resource.data;
-       return data.name == oldData.name &&
-              data.category == oldData.category &&
-              data.bottleVolumeMl == oldData.bottleVolumeMl &&
-              data.costPerBottle == oldData.costPerBottle &&
-              data.portionVolumeMl == oldData.portionVolumeMl &&
-              data.sellingPricePerPortion == oldData.sellingPricePerPortion;
+     function isProductUpdateValid() {
+        let incoming = request.resource.data;
+        let existing = resource.data;
+        // Allow updating only these specific fields by non-admins
+        let allowedToChange = [
+            'subCategory', 'imageUrl', 'fullBottleWeightG', 'emptyBottleWeightG', 
+            'reorderPointMl', 'reorderQuantity', 'defaultSupplierId', 'isActive', 'updatedAt'
+        ];
+        // Ensure critical fields are NOT changed
+        let criticalFieldsUnchanged = 
+            incoming.name == existing.name &&
+            incoming.category == existing.category &&
+            incoming.costPerBottle == existing.costPerBottle &&
+            incoming.sellingPricePerPortion == existing.sellingPricePerPortion &&
+            incoming.portionVolumeMl == existing.portionVolumeMl &&
+            incoming.bottleVolumeMl == existing.bottleVolumeMl;
+            
+        return criticalFieldsUnchanged || incoming.diff(existing).affectedKeys().hasOnly(allowedToChange);
     }
     
     function isInventorySessionCreateValid(barId) {
@@ -184,7 +193,7 @@ service cloud.firestore {
 
       match /inventorySessions/{inventorySessionId} {
         allow get: if canReadBarData(barId);
-        allow list: if isSignedIn(); // Allow list for any signed-in user, client MUST filter by barId
+        allow list: if isBarOwnerByPath(barId) || isAdmin();
         allow create: if isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
         allow delete: if canWriteSubcollection(barId) && resourceExists();

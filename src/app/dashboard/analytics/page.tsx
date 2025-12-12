@@ -61,8 +61,8 @@ export default function AnalyticsPage() {
           ...session,
           lines: linesBySession[session.id] || []
         })).sort((a, b) => {
-            const dateA = a.closedAt instanceof Timestamp ? a.closedAt.toMillis() : 0;
-            const dateB = b.closedAt instanceof Timestamp ? b.closedAt.toMillis() : 0;
+            const dateA = a.closedAt instanceof Timestamp ? a.closedAt.toMillis() : (a.closedAt as any)?.seconds * 1000 || 0;
+            const dateB = b.closedAt instanceof Timestamp ? b.closedAt.toMillis() : (b.closedAt as any)?.seconds * 1000 || 0;
             return dateA - dateB;
         });
         

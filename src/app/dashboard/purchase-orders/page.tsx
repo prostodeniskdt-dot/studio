@@ -38,37 +38,30 @@ export default function PurchaseOrdersPage() {
       return;
     };
     
-    // Only fetch lines if there are orders to process
     if (orders.length === 0) {
+        setAllOrderLines({});
         setIsLoadingLines(false);
         return;
     }
     
     setIsLoadingLines(true);
     const fetchAllLines = async () => {
-        // Create an array of promises, where each promise fetches the lines for one order.
-        const linesPromises = orders.map(order => {
-            const linesQuery = query(collection(firestore, 'bars', barId, 'purchaseOrders', order.id, 'lines'));
-            return getDocs(linesQuery).then(snapshot => ({
-                orderId: order.id,
-                lines: snapshot.docs.map(doc => doc.data() as PurchaseOrderLine)
-            }));
-        });
+        const linesPromises = orders.map(order => 
+            getDocs(query(collection(firestore, 'bars', barId, 'purchaseOrders', order.id, 'lines')))
+        );
         
         try {
-            // Wait for all the promises to resolve.
-            const results = await Promise.all(linesPromises);
+            const snapshotResults = await Promise.all(linesPromises);
             
-            // Transform the array of results into a dictionary for easy lookup.
-            const linesByOrder = results.reduce((acc, result) => {
-                acc[result.orderId] = result.lines;
+            const linesByOrder = snapshotResults.reduce((acc, snapshot, index) => {
+                const orderId = orders[index].id;
+                acc[orderId] = snapshot.docs.map(doc => doc.data() as PurchaseOrderLine);
                 return acc;
             }, {} as Record<string, PurchaseOrderLine[]>);
             
             setAllOrderLines(linesByOrder);
         } catch (error) {
             console.error("Error fetching all order lines:", error);
-            // Optionally, handle the error state in the UI
         } finally {
             setIsLoadingLines(false);
         }

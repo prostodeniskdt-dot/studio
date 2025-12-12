@@ -78,10 +78,11 @@ export function ProductsTable({ products }: { products: Product[] }) {
     setIsArchiving(product.id);
     try {
         const productRef = doc(firestore, 'products', product.id);
-        await updateDoc(productRef, { isActive: !product.isActive });
+        const updateData = { isActive: !product.isActive };
+        await updateDoc(productRef, updateData);
         toast({ title: "Статус продукта изменен." });
     } catch (serverError) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `products/${product.id}`, operation: 'update' }));
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `products/${product.id}`, operation: 'update', requestResourceData: updateData }));
     } finally {
         setIsArchiving(null);
     }

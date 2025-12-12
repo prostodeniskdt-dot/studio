@@ -55,10 +55,16 @@ service cloud.firestore {
      * SAFE for get, create, update, delete. UNSAFE for list.
      */
     function isBarMemberByRead(barId) {
+      // Allow read if user is the owner of the bar document
       let barDoc = get(/databases/$(database)/documents/bars/$(barId));
-      let isOwner = barDoc.data.ownerUserId == request.auth.uid;
-      let isExplicitMember = exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid));
-      return isOwner || isExplicitMember;
+      if (barDoc.data.ownerUserId == request.auth.uid) {
+        return true;
+      }
+      // Allow read if the user is an explicit member of the bar
+      if (exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid))) {
+        return true;
+      }
+      return false;
     }
 
     // ------------------------------------------------------------------------
@@ -83,7 +89,6 @@ service cloud.firestore {
 
     function isCreatingOwnUser(userId) {
       // The user can only create their own user document.
-      // This is the key fix: the request data MUST include the 'id' field.
       return isOwner(userId) && request.resource.data.id == userId;
     }
 
@@ -94,7 +99,8 @@ service cloud.firestore {
 
     function isCreatingOwnBar(barId) {
       // The barId must be `bar_${userId}` and the ownerUserId field must match.
-      return barId == 'bar_' + request.auth.uid && request.resource.data.ownerUserId == request.auth.uid;
+      return barId == 'bar_' + request.auth.uid 
+        && request.resource.data.ownerUserId == request.auth.uid;
     }
 
     function isBarUpdateValid() {

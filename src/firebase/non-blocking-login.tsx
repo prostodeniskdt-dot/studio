@@ -33,7 +33,6 @@ function getInitialProductData(): ProductSeedData[] {
     const vermouthImage = PlaceHolderImages.find(p => p.id === 'vermouth')?.imageUrl;
 
     return [
-        // Existing
         { name: 'Jameson', category: 'Whiskey', subCategory: 'Irish', costPerBottle: 1800, sellingPricePerPortion: 350, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1150, emptyBottleWeightG: 450, isActive: true, imageUrl: whiskeyImage },
         { name: 'Jack Daniel\'s', category: 'Whiskey', subCategory: 'Bourbon', costPerBottle: 2000, sellingPricePerPortion: 380, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1180, emptyBottleWeightG: 480, isActive: true, imageUrl: whiskeyImage },
         { name: 'Havana Club 3', category: 'Rum', subCategory: 'White', costPerBottle: 1500, sellingPricePerPortion: 300, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1120, emptyBottleWeightG: 420, isActive: true, imageUrl: rumImage },
@@ -44,8 +43,6 @@ function getInitialProductData(): ProductSeedData[] {
         { name: 'Monin Grenadine', category: 'Syrup', costPerBottle: 800, sellingPricePerPortion: 50, portionVolumeMl: 10, bottleVolumeMl: 1000, fullBottleWeightG: 1800, emptyBottleWeightG: 800, isActive: true, imageUrl: syrupImage },
         { name: 'Вино красное (дом)', category: 'Wine', subCategory: 'Red', costPerBottle: 900, sellingPricePerPortion: 250, portionVolumeMl: 150, bottleVolumeMl: 750, fullBottleWeightG: 1250, emptyBottleWeightG: 500, isActive: true, imageUrl: wineImage },
         { name: 'Пиво светлое (кран)', category: 'Beer', subCategory: 'Lager', costPerBottle: 150, sellingPricePerPortion: 300, portionVolumeMl: 500, bottleVolumeMl: 1000, fullBottleWeightG: 1550, emptyBottleWeightG: 550, isActive: true, imageUrl: beerImage },
-        
-        // New popular items
         { name: 'Русский Стандарт', category: 'Vodka', costPerBottle: 1000, sellingPricePerPortion: 250, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1100, emptyBottleWeightG: 400, isActive: true, imageUrl: vodkaImage },
         { name: 'Beluga Noble', category: 'Vodka', costPerBottle: 1800, sellingPricePerPortion: 400, portionVolumeMl: 40, bottleVolumeMl: 700, fullBottleWeightG: 1250, emptyBottleWeightG: 550, isActive: true, imageUrl: vodkaImage },
         { name: 'Арарат 5 звезд', category: 'Brandy', costPerBottle: 1500, sellingPricePerPortion: 350, portionVolumeMl: 40, bottleVolumeMl: 500, fullBottleWeightG: 950, emptyBottleWeightG: 450, isActive: true, imageUrl: brandyImage },
@@ -60,20 +57,27 @@ function getInitialProductData(): ProductSeedData[] {
 }
 
 /**
- * Seeds the entire product catalog if it's empty.
+ * Seeds the product catalog if it's missing products.
+ * This is an idempotent operation; it only adds products that don't already exist by name.
  */
 async function seedInitialProducts(firestore: Firestore): Promise<void> {
     const productsCollectionRef = collection(firestore, 'products');
-    const productsQuery = query(productsCollectionRef, limit(1));
     
-    const productsSnapshot = await getDocs(productsQuery);
-    if (!productsSnapshot.empty) {
-        return; // Products already exist.
+    // Get all existing products from Firestore
+    const existingProductsSnapshot = await getDocs(productsCollectionRef);
+    const existingProductNames = new Set(existingProductsSnapshot.docs.map(doc => doc.data().name));
+
+    // Get the list of products that should exist
+    const productsToSeed = getInitialProductData();
+
+    // Filter out products that already exist
+    const productsToCreate = productsToSeed.filter(prod => !existingProductNames.has(prod.name));
+
+    if (productsToCreate.length === 0) {
+        return; // All products already exist.
     }
 
     const batch = writeBatch(firestore);
-    const productsToCreate = getInitialProductData();
-
     productsToCreate.forEach(prodData => {
         const prodRef = doc(productsCollectionRef);
         batch.set(prodRef, {

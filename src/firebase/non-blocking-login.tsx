@@ -98,29 +98,29 @@ async function seedInitialProducts(firestore: Firestore): Promise<void> {
     const productsToSeed = getInitialProductData();
     const batch = writeBatch(firestore);
 
-    // Get all existing products from Firestore
     const existingProductsSnapshot = await getDocs(productsCollectionRef);
     const existingProductsMap = new Map<string, {id: string, data: Product}>();
-    existingProductsSnapshot.docs.forEach(doc => {
+    existingProductsSnapshot.forEach(doc => {
         const data = doc.data() as Product;
-        // Use a consistent key, like lowercase name, to find matches later
-        existingProductsMap.set(data.name.toLowerCase(), {id: doc.id, data});
+        // Use a consistent key for matching. Using original name from the seed list as the key.
+        const seedData = productsToSeed.find(p => p.name === data.name);
+        if(seedData){
+           existingProductsMap.set(seedData.name, {id: doc.id, data});
+        }
     });
 
     for (const seedProd of productsToSeed) {
-        const seedProdNameLower = seedProd.name.toLowerCase();
-        const existingDoc = existingProductsMap.get(seedProdNameLower);
+        const existingDoc = existingProductsMap.get(seedProd.name);
         
         if (existingDoc) {
             // Product exists, update it with the seed data.
-            // We use the existing doc.id to ensure we're updating the correct document.
             const docRef = doc(firestore, 'products', existingDoc.id);
             batch.set(docRef, {
-                ...seedProd, // Overwrite with new seed data, including name
-                id: existingDoc.id, // ensure id is preserved
-                createdAt: existingDoc.data.createdAt, // ensure createdAt is preserved
+                ...seedProd,
+                id: existingDoc.id, 
+                createdAt: existingDoc.data.createdAt, 
                 updatedAt: serverTimestamp(),
-            }, { merge: true }); // Merge to avoid overwriting fields not in seed data
+            }, { merge: true });
         } else {
             // Product doesn't exist, create a new one.
             const docRef = doc(productsCollectionRef);

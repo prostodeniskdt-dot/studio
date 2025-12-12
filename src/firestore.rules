@@ -83,7 +83,7 @@ service cloud.firestore {
 
     function isCreatingOwnUser(userId) {
       // The user can only create their own user document.
-      // The 'id' in the document must match the creator's UID.
+      // This is the key fix: the request data MUST include the 'id' field.
       return isOwner(userId) && request.resource.data.id == userId;
     }
 
@@ -164,8 +164,8 @@ service cloud.firestore {
     
     match /products/{productId} {
         allow read, list: if isSignedIn();
-        // Any signed-in user can create or update a product, as it is a global catalog.
         allow create: if isSignedIn() && isProductCreateValid();
+        // Any signed-in user can update a product, as long as the update is valid (doesn't change critical fields).
         allow update: if isSignedIn() && resourceExists() && isProductUpdateValid();
         allow delete: if isAdmin() && resourceExists();
     }

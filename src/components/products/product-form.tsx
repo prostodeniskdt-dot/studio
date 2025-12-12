@@ -297,7 +297,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         
         <Separator />
         <h3 className="text-lg font-medium">Параметры автозаказа</h3>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 items-start">
             <FormField
                 control={form.control}
                 name="reorderPointMl"

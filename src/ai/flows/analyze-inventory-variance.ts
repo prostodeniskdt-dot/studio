@@ -7,8 +7,8 @@
  */
 
 import {ai} from '@/ai/genkit';
-import { type AnalyzeInventoryVarianceInput, type AnalyzeInventoryVarianceOutput } from '@/lib/actions';
-import {z} from 'genkit';
+import type { AnalyzeInventoryVarianceInput, AnalyzeInventoryVarianceOutput } from '@/lib/actions';
+import {z} from 'zod';
 
 const AnalyzeInventoryVarianceInputSchema = z.object({
   productName: z.string().describe('The name of the product being analyzed.'),

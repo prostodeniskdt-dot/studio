@@ -112,25 +112,15 @@ async function seedInitialProducts(firestore: Firestore): Promise<void> {
     for (const seedProd of productsToSeed) {
         const existingDoc = existingProductsMap.get(seedProd.name);
         
-        if (existingDoc) {
-            // Product exists, update it with the seed data.
-            const docRef = doc(firestore, 'products', existingDoc.id);
-            batch.set(docRef, {
-                ...seedProd,
-                id: existingDoc.id, 
-                createdAt: existingDoc.data.createdAt, 
-                updatedAt: serverTimestamp(),
-            }, { merge: true });
-        } else {
-            // Product doesn't exist, create a new one.
-            const docRef = doc(productsCollectionRef);
-            batch.set(docRef, {
-                ...seedProd,
-                id: docRef.id,
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-            });
-        }
+        const docRef = existingDoc ? doc(firestore, 'products', existingDoc.id) : doc(productsCollectionRef);
+        const finalData = {
+            ...seedProd,
+            id: docRef.id,
+            createdAt: existingDoc ? existingDoc.data.createdAt : serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        };
+
+        batch.set(docRef, finalData, { merge: true });
     }
     
     await batch.commit();

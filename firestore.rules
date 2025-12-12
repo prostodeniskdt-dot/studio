@@ -83,6 +83,7 @@ service cloud.firestore {
 
     function isCreatingOwnUser(userId) {
       let isRoleValid = request.resource.data.role == 'manager';
+      // This is the key fix: the request data MUST include the 'id' field.
       return isOwner(userId) && request.resource.data.id == userId && isRoleValid;
     }
 
@@ -115,16 +116,12 @@ service cloud.firestore {
     }
     
      function isProductUpdateValid() {
-      let data = request.resource.data;
-      let oldData = resource.data;
-      // Only allow non-critical fields to be updated by non-admins
-      return data.name == oldData.name &&
-             data.category == oldData.category &&
-             data.subCategory == oldData.subCategory &&
-             data.bottleVolumeMl == oldData.bottleVolumeMl &&
-             data.costPerBottle == oldData.costPerBottle &&
-             data.portionVolumeMl == oldData.portionVolumeMl &&
-             data.sellingPricePerPortion == oldData.sellingPricePerPortion;
+      let incomingData = request.resource.data;
+      let existingData = resource.data;
+      // This rule ensures that critical, system-set fields are not changed by the client.
+      // Any other field is allowed to be updated.
+      return incomingData.id == existingData.id &&
+             incomingData.createdAt == existingData.createdAt;
     }
     
     function isInventorySessionCreateValid(barId) {
@@ -166,7 +163,8 @@ service cloud.firestore {
     match /products/{productId} {
         allow read, list: if isSignedIn();
         allow create: if isSignedIn() && isProductCreateValid();
-        allow update: if resourceExists() && (isAdmin() || isProductUpdateValid());
+        // Any signed-in user can update a product, as long as the update is valid (doesn't change critical fields).
+        allow update: if isSignedIn() && resourceExists() && isProductUpdateValid();
         allow delete: if isAdmin() && resourceExists();
     }
 

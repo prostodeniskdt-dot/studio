@@ -297,59 +297,60 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         
         <Separator />
         <h3 className="text-lg font-medium">Параметры автозаказа</h3>
-        <div className="grid grid-cols-2 gap-4 items-start">
+        <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="reorderPointMl"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Минимальный остаток (мл)</FormLabel>
+                        <FormControl>
+                            <Input type="number" {...field} value={field.value ?? ''} placeholder="Например, 350"/>
+                        </FormControl>
+                        <FormDescription>Когда остаток упадет ниже этого значения, товар попадет в автозаказ.</FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="reorderQuantity"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Количество для заказа (бут.)</FormLabel>
+                        <FormControl>
+                            <Input type="number" {...field} value={field.value ?? ''} placeholder="Например, 6"/>
+                        </FormControl>
+                        <FormDescription>Сколько бутылок заказывать, когда остаток низкий.</FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
             <FormField
                 control={form.control}
-                name="reorderPointMl"
+                name="defaultSupplierId"
                 render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Минимальный остаток (мл)</FormLabel>
+                <FormItem>
+                    <FormLabel>Поставщик по умолчанию</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value ?? ''}>
                     <FormControl>
-                        <Input type="number" {...field} value={field.value ?? ''} placeholder="Например, 350"/>
+                        <SelectTrigger disabled={isLoadingSuppliers}>
+                        <SelectValue placeholder={isLoadingSuppliers ? "Загрузка..." : "Выберите поставщика"} />
+                        </SelectTrigger>
                     </FormControl>
-                    <FormDescription>Когда остаток упадет ниже этого значения, товар попадет в автозаказ.</FormDescription>
+                    <SelectContent>
+                        {suppliers ? suppliers.map(s => (
+                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        )) : <SelectItem value="loading" disabled>Загрузка...</SelectItem>}
+                    </SelectContent>
+                    </Select>
                     <FormMessage />
-                    </FormItem>
-                )}
-            />
-            <FormField
-                control={form.control}
-                name="reorderQuantity"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Количество для заказа (бут.)</FormLabel>
-                    <FormControl>
-                        <Input type="number" {...field} value={field.value ?? ''} placeholder="Например, 6"/>
-                    </FormControl>
-                    <FormDescription>Сколько бутылок заказывать, когда остаток низкий.</FormDescription>
-                    <FormMessage />
-                    </FormItem>
+                </FormItem>
                 )}
             />
         </div>
-        <FormField
-            control={form.control}
-            name="defaultSupplierId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Поставщик по умолчанию</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                  <FormControl>
-                    <SelectTrigger disabled={isLoadingSuppliers}>
-                      <SelectValue placeholder={isLoadingSuppliers ? "Загрузка..." : "Выберите поставщика"} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {suppliers ? suppliers.map(s => (
-                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    )) : <SelectItem value="loading" disabled>Загрузка...</SelectItem>}
-                  </SelectContent>
-                </Select>
-                <FormDescription>Основной поставщик для этого продукта.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
        
         <Separator />
 

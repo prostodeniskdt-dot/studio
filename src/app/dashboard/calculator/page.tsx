@@ -160,14 +160,16 @@ export default function UnifiedCalculatorPage() {
 
     setIsSending(true);
     
-    const sessionsQuery = query(
-        collection(firestore, 'bars', barId, 'inventorySessions'),
-        where('barId', '==', barId),
-        where('status', '==', 'in_progress'),
-        limit(1)
-    );
+    try {
+        const sessionsQuery = query(
+            collection(firestore, 'bars', barId, 'inventorySessions'),
+            where('barId', '==', barId),
+            where('status', '==', 'in_progress'),
+            limit(1)
+        );
 
-    getDocs(sessionsQuery).then(sessionsSnapshot => {
+        const sessionsSnapshot = await getDocs(sessionsQuery);
+
         if (sessionsSnapshot.empty) {
             toast({
                 variant: "destructive",
@@ -184,70 +186,55 @@ export default function UnifiedCalculatorPage() {
         const linesColRef = collection(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines');
         const linesQuery = query(linesColRef, where('productId', '==', selectedProductId), limit(1));
       
-        return getDocs(linesQuery).then(linesSnapshot => {
-            if (linesSnapshot.empty) {
-                const product = products?.find(p => p.id === selectedProductId);
-                if (!product) {
-                    setIsSending(false);
-                    return;
-                };
+        const linesSnapshot = await getDocs(linesQuery);
 
-                const batch = writeBatch(firestore);
-                const newLineRef = doc(linesColRef);
-                const newLineData = {
-                  id: newLineRef.id,
-                  productId: selectedProductId,
-                  inventorySessionId: activeSessionId,
-                  startStock: 0,
-                  purchases: 0,
-                  sales: 0,
-                  endStock: volume,
-                  theoreticalEndStock: 0,
-                  differenceVolume: 0,
-                  differenceMoney: 0,
-                  differencePercent: 0,
-                };
-                batch.set(newLineRef, newLineData);
-                
-                batch.commit().then(() => {
-                    toast({
-                        title: "Данные отправлены",
-                        description: `Остаток для продукта ${product.name} (${volume} мл) добавлен в текущую инвентаризацию.`,
-                    });
-                }).catch(serverError => {
-                    const permissionError = new FirestorePermissionError({ path: newLineRef.path, operation: 'create', requestResourceData: newLineData });
-                    errorEmitter.emit('permission-error', permissionError);
-                }).finally(() => {
-                    setIsSending(false);
-                });
+        if (linesSnapshot.empty) {
+            const product = products?.find(p => p.id === selectedProductId);
+            if (!product) {
+                setIsSending(false);
+                return;
+            };
 
-            } else {
-                const lineDoc = linesSnapshot.docs[0];
-                const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines', lineDoc.id);
-                const updateData = { endStock: volume };
-                updateDoc(lineRef, updateData).then(() => {
-                     toast({
-                        title: "Данные отправлены",
-                        description: `Остаток для продукта ${products?.find(p => p.id === selectedProductId)?.name} (${volume} мл) обновлен в текущей инвентаризации.`,
-                    });
-                }).catch(serverError => {
-                    const permissionError = new FirestorePermissionError({ path: lineRef.path, operation: 'update', requestResourceData: updateData });
-                    errorEmitter.emit('permission-error', permissionError);
-                }).finally(() => {
-                    setIsSending(false);
-                });
-            }
-        }).catch(serverError => {
-            const permissionError = new FirestorePermissionError({ path: linesColRef.path, operation: 'list' });
-            errorEmitter.emit('permission-error', permissionError);
-            setIsSending(false);
-        });
-
-    }).catch(serverError => {
-        const permissionError = new FirestorePermissionError({ path: `bars/${barId}/inventorySessions`, operation: 'list' });
+            const batch = writeBatch(firestore);
+            const newLineRef = doc(linesColRef);
+            const newLineData = {
+              id: newLineRef.id,
+              productId: selectedProductId,
+              inventorySessionId: activeSessionId,
+              startStock: 0,
+              purchases: 0,
+              sales: 0,
+              endStock: volume,
+              theoreticalEndStock: 0,
+              differenceVolume: 0,
+              differenceMoney: 0,
+              differencePercent: 0,
+            };
+            batch.set(newLineRef, newLineData);
+            
+            await batch.commit();
+            toast({
+                title: "Данные отправлены",
+                description: `Остаток для продукта ${product.name} (${volume} мл) добавлен в текущую инвентаризацию.`,
+            });
+        } else {
+            const lineDoc = linesSnapshot.docs[0];
+            const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines', lineDoc.id);
+            const updateData = { endStock: volume };
+            await updateDoc(lineRef, updateData);
+            toast({
+                title: "Данные отправлены",
+                description: `Остаток для продукта ${products?.find(p => p.id === selectedProductId)?.name} (${volume} мл) обновлен в текущей инвентаризации.`,
+            });
+        }
+    } catch (serverError: any) {
+        const path = serverError.path || `bars/${barId}/inventorySessions`;
+        const operation = serverError.operation || 'list';
+        const permissionError = new FirestorePermissionError({ path, operation });
         errorEmitter.emit('permission-error', permissionError);
+    } finally {
         setIsSending(false);
-    });
+    }
   };
 
   if (isLoadingProducts) {

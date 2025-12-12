@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, query, getDocs, where, doc, setDoc, serverTimestamp, orderBy } from 'firebase/firestore';
+import { collection, query, getDocs, where, doc, setDoc, serverTimestamp, orderBy, limit } from 'firebase/firestore';
 
 
 export default function SessionsPage() {
@@ -48,13 +48,13 @@ export default function SessionsPage() {
 
     try {
         const inventoriesCollection = collection(firestore, 'bars', barId, 'inventorySessions');
-        const inProgressQuery = query(inventoriesCollection, where('status', '==', 'in_progress'), where('barId', '==', barId));
-        const querySnapshot = await getDocs(inProgressQuery);
-
+        const activeSessionQuery = query(inventoriesCollection, where('status', '==', 'in_progress'), where('barId', '==', barId), limit(1));
+        const activeSessionSnapshot = await getDocs(activeSessionQuery);
+        
         let sessionId;
 
-        if (!querySnapshot.empty) {
-            sessionId = querySnapshot.docs[0].id;
+        if (!activeSessionSnapshot.empty) {
+            sessionId = activeSessionSnapshot.docs[0].id;
             toast({
                 title: "Активная инвентаризация уже существует",
                 description: "Вы будете перенаправлены на существующую инвентаризацию.",

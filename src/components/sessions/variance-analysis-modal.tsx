@@ -21,11 +21,17 @@ export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnal
   
   const { execute: performAnalysis, isLoading, data, error } = useServerAction(runVarianceAnalysis);
 
+  const analysisCallback = React.useCallback(() => {
+    if (line) {
+        performAnalysis(line);
+    }
+  }, [line, performAnalysis]);
+
   React.useEffect(() => {
     if (open) {
-      performAnalysis(line);
+      analysisCallback();
     }
-  }, [open, line, performAnalysis]);
+  }, [open, analysisCallback]);
 
   const varianceType = line.differenceVolume > 0 ? 'Излишек' : 'Недостача';
   const varianceColor = line.differenceVolume > 0 ? 'text-green-600' : 'text-destructive';
@@ -64,7 +70,7 @@ export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnal
         </div>
         <DialogFooter>
           <Button onClick={() => onOpenChange(false)} variant="outline">Закрыть</Button>
-          <Button onClick={() => performAnalysis(line)} disabled={isLoading}>
+          <Button onClick={analysisCallback} disabled={isLoading}>
             {isLoading ? "Анализ..." : "Повторить анализ"}
           </Button>
         </DialogFooter>
@@ -72,5 +78,3 @@ export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnal
     </Dialog>
   );
 }
-
-    

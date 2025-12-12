@@ -10,7 +10,7 @@ import Link from 'next/link';
 import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, query, where, getDocs, doc, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, serverTimestamp, writeBatch, limit } from 'firebase/firestore';
 
 
 export default function DashboardPage() {
@@ -50,16 +50,19 @@ export default function DashboardPage() {
     setIsCreating(true);
 
     try {
-        if (activeSessions.length > 0) {
-            toast({
+        const inventoriesCollection = collection(firestore, 'bars', barId, 'inventorySessions');
+        const activeSessionQuery = query(inventoriesCollection, where('status', '==', 'in_progress'), limit(1));
+        const activeSessionSnapshot = await getDocs(activeSessionQuery);
+        
+        if (!activeSessionSnapshot.empty) {
+             toast({
                 title: "Активная инвентаризация уже существует",
                 description: "Вы будете перенаправлены на существующую инвентаризацию.",
             });
-            router.push(`/dashboard/sessions/${activeSessions[0].id}`);
+            router.push(`/dashboard/sessions/${activeSessionSnapshot.docs[0].id}`);
             return;
         }
 
-        const inventoriesCollection = collection(firestore, 'bars', barId, 'inventorySessions');
         const newSessionRef = doc(inventoriesCollection);
         const newSessionData = {
             id: newSessionRef.id,

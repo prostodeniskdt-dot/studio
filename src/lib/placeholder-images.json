@@ -55,6 +55,30 @@
       "imageHint": "syrup bottle"
     },
     {
+      "id": "brandy",
+      "description": "A bottle of brandy.",
+      "imageUrl": "https://images.unsplash.com/photo-1626259049184-131f6d33261a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxicmFuZHklMjBib3R0bGV8ZW58MHx8fHwxNzY1MzM5MzUwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "brandy bottle"
+    },
+    {
+      "id": "vermouth",
+      "description": "A bottle of vermouth.",
+      "imageUrl": "https://images.unsplash.com/photo-1620286395344-915998135893?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx2ZXJtb3V0aCUyMGJvdHRsZXxlbnwwfHx8fDE3NjUzMzkzNTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "vermouth bottle"
+    },
+    {
+      "id": "absinthe",
+      "description": "A bottle of absinthe.",
+      "imageUrl": "https://images.unsplash.com/photo-1595272638893-f1479c8d7e6c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhYnNpbnRoZSUyMGJvdHRsZXxlbnwwfHx8fDE3NjUzMzkzNTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "absinthe bottle"
+    },
+    {
+      "id": "bitters",
+      "description": "A bottle of cocktail bitters.",
+      "imageUrl": "https://images.unsplash.com/photo-1620953932453-910c27c65e06?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxiaXR0ZXJzJTIwYm90dGxlfGVufDB8fHx8fDE3NjUzMzkzNTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "bitters bottle"
+    },
+    {
       "id": "other",
       "description": "A generic bottle for other categories.",
       "imageUrl": "https://images.unsplash.com/photo-1602143407151-7111542de6e8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxib3R0bGV8ZW58MHx8fHwxNzY1MzA4NjI4fDA&ixlib=rb-4.1.0&q=80&w=1080",

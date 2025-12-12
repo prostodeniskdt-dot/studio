@@ -90,36 +90,47 @@ function getInitialProductData(): ProductSeedData[] {
 }
 
 /**
- * Seeds the product catalog if it's missing products.
- * This is an idempotent operation; it only adds products that don't already exist by name.
+ * Seeds the product catalog if it's missing products or updates existing ones.
+ * This is an idempotent operation.
  */
 async function seedInitialProducts(firestore: Firestore): Promise<void> {
     const productsCollectionRef = collection(firestore, 'products');
-    
+    const productsToSeed = getInitialProductData();
+    const batch = writeBatch(firestore);
+
     // Get all existing products from Firestore
     const existingProductsSnapshot = await getDocs(productsCollectionRef);
-    const existingProductNames = new Set(existingProductsSnapshot.docs.map(doc => doc.data().name.toLowerCase()));
-
-    // Get the list of products that should exist
-    const productsToSeed = getInitialProductData();
-
-    // Filter out products that already exist by comparing lower-cased names
-    const productsToCreate = productsToSeed.filter(prod => !existingProductNames.has(prod.name.toLowerCase()));
-
-    if (productsToCreate.length === 0) {
-        return; // All products already exist.
-    }
-
-    const batch = writeBatch(firestore);
-    productsToCreate.forEach(prodData => {
-        const prodRef = doc(productsCollectionRef);
-        batch.set(prodRef, {
-            ...prodData,
-            id: prodRef.id,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-        });
+    const existingProductsMap = new Map<string, {id: string, data: Product}>();
+    existingProductsSnapshot.docs.forEach(doc => {
+        const data = doc.data() as Product;
+        // Use a consistent key, like lowercase name, to find matches later
+        existingProductsMap.set(data.name.toLowerCase(), {id: doc.id, data});
     });
+
+    for (const seedProd of productsToSeed) {
+        const seedProdNameLower = seedProd.name.toLowerCase();
+        const existingDoc = existingProductsMap.get(seedProdNameLower);
+        
+        if (existingDoc) {
+            // Product exists, update it with the seed data.
+            // We use the existing doc.id to ensure we're updating the correct document.
+            const docRef = doc(firestore, 'products', existingDoc.id);
+            batch.set(docRef, {
+                ...existingDoc.data, // Preserve original data like createdAt
+                ...seedProd, // Overwrite with new seed data
+                updatedAt: serverTimestamp(),
+            }, { merge: true });
+        } else {
+            // Product doesn't exist, create a new one.
+            const docRef = doc(productsCollectionRef);
+            batch.set(docRef, {
+                ...seedProd,
+                id: docRef.id,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            });
+        }
+    }
     
     await batch.commit();
 }

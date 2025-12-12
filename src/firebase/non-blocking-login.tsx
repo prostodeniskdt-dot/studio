@@ -116,10 +116,11 @@ async function seedInitialProducts(firestore: Firestore): Promise<void> {
             // We use the existing doc.id to ensure we're updating the correct document.
             const docRef = doc(firestore, 'products', existingDoc.id);
             batch.set(docRef, {
-                ...existingDoc.data, // Preserve original data like createdAt
-                ...seedProd, // Overwrite with new seed data
+                ...seedProd, // Overwrite with new seed data, including name
+                id: existingDoc.id, // ensure id is preserved
+                createdAt: existingDoc.data.createdAt, // ensure createdAt is preserved
                 updatedAt: serverTimestamp(),
-            }, { merge: true });
+            }, { merge: true }); // Merge to avoid overwriting fields not in seed data
         } else {
             // Product doesn't exist, create a new one.
             const docRef = doc(productsCollectionRef);

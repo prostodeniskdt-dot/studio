@@ -162,7 +162,8 @@ service cloud.firestore {
     match /products/{productId} {
         allow read, list: if isSignedIn();
         allow create: if isSignedIn() && isProductCreateValid();
-        allow update: if resourceExists() && (isAdmin() || isProductUpdateValid());
+        // Allow updates if the user is an admin OR if it's a valid update by any signed-in user
+        allow update: if resourceExists() && (isAdmin() || (isSignedIn() && isProductUpdateValid()));
         allow delete: if isAdmin() && resourceExists();
     }
 

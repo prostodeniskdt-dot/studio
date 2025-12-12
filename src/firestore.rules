@@ -114,23 +114,13 @@ service cloud.firestore {
              data.isActive == true;
     }
     
-    function isProductUpdateValid() {
-        let incoming = request.resource.data;
-        let existing = resource.data;
-        // Allow updating only these specific fields by non-admins
-        let allowedToChange = [
-            'name', 'category', 'subCategory', 'imageUrl',
-            'costPerBottle', 'sellingPricePerPortion', 'portionVolumeMl',
-            'bottleVolumeMl', 'fullBottleWeightG', 'emptyBottleWeightG',
-            'reorderPointMl', 'reorderQuantity', 'defaultSupplierId',
-            'isActive', 'updatedAt'
-        ];
-        // Ensure critical fields that should NEVER change are not in the update
-        let criticalFieldsUnchanged = 
-            incoming.id == existing.id &&
-            incoming.createdAt == existing.createdAt;
-            
-        return criticalFieldsUnchanged;
+     function isProductUpdateValid() {
+      let incomingData = request.resource.data;
+      let existingData = resource.data;
+      // This rule ensures that critical, system-set fields are not changed by the client.
+      // Any other field is allowed to be updated.
+      return incomingData.id == existingData.id &&
+             incomingData.createdAt == existingData.createdAt;
     }
     
     function isInventorySessionCreateValid(barId) {

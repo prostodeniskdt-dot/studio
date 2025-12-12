@@ -184,14 +184,13 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
         const userDoc = await getDoc(userRef);
         const barDoc = await getDoc(barRef);
         let docsJustCreated = false;
-
-        const batch = writeBatch(firestore);
         
         if (!userDoc.exists()) {
             docsJustCreated = true;
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
-            batch.set(userRef, {
-                id: user.uid, // This is required by the security rules
+            // Write the user document first and wait for it to complete.
+            await setDoc(userRef, {
+                id: user.uid,
                 displayName: displayName,
                 email: user.email,
                 role: 'manager', // Default role
@@ -202,21 +201,23 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
         if (!barDoc.exists()) {
             docsJustCreated = true;
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
-            batch.set(barRef, {
+            // Then write the bar document and wait for it to complete.
+            await setDoc(barRef, {
                 id: barId,
                 name: `Бар ${displayName}`,
                 location: 'Не указано',
                 ownerUserId: user.uid,
             });
         }
-
+        
+        // If we just created the core docs, it's a new user, so seed all data.
         if (docsJustCreated) {
-            await batch.commit();
+            await seedInitialData(firestore, barId, user.uid);
+        } else {
+            // If the user already existed, just ensure the product catalog is up-to-date.
+            // This is where the product name translation will happen for existing users.
+            await seedInitialProducts(firestore);
         }
-
-        // IMPORTANT: Seed data only AFTER the user/bar docs are confirmed to exist.
-        // This gives security rules time to recognize the new documents.
-        await seedInitialData(firestore, barId, user.uid);
 
     } catch (serverError: any) {
         // Create a more specific error for the developer console

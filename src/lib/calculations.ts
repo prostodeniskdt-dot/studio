@@ -3,10 +3,10 @@ import type { InventoryLine, Product } from '@/lib/types';
 /**
  * Calculates the theoretical end stock in milliliters.
  */
-export function calculateTheoreticalEndStock(line: InventoryLine, product: Product): number {
+export function calculateTheoreticalEndStock(line: Partial<InventoryLine>, product: Product): number {
   if (!product) return 0;
-  const salesVolume = line.sales * (product.portionVolumeMl || 0);
-  return line.startStock + line.purchases - salesVolume;
+  const salesVolume = (line.sales || 0) * (product.portionVolumeMl || 0);
+  return (line.startStock || 0) + (line.purchases || 0) - salesVolume;
 }
 
 /**
@@ -29,18 +29,22 @@ export function calculateDifferenceMoney(differenceVolume: number, product: Prod
 /**
  * Calculates the percentage of variance relative to the total volume used.
  */
-export function calculateDifferencePercent(differenceVolume: number, line: InventoryLine, product: Product): number {
-  if (!product) return 0;
-  const volumeSold = line.sales * (product.portionVolumeMl || 0);
+export function calculateDifferencePercent(differenceVolume: number, line: Partial<InventoryLine>, product: Product): number {
+  if (!product || !product.portionVolumeMl) return 0;
+  
+  const volumeSold = (line.sales || 0) * product.portionVolumeMl;
+  
   if (volumeSold === 0) {
-      if (differenceVolume !== 0) {
-          if (line.startStock > 0) {
-              return (differenceVolume / line.startStock) * 100;
-          }
-          return differenceVolume > 0 ? 100 : -100;
+      if (differenceVolume === 0) {
+          return 0; // No sales, no difference -> 0%
       }
+      // If there's a difference but no sales, we can't calculate a percentage of sales.
+      // We could base it on startStock, but that can be misleading.
+      // Returning 100% or -100% for any difference might be too extreme.
+      // A safe fallback is to return 0 if no sales occurred.
       return 0;
   }
+  
   return (differenceVolume / volumeSold) * 100;
 }
 

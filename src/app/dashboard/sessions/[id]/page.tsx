@@ -77,6 +77,14 @@ export default function SessionPage() {
   const [isCompleting, setIsCompleting] = React.useState(false);
   const [isAddingProduct, setIsAddingProduct] = React.useState(false);
 
+  // Memoize the original lines from Firestore to compare for changes
+  const originalLines = React.useMemo(() => lines, [lines]);
+  const hasUnsavedChanges = React.useMemo(() => {
+    if (!originalLines || !localLines) return false;
+    // A simple JSON diff is performant enough for this.
+    return JSON.stringify(originalLines) !== JSON.stringify(localLines);
+  }, [originalLines, localLines]);
+
 
   React.useEffect(() => {
     if (lines) {
@@ -147,7 +155,15 @@ export default function SessionPage() {
             
             const calculatedFields = calculateLineFields(line, product);
             const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', id, 'lines', line.id);
-            batch.update(lineRef, { ...line, ...calculatedFields });
+            // We only need to write the user-editable fields and the calculated ones
+            const { startStock, purchases, sales, endStock } = line;
+            batch.update(lineRef, {
+                startStock,
+                purchases,
+                sales,
+                endStock,
+                ...calculatedFields
+            });
         });
         await batch.commit();
         toast({ title: "Изменения сохранены" });
@@ -162,7 +178,9 @@ export default function SessionPage() {
     if (!sessionRef || !barId || !firestore) return;
     setIsCompleting(true);
     try {
-      await handleSaveChanges(); // First, save any pending changes
+      if (hasUnsavedChanges) {
+          await handleSaveChanges(); // First, save any pending changes
+      }
       await updateDoc(sessionRef, {
         status: 'completed',
         closedAt: serverTimestamp(),
@@ -357,7 +375,7 @@ export default function SessionPage() {
                       </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <Button onClick={handleSaveChanges} variant="outline" disabled={!isEditable || isSaving}>
+                    <Button onClick={handleSaveChanges} variant="outline" disabled={!isEditable || isSaving || !hasUnsavedChanges}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         {isSaving ? 'Сохранение...' : 'Сохранить'}
                     </Button>
@@ -372,7 +390,7 @@ export default function SessionPage() {
                             <AlertDialogHeader>
                             <AlertDialogTitle>Завершить инвентаризацию?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Все текущие данные будут сохранены. После завершения вы не сможете вносить изменения и будете перенаправлены на страницу отчета.
+                                Все несохраненные изменения будут автоматически сохранены. После завершения вы не сможете вносить правки и будете перенаправлены на страницу отчета.
                             </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

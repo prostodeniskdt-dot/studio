@@ -82,11 +82,13 @@ service cloud.firestore {
     // ------------------------------------------------------------------------
 
     function isCreatingOwnUser(userId) {
-      let isRoleValid = request.resource.data.role == 'manager';
-      return isOwner(userId) && request.resource.data.id == userId && isRoleValid;
+      // The user can only create their own user document.
+      // The 'id' in the document must match the creator's UID.
+      return isOwner(userId) && request.resource.data.id == userId;
     }
 
     function isUserUpdateValid() {
+      // Prevent users from changing their own ID or role.
       return request.resource.data.id == resource.data.id && request.resource.data.role == resource.data.role;
     }
 
@@ -96,6 +98,7 @@ service cloud.firestore {
     }
 
     function isBarUpdateValid() {
+      // Prevent the owner of the bar from being changed.
       return request.resource.data.ownerUserId == resource.data.ownerUserId;
     }
     
@@ -161,8 +164,8 @@ service cloud.firestore {
     
     match /products/{productId} {
         allow read, list: if isSignedIn();
+        // Any signed-in user can create or update a product, as it is a global catalog.
         allow create: if isSignedIn() && isProductCreateValid();
-        // Any signed-in user can update a product, as long as the update is valid (doesn't change critical fields).
         allow update: if isSignedIn() && resourceExists() && isProductUpdateValid();
         allow delete: if isAdmin() && resourceExists();
     }

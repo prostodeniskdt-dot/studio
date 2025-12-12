@@ -183,10 +183,9 @@ async function seedDemoInventorySessions(firestore: Firestore, barId: string, us
  */
 async function seedInitialData(firestore: Firestore, barId: string, userId: string): Promise<void> {
     try {
-        await Promise.all([
-            seedInitialProducts(firestore),
-            seedDemoInventorySessions(firestore, barId, userId),
-        ]);
+        // Run sequentially to ensure products exist before demo sessions are created.
+        await seedInitialProducts(firestore);
+        await seedDemoInventorySessions(firestore, barId, userId);
     } catch(e) {
         console.error("Error during initial data seeding:", e);
         // We don't rethrow here to avoid blocking the UI if seeding fails.
@@ -210,24 +209,24 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
     try {
         const userDoc = await getDoc(userRef);
         const barDoc = await getDoc(barRef);
+        let docsJustCreated = false;
 
-        let needsCommit = false;
         const batch = writeBatch(firestore);
         
         if (!userDoc.exists()) {
-            needsCommit = true;
+            docsJustCreated = true;
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
             batch.set(userRef, {
-                id: user.uid,
+                id: user.uid, // This is required by the security rules
                 displayName: displayName,
                 email: user.email,
-                role: 'manager',
+                role: 'manager', // Default role
                 createdAt: serverTimestamp(),
             });
         }
 
         if (!barDoc.exists()) {
-            needsCommit = true;
+            docsJustCreated = true;
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
             batch.set(barRef, {
                 id: barId,
@@ -237,8 +236,10 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
             });
         }
 
-        if (needsCommit) {
+        if (docsJustCreated) {
             await batch.commit();
+            // Give Firestore a moment to process the creation before seeding data
+            await new Promise(resolve => setTimeout(resolve, 500));
         }
 
         // IMPORTANT: Seed data only AFTER the user/bar docs are confirmed to exist.

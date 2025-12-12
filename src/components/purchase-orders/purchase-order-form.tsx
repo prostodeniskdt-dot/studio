@@ -82,33 +82,38 @@ export function PurchaseOrderForm({ barId, order, suppliers, onFormSubmit }: Pur
     },
   });
 
-  async function onSubmit(data: PurchaseOrderFormValues) {
+  function onSubmit(data: PurchaseOrderFormValues) {
     if (!firestore || !user) return;
     setIsSaving(true);
     
-    try {
-        const orderRef = order ? doc(firestore, 'bars', barId, 'purchaseOrders', order.id) : doc(collection(firestore, 'bars', barId, 'purchaseOrders'));
-        const orderData = {
-          ...data,
-          id: orderRef.id,
-          barId,
-          createdByUserId: user.uid,
-          orderDate: Timestamp.fromDate(data.orderDate),
-          createdAt: order?.createdAt || serverTimestamp(),
-        };
+    const orderRef = order ? doc(firestore, 'bars', barId, 'purchaseOrders', order.id) : doc(collection(firestore, 'bars', barId, 'purchaseOrders'));
+    const orderData = {
+      ...data,
+      id: orderRef.id,
+      barId,
+      createdByUserId: user.uid,
+      orderDate: Timestamp.fromDate(data.orderDate),
+      createdAt: order?.createdAt || serverTimestamp(),
+    };
 
-        await setDoc(orderRef, orderData, { merge: true });
-        
+    setDoc(orderRef, orderData, { merge: true })
+      .then(() => {
         toast({ title: order ? 'Заказ обновлен' : 'Заказ создан' });
         onFormSubmit();
         if (!order) {
             router.push(`/dashboard/purchase-orders/${orderRef.id}`);
         }
-    } catch(serverError) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/purchaseOrders`, operation: 'write' }));
-    } finally {
+      })
+      .catch((serverError) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+            path: `bars/${barId}/purchaseOrders/${orderRef.id}`, 
+            operation: order ? 'update' : 'create',
+            requestResourceData: orderData,
+        }));
+      })
+      .finally(() => {
         setIsSaving(false);
-    }
+      });
   }
 
   return (

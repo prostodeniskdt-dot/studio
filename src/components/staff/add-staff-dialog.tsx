@@ -25,7 +25,7 @@ import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import { translateRole } from '@/lib/utils';
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, getDocs, query, where, doc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, setDoc, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 const addStaffSchema = z.object({
@@ -71,6 +71,7 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
 
         if (userSnapshot.empty) {
             toast({ variant: 'destructive', title: "Пользователь не найден", description: "Пользователь с таким email не зарегистрирован." });
+            setIsSubmitting(false);
             return;
         }
 
@@ -84,8 +85,8 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
         onOpenChange(false);
         reset();
     } catch(error) {
-        toast({ variant: 'destructive', title: "Ошибка", description: "Не удалось добавить сотрудника." });
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/members`, operation: 'create' }));
+        const memberPath = `bars/${barId}/members`;
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: memberPath, operation: 'create', requestResourceData: data }));
     } finally {
         setIsSubmitting(false);
     }

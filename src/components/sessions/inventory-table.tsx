@@ -54,16 +54,7 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
     if (value !== '' && isNaN(numericValue)) return;
     const finalValue = value === '' ? 0 : numericValue;
 
-    // Update the visual state immediately
-    setCalculatedLines(currentLines =>
-      currentLines.map(line =>
-        line.id === lineId
-          ? { ...line, [field]: finalValue, hasChanged: true }
-          : line
-      )
-    );
-    
-    // Also update the parent state that will be saved
+    // Update the parent state that will be saved
     setLines(currentLines => {
         if (!currentLines) return null;
         return currentLines.map(line => 
@@ -73,19 +64,16 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
   };
 
   const totals = React.useMemo(() => {
+    // This calculation now relies on the `calculatedLines` which is derived from parent state
+    // but its own calculations are internal to this component's effect.
     return calculatedLines.reduce(
       (acc, line) => {
-        // Re-calculate fields for total based on potentially changed local state
-        const product = products.find(p => p.id === line.productId);
-        if (!product) return acc;
-        const calculated = calculateLineFields(line, product);
-
-        acc.differenceMoney += calculated.differenceMoney;
+        acc.differenceMoney += line.differenceMoney;
         return acc;
       },
       { differenceMoney: 0 }
     );
-  }, [calculatedLines, products]);
+  }, [calculatedLines]);
 
   if (!lines || !products) {
     return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -125,8 +113,6 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                       </TableRow>
                     )}
                     {subCategoryLines.sort((a,b) => (a.product?.name ?? '').localeCompare(b.product?.name ?? '')).map(line => {
-                       const product = products.find(p => p.id === line.productId);
-                       const calculated = product ? calculateLineFields(line, product) : null;
                       return (
                         <TableRow key={line.id} className={cn(line.hasChanged && 'bg-yellow-500/10')}>
                           <TableCell className="font-medium pl-4 md:pl-10">{line.product?.name}</TableCell>
@@ -145,17 +131,17 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                               <Input type="number" value={line.sales} onChange={e => handleInputChange(line.id!, 'sales', e.target.value)} className="w-24 text-right ml-auto" />
                             ) : line.sales}
                           </TableCell>
-                          <TableCell className="text-right font-mono hidden md:table-cell">{calculated ? Math.round(calculated.theoreticalEndStock) : '-'}</TableCell>
+                          <TableCell className="text-right font-mono hidden md:table-cell">{Math.round(line.theoreticalEndStock)}</TableCell>
                           <TableCell className="text-right">
                             {isEditable ? (
                               <Input type="number" value={line.endStock} onChange={e => handleInputChange(line.id!, 'endStock', e.target.value)} className="w-24 text-right ml-auto bg-primary/10" />
                             ) : line.endStock}
                           </TableCell>
-                          <TableCell className={cn("text-right font-mono hidden sm:table-cell", calculated && (calculated.differenceVolume > 0 ? 'text-green-600' : calculated.differenceVolume < 0 ? 'text-destructive' : 'text-muted-foreground'))}>
-                            {calculated ? Math.round(calculated.differenceVolume) : '-'}
+                          <TableCell className={cn("text-right font-mono hidden sm:table-cell", line.differenceVolume > 0 ? 'text-green-600' : line.differenceVolume < 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                            {Math.round(line.differenceVolume)}
                           </TableCell>
-                          <TableCell className={cn("text-right font-mono hidden sm:table-cell", calculated && (calculated.differenceMoney > 0 ? 'text-green-600' : calculated.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground'))}>
-                            {calculated ? formatCurrency(calculated.differenceMoney) : '-'}
+                          <TableCell className={cn("text-right font-mono hidden sm:table-cell", line.differenceMoney > 0 ? 'text-green-600' : line.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                            {formatCurrency(line.differenceMoney)}
                           </TableCell>
                         </TableRow>
                       )

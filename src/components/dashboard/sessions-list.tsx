@@ -74,15 +74,12 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     const sessionRef = doc(firestore, 'bars', barId, 'inventorySessions', sessionToDelete.id);
     
     try {
-        // Atomically delete the session document and all of its line items.
         const linesRef = collection(sessionRef, 'lines');
         const linesSnapshot = await getDocs(linesRef);
         const batch = writeBatch(firestore);
 
-        // Delete all line items in the subcollection
         linesSnapshot.forEach(lineDoc => batch.delete(lineDoc.ref));
         
-        // Delete the main session document
         batch.delete(sessionRef);
 
         await batch.commit();
@@ -95,12 +92,9 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
             path: sessionRef.path,
             operation: 'delete'
         }));
-        // CRITICAL: Stop execution here to let the error listener handle it.
-        // We also stop the loading state but keep the dialog open.
-        setIsDeleting(false); 
-        return; // Halt further execution
+    } finally {
+        setIsDeleting(false);
     }
-    setIsDeleting(false);
   };
 
 

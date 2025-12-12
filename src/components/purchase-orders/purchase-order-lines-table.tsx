@@ -53,64 +53,74 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
     );
   };
   
-  const handleSaveLines = async () => {
+  const handleSaveLines = () => {
     if (!firestore) return;
     setIsSaving(true);
-    try {
-        const batch = writeBatch(firestore);
-        localLines.forEach(line => {
-            const lineRef = doc(firestore, 'bars', barId, 'purchaseOrders', orderId, 'lines', line.id);
-            batch.update(lineRef, {
-                quantity: line.quantity,
-                costPerItem: line.costPerItem,
-                receivedQuantity: line.receivedQuantity,
-            });
+    const batch = writeBatch(firestore);
+    localLines.forEach(line => {
+        const lineRef = doc(firestore, 'bars', barId, 'purchaseOrders', orderId, 'lines', line.id);
+        batch.update(lineRef, {
+            quantity: line.quantity,
+            costPerItem: line.costPerItem,
+            receivedQuantity: line.receivedQuantity,
         });
-        await batch.commit();
+    });
+
+    batch.commit()
+      .then(() => {
         toast({ title: 'Позиции заказа обновлены' });
-    } catch (error) {
+      })
+      .catch((error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/purchaseOrders/${orderId}/lines`, operation: 'update' }));
-    } finally {
+      })
+      .finally(() => {
         setIsSaving(false);
-    }
+      });
   };
 
-  const handleRemoveLine = async (lineId: string) => {
+  const handleRemoveLine = (lineId: string) => {
     if (!firestore) return;
     setIsProcessing(true);
-    try {
-        const lineRef = doc(firestore, 'bars', barId, 'purchaseOrders', orderId, 'lines', lineId);
-        await deleteDoc(lineRef);
+    const lineRef = doc(firestore, 'bars', barId, 'purchaseOrders', orderId, 'lines', lineId);
+
+    deleteDoc(lineRef)
+      .then(() => {
         toast({ title: 'Позиция удалена' });
-    } catch (error) {
+      })
+      .catch((error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/purchaseOrders/${orderId}/lines/${lineId}`, operation: 'delete' }));
-    } finally {
+      })
+      .finally(() => {
         setIsProcessing(false);
-    }
+      });
   };
   
-  const handleAddProduct = async (productId: string) => {
+  const handleAddProduct = (productId: string) => {
     const product = products.find(p => p.id === productId);
     if (!product || !firestore) return;
     setIsProcessing(true);
     setIsAdding(false);
-    try {
-        const lineRef = doc(collection(firestore, 'bars', barId, 'purchaseOrders', orderId, 'lines'));
-        const newLineData = {
-            id: lineRef.id,
-            purchaseOrderId: orderId,
-            productId: product.id,
-            quantity: 1,
-            costPerItem: product.costPerBottle,
-            receivedQuantity: 0,
-        };
-        await setDoc(lineRef, newLineData);
+
+    const lineRef = doc(collection(firestore, 'bars', barId, 'purchaseOrders', orderId, 'lines'));
+    const newLineData = {
+        id: lineRef.id,
+        purchaseOrderId: orderId,
+        productId: product.id,
+        quantity: 1,
+        costPerItem: product.costPerBottle,
+        receivedQuantity: 0,
+    };
+    
+    setDoc(lineRef, newLineData)
+      .then(() => {
         toast({ title: 'Продукт добавлен в заказ' });
-    } catch (error) {
+      })
+      .catch((error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/purchaseOrders/${orderId}/lines`, operation: 'create' }));
-    } finally {
+      })
+      .finally(() => {
         setIsProcessing(false);
-    }
+      });
   };
 
   const linesWithProducts = React.useMemo(() => {

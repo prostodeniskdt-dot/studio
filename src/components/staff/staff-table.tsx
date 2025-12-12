@@ -61,18 +61,20 @@ export function StaffTable({ staff, barId }: StaffTableProps) {
     setMemberToDelete(member);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (!memberToDelete || !firestore) return;
-    try {
-        const memberRef = doc(firestore, 'bars', barId, 'members', memberToDelete.userId);
-        await deleteDoc(memberRef);
+    const memberRef = doc(firestore, 'bars', barId, 'members', memberToDelete.userId);
+    
+    deleteDoc(memberRef)
+      .then(() => {
         toast({ title: "Сотрудник удален." });
-    } catch(error) {
-        toast({ variant: 'destructive', title: "Ошибка", description: "Не удалось удалить сотрудника." });
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/members/${memberToDelete.userId}`, operation: 'delete' }));
-    } finally {
+      })
+      .catch((error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: memberRef.path, operation: 'delete' }));
+      })
+      .finally(() => {
         setMemberToDelete(null);
-    }
+      });
   };
 
   const columns: ColumnDef<StaffWithProfile>[] = [

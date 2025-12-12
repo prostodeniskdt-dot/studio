@@ -112,26 +112,32 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     }
   }, [watchedCategory, form]);
 
-  async function onSubmit(data: ProductFormValues) {
+  function onSubmit(data: ProductFormValues) {
     if (!firestore) return;
     setIsSaving(true);
-    try {
-        const productRef = product ? doc(firestore, 'products', product.id) : doc(collection(firestore, 'products'));
-        const productData = {
-            ...data,
-            id: productRef.id,
-            updatedAt: serverTimestamp(),
-            createdAt: product?.createdAt || serverTimestamp(),
-        };
+    const productRef = product ? doc(firestore, 'products', product.id) : doc(collection(firestore, 'products'));
+    const productData = {
+        ...data,
+        id: productRef.id,
+        updatedAt: serverTimestamp(),
+        createdAt: product?.createdAt || serverTimestamp(),
+    };
 
-        await setDoc(productRef, productData, { merge: true });
+    setDoc(productRef, productData, { merge: true })
+      .then(() => {
         toast({ title: product ? "Продукт обновлен" : "Продукт создан" });
         onFormSubmit();
-    } catch (serverError) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `products/${product?.id || ''}`, operation: 'write' }));
-    } finally {
+      })
+      .catch((serverError) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+            path: `products/${productRef.id}`, 
+            operation: product ? 'update' : 'create',
+            requestResourceData: productData
+        }));
+      })
+      .finally(() => {
         setIsSaving(false);
-    }
+      });
   }
 
   return (

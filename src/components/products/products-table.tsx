@@ -73,19 +73,22 @@ export function ProductsTable({ products }: { products: Product[] }) {
     setEditingProduct(undefined);
   }
 
-  const handleArchiveAction = async (product: Product) => {
+  const handleArchiveAction = (product: Product) => {
     if (!firestore) return;
     setIsArchiving(product.id);
-    try {
-        const productRef = doc(firestore, 'products', product.id);
-        const updateData = { isActive: !product.isActive };
-        await updateDoc(productRef, updateData);
+    const productRef = doc(firestore, 'products', product.id);
+    const updateData = { isActive: !product.isActive };
+    
+    updateDoc(productRef, updateData)
+      .then(() => {
         toast({ title: "Статус продукта изменен." });
-    } catch (serverError) {
+      })
+      .catch((serverError) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `products/${product.id}`, operation: 'update', requestResourceData: updateData }));
-    } finally {
+      })
+      .finally(() => {
         setIsArchiving(null);
-    }
+      });
   }
 
 

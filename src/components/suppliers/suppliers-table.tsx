@@ -60,17 +60,20 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
     setSupplierToDelete(supplier);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (!supplierToDelete || !firestore) return;
-    try {
-        const supplierRef = doc(firestore, 'bars', barId, 'suppliers', supplierToDelete.id);
-        await deleteDoc(supplierRef);
+    const supplierRef = doc(firestore, 'bars', barId, 'suppliers', supplierToDelete.id);
+    
+    deleteDoc(supplierRef)
+      .then(() => {
         toast({ title: "Поставщик удален." });
-    } catch (error) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/suppliers/${supplierToDelete.id}`, operation: 'delete' }));
-    } finally {
+      })
+      .catch((error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: supplierRef.path, operation: 'delete' }));
+      })
+      .finally(() => {
         setSupplierToDelete(null);
-    }
+      });
   };
 
   const columns: ColumnDef<Supplier>[] = [

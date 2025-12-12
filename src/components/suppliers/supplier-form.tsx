@@ -56,26 +56,32 @@ export function SupplierForm({ barId, supplier, onFormSubmit }: SupplierFormProp
     },
   });
 
-  async function onSubmit(data: SupplierFormValues) {
+  function onSubmit(data: SupplierFormValues) {
     if (!firestore) return;
     setIsSaving(true);
     
-    try {
-        const supplierRef = supplier ? doc(firestore, 'bars', barId, 'suppliers', supplier.id) : doc(collection(firestore, 'bars', barId, 'suppliers'));
-        const supplierData = {
-          ...data,
-          id: supplierRef.id,
-          barId: barId,
-        };
+    const supplierRef = supplier ? doc(firestore, 'bars', barId, 'suppliers', supplier.id) : doc(collection(firestore, 'bars', barId, 'suppliers'));
+    const supplierData = {
+      ...data,
+      id: supplierRef.id,
+      barId: barId,
+    };
 
-        await setDoc(supplierRef, supplierData, { merge: true });
+    setDoc(supplierRef, supplierData, { merge: true })
+      .then(() => {
         toast({ title: supplier ? 'Поставщик обновлен' : 'Поставщик создан' });
         onFormSubmit();
-    } catch(error) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/suppliers`, operation: 'write' }));
-    } finally {
+      })
+      .catch((error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+            path: supplierRef.path, 
+            operation: supplier ? 'update' : 'create',
+            requestResourceData: supplierData,
+        }));
+      })
+      .finally(() => {
         setIsSaving(false);
-    }
+      });
   }
 
   return (

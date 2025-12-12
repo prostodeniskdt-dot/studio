@@ -114,24 +114,23 @@ service cloud.firestore {
              data.isActive == true;
     }
     
-     function isProductUpdateValid() {
+    function isProductUpdateValid() {
         let incoming = request.resource.data;
         let existing = resource.data;
         // Allow updating only these specific fields by non-admins
         let allowedToChange = [
-            'subCategory', 'imageUrl', 'fullBottleWeightG', 'emptyBottleWeightG', 
-            'reorderPointMl', 'reorderQuantity', 'defaultSupplierId', 'isActive', 'updatedAt'
+            'name', 'category', 'subCategory', 'imageUrl',
+            'costPerBottle', 'sellingPricePerPortion', 'portionVolumeMl',
+            'bottleVolumeMl', 'fullBottleWeightG', 'emptyBottleWeightG',
+            'reorderPointMl', 'reorderQuantity', 'defaultSupplierId',
+            'isActive', 'updatedAt'
         ];
-        // Ensure critical fields are NOT changed
+        // Ensure critical fields that should NEVER change are not in the update
         let criticalFieldsUnchanged = 
-            incoming.name == existing.name &&
-            incoming.category == existing.category &&
-            incoming.costPerBottle == existing.costPerBottle &&
-            incoming.sellingPricePerPortion == existing.sellingPricePerPortion &&
-            incoming.portionVolumeMl == existing.portionVolumeMl &&
-            incoming.bottleVolumeMl == existing.bottleVolumeMl;
+            incoming.id == existing.id &&
+            incoming.createdAt == existing.createdAt;
             
-        return criticalFieldsUnchanged || incoming.diff(existing).affectedKeys().hasOnly(allowedToChange);
+        return criticalFieldsUnchanged;
     }
     
     function isInventorySessionCreateValid(barId) {

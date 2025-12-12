@@ -163,7 +163,6 @@ export default function UnifiedCalculatorPage() {
     try {
         const sessionsQuery = query(
             collection(firestore, 'bars', barId, 'inventorySessions'),
-            where('barId', '==', barId),
             where('status', '==', 'in_progress'),
             limit(1)
         );
@@ -228,9 +227,8 @@ export default function UnifiedCalculatorPage() {
             });
         }
     } catch (serverError: any) {
-        const path = serverError.path || `bars/${barId}/inventorySessions`;
-        const operation = serverError.operation || 'list';
-        const permissionError = new FirestorePermissionError({ path, operation });
+        const operation = 'write';
+        const permissionError = new FirestorePermissionError({ path: `bars/${barId}/inventorySessions`, operation });
         errorEmitter.emit('permission-error', permissionError);
     } finally {
         setIsSending(false);

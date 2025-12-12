@@ -72,18 +72,19 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
 
   const confirmDelete = async () => {
     if (!orderToDelete || !firestore) return;
+    const orderRef = doc(firestore, 'bars', barId, 'purchaseOrders', orderToDelete.id);
+    
     try {
-        const orderRef = doc(firestore, 'bars', barId, 'purchaseOrders', orderToDelete.id);
-        // Also delete subcollection of lines
         const linesRef = collection(orderRef, 'lines');
         const linesSnapshot = await getDocs(linesRef);
         const batch = writeBatch(firestore);
         linesSnapshot.forEach(lineDoc => batch.delete(lineDoc.ref));
         batch.delete(orderRef);
+        
         await batch.commit();
         toast({ title: "Заказ удален." });
     } catch (error) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/purchaseOrders/${orderToDelete.id}`, operation: 'delete' }));
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: orderRef.path, operation: 'delete' }));
     } finally {
         setOrderToDelete(null);
     }

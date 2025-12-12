@@ -4,7 +4,6 @@ import { analyzeInventoryVariance as analyzeInventoryVarianceFlow } from '@/ai/f
 import type { CalculatedInventoryLine, InventoryLine, InventorySession, Product, PurchaseOrder } from './types';
 import { getUpcomingHoliday, russianHolidays2024 } from './holidays';
 import { collection, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
-import { getFirestore } from 'firebase/firestore'; // We need the actual instance here for server actions
 import { initializeFirebase } from '@/firebase';
 
 
@@ -36,6 +35,7 @@ export async function analyzeVariance(line: CalculatedInventoryLine): Promise<An
     return result;
   } catch (e: any) {
     console.error("Variance analysis failed:", e);
+    // Throw a user-friendly error to be caught by the client-side hook
     throw new Error('Не удалось выполнить анализ. Пожалуйста, попробуйте еще раз.');
   }
 }
@@ -94,44 +94,56 @@ export async function createPurchaseOrdersFromSession(input: CreatePurchaseOrder
         ordersBySupplier[supplierId].push(item);
     });
 
-    const batch = writeBatch(firestore);
-    const createdOrderIds: string[] = [];
+    try {
+        const batch = writeBatch(firestore);
+        const createdOrderIds: string[] = [];
 
-    for (const supplierId in ordersBySupplier) {
-        const orderRef = doc(collection(firestore, 'bars', barId, 'purchaseOrders'));
-        createdOrderIds.push(orderRef.id);
+        for (const supplierId in ordersBySupplier) {
+            if (supplierId === 'unknown') {
+                // In a real app, you might want to handle this more gracefully
+                console.warn("Skipping order for products with unknown supplier.");
+                continue;
+            }
+            const orderRef = doc(collection(firestore, 'bars', barId, 'purchaseOrders'));
+            createdOrderIds.push(orderRef.id);
 
-        const orderData: Omit<PurchaseOrder, 'createdAt' | 'orderDate'> & { createdAt: any; orderDate: any } = {
-            id: orderRef.id,
-            barId,
-            supplierId,
-            status: 'draft' as const,
-            orderDate: serverTimestamp(),
-            createdAt: serverTimestamp(),
-            createdByUserId: userId,
-        };
-        batch.set(orderRef, orderData);
-
-        ordersBySupplier[supplierId].forEach(item => {
-            const lineRef = doc(collection(orderRef, 'lines'));
-            const lineData = {
-                id: lineRef.id,
-                purchaseOrderId: orderRef.id,
-                productId: item.product.id,
-                quantity: item.quantity,
-                costPerItem: item.product.costPerBottle,
-                receivedQuantity: 0,
+            const orderData = {
+                id: orderRef.id,
+                barId,
+                supplierId,
+                status: 'draft' as const,
+                orderDate: serverTimestamp(),
+                createdAt: serverTimestamp(),
+                createdByUserId: userId,
             };
-            batch.set(lineRef, lineData);
-        });
-    }
-    
-    await batch.commit();
+            batch.set(orderRef, orderData);
 
-    return {
-        orderIds: createdOrderIds,
-        createdCount: createdOrderIds.length,
-        holidayBonus: !!upcomingHoliday,
-        holidayName: upcomingHoliday || undefined,
-    };
+            ordersBySupplier[supplierId].forEach(item => {
+                const lineRef = doc(collection(orderRef, 'lines'));
+                const lineData = {
+                    id: lineRef.id,
+                    purchaseOrderId: orderRef.id,
+                    productId: item.product.id,
+                    quantity: item.quantity,
+                    costPerItem: item.product.costPerBottle,
+                    receivedQuantity: 0,
+                };
+                batch.set(lineRef, lineData);
+            });
+        }
+        
+        if(createdOrderIds.length > 0) {
+            await batch.commit();
+        }
+
+        return {
+            orderIds: createdOrderIds,
+            createdCount: createdOrderIds.length,
+            holidayBonus: !!upcomingHoliday,
+            holidayName: upcomingHoliday || undefined,
+        };
+    } catch(e: any) {
+        console.error("Failed to create purchase orders:", e);
+        throw new Error(`Не удалось создать заказы на закупку: ${e.message}`);
+    }
 }

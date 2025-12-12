@@ -25,6 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import type { PurchaseOrder, Supplier } from '@/lib/types';
@@ -178,54 +179,61 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
   return (
     <>
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <div className="flex flex-wrap items-center justify-between gap-4 py-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Заказы на закупку</h1>
-            <p className="text-muted-foreground">Управляйте вашими закупками у поставщиков.</p>
-          </div>
-          <SheetTrigger asChild>
-            <Button onClick={() => handleOpenSheet()}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Создать заказ
-            </Button>
-          </SheetTrigger>
-        </div>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
+        <Card>
+            <CardHeader>
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <CardTitle>Заказы на закупку</CardTitle>
+                        <CardDescription>Управляйте вашими закупками у поставщиков.</CardDescription>
+                    </div>
+                    <SheetTrigger asChild>
+                        <Button onClick={() => handleOpenSheet()}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Создать заказ
+                        </Button>
+                    </SheetTrigger>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="rounded-md border">
+                <Table>
+                    <TableHeader>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                        <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                            <TableHead key={header.id}>
+                            {header.isPlaceholder
+                                ? null
+                                : flexRender(header.column.columnDef.header, header.getContext())}
+                            </TableHead>
+                        ))}
+                        </TableRow>
                     ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
-                    Заказов пока нет.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                    </TableHeader>
+                    <TableBody>
+                    {table.getRowModel().rows?.length ? (
+                        table.getRowModel().rows.map((row) => (
+                        <TableRow key={row.id}>
+                            {row.getVisibleCells().map((cell) => (
+                            <TableCell key={cell.id}>
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </TableCell>
+                            ))}
+                        </TableRow>
+                        ))
+                    ) : (
+                        <TableRow>
+                        <TableCell colSpan={columns.length} className="h-24 text-center">
+                            Заказов пока нет.
+                        </TableCell>
+                        </TableRow>
+                    )}
+                    </TableBody>
+                </Table>
+                </div>
+            </CardContent>
+        </Card>
+        
         <SheetContent>
           <SheetHeader>
             <SheetTitle>{editingOrder ? 'Редактировать заказ' : 'Создать новый заказ'}</SheetTitle>

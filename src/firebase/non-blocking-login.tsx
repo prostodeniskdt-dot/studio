@@ -86,6 +86,7 @@ function getInitialProductData(): ProductSeedData[] {
 
         // --- Bitters ---
         { name: 'Ангостура Биттер', category: 'Bitters', costPerBottle: 1500, sellingPricePerPortion: 30, portionVolumeMl: 2, bottleVolumeMl: 200, fullBottleWeightG: 450, emptyBottleWeightG: 250, isActive: true, imageUrl: getImage('bitters') },
+    
     ];
 }
 
@@ -98,29 +99,89 @@ async function seedInitialProducts(firestore: Firestore): Promise<void> {
     const productsToSeed = getInitialProductData();
     const batch = writeBatch(firestore);
 
+    // This map connects the original English name to the new Russian seed data.
+    const originalNameToSeedMap: Record<string, ProductSeedData> = {
+        'Aperol': productsToSeed.find(p => p.name === 'Апероль')!,
+        'Oakhart Spiced': productsToSeed.find(p => p.name === 'Капитан Морган Спайсд Голд')!,
+        'Martini Rosso': productsToSeed.find(p => p.name === 'Мартини Россо')!,
+        'Hoegaarden Witbier': productsToSeed.find(p => p.name === 'Хугарден Витбир')!,
+        'Plantation Original Dark': productsToSeed.find(p => p.name === 'Кракен Блэк Спайсд')!, // Example mapping
+        'Русский Стандарт Original': productsToSeed.find(p => p.name === 'Русский Стандарт')!,
+        'Jameson': productsToSeed.find(p => p.name === 'Джемесон')!,
+        'Jack Daniel\'s': productsToSeed.find(p => p.name === 'Джек Дэниэлс')!,
+        'Macallan 12 Double Cask': productsToSeed.find(p => p.name === 'Макаллан 12 Дабл Каск')!,
+        'Chivas Regal 12': productsToSeed.find(p => p.name === 'Чивас Ригал 12')!,
+        'Maker\'s Mark': productsToSeed.find(p => p.name === 'Мэйкерс Марк')!,
+        'Havana Club 3 Anos': productsToSeed.find(p => p.name === 'Гавана Клуб 3 года')!,
+        'Captain Morgan Spiced Gold': productsToSeed.find(p => p.name === 'Капитан Морган Спайсд Голд')!,
+        'Bacardi Carta Blanca': productsToSeed.find(p => p.name === 'Бакарди Карта Бланка')!,
+        'The Kraken Black Spiced': productsToSeed.find(p => p.name === 'Кракен Блэк Спайсд')!,
+        'Russian Standard': productsToSeed.find(p => p.name === 'Русский Стандарт')!,
+        'Beluga Noble': productsToSeed.find(p => p.name === 'Белуга Нобл')!,
+        'Absolut': productsToSeed.find(p => p.name === 'Абсолют')!,
+        'Finlandia': productsToSeed.find(p => p.name === 'Финляндия')!,
+        'Beefeater London Dry': productsToSeed.find(p => p.name === 'Бифитер Лондон Драй')!,
+        'Hendrick\'s': productsToSeed.find(p => p.name === 'Хендрикс')!,
+        'Bombay Sapphire': productsToSeed.find(p => p.name === 'Бомбей Сапфир')!,
+        'Tanqueray London Dry': productsToSeed.find(p => p.name === 'Танкерей Лондон Драй')!,
+        'Olmeca Blanco': productsToSeed.find(p => p.name === 'Ольмека Бланко')!,
+        'Patron Silver': productsToSeed.find(p => p.name === 'Патрон Сильвер')!,
+        'Sauza Silver': productsToSeed.find(p => p.name === 'Сауза Сильвер')!,
+        'Jose Cuervo Especial Silver': productsToSeed.find(p => p.name === 'Хосе Куэрво Эспесиаль Сильвер')!,
+        'Baileys Original': productsToSeed.find(p => p.name === 'Бейлис Ориджинал')!,
+        'Jägermeister': productsToSeed.find(p => p.name === 'Егермейстер')!,
+        'Cointreau': productsToSeed.find(p => p.name === 'Куантро')!,
+        'Campari': productsToSeed.find(p => p.name === 'Кампари')!,
+        'Ararat 5 stars': productsToSeed.find(p => p.name === 'Арарат 5 звезд')!,
+        'Hennessy V.S': productsToSeed.find(p => p.name === 'Хеннесси V.S')!,
+        'Martini Bianco': productsToSeed.find(p => p.name === 'Мартини Бьянко')!,
+        'Grenadine Syrup': productsToSeed.find(p => p.name === 'Сироп Гренадин')!,
+        'Sugar Syrup': productsToSeed.find(p => p.name === 'Сахарный сироп')!,
+        'Angostura Bitters': productsToSeed.find(p => p.name === 'Ангостура Биттер')!,
+    };
+    
     const existingProductsSnapshot = await getDocs(productsCollectionRef);
-    const existingProductsMap = new Map<string, {id: string, data: Product}>();
+    const existingProductsByName = new Map<string, { id: string, data: Product }>();
     existingProductsSnapshot.forEach(doc => {
-        const data = doc.data() as Product;
-        // Use a consistent key for matching. Using original name from the seed list as the key.
-        const seedData = productsToSeed.find(p => p.name === data.name);
-        if(seedData){
-           existingProductsMap.set(seedData.name, {id: doc.id, data});
+        existingProductsByName.set((doc.data() as Product).name, { id: doc.id, data: doc.data() as Product });
+    });
+
+    // 1. Update existing products that need russian translation
+    existingProductsByName.forEach((existingProd, name) => {
+        const seedData = originalNameToSeedMap[name];
+        if (seedData) {
+            // This product exists and needs to be updated with the Russian name
+            const docRef = doc(firestore, 'products', existingProd.id);
+            batch.set(docRef, { 
+                ...existingProd.data, // keep old data
+                ...seedData,          // overwrite with new seed data (including russian name)
+                id: existingProd.id,      // ensure id is not changed
+                createdAt: existingProd.data.createdAt, // ensure createdAt is not changed
+                updatedAt: serverTimestamp(),
+             }, { merge: true });
         }
     });
 
-    for (const seedProd of productsToSeed) {
-        const existingDoc = existingProductsMap.get(seedProd.name);
+    // 2. Add products that are completely missing from the database
+    const productsToAdd = productsToSeed.filter(seedProd => {
+        // Check if any existing product will be renamed to this seed product's name
+        const willBeRenamed = Object.entries(originalNameToSeedMap).some(([oldName, newSeedData]) => 
+            existingProductsByName.has(oldName) && newSeedData.name === seedProd.name
+        );
+        // Check if a product with this name already exists
+        const alreadyExists = existingProductsByName.has(seedProd.name);
         
-        const docRef = existingDoc ? doc(firestore, 'products', existingDoc.id) : doc(productsCollectionRef);
-        const finalData = {
+        return !alreadyExists && !willBeRenamed;
+    });
+    
+    for (const seedProd of productsToAdd) {
+        const docRef = doc(productsCollectionRef);
+        batch.set(docRef, {
             ...seedProd,
             id: docRef.id,
-            createdAt: existingDoc ? existingDoc.data.createdAt : serverTimestamp(),
+            createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
-        };
-
-        batch.set(docRef, finalData, { merge: true });
+        });
     }
     
     await batch.commit();
@@ -202,31 +263,32 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
         const userDoc = await getDoc(userRef);
         const barDoc = await getDoc(barRef);
 
+        const batch = writeBatch(firestore);
+        
         // Create user and bar docs if they don't exist
-        if (!userDoc.exists() || !barDoc.exists()) {
-            const batch = writeBatch(firestore);
+        if (!userDoc.exists()) {
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
-            
-            if (!userDoc.exists()) {
-                batch.set(userRef, {
-                    id: user.uid,
-                    displayName: displayName,
-                    email: user.email,
-                    role: 'manager',
-                    createdAt: serverTimestamp(),
-                });
-            }
-
-            if (!barDoc.exists()) {
-                batch.set(barRef, {
-                    id: barId,
-                    name: `Бар ${displayName}`,
-                    location: 'Не указано',
-                    ownerUserId: user.uid,
-                });
-            }
-            await batch.commit();
+            batch.set(userRef, {
+                id: user.uid,
+                displayName: displayName,
+                email: user.email,
+                role: 'manager',
+                createdAt: serverTimestamp(),
+            });
         }
+
+        if (!barDoc.exists()) {
+            const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
+            batch.set(barRef, {
+                id: barId,
+                name: `Бар ${displayName}`,
+                location: 'Не указано',
+                ownerUserId: user.uid,
+            });
+        }
+
+        // Commit user/bar creation first if needed
+        await batch.commit();
 
         // Seed initial data in parallel. These functions have internal checks to prevent re-seeding.
         await Promise.all([
@@ -283,3 +345,5 @@ export async function initiateEmailSignIn(
     throw error;
   }
 }
+
+    

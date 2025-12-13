@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { LoginAnimation } from "@/components/login-animation";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Неверный формат электронной почты" }),
@@ -63,7 +64,6 @@ export default function LoginPage() {
     }
   };
   
-  // Show a loader while checking for user auth state or if the form is submitting
   if (isUserLoading || isSubmitting) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -72,8 +72,6 @@ export default function LoginPage() {
     );
   }
   
-  // If user is already logged in, they will be redirected by the useEffect.
-  // We can show a loader here as well to avoid a flash of the login page.
   if (user) {
      return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -90,20 +88,24 @@ export default function LoginPage() {
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage:
-                "url(https://images.unsplash.com/photo-1519682337058-224d4a54bf9e?q=80&w=2070&auto=format&fit=crop)",
-              filter: "brightness(0.2)",
+              backgroundImage: "url(https://images.unsplash.com/photo-1554102622-9214d2355523?q=80&w=2070&auto=format&fit=crop)",
+              filter: "brightness(0.3)",
             }}
           />
           <div className="relative z-20 flex items-center text-lg font-medium">
-            <AppLogo />
+             <AppLogo className="text-primary" />
           </div>
+          
+           <div className="relative z-20 flex flex-1 flex-col items-center justify-center">
+            <LoginAnimation />
+          </div>
+
           <div className="relative z-20 mt-auto">
-            <blockquote className="space-y-2 text-primary">
-              <p className="text-lg font-medium">
+            <blockquote className="space-y-2">
+              <p className="text-lg font-medium text-yellow-300">
                 &ldquo;Эта система инвентаризации — лучшее, что случалось с моим баром. Просто, эффективно и экономит мне кучу денег!&rdquo;
               </p>
-              <footer className="text-sm text-primary/80">Владелец бара</footer>
+              <footer className="text-sm text-yellow-300/80">Владелец бара</footer>
             </blockquote>
           </div>
         </div>

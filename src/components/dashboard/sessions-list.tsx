@@ -45,13 +45,10 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     [sessions, sessionToDeleteId]
   );
   
-  // Safeguard: if the session to delete disappears from the list (e.g. deleted in another tab), close the dialog.
-  React.useEffect(() => {
-    if (!sessionToDeleteId) return;
-    if (!sessions.some(s => s.id === sessionToDeleteId)) {
-        setSessionToDeleteId(null);
-    }
-  }, [sessions, sessionToDeleteId]);
+  const handleOpenDeleteDialog = (e: React.MouseEvent, session: InventorySession) => {
+    e.preventDefault(); // Prevent dropdown from closing immediately
+    setSessionToDeleteId(session.id);
+  };
 
 
   const getStatusVariant = (status: InventorySession['status']) => {
@@ -78,21 +75,12 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     return 'Неверная дата';
   }
 
-  const handleDeleteClick = (session: InventorySession) => {
-    setSessionToDeleteId(session.id);
-  };
-
   const confirmDelete = async () => {
     if (!sessionToDeleteId || !barId || !firestore) return;
     
     const idToDelete = sessionToDeleteId;
     
-    // Close the dialog immediately and set deleting state
-    setSessionToDeleteId(null);
     setIsDeleting(true);
-
-    // Wait for next paint to allow UI to update (e.g. close dialog)
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
     try {
         await deleteSessionWithLinesClient(firestore, barId, idToDelete);
@@ -105,6 +93,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
         });
     } finally {
         setIsDeleting(false);
+        setSessionToDeleteId(null);
     }
   };
 
@@ -138,7 +127,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleDeleteClick(session)} className="text-destructive focus:text-destructive">
+                        <DropdownMenuItem onClick={(e) => handleOpenDeleteDialog(e, session)} className="text-destructive focus:text-destructive">
                             <Trash2 className="mr-2 h-4 w-4"/>
                             Удалить
                         </DropdownMenuItem>
@@ -162,7 +151,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
         </Card>
       ))}
     </div>
-     <AlertDialog open={!!sessionToDeleteId} onOpenChange={(open) => !open && setSessionToDeleteId(null)}>
+     <AlertDialog open={!!sessionToDeleteId} onOpenChange={setSessionToDeleteId}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Вы уверены?</AlertDialogTitle>

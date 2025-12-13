@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { cn, formatCurrency, translateCategory, translateSubCategory, buildProductDisplayName } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
-type LocalCalculatedLine = CalculatedInventoryLine & { hasChanged?: boolean };
+type LocalCalculatedLine = CalculatedInventoryLine & { product: Product };
 
 type InventoryTableProps = {
   lines: InventoryLine[];
@@ -19,29 +19,26 @@ type InventoryTableProps = {
 
 type GroupedLines = Record<string, Record<string, LocalCalculatedLine[]>>;
 
-export function InventoryTable({ lines, setLines, products, isEditable }: InventoryTableProps) {
-  console.count("[inventory-table] render");
 
+const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, products, isEditable }) => {
   const productsById = React.useMemo(() => {
-    const m = new Map<string, Product>();
+    const map = new Map<string, Product>();
     for (const p of products) {
-      m.set(p.id, p);
+      map.set(p.id, p);
     }
-    return m;
+    return map;
   }, [products]);
 
-  console.time("calc_lines");
   const calculatedLines = React.useMemo(() => {
     return lines
       .map(line => {
         const product = productsById.get(line.productId);
         if (!product) return null;
         const calculatedFields = calculateLineFields(line, product);
-        return { ...line, product, ...calculatedFields, hasChanged: false };
+        return { ...line, product, ...calculatedFields };
       })
       .filter((l): l is LocalCalculatedLine => l !== null);
   }, [lines, productsById]);
-  console.timeEnd("calc_lines");
 
 
   const groupedAndSortedLines = React.useMemo(() => {
@@ -63,7 +60,6 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
     if (value !== '' && isNaN(numericValue)) return;
     const finalValue = value === '' ? 0 : numericValue;
 
-    // Update the parent state that will be saved
     setLines(currentLines => {
         if (!currentLines) return null;
         return currentLines.map(line => 
@@ -119,10 +115,10 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                         </TableCell>
                       </TableRow>
                     )}
-                    {subCategoryLines.sort((a,b) => buildProductDisplayName(a.product?.name ?? '', a.product?.bottleVolumeMl).localeCompare(buildProductDisplayName(b.product?.name ?? '', b.product?.bottleVolumeMl))).map(line => {
+                    {subCategoryLines.sort((a,b) => buildProductDisplayName(a.product.name, a.product.bottleVolumeMl).localeCompare(buildProductDisplayName(b.product.name, b.product.bottleVolumeMl))).map(line => {
                       return (
-                        <TableRow key={line.id} className={cn(line.hasChanged && 'bg-yellow-500/10')}>
-                          <TableCell className="font-medium pl-4 md:pl-10">{line.product ? buildProductDisplayName(line.product.name, line.product.bottleVolumeMl) : 'Неизвестный продукт'}</TableCell>
+                        <TableRow key={line.id}>
+                          <TableCell className="font-medium pl-4 md:pl-10">{buildProductDisplayName(line.product.name, line.product.bottleVolumeMl)}</TableCell>
                           <TableCell className="text-right hidden md:table-cell">
                             {isEditable ? (
                               <Input type="number" value={line.startStock} onChange={e => handleInputChange(line.id!, 'startStock', e.target.value)} className="w-24 text-right ml-auto" />
@@ -173,3 +169,5 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
     </>
   );
 }
+
+export const InventoryTable = React.memo(InventoryTableInner);

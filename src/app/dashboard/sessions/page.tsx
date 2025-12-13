@@ -27,12 +27,6 @@ export default function SessionsPage() {
   
   const { data: sessions, isLoading: isLoadingSessions, error: sessionsError } = useCollection<InventorySession>(sessionsQuery);
 
-  const sortedSessions = React.useMemo(() => {
-    if (!sessions) return [];
-    // The query already sorts by date, but we can keep this for safety
-    return sessions;
-  }, [sessions]);
-
 
   const handleCreateSession = async () => {
     if (!user || !barId || !firestore) {
@@ -111,7 +105,7 @@ export default function SessionsPage() {
             <p className="text-xs">{sessionsError?.message || 'Возможно, у вас нет прав на просмотр или данные еще не созданы.'}</p>
          </div>
       ) : (
-        <SessionsList sessions={sortedSessions || []} barId={barId!} />
+        <SessionsList sessions={sessions || []} barId={barId!} />
       )}
     </>
   );

@@ -180,8 +180,8 @@ service cloud.firestore {
       allow get: if canReadBarData(barId);
       allow list: if isSignedIn();
       allow create: if isSignedIn() && isCreatingOwnBar(barId);
-      allow update: if (canWriteBarData(barId)) && resourceExists() && isBarUpdateValid();
-      allow delete: if (canWriteBarData(barId)) && resourceExists();
+      allow update: if (isBarMemberByRead(barId) || isAdmin()) && resourceExists() && isBarUpdateValid();
+      allow delete: if (isBarMemberByRead(barId) || isAdmin()) && resourceExists();
 
       match /members/{userId} {
         allow get: if canReadBarData(barId);

@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { LoginAnimation } from "@/components/login-animation";
+import { RunningManLoader } from "@/components/running-man-loader";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Неверный формат электронной почты" }),
@@ -66,8 +67,8 @@ export default function LoginPage() {
   
   if (isUserLoading || isSubmitting) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+        <RunningManLoader />
       </div>
     );
   }

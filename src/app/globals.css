@@ -137,4 +137,44 @@
       opacity: 1;
     }
   }
+  
+  /* Running Man Loader Animation */
+  @keyframes run-track {
+    0% {
+      transform: translateX(-24px);
+    }
+    100% {
+      transform: translateX(calc(100% - 24px));
+    }
+  }
+
+  @keyframes fill-progress {
+    0% {
+      width: 0%;
+    }
+    100% {
+      width: 100%;
+    }
+  }
+
+  @keyframes bob-and-run {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+
+  .animate-run-track {
+    animation: run-track 2s linear infinite;
+  }
+  
+  .animate-fill-progress {
+    animation: fill-progress 2s linear infinite;
+  }
+
+  .animate-bob-and-run {
+    animation: bob-and-run 0.5s ease-in-out infinite;
+  }
 }

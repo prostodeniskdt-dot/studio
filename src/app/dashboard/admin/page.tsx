@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { AdminUsersTable } from '@/components/admin/admin-users-table';
@@ -13,15 +13,21 @@ export default function AdminPage() {
   const firestore = useFirestore();
   const router = useRouter();
 
-  // Простая и надежная проверка администратора по email
-  const isAuthorizedAdmin = !isUserLoading && user?.email === 'prostodeniskdt@gmail.com';
+  // Правильная проверка на админа через отдельную коллекцию
+  const adminRoleRef = useMemoFirebase(() => 
+    firestore && user ? doc(firestore, 'roles_admin', user.uid) : null, 
+    [firestore, user]
+  );
+  const { data: adminRole, isLoading: isAdminRoleLoading } = useDoc(adminRoleRef);
+  
+  const isAuthorizedAdmin = !isAdminRoleLoading && adminRole !== null;
 
   React.useEffect(() => {
-    // Если загрузка пользователя завершена и он не является админом, перенаправляем его
-    if (!isUserLoading && !isAuthorizedAdmin) {
+    // Если все загрузки завершены и пользователь не админ, перенаправляем его
+    if (!isUserLoading && !isAdminRoleLoading && !isAuthorizedAdmin) {
       router.replace('/dashboard');
     }
-  }, [user, isUserLoading, isAuthorizedAdmin, router]);
+  }, [user, isUserLoading, isAuthorizedAdmin, isAdminRoleLoading, router]);
 
   // Запрос пользователей будет выполнен только после подтверждения прав администратора
   const usersQuery = useMemoFirebase(() =>
@@ -31,7 +37,7 @@ export default function AdminPage() {
   
   const { data: users, isLoading: isLoadingUsers, error } = useCollection<UserProfile>(usersQuery);
 
-  const showLoader = isUserLoading;
+  const showLoader = isUserLoading || isAdminRoleLoading;
 
   if (showLoader) {
     return (

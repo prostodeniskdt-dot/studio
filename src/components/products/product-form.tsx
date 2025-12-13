@@ -116,8 +116,11 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     if (!firestore) return;
     setIsSaving(true);
     const productRef = product ? doc(firestore, 'products', product.id) : doc(collection(firestore, 'products'));
+    
+    // Ensure `undefined` values are converted to `null` or omitted
     const productData = {
         ...data,
+        defaultSupplierId: data.defaultSupplierId || null,
         id: productRef.id,
         updatedAt: serverTimestamp(),
         createdAt: product?.createdAt || serverTimestamp(),

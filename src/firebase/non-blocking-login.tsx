@@ -191,7 +191,7 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
                 role: 'manager' as const, // Default role
                 createdAt: serverTimestamp(),
             };
-            await setDoc(userRef, userData); // Await user creation
+            await setDoc(userRef, userData);
             wasUserCreated = true;
         }
         
@@ -215,7 +215,7 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
                 location: 'Не указано',
                 ownerUserId: user.uid,
             };
-            await setDoc(barRef, barData); // Await bar creation
+            await setDoc(barRef, barData);
             
             // If the user was brand new, seed their bar with initial data.
             if (wasUserCreated) {
@@ -223,6 +223,7 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
             }
         }
     } catch (e: any) {
+        // LOG THE FULL ERROR OBJECT for detailed diagnosis.
         console.error("A non-recoverable error occurred during user/bar document check:", e);
         throw new Error(`Не удалось проверить или создать необходимые документы: ${e.message}`);
     }

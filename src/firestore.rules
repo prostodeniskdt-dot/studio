@@ -16,9 +16,11 @@ service cloud.firestore {
     }
 
     match /roles_admin/{userId} {
-      // Only the user can check if they are an admin. No one can list, create, or delete roles from the client.
       allow get: if isOwner(userId);
-      allow list, create, update, delete: if false;
+      allow list: if false; // Users should not be able to list who is an admin.
+      // Allow the designated admin to create their own role document, one time.
+      allow create: if isOwner(userId) && request.auth.token.email == 'prostodeniskdt@gmail.com';
+      allow update, delete: if false; // Roles cannot be changed or deleted from the client.
     }
 
     match /users/{userId} {

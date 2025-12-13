@@ -183,17 +183,27 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
         let wasUserCreated = false;
 
         if (!userDoc.exists()) {
-            const isAppAdmin = user.email === 'prostodeniskdt@gmail.com';
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
             const userData = {
                 id: user.uid,
                 displayName: displayName,
                 email: user.email,
-                role: isAppAdmin ? 'admin' : 'manager',
+                role: 'manager' as const, // Default role
                 createdAt: serverTimestamp(),
             };
             await setDoc(userRef, userData);
             wasUserCreated = true;
+        }
+        
+        // --- Step 1.5: Ensure Admin Role document exists if it's the admin user ---
+        const isAppAdmin = user.email === 'prostodeniskdt@gmail.com';
+        if (isAppAdmin) {
+            const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
+            const adminRoleDoc = await getDoc(adminRoleRef);
+            if (!adminRoleDoc.exists()) {
+                // This call is now allowed by the updated security rules
+                await setDoc(adminRoleRef, { isAdmin: true });
+            }
         }
 
         // --- Step 2: Ensure Bar document exists ---

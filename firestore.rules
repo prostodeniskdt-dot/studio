@@ -47,7 +47,7 @@ service cloud.firestore {
      * It relies on the convention that barId is `bar_${userId}`.
      */
     function isBarOwnerByPath(barId) {
-      return request.auth.uid == barId.split('_')[1];
+      return barId == 'bar_' + request.auth.uid;
     }
     
     /**
@@ -55,11 +55,10 @@ service cloud.firestore {
      * SAFE for get, create, update, delete. UNSAFE for list.
      */
     function isBarMemberByRead(barId) {
-        // Bar owners are always members.
-        if (get(/databases/$(database)/documents/bars/$(barId)).data.ownerUserId == request.auth.uid) {
+        let barDoc = get(/databases/$(database)/documents/bars/$(barId));
+        if (barDoc.data.ownerUserId == request.auth.uid) {
             return true;
         }
-        // Staff members are also members.
         return exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid));
     }
 

@@ -185,7 +185,8 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
 
         if (!userDoc.exists()) {
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
-            // Create user doc first
+            
+            // Create user and bar docs sequentially
             await setDoc(userRef, {
                 id: user.uid,
                 displayName: displayName,
@@ -194,16 +195,12 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
                 createdAt: serverTimestamp(),
             });
 
-            // Then create bar doc
-            const barDoc = await getDoc(barRef);
-            if (!barDoc.exists()) {
-                 await setDoc(barRef, {
-                    id: barId,
-                    name: `Бар ${displayName}`,
-                    location: 'Не указано',
-                    ownerUserId: user.uid,
-                });
-            }
+            await setDoc(barRef, {
+                id: barId,
+                name: `Бар ${displayName}`,
+                location: 'Не указано',
+                ownerUserId: user.uid,
+            });
            
             // Seed data only for brand new users
             await seedInitialData(firestore, barId, user.uid);

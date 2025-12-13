@@ -55,15 +55,14 @@ service cloud.firestore {
      * SAFE for get, create, update, delete. UNSAFE for list.
      */
     function isBarMemberByRead(barId) {
-      let barDoc = get(/databases/$(database)/documents/bars/$(barId));
-      if (barDoc.data.ownerUserId == request.auth.uid) {
-        return true;
-      }
-      if (exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid))) {
-        return true;
-      }
-      return false;
+        // Bar owners are always members.
+        if (get(/databases/$(database)/documents/bars/$(barId)).data.ownerUserId == request.auth.uid) {
+            return true;
+        }
+        // Staff members are also members.
+        return exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid));
     }
+
 
     // ------------------------------------------------------------------------
     // Authorization Logic Functions

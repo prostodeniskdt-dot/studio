@@ -8,7 +8,9 @@ import { Loader2 } from 'lucide-react';
 import { AdminUsersTable } from '@/components/admin/admin-users-table';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ShieldAlert } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ShieldAlert, Info } from 'lucide-react';
+import Link from 'next/link';
 
 
 export default function AdminPage() {
@@ -16,7 +18,6 @@ export default function AdminPage() {
   const firestore = useFirestore();
   const router = useRouter();
 
-  // Reference to the admin role document for the current user.
   const adminRoleRef = useMemoFirebase(() => 
     firestore && user ? doc(firestore, 'roles_admin', user.uid) : null, 
     [firestore, user]
@@ -24,27 +25,9 @@ export default function AdminPage() {
   
   const { data: adminRoleDoc, isLoading: isAdminRoleLoading, error: adminRoleError } = useDoc(adminRoleRef);
   
-  const isAuthorizedAdmin = !isAdminRoleLoading && !adminRoleError && adminRoleDoc !== null;
+  const isAuthorizedAdmin = adminRoleDoc !== null;
+  const finishedAllLoads = !isUserLoading && !isAdminRoleLoading;
 
-  // Effect to handle redirection if the user is not an admin.
-  React.useEffect(() => {
-    const allLoadsFinished = !isUserLoading && !isAdminRoleLoading;
-    
-    // If all data is loaded and the user is determined not to be an admin (or there was an error), redirect.
-    if (allLoadsFinished && !isAuthorizedAdmin) {
-      router.replace('/dashboard');
-    }
-  }, [user, isUserLoading, isAuthorizedAdmin, isAdminRoleLoading, router]);
-
-  // The query for users should only be constructed if the user is a confirmed admin.
-  const usersQuery = useMemoFirebase(() =>
-    firestore && isAuthorizedAdmin ? query(collection(firestore, 'users')) : null,
-    [firestore, isAuthorizedAdmin]
-  );
-  
-  const { data: users, isLoading: isLoadingUsers, error: usersError } = useCollection<UserProfile>(usersQuery);
-
-  // Show a top-level loader while checking user auth and admin role.
   if (isUserLoading || isAdminRoleLoading) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -53,32 +36,56 @@ export default function AdminPage() {
     );
   }
   
-  // If there was an error fetching the admin role, show a specific error message.
   if (adminRoleError) {
     return (
       <Alert variant="destructive" className="max-w-xl mx-auto">
         <ShieldAlert className="h-4 w-4" />
         <AlertTitle>Ошибка проверки прав администратора</AlertTitle>
         <AlertDescription>
-          <p>Не удалось проверить ваш статус администратора. Это может быть связано с проблемой правил безопасности или конфигурации проекта.</p>
+          <p>Не удалось проверить ваш статус администратора из-за ошибки прав доступа.</p>
           <p className="mt-2 text-xs">Детали: {adminRoleError.message}</p>
-          <p className="mt-2 text-xs">Убедитесь, что правила Firestore развернуты, и ваш проект (`projectId`) в коде совпадает с проектом в Firebase CLI.</p>
+          <p className="mt-2 text-xs">Убедитесь, что правила Firestore (`firestore.rules`) развернуты и ваш `projectId` в коде совпадает с проектом в Firebase CLI.</p>
         </AlertDescription>
       </Alert>
     )
   }
 
-  // This block will render if loads are finished but the user is not an admin,
-  // just before the useEffect redirects them.
   if (!isAuthorizedAdmin) {
+     if (user?.email === 'prostodeniskdt@gmail.com') {
+        return (
+             <Alert className="max-w-xl mx-auto">
+                <Info className="h-4 w-4" />
+                <AlertTitle>Роль администратора не активирована</AlertTitle>
+                <AlertDescription>
+                    <p>Ваша учетная запись имеет право быть администратором, но роль еще не активирована в базе данных.</p>
+                    <Button asChild className="mt-4">
+                        <Link href="/dashboard/admin/debug">
+                            Перейти к активации
+                        </Link>
+                    </Button>
+                </AlertDescription>
+            </Alert>
+        )
+     }
     return (
        <div className="flex justify-center items-center h-full">
-        <p>У вас нет прав для доступа к этой странице. Вы будете перенаправлены...</p>
+        <Alert variant="destructive">
+            <ShieldAlert className="h-4 w-4" />
+            <AlertTitle>Доступ запрещен</AlertTitle>
+            <AlertDescription>У вас нет прав для доступа к этой странице.</AlertDescription>
+        </Alert>
       </div>
     )
   }
 
-  // If the user is an admin, show the main content.
+  // --- From this point on, user is an authorized admin ---
+  const usersQuery = useMemoFirebase(() =>
+    firestore ? query(collection(firestore, 'users')) : null,
+    [firestore]
+  );
+  
+  const { data: users, isLoading: isLoadingUsers, error: usersError } = useCollection<UserProfile>(usersQuery);
+
   if (usersError) {
     return (
       <div className="text-center text-destructive bg-destructive/10 p-4 rounded-md">

@@ -194,18 +194,6 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
             await setDoc(userRef, userData);
             wasUserCreated = true;
         }
-        
-        // --- Step 1.5: Self-bootstrap Admin Role (non-blocking) ---
-        // This attempts to create the admin role doc. If it fails due to rules (e.g., doc exists),
-        // it will fail silently and not block the main flow.
-        if (user.email === 'prostodeniskdt@gmail.com') {
-            const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
-            setDoc(adminRoleRef, { isAdmin: true }).catch(error => {
-                // Log the error for debugging but don't throw, as it's not a critical failure for the user.
-                // The most common error here would be "permission-denied" if the doc already exists, which is fine.
-                console.warn("Could not self-bootstrap admin role (this is often normal if role already exists):", error.code);
-            });
-        }
 
         // --- Step 2: Ensure Bar document exists ---
         const barId = `bar_${user.uid}`;

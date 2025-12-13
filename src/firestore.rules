@@ -25,8 +25,10 @@ service cloud.firestore {
     // Collection Rules
     // ------------------------------------------------------------------------
     match /roles_admin/{userId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
+      // A user can read their own admin role document to check their status.
+      // Only an existing admin can write/list these documents.
+      allow read: if isOwner(userId);
+      allow list, write: if isAdmin();
     }
     
     match /users/{userId} {

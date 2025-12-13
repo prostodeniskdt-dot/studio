@@ -19,7 +19,7 @@ const profileSchema = z.object({
   city: z.string().optional(),
   establishment: z.string().optional(),
   phone: z.string().optional(),
-  socialLink: z.string().url({ message: 'Пожалуйста, введите корректную ссылку.' }).optional().or(z.literal('')),
+  socialLink: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -122,7 +122,7 @@ export default function ProfilePage() {
             </div>
              <div className="space-y-2">
               <Label htmlFor="socialLink">Ссылка на Telegram / WhatsApp</Label>
-              <Input id="socialLink" placeholder="https://t.me/username" {...register('socialLink')} />
+              <Input id="socialLink" placeholder="@username" {...register('socialLink')} />
               {errors.socialLink && <p className="text-xs text-destructive mt-1">{errors.socialLink.message}</p>}
             </div>
             <Button type="submit" disabled={isSubmitting}>

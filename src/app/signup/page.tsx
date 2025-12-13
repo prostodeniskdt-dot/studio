@@ -22,7 +22,7 @@ const signupSchema = z.object({
   city: z.string().optional(),
   establishment: z.string().optional(),
   phone: z.string().optional(),
-  socialLink: z.string().url({ message: 'Пожалуйста, введите корректную ссылку.' }).optional().or(z.literal('')),
+  socialLink: z.string().optional(),
 });
 
 type SignupFormInputs = z.infer<typeof signupSchema>;
@@ -159,7 +159,7 @@ export default function SignupPage() {
                 </div>
                  <div>
                   <Label htmlFor="socialLink">Ссылка на Telegram / WhatsApp</Label>
-                  <Input id="socialLink" placeholder="https://t.me/username" {...register('socialLink')} />
+                  <Input id="socialLink" placeholder="@username" {...register('socialLink')} />
                   {errors.socialLink && <p className="text-xs text-destructive mt-1">{errors.socialLink.message}</p>}
                 </div>
               </div>

@@ -51,6 +51,9 @@ export async function deleteSessionWithLinesClient(
     snapshot.docs.forEach((d) => batch.delete(d.ref));
     await batch.commit();
 
+    // Yield to the main thread to prevent UI freezing on large deletions
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
     // Set the last document from this batch to be the starting point for the next query.
     lastDoc = snapshot.docs[snapshot.docs.length - 1];
   }

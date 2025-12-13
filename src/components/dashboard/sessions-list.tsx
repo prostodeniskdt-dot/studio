@@ -87,9 +87,12 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     
     const idToDelete = sessionToDeleteId;
     
-    // Close the dialog immediately to prevent UI race conditions
+    // Close the dialog immediately and set deleting state
     setSessionToDeleteId(null);
     setIsDeleting(true);
+
+    // Wait for next paint to allow UI to update (e.g. close dialog)
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
     try {
         await deleteSessionWithLinesClient(firestore, barId, idToDelete);

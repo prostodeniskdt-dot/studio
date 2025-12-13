@@ -83,7 +83,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         emptyBottleWeightG: product.emptyBottleWeightG ?? undefined,
         reorderPointMl: product.reorderPointMl ?? undefined,
         reorderQuantity: product.reorderQuantity ?? undefined,
-        defaultSupplierId: product.defaultSupplierId ?? null,
+        defaultSupplierId: product.defaultSupplierId ?? undefined,
     } : {
       name: '',
       category: 'Other',
@@ -401,3 +401,5 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     </Form>
   );
 }
+
+    

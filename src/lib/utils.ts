@@ -156,43 +156,61 @@ const normalizeKey = (s: string) =>
 function translateNameOnly(name: string): string {
   if (!name) return '';
   const normalized = normalizeKey(name);
-  return productNameTranslations.get(normalized) || fallbackTransliterate(name);
+  if (productNameTranslations.has(normalized)) {
+      return productNameTranslations.get(normalized)!;
+  }
+  
+  // Fallback to transliteration if name contains Latin characters
+  const hasLatin = (s: string) => /[A-Za-z]/.test(s);
+  if (hasLatin(name)) {
+      return fallbackTransliterate(name);
+  }
+
+  // If no translation and no Latin chars, return original
+  return name;
 }
+
+const VOLUME_RE = /(?:^|[\s(])(\d+(?:[.,]\d+)?)\s*(мл|ml|л|l|cl)\b[)\s]*?/gi;
 
 export function extractVolume(original: string): { baseName: string; volumeMl?: number } {
-  if (!original) return { baseName: '' };
-  const s = original.trim();
-  const re = /(?:^|\s)(\d+(?:[.,]\d+)?)\s*(мл|ml|л|l|cl)\b/i;
-  const match = s.match(re);
+  const s = (original ?? "").trim();
+  let lastMl: number | undefined;
 
-  if (!match) return { baseName: s };
+  // Find the last volume mentioned in the string
+  for (const m of s.matchAll(VOLUME_RE)) {
+    const numRaw = (m[1] ?? "").replace(",", ".");
+    const unit = (m[2] ?? "").toLowerCase();
+    const value = Number(numRaw);
+    if (!Number.isFinite(value)) continue;
 
-  const numRaw = match[1].replace(",", ".");
-  const unit = match[2].toLowerCase();
-  const value = Number(numRaw);
+    if (unit === "мл" || unit === "ml") lastMl = Math.round(value);
+    else if (unit === "л" || unit === "l") lastMl = Math.round(value * 1000);
+    else if (unit === "cl") lastMl = Math.round(value * 10);
+  }
 
-  if (!Number.isFinite(value)) return { baseName: s };
+  // Remove ALL volume mentions from the name to get a clean base name
+  const baseName = s.replace(VOLUME_RE, " ").replace(/\s+/g, " ").trim();
 
-  let volumeMl: number | undefined;
-  if (unit === "мл" || unit === "ml") volumeMl = Math.round(value);
-  else if (unit === "л" || unit === "l") volumeMl = Math.round(value * 1000);
-  else if (unit === "cl") volumeMl = Math.round(value * 10);
-
-  const baseName = s.replace(re, " ").replace(/\s+/g, " ").trim();
-  return { baseName, volumeMl };
+  return { baseName, volumeMl: lastMl };
 }
 
 
-export function buildProductDisplayName(name: string, nominalVolumeMl?: number | null): string {
-  const { baseName } = extractVolume(name);
+export function buildProductDisplayName(name: string, bottleVolumeMl?: number | null): string {
+  const { baseName, volumeMl: fromName } = extractVolume(name);
   const translatedName = translateNameOnly(baseName);
+
+  // Priority: bottleVolumeMl field > volume from name string
+  const finalVolume = bottleVolumeMl ?? fromName;
   
-  if (nominalVolumeMl) {
-    return `${translatedName} ${nominalVolumeMl}мл`;
+  if (finalVolume) {
+    return `${translatedName} ${finalVolume}мл`;
   }
   
   return translatedName;
 }
+
+// Legacy function for direct translation, kept for specific use cases if any.
+export const translateProductName = buildProductDisplayName;
 
 
 export const productCategories: ProductCategory[] = ['Whiskey', 'Rum', 'Vodka', 'Gin', 'Tequila', 'Liqueur', 'Wine', 'Beer', 'Brandy', 'Vermouth', 'Absinthe', 'Bitters', 'Syrup', 'Other'];
@@ -289,11 +307,10 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
 export function dedupeProductsByName(products: Product[]): Product[] {
   const map = new Map<string, Product>();
 
-  // More aggressive normalization
   const normalizeForDedupe = (s: string) => s.toLowerCase().replace(/\s+/g, '').replace(/мл/g, 'ml');
 
   for (const item of products) {
-    // The key is now based on normalized name AND volume.
+    // Key now includes volume for uniqueness
     const key = `${normalizeForDedupe(item.name)}:${item.bottleVolumeMl}`;
     const existing = map.get(key);
 
@@ -302,13 +319,11 @@ export function dedupeProductsByName(products: Product[]): Product[] {
       continue;
     }
 
-    // Prefer active items
     if (item.isActive && !existing.isActive) {
       map.set(key, item);
       continue;
     }
     
-    // If status is the same, prefer the one updated more recently.
     if (item.isActive === existing.isActive) {
         const existingTime = existing.updatedAt?.toMillis?.() ?? 0;
         const itemTime = item.updatedAt?.toMillis?.() ?? 0;
@@ -320,3 +335,5 @@ export function dedupeProductsByName(products: Product[]): Product[] {
 
   return Array.from(map.values());
 }
+
+    

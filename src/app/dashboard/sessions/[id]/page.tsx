@@ -63,6 +63,8 @@ export default function SessionPage() {
   const [isCompleting, setIsCompleting] = React.useState(false);
   const [isAddingProduct, setIsAddingProduct] = React.useState(false);
   
+  const didNotFoundRef = React.useRef(false);
+  
   const sessionRef = useMemoFirebase(() => 
     firestore && barId ? doc(firestore, 'bars', barId, 'inventorySessions', id) : null,
     [firestore, barId, id]
@@ -78,19 +80,23 @@ export default function SessionPage() {
   const [allProducts, setAllProducts] = React.useState<Product[] | null>(null);
   const [isLoadingProducts, setIsLoadingProducts] = React.useState(true);
 
+  const isReady = !!(firestore && user && barId && id && sessionRef);
+
   React.useEffect(() => {
-    // Wait until the loading is finished before checking for the session.
-    if (!isLoadingSession && !session) {
-      // If loading is done and there's still no session, then redirect.
-      // This prevents redirecting while the data is still being fetched.
+    if (!isReady || isLoadingSession || sessionError) return;
+
+    if (session === null) {
+      if (didNotFoundRef.current) return;
+      didNotFoundRef.current = true;
+
       toast({
         variant: "destructive",
         title: "Инвентаризация не найдена",
-        description: "Возможно, она была удалена.",
+        description: "Возможно, она была удалена или у вас нет доступа.",
       });
       router.replace("/dashboard/sessions");
     }
-  }, [isLoadingSession, session, router, toast]);
+  }, [isReady, isLoadingSession, session, sessionError, router, toast]);
 
   React.useEffect(() => {
     if (!firestore) return;
@@ -120,10 +126,10 @@ export default function SessionPage() {
   }, [firestore, toast]);
 
   React.useEffect(() => {
-    // Only set local lines if the lines data has been fetched.
-    // This now correctly handles the initial state where lines can be null.
-    if (lines) {
+    if (lines !== null) {
       setLocalLines(lines);
+    } else {
+      setLocalLines([]); // Ensure localLines is an empty array if lines are null (e.g., new session)
     }
   }, [lines]);
 
@@ -131,6 +137,7 @@ export default function SessionPage() {
 
   const hasUnsavedChanges = React.useMemo(() => {
     if (!originalLines || !localLines) return false;
+    if (originalLines.length !== localLines.length) return true;
     return JSON.stringify(originalLines) !== JSON.stringify(localLines);
   }, [originalLines, localLines]);
   
@@ -355,16 +362,27 @@ export default function SessionPage() {
       );
   }
 
-  if (isLoadingSession || !session) {
+  // Handle loading and error states first
+  if (!isReady || isLoadingSession) {
     return (
       <div className="flex items-center justify-center h-full pt-20">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
-  
+
   if (sessionError) {
     return <div className="text-center text-destructive p-4">Ошибка загрузки сессии: {sessionError.message}</div>;
+  }
+  
+  // If we have passed the ready checks and session is still null, the useEffect will handle redirection.
+  // We can show a loader for a frame to avoid flashing content.
+  if (!session) {
+    return (
+      <div className="flex items-center justify-center h-full pt-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
   
   const isLoading = isLoadingLines || isLoadingProducts;

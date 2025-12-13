@@ -93,7 +93,6 @@ export function ProductsTable({ products }: { products: Product[] }) {
   }
 
   const uniqueProducts = React.useMemo(() => {
-    // Ensure products are unique by their canonical `id` field, not the document id
     const productMap = new Map<string, Product>();
     products.forEach(p => {
         if (!productMap.has(p.id)) {

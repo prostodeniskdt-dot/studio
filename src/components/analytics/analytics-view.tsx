@@ -8,14 +8,14 @@ import { VarianceTrendChart } from '@/components/analytics/variance-trend-chart'
 export function AnalyticsView({ data }: { data: SessionWithLines[] }) {
     return (
         <>
-            <div className="flex items-center justify-between py-4">
+            <div className="flex w-full items-center justify-between py-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Аналитика</h1>
                     <p className="text-muted-foreground">Анализируйте данные по инвентаризациям для принятия лучших решений.</p>
                 </div>
             </div>
 
-            <div className="grid gap-6">
+            <div className="grid w-full grid-cols-1 gap-6">
                 <Card>
                 <CardHeader>
                     <CardTitle>Динамика отклонений</CardTitle>

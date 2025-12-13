@@ -60,7 +60,7 @@ export function VarianceTrendChart({ data }: { data: SessionWithLines[] }) {
   }, [data]);
 
   return (
-    <div className="h-[300px] w-full">
+    <div className="h-[300px] w-full min-w-0">
        <ChartContainer config={chartConfig}>
         <BarChart data={chartData}>
             <CartesianGrid vertical={false} />

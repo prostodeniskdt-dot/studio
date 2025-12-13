@@ -13,7 +13,7 @@ import type { InventorySession, Product, ProductCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
-import { translateCategory, productCategories, productSubCategories, translateSubCategory } from '@/lib/utils';
+import { translateCategory, productCategories, productSubCategories, translateSubCategory, dedupeProductsByName } from '@/lib/utils';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 
 export default function UnifiedCalculatorPage() {
@@ -46,14 +46,7 @@ export default function UnifiedCalculatorPage() {
   const filteredProducts = React.useMemo(() => {
     if (!products) return [];
     
-    // Ensure products are unique by their canonical `id` field.
-    const productMap = new Map<string, Product>();
-    products.forEach(p => {
-        if (!productMap.has(p.id)) {
-            productMap.set(p.id, p);
-        }
-    });
-    const uniqueProducts = Array.from(productMap.values());
+    const uniqueProducts = dedupeProductsByName(products);
 
     return uniqueProducts.filter(p => {
       const categoryMatch = !selectedCategory || p.category === selectedCategory;
@@ -235,7 +228,7 @@ export default function UnifiedCalculatorPage() {
             await updateDoc(lineRef, updateData);
             toast({
                 title: "Данные отправлены",
-                description: `Остаток для продукта ${products?.find(p => p.id === selectedProductId)?.name} (${volume} мл) обновлен в текущей инвентаризации.`,
+                description: `Остаток для продукта ${products?.find(p => p.id === selectedProductId)?.name} (${volume} мл) обновлен в текущую инвентаризацию.`,
             });
         }
     } catch (serverError: any) {

@@ -38,7 +38,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import type { Product, ProductCategory } from '@/lib/types';
-import { formatCurrency, translateCategory, translateSubCategory, productCategories, productSubCategories } from '@/lib/utils';
+import { formatCurrency, translateCategory, translateSubCategory, productCategories, productSubCategories, dedupeProductsByName } from '@/lib/utils';
 import { ProductForm } from './product-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
@@ -93,13 +93,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
   }
 
   const uniqueProducts = React.useMemo(() => {
-    const productMap = new Map<string, Product>();
-    products.forEach(p => {
-        if (!productMap.has(p.id)) {
-            productMap.set(p.id, p);
-        }
-    });
-    return Array.from(productMap.values());
+    return dedupeProductsByName(products);
   }, [products]);
 
 

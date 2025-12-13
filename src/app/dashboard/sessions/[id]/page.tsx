@@ -5,12 +5,13 @@ import { useParams, notFound, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { InventoryTable } from "@/components/sessions/inventory-table";
 import { Button } from "@/components/ui/button";
-import { FileText, Loader2, Save, XCircle, Download, Upload, PlusCircle } from "lucide-react";
+import { FileText, Loader2, Save, XCircle, Download, Upload, PlusCircle, MoreVertical, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { translateStatus, buildProductDisplayName } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, collection, query, setDoc, writeBatch, serverTimestamp, updateDoc, getDocs } from 'firebase/firestore';
+import { deleteSessionWithLinesClient } from '@/lib/firestore-utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,6 +74,9 @@ export default function SessionPage() {
   const [isSaving, setIsSaving] = React.useState(false);
   const [isCompleting, setIsCompleting] = React.useState(false);
   const [isAddingProduct, setIsAddingProduct] = React.useState(false);
+  const [isDeletingSession, setIsDeletingSession] = React.useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+
 
   // --- FIX: Redirect if session is not found after loading ---
   React.useEffect(() => {
@@ -134,13 +138,37 @@ export default function SessionPage() {
       setLocalLines(lines);
     }
   }, [lines]);
+
+  const handleDeleteSession = async () => {
+    if (!firestore || !barId) return;
+
+    setIsDeletingSession(true);
+    setIsDeleteDialogOpen(false);
+
+    // 1. Redirect away from the page immediately
+    router.replace("/dashboard/sessions");
+
+    // 2. Wait for the next paint to allow UI to update
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+    // 3. Perform the deletion in the background
+    try {
+        await deleteSessionWithLinesClient(firestore, barId, id);
+        toast({ title: "Инвентаризация удалена." });
+    } catch (e: any) {
+        toast({ 
+            variant: "destructive", 
+            title: "Не удалось удалить инвентаризацию", 
+            description: e?.message ?? "Произошла неизвестная ошибка."
+        });
+        // We don't set isDeletingSession back to false because the component is already unmounted.
+    }
+  };
   
   const isLoading = isLoadingSession || isLoadingLines || isLoadingProducts;
 
-  // --- FIX: Don't render anything until we know if the session exists ---
-  // This is the crucial fix. By checking !session here, we prevent the expensive
-  // memoizations and the render of InventoryTable from running after deletion.
-  if (isLoading || !session) {
+  // --- FIX: Don't render anything until we know if the session exists or if we are deleting ---
+  if (isLoading || !session || isDeletingSession) {
     return (
         <div className="flex items-center justify-center h-full pt-20">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -148,7 +176,7 @@ export default function SessionPage() {
     );
   }
 
-  // All code below this point will ONLY run if `session` exists.
+  // All code below this point will ONLY run if `session` exists and we are not deleting.
 
   const productsInSession = React.useMemo(() => new Set(localLines?.map(line => line.productId)), [localLines]);
   
@@ -437,6 +465,20 @@ export default function SessionPage() {
                     </AlertDialog>
                 </>
             )}
+             <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9">
+                        <MoreVertical className="h-4 w-4" />
+                        <span className="sr-only">Другие действия</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                     <DropdownMenuItem onSelect={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4"/>
+                        Удалить инвентаризацию
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
         </div>
       </div>
       <div className="overflow-x-auto">
@@ -471,6 +513,22 @@ export default function SessionPage() {
             </DialogFooter>
         </DialogContent>
       </Dialog>
+       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы собираетесь безвозвратно удалить инвентаризацию "{session?.name}" и все связанные с ней данные. Это действие нельзя отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteSession} className="bg-destructive hover:bg-destructive/90">
+                Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

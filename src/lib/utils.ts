@@ -103,6 +103,7 @@ const productNameTranslations = new Map<string, string>([
     ["glenfiddich 12", "Гленфиддик 12"],
     ["nikka from the barrel", "Никка Фром зе Баррел"],
     ["connemara peated", "Коннемара Питед"],
+    ["cinzano rosso", "Чинзано Россо"],
 ]);
 
 const translitMap: { [key: string]: string } = {
@@ -154,23 +155,20 @@ const normalize = (s: string) =>
 export function translateProductName(name: string, volume?: number): string {
     if (!name) return '';
 
+    const nameWithoutVolume = name.replace(/\s*\d+\s?(мл|ml)\s*$/i, '').trim();
+
     // First, try to get a direct translation from the dictionary
-    const normalizedName = normalize(name);
+    const normalizedName = normalize(nameWithoutVolume);
     let translated = productNameTranslations.get(normalizedName);
 
     // If no translation found, use fallback transliteration
     if (!translated) {
-        translated = fallbackTransliterate(name);
+        translated = fallbackTransliterate(nameWithoutVolume);
     }
     
     // Now, handle the volume part
     if (volume) {
-        // Regular expression to check if volume is already in the name
-        // It looks for a number followed by 'ml' or 'мл', possibly with a space.
-        const volumeRegex = new RegExp(`\\s*${volume}\\s?(мл|ml)`, 'i');
-        if (!volumeRegex.test(translated)) {
-             return `${translated} ${volume}мл`;
-        }
+        return `${translated} ${volume}мл`;
     }
 
     return translated;

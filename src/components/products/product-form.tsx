@@ -119,9 +119,12 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     setIsSaving(true);
     const productRef = product ? doc(firestore, 'products', product.id) : doc(collection(firestore, 'products'));
     
+    const finalName = translateProductName(data.name);
+
     // Ensure `undefined` values are converted to `null` or omitted
     const productData = {
         ...data,
+        name: finalName,
         defaultSupplierId: data.defaultSupplierId || null,
         reorderPointMl: data.reorderPointMl || null,
         reorderQuantity: data.reorderQuantity || null,
@@ -148,6 +151,14 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         setIsSaving(false);
       });
   }
+  
+  const finalDisplayName = React.useMemo(() => {
+    const translated = translateProductName(watchedName);
+    if(watchedVolume > 0){
+        return `${translated} ${watchedVolume}мл`;
+    }
+    return translated;
+  }, [watchedName, watchedVolume])
 
   return (
     <Form {...form}>
@@ -161,7 +172,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
               <FormControl>
                 <Input placeholder="Jameson" {...field} />
               </FormControl>
-              <FormDescription>Отображаемое имя: {translateProductName(watchedName, watchedVolume)}</FormDescription>
+              <FormDescription>Отображаемое имя: {finalDisplayName}</FormDescription>
               <FormMessage />
             </FormItem>
           )}

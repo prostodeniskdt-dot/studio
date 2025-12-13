@@ -179,15 +179,12 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
     try {
         const userRef = doc(firestore, 'users', user.uid);
         const barRef = doc(firestore, 'bars', `bar_${user.uid}`);
-        const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
-
+        
         const userDoc = await getDoc(userRef);
         const barDoc = await getDoc(barRef);
-        const adminRoleDoc = await getDoc(adminRoleRef);
-        
-        let wasUserCreated = false;
-        
+
         const batch = writeBatch(firestore);
+        let wasUserCreated = false;
 
         if (!userDoc.exists()) {
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
@@ -212,14 +209,18 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
             };
             batch.set(barRef, barData);
         }
-        
-        const isAppAdmin = user.email === 'prostodeniskdt@gmail.com';
-        if (isAppAdmin && !adminRoleDoc.exists()) {
-            batch.set(adminRoleRef, { isAdmin: true });
-        }
 
         await batch.commit();
+        
+        const isAppAdmin = user.email === 'prostodeniskdt@gmail.com';
+        if (isAppAdmin) {
+            const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
+            // This set is separate and will use the specific 'create' rule for admins.
+            await setDoc(adminRoleRef, { isAdmin: true }, { merge: true });
+        }
 
+
+        // If the user was newly created, also seed their bar with initial data.
         if (wasUserCreated) {
             await seedInitialData(firestore, barRef.id, user.uid);
         }

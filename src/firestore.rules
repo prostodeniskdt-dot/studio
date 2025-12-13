@@ -79,10 +79,6 @@ service cloud.firestore {
       return isBarMemberByRead(barId) || isAdmin();
     }
     
-    function canWriteSubcollection(barId) {
-       return isBarOwnerByPath(barId) || isAdmin();
-    }
-
     // ------------------------------------------------------------------------
     // Data Validation Functions
     // ------------------------------------------------------------------------
@@ -180,14 +176,14 @@ service cloud.firestore {
       allow get: if canReadBarData(barId);
       allow list: if isSignedIn();
       allow create: if isSignedIn() && isCreatingOwnBar(barId);
-      allow update: if (canWriteBarData(barId)) && resourceExists() && isBarUpdateValid();
-      allow delete: if (canWriteBarData(barId)) && resourceExists();
+      allow update: if (isBarOwnerByPath(barId) || isAdmin()) && resourceExists() && isBarUpdateValid();
+      allow delete: if (isBarOwnerByPath(barId) || isAdmin()) && resourceExists();
 
       match /members/{userId} {
         allow get: if canReadBarData(barId);
         allow list: if isBarOwnerByPath(barId) || isAdmin();
-        allow create, update: if (canWriteSubcollection(barId)) && isValidMemberRole();
-        allow delete: if canWriteSubcollection(barId);
+        allow create, update: if (isBarOwnerByPath(barId) || isAdmin()) && isValidMemberRole();
+        allow delete: if (isBarOwnerByPath(barId) || isAdmin());
       }
 
       match /inventorySessions/{inventorySessionId} {
@@ -195,30 +191,30 @@ service cloud.firestore {
         allow list: if isBarOwnerByPath(barId) || isAdmin();
         allow create: if isInventorySessionCreateValid(barId);
         allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
-        allow delete: if canWriteSubcollection(barId) && resourceExists();
+        allow delete: if (isBarOwnerByPath(barId) || isAdmin()) && resourceExists();
 
         match /lines/{inventoryLineId} {
           allow get, list: if canReadBarData(barId);
           allow create: if canWriteBarData(barId) && isInventoryLineCreateValid(inventorySessionId);
           allow update: if canWriteBarData(barId) && resourceExists() && isInventoryLineUpdateValid();
-          allow delete: if canWriteSubcollection(barId) && resourceExists();
+          allow delete: if (isBarOwnerByPath(barId) || isAdmin()) && resourceExists();
         }
       }
       
       match /suppliers/{supplierId} {
         allow get: if canReadBarData(barId);
-        allow list: if canWriteSubcollection(barId);
-        allow create, update, delete: if canWriteSubcollection(barId);
+        allow list: if isBarOwnerByPath(barId) || isAdmin();
+        allow create, update, delete: if isBarOwnerByPath(barId) || isAdmin();
       }
 
       match /purchaseOrders/{purchaseOrderId} {
         allow get: if canReadBarData(barId);
-        allow list: if canWriteSubcollection(barId);
-        allow create, update, delete: if canWriteSubcollection(barId);
+        allow list: if isBarOwnerByPath(barId) || isAdmin();
+        allow create, update, delete: if isBarOwnerByPath(barId) || isAdmin();
 
         match /lines/{purchaseOrderLineId} {
           allow get, list: if canReadBarData(barId);
-          allow create, update, delete: if canWriteSubcollection(barId);
+          allow create, update, delete: if isBarOwnerByPath(barId) || isAdmin();
         }
       }
     }

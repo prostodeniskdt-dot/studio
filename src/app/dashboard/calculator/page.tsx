@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Combobox, type GroupedComboboxOption } from '@/components/ui/combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Weight, Send, Loader2, Ruler } from 'lucide-react';
+import { Weight, Send, Loader2, Search } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import type { InventorySession, Product, ProductCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +31,7 @@ export default function UnifiedCalculatorPage() {
   const [selectedCategory, setSelectedCategory] = React.useState<ProductCategory | undefined>();
   const [selectedSubCategory, setSelectedSubCategory] = React.useState<string | undefined>();
   const [selectedProductId, setSelectedProductId] = React.useState<string | undefined>(undefined);
+  const [searchTerm, setSearchTerm] = React.useState('');
 
   const [bottleVolume, setBottleVolume] = React.useState('');
   const [fullWeight, setFullWeight] = React.useState('');
@@ -44,12 +45,15 @@ export default function UnifiedCalculatorPage() {
 
   const filteredProducts = React.useMemo(() => {
     if (!products) return [];
-    return products.filter(p => {
+    let uniqueProducts = Array.from(new Map(products.map(p => [p.id, p])).values());
+
+    return uniqueProducts.filter(p => {
       const categoryMatch = !selectedCategory || p.category === selectedCategory;
       const subCategoryMatch = !selectedSubCategory || p.subCategory === selectedSubCategory;
-      return categoryMatch && subCategoryMatch;
+      const searchMatch = !searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase());
+      return categoryMatch && subCategoryMatch && searchMatch;
     });
-  }, [products, selectedCategory, selectedSubCategory]);
+  }, [products, selectedCategory, selectedSubCategory, searchTerm]);
 
   const productOptions = React.useMemo<GroupedComboboxOption[]>(() => {
     if (filteredProducts.length === 0) return [];
@@ -257,11 +261,20 @@ export default function UnifiedCalculatorPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">
-            <Label>Фильтр продуктов</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
+            <Label>Поиск и фильтр продуктов</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+               <div className="relative lg:col-span-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Поиск по названию..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+               </div>
                <Select onValueChange={(val) => handleCategoryChange(val as ProductCategory)} value={selectedCategory}>
                   <SelectTrigger>
-                    <SelectValue placeholder="1. Выберите категорию" />
+                    <SelectValue placeholder="Выберите категорию" />
                   </SelectTrigger>
                   <SelectContent>
                     {productCategories.map(cat => (
@@ -274,7 +287,7 @@ export default function UnifiedCalculatorPage() {
                     value={selectedSubCategory ?? '_all_'} 
                     disabled={!subCategoryOptions || subCategoryOptions.length === 0}>
                   <SelectTrigger>
-                    <SelectValue placeholder="2. Выберите подкатегорию" />
+                    <SelectValue placeholder="Выберите подкатегорию" />
                   </SelectTrigger>
                   <SelectContent>
                      <SelectItem value="_all_">Все подкатегории</SelectItem>
@@ -287,11 +300,10 @@ export default function UnifiedCalculatorPage() {
                   options={productOptions}
                   value={selectedProductId}
                   onSelect={handleProductSelect}
-                  placeholder="3. Выберите продукт"
+                  placeholder="Выберите продукт"
                   searchPlaceholder='Поиск продукта...'
                   notFoundText='Продукт не найден.'
                   triggerClassName='lg:col-span-1'
-                  disabled={!selectedCategory}
                 />
             </div>
           </div>

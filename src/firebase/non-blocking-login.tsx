@@ -176,19 +176,15 @@ async function seedInitialData(firestore: Firestore, barId: string, userId: stri
 export async function ensureUserAndBarDocuments(firestore: Firestore, user: User): Promise<void> {
     if (!firestore || !user) return;
 
-    const userRef = doc(firestore, 'users', user.uid);
-    const barId = `bar_${user.uid}`;
-    const barRef = doc(firestore, 'bars', barId);
-    
     try {
+        // --- Step 1: Ensure User and Admin Role documents exist ---
+        const userRef = doc(firestore, 'users', user.uid);
         const userDoc = await getDoc(userRef);
-        const barDoc = await getDoc(barRef);
         const isAppAdmin = user.email === 'prostodeniskdt@gmail.com';
-        
-        const batch = writeBatch(firestore);
-        let shouldCommit = false;
+        let wasUserCreated = false;
 
         if (!userDoc.exists()) {
+            const batch = writeBatch(firestore);
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
             const userData = {
                 id: user.uid,
@@ -198,8 +194,21 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
                 createdAt: serverTimestamp(),
             };
             batch.set(userRef, userData);
-            shouldCommit = true;
+            
+            if (isAppAdmin) {
+                const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
+                batch.set(adminRoleRef, { isAdmin: true });
+            }
+            
+            await batch.commit();
+            wasUserCreated = true;
         }
+
+        // --- Step 2: Ensure Bar document exists ---
+        // This runs after user creation is confirmed, avoiding the rule paradox.
+        const barId = `bar_${user.uid}`;
+        const barRef = doc(firestore, 'bars', barId);
+        const barDoc = await getDoc(barRef);
 
         if (!barDoc.exists()) {
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
@@ -209,24 +218,11 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
                 location: 'Не указано',
                 ownerUserId: user.uid,
             };
-            batch.set(barRef, barData);
-            shouldCommit = true;
-        }
-        
-        if (isAppAdmin) {
-            const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
-            const adminDoc = await getDoc(adminRoleRef);
-            if (!adminDoc.exists()) {
-                batch.set(adminRoleRef, { isAdmin: true });
-                shouldCommit = true;
-            }
-        }
-        
-        if (shouldCommit) {
-            await batch.commit();
-            // Seed data only when the user document was newly created.
-            if (!userDoc.exists()) {
-                 await seedInitialData(firestore, barId, user.uid);
+            await setDoc(barRef, barData);
+            
+            // If the user was brand new, seed their bar with initial data.
+            if (wasUserCreated) {
+                await seedInitialData(firestore, barId, user.uid);
             }
         }
     } catch (e: any) {

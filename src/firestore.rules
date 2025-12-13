@@ -16,7 +16,9 @@ service cloud.firestore {
     }
 
     function isBarOwnerByPath(barId) {
-        return isSignedIn() && barId == 'bar_' + request.auth.uid;
+        // A bar owner is identified by the barId matching 'bar_' + their uid.
+        // This check requires that the user document already exists.
+        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager' && barId == 'bar_' + request.auth.uid;
     }
 
     match /roles_admin/{userId} {
@@ -41,7 +43,8 @@ service cloud.firestore {
     }
 
     match /bars/{barId} {
-      allow create: if isBarOwnerByPath(barId) && request.resource.data.ownerUserId == request.auth.uid;
+      // Allow creation only if the bar ID matches the user's UID and they are creating it for themselves.
+      allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid && barId == 'bar_' + request.auth.uid;
       allow read, update, delete: if isBarOwnerByPath(barId) || isAdmin();
       allow list: if isAdmin();
 

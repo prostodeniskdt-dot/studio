@@ -134,6 +134,21 @@ export default function SessionPage() {
       setLocalLines(lines);
     }
   }, [lines]);
+  
+  const isLoading = isLoadingSession || isLoadingLines || isLoadingProducts;
+
+  // --- FIX: Don't render anything until we know if the session exists ---
+  // This is the crucial fix. By checking !session here, we prevent the expensive
+  // memoizations and the render of InventoryTable from running after deletion.
+  if (isLoading || !session) {
+    return (
+        <div className="flex items-center justify-center h-full pt-20">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+    );
+  }
+
+  // All code below this point will ONLY run if `session` exists.
 
   const productsInSession = React.useMemo(() => new Set(localLines?.map(line => line.productId)), [localLines]);
   
@@ -328,18 +343,6 @@ export default function SessionPage() {
     reader.readAsText(file);
   };
 
-
-  const isLoading = isLoadingSession || isLoadingLines || isLoadingProducts;
-
-  // --- FIX: Don't render anything until we know if the session exists ---
-  if (isLoading || !session) {
-    return (
-        <div className="flex items-center justify-center h-full pt-20">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-    );
-  }
-
   const getStatusVariant = (status: (typeof session.status)) => {
     switch (status) {
       case 'completed':
@@ -471,5 +474,3 @@ export default function SessionPage() {
     </>
   );
 }
-
-    

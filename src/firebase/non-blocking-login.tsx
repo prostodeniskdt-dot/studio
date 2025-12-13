@@ -179,7 +179,7 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
     const userRef = doc(firestore, 'users', user.uid);
     const barId = `bar_${user.uid}`;
     const barRef = doc(firestore, 'bars', barId);
-
+    
     const userDocSnapshot = await getDoc(userRef);
 
     if (userDocSnapshot.exists()) {
@@ -190,29 +190,40 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
 
     // --- User does not exist, create everything ---
 
+    const isAppAdmin = user.email === 'prostodeniskdt@gmail.com';
     const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
+    
+    const batch = writeBatch(firestore);
+
+    // 1. Create User document
     const userData = {
         id: user.uid,
         displayName: displayName,
         email: user.email,
-        role: 'manager', // Default role
+        role: isAppAdmin ? 'admin' : 'manager', // Assign 'admin' role if email matches
         createdAt: serverTimestamp(),
     };
+    batch.set(userRef, userData, { merge: true });
+
+    // 2. Create Bar document
     const barData = {
         id: barId,
         name: `Бар ${displayName}`,
         location: 'Не указано',
         ownerUserId: user.uid,
     };
+    batch.set(barRef, barData, { merge: true });
+
+    // 3. Create admin role document if user is admin
+    if (isAppAdmin) {
+        const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
+        batch.set(adminRoleRef, { isAdmin: true });
+    }
 
     try {
-        console.log("Attempting to write user document...");
-        await setDoc(userRef, userData, { merge: true });
-        console.log("User document write OK.");
-
-        console.log("Attempting to write bar document...");
-        await setDoc(barRef, barData, { merge: true });
-        console.log("Bar document write OK.");
+        console.log("Attempting to write user, bar, and admin role documents...");
+        await batch.commit();
+        console.log("Documents write OK.");
 
         // Seed initial data only for brand new users
         await seedInitialData(firestore, barId, user.uid);
@@ -262,5 +273,3 @@ export async function initiateEmailSignIn(
     throw error;
   }
 }
-
-    

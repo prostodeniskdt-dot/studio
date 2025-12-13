@@ -33,11 +33,12 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    /**
+     * Checks if the user is an admin.
+     * SAFE for ALL rule types because it checks a known, predictable path.
+     */
     function isAdmin() {
-      // Check if the user's email is the admin email.
-      // This is less secure than checking a custom claim or a document,
-      // but it's the simplest way based on the user's request.
-      return request.auth.token.email == 'prostodeniskdt@gmail.com';
+      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
     /**
@@ -84,6 +85,10 @@ service cloud.firestore {
     // Collection Rules
     // ------------------------------------------------------------------------
 
+    match /roles_admin/{userId} {
+      allow read, write: if isAdmin();
+    }
+    
     match /users/{userId} {
       allow read: if isSignedIn() && (isOwner(userId) || isAdmin());
       allow list: if isAdmin();

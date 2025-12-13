@@ -1,61 +1,114 @@
 'use server';
 
+import type { CalculatedInventoryLine, InventoryLine, InventorySession, Product, PurchaseOrder } from './types';
+import { getUpcomingHoliday, russianHolidays2024 } from './holidays';
+import { collection, doc, writeBatch, serverTimestamp, getDocs, query, orderBy, limit, startAfter } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
+
+type CreatePurchaseOrdersInput = {
+    lines: InventoryLine[];
+    products: Product[];
+    barId: string;
+    userId: string;
+};
+
+type CreatePurchaseOrdersOutput = {
+    orderIds: string[];
+    createdCount: number;
+    holidayBonus: boolean;
+    holidayName?: string;
+};
+
 /**
- * @fileOverview AI-powered analysis of inventory variances to identify potential causes of discrepancies.
- *
- * - analyzeInventoryVariance - A function that takes inventory data and returns potential causes for variances.
+ * Creates draft purchase orders based on an inventory session analysis.
+ * Identifies products below their reorder point and groups them by supplier.
+ * Applies a multiplier for upcoming holidays.
+ * @returns An object containing the IDs of created orders and other metadata.
  */
+export async function createPurchaseOrdersFromSession(input: CreatePurchaseOrdersInput): Promise<CreatePurchaseOrdersOutput> {
+    const { lines, products, barId, userId } = input;
+    const { firestore } = initializeFirebase();
 
-import {ai} from '@/ai/genkit';
-import type { AnalyzeInventoryVarianceInput, AnalyzeInventoryVarianceOutput } from '@/lib/actions';
-import {z} from 'zod';
+    const HOLIDAY_MULTIPLIER = 2; // Increase order by 2x for holidays
+    const PRE_HOLIDAY_DAYS = 5;   // Start increasing orders 5 days before a holiday
 
-const AnalyzeInventoryVarianceInputSchema = z.object({
-  productName: z.string().describe('The name of the product being analyzed.'),
-  theoreticalEndStock: z.number().describe('The theoretical end stock level of the product.'),
-  endStock: z.number().describe('The actual end stock level of the product.'),
-  sales: z.number().describe('The amount of the product sold during the inventory session.'),
-  purchases: z.number().describe('The amount of the product purchased during the inventory session.'),
-  startStock: z.number().describe('The starting stock level of the product.'),
-});
+    const today = new Date();
+    const upcomingHoliday = getUpcomingHoliday(today, russianHolidays2024, PRE_HOLIDAY_DAYS);
+    const multiplier = upcomingHoliday ? HOLIDAY_MULTIPLIER : 1;
 
-const AnalyzeInventoryVarianceOutputSchema = z.object({
-  analysis: z.string().describe('An analysis of potential causes for the inventory variance.'),
-});
+    const productsToOrder = lines.map(line => {
+        const product = products.find(p => p.id === line.productId);
+        if (!product || !product.reorderPointMl || !product.reorderQuantity) return null;
+        if (line.endStock < product.reorderPointMl) {
+            const recommendedQuantity = Math.ceil(product.reorderQuantity * multiplier);
+            return { product, quantity: recommendedQuantity };
+        }
+        return null;
+    }).filter((p): p is NonNullable<typeof p> => p !== null);
 
-const prompt = ai.definePrompt({
-  name: 'analyzeInventoryVariancePrompt',
-  input: {schema: AnalyzeInventoryVarianceInputSchema},
-  output: {schema: AnalyzeInventoryVarianceOutputSchema},
-  prompt: `Вы — эксперт-аналитик по инвентаризации в барах.
+    if (productsToOrder.length === 0) {
+        throw new Error('Заказ не требуется: остатки всех продуктов выше минимального уровня.');
+    }
 
-Вам предоставляются данные инвентаризации по конкретному продукту, и ваша задача — проанализировать любые расхождения между теоретическим и фактическим уровнем запасов.
+    const ordersBySupplier: Record<string, { product: Product, quantity: number }[]> = {};
+    productsToOrder.forEach(item => {
+        const supplierId = item.product.defaultSupplierId || 'unknown';
+        if (!ordersBySupplier[supplierId]) {
+            ordersBySupplier[supplierId] = [];
+        }
+        ordersBySupplier[supplierId].push(item);
+    });
 
-На основе предоставленных данных определите возможные причины расхождения. Учитывайте такие факторы, как возможный перелив, кража, порча, неверная регистрация продаж или неверный подсчет запасов.
+    try {
+        const batch = writeBatch(firestore);
+        const createdOrderIds: string[] = [];
 
-Название продукта: {{{productName}}}
-Теоретический конечный запас: {{{theoreticalEndStock}}}
-Фактический конечный запас: {{{endStock}}}
-Продажи: {{{sales}}}
-Закупки: {{{purchases}}}
-Начальный запас: {{{startStock}}}
+        for (const supplierId in ordersBySupplier) {
+            if (supplierId === 'unknown') {
+                // In a real app, you might want to handle this more gracefully
+                console.warn("Skipping order for products with unknown supplier.");
+                continue;
+            }
+            const orderRef = doc(collection(firestore, 'bars', barId, 'purchaseOrders'));
+            createdOrderIds.push(orderRef.id);
 
-Предоставьте краткий анализ потенциальных причин расхождения. Ответ должен быть на русском языке.
-`,
-});
+            const orderData = {
+                id: orderRef.id,
+                barId,
+                supplierId,
+                status: 'draft' as const,
+                orderDate: serverTimestamp(),
+                createdAt: serverTimestamp(),
+                createdByUserId: userId,
+            };
+            batch.set(orderRef, orderData);
 
-const analyzeInventoryVarianceFlow = ai.defineFlow(
-  {
-    name: 'analyzeInventoryVarianceFlow',
-    inputSchema: AnalyzeInventoryVarianceInputSchema,
-    outputSchema: AnalyzeInventoryVarianceOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+            ordersBySupplier[supplierId].forEach(item => {
+                const lineRef = doc(collection(orderRef, 'lines'));
+                const lineData = {
+                    id: lineRef.id,
+                    purchaseOrderId: orderRef.id,
+                    productId: item.product.id,
+                    quantity: item.quantity,
+                    costPerItem: item.product.costPerBottle,
+                    receivedQuantity: 0,
+                };
+                batch.set(lineRef, lineData);
+            });
+        }
+        
+        if(createdOrderIds.length > 0) {
+            await batch.commit();
+        }
 
-export async function analyzeInventoryVariance(input: AnalyzeInventoryVarianceInput): Promise<AnalyzeInventoryVarianceOutput> {
-  return analyzeInventoryVarianceFlow(input);
+        return {
+            orderIds: createdOrderIds,
+            createdCount: createdOrderIds.length,
+            holidayBonus: !!upcomingHoliday,
+            holidayName: upcomingHoliday || undefined,
+        };
+    } catch(e: any) {
+        console.error("Failed to create purchase orders:", e);
+        throw new Error(`Не удалось создать заказы на закупку: ${e.message}`);
+    }
 }

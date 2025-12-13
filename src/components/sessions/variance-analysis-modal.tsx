@@ -1,95 +1,114 @@
-'use client';
+'use server';
 
-import * as React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Lightbulb } from 'lucide-react';
-import type { CalculatedInventoryLine } from '@/lib/types';
-import { analyzeVariance, type AnalyzeInventoryVarianceInput } from '@/lib/actions';
-import { formatCurrency, translateProductName } from '@/lib/utils';
-import { useServerAction } from '@/hooks/use-server-action';
+import type { CalculatedInventoryLine, InventoryLine, InventorySession, Product, PurchaseOrder } from './types';
+import { getUpcomingHoliday, russianHolidays2024 } from './holidays';
+import { collection, doc, writeBatch, serverTimestamp, getDocs, query, orderBy, limit, startAfter } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
 
-type VarianceAnalysisModalProps = {
-  line: CalculatedInventoryLine;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+type CreatePurchaseOrdersInput = {
+    lines: InventoryLine[];
+    products: Product[];
+    barId: string;
+    userId: string;
 };
 
-export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnalysisModalProps) {
-  
-  const { execute: performAnalysis, isLoading, data, error } = useServerAction(analyzeVariance);
+type CreatePurchaseOrdersOutput = {
+    orderIds: string[];
+    createdCount: number;
+    holidayBonus: boolean;
+    holidayName?: string;
+};
 
-  const getAnalysisInput = React.useCallback((): AnalyzeInventoryVarianceInput | null => {
-    if (!line?.product) return null;
-    return {
-      productName: translateProductName(line.product.name, line.product.bottleVolumeMl),
-      theoreticalEndStock: line.theoreticalEndStock,
-      endStock: line.endStock,
-      sales: line.sales,
-      purchases: line.purchases,
-      startStock: line.startStock,
-    };
-  }, [line]);
+/**
+ * Creates draft purchase orders based on an inventory session analysis.
+ * Identifies products below their reorder point and groups them by supplier.
+ * Applies a multiplier for upcoming holidays.
+ * @returns An object containing the IDs of created orders and other metadata.
+ */
+export async function createPurchaseOrdersFromSession(input: CreatePurchaseOrdersInput): Promise<CreatePurchaseOrdersOutput> {
+    const { lines, products, barId, userId } = input;
+    const { firestore } = initializeFirebase();
 
+    const HOLIDAY_MULTIPLIER = 2; // Increase order by 2x for holidays
+    const PRE_HOLIDAY_DAYS = 5;   // Start increasing orders 5 days before a holiday
 
-  const analysisCallback = React.useCallback(() => {
-    const input = getAnalysisInput();
-    if (open && input) {
-        performAnalysis(input);
+    const today = new Date();
+    const upcomingHoliday = getUpcomingHoliday(today, russianHolidays2024, PRE_HOLIDAY_DAYS);
+    const multiplier = upcomingHoliday ? HOLIDAY_MULTIPLIER : 1;
+
+    const productsToOrder = lines.map(line => {
+        const product = products.find(p => p.id === line.productId);
+        if (!product || !product.reorderPointMl || !product.reorderQuantity) return null;
+        if (line.endStock < product.reorderPointMl) {
+            const recommendedQuantity = Math.ceil(product.reorderQuantity * multiplier);
+            return { product, quantity: recommendedQuantity };
+        }
+        return null;
+    }).filter((p): p is NonNullable<typeof p> => p !== null);
+
+    if (productsToOrder.length === 0) {
+        throw new Error('Заказ не требуется: остатки всех продуктов выше минимального уровня.');
     }
-  }, [getAnalysisInput, open, performAnalysis]);
 
-  React.useEffect(() => {
-     analysisCallback();
-  }, [analysisCallback]);
+    const ordersBySupplier: Record<string, { product: Product, quantity: number }[]> = {};
+    productsToOrder.forEach(item => {
+        const supplierId = item.product.defaultSupplierId || 'unknown';
+        if (!ordersBySupplier[supplierId]) {
+            ordersBySupplier[supplierId] = [];
+        }
+        ordersBySupplier[supplierId].push(item);
+    });
 
-  const varianceType = line.differenceVolume > 0 ? 'Излишек' : 'Недостача';
-  const varianceColor = line.differenceVolume > 0 ? 'text-green-600' : 'text-destructive';
+    try {
+        const batch = writeBatch(firestore);
+        const createdOrderIds: string[] = [];
 
+        for (const supplierId in ordersBySupplier) {
+            if (supplierId === 'unknown') {
+                // In a real app, you might want to handle this more gracefully
+                console.warn("Skipping order for products with unknown supplier.");
+                continue;
+            }
+            const orderRef = doc(collection(firestore, 'bars', barId, 'purchaseOrders'));
+            createdOrderIds.push(orderRef.id);
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Анализ отклонений: {line.product ? translateProductName(line.product.name, line.product.bottleVolumeMl) : ''}</DialogTitle>
-          <DialogDescription>
-            AI-аналитика <span className={varianceColor}>{varianceType} в {Math.abs(Math.round(line.differenceVolume))}мл ({formatCurrency(Math.abs(line.differenceMoney))})</span>.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="py-4 space-y-4">
-            <h3 className="font-semibold flex items-center gap-2"><Lightbulb className="text-primary"/> Возможные причины</h3>
-            {isLoading && (
-                <div className="space-y-2">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                </div>
-            )}
-            {error && (
-                <Alert variant="destructive">
-                    <Terminal className="h-4 w-4" />
-                    <AlertTitle>Ошибка анализа</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                </Alert>
-            )}
-            {data && (
-                <div className="text-sm text-muted-foreground prose prose-sm dark:prose-invert rounded-md border p-4 bg-muted/50">
-                    <p>{data.analysis}</p>
-                </div>
-            )}
-        </div>
-        <DialogFooter>
-          <Button onClick={() => onOpenChange(false)} variant="outline">Закрыть</Button>
-          <Button onClick={() => {
-            const input = getAnalysisInput();
-            if (input) performAnalysis(input);
-          }} disabled={isLoading}>
-            {isLoading ? "Анализ..." : "Повторить анализ"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
+            const orderData = {
+                id: orderRef.id,
+                barId,
+                supplierId,
+                status: 'draft' as const,
+                orderDate: serverTimestamp(),
+                createdAt: serverTimestamp(),
+                createdByUserId: userId,
+            };
+            batch.set(orderRef, orderData);
+
+            ordersBySupplier[supplierId].forEach(item => {
+                const lineRef = doc(collection(orderRef, 'lines'));
+                const lineData = {
+                    id: lineRef.id,
+                    purchaseOrderId: orderRef.id,
+                    productId: item.product.id,
+                    quantity: item.quantity,
+                    costPerItem: item.product.costPerBottle,
+                    receivedQuantity: 0,
+                };
+                batch.set(lineRef, lineData);
+            });
+        }
+        
+        if(createdOrderIds.length > 0) {
+            await batch.commit();
+        }
+
+        return {
+            orderIds: createdOrderIds,
+            createdCount: createdOrderIds.length,
+            holidayBonus: !!upcomingHoliday,
+            holidayName: upcomingHoliday || undefined,
+        };
+    } catch(e: any) {
+        console.error("Failed to create purchase orders:", e);
+        throw new Error(`Не удалось создать заказы на закупку: ${e.message}`);
+    }
 }

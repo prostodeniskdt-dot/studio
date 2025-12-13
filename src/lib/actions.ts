@@ -1,33 +1,9 @@
 'use server';
 
-import { analyzeInventoryVariance as analyzeInventoryVarianceFlow } from '@/ai/flows/analyze-inventory-variance';
 import type { CalculatedInventoryLine, InventoryLine, InventorySession, Product, PurchaseOrder } from './types';
 import { getUpcomingHoliday, russianHolidays2024 } from './holidays';
 import { collection, doc, writeBatch, serverTimestamp, getDocs, query, orderBy, limit, startAfter } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
-import { translateProductName } from './utils';
-
-
-export type AnalyzeInventoryVarianceInput = {
-    productName: string;
-    startStock: number;
-    purchases: number;
-    sales: number;
-    theoreticalEndStock: number;
-    endStock: number;
-};
-export type AnalyzeInventoryVarianceOutput = { analysis: string; };
-
-export async function analyzeVariance(input: AnalyzeInventoryVarianceInput): Promise<AnalyzeInventoryVarianceOutput> {
-  try {
-    const result = await analyzeInventoryVarianceFlow(input);
-    return result;
-  } catch (e: any) {
-    console.error("Variance analysis failed:", e);
-    // Throw a user-friendly error to be caught by the client-side hook
-    throw new Error('Не удалось выполнить анализ. Пожалуйста, попробуйте еще раз.');
-  }
-}
 
 type CreatePurchaseOrdersInput = {
     lines: InventoryLine[];

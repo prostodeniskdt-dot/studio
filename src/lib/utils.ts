@@ -110,7 +110,7 @@ const translitMap: { [key: string]: string } = {
     'h': 'х', 'i': 'и', 'j': 'дж', 'k': 'к', 'l': 'л', 'm': 'м', 'n': 'н',
     'o': 'о', 'p': 'п', 'q': 'к', 'r': 'р', 's': 'с', 't': 'т', 'u': 'у',
     'v': 'в', 'w': 'в', 'x': 'кс', 'y': 'й', 'z': 'з',
-    'ch': 'ч', 'sh': 'ш', 'sch': 'щ', 'yo': 'ё', 'zh': 'ж',
+    'ch': 'ч', 'sh': 'ш', 'sch': 'щ', 'yo': 'ё', 'zh': 'ж', 'ju': 'ю', 'ja': 'я',
     'kh': 'х', 'ts': 'ц', 'yu': 'ю', 'ya': 'я', 'ie': 'ие',
 };
 
@@ -147,7 +147,6 @@ export function translateProductName(name: string): string {
     if (productNameTranslations.has(normalizedName)) {
         return productNameTranslations.get(normalizedName)!;
     }
-    // Fallback to transliteration if not in dictionary
     return fallbackTransliterate(name);
 }
 
@@ -201,7 +200,6 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
         'Japanese': 'Японский',
         
         // Rum
-        'White': 'Белый',
         'Gold': 'Золотой',
         'Dark': 'Темный',
         'Spiced': 'Пряный',
@@ -213,7 +211,7 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
 
         // Wine
         'Red': 'Красное',
-        // 'White': 'Белое', // This was commented causing issues
+        'White': 'Белое',
         'Rose': 'Розовое',
         'Sparkling': 'Игристое',
 
@@ -237,9 +235,6 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
         'uncategorized': 'Без подкатегории',
     };
     
-    // Add specific check for 'White' since it's in multiple categories
-    if (subCategory === 'White') return 'Белое';
-
     return translations[subCategory] || subCategory;
 }
 
@@ -253,7 +248,8 @@ export function dedupeProductsByName(products: Product[]): Product[] {
   const map = new Map<string, Product>();
 
   for (const item of products) {
-    const key = normalize(item.name);
+    // Use a composite key of name and bottle volume to determine uniqueness.
+    const key = `${normalize(item.name)}:${item.bottleVolumeMl}`;
     const existing = map.get(key);
 
     if (!existing) {
@@ -261,12 +257,18 @@ export function dedupeProductsByName(products: Product[]): Product[] {
       continue;
     }
 
-    // Strategy: active is better than inactive.
-    const existingScore = (existing.isActive ? 10 : 0);
-    const itemScore = (item.isActive ? 10 : 0);
-    
-    if (itemScore > existingScore) {
+    // If an item with the same name and volume exists, prefer the active one.
+    // This handles cases where a product might have been archived and re-added.
+    if (item.isActive && !existing.isActive) {
       map.set(key, item);
+    }
+    // If both are active or both inactive, prefer the one most recently updated.
+    else if (item.isActive === existing.isActive) {
+        const existingTime = existing.updatedAt?.toMillis?.() ?? 0;
+        const itemTime = item.updatedAt?.toMillis?.() ?? 0;
+        if (itemTime > existingTime) {
+            map.set(key, item);
+        }
     }
   }
 

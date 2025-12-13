@@ -65,7 +65,6 @@ export default function SessionPage() {
 
   const [allProducts, setAllProducts] = React.useState<Product[] | null>(null);
   const [isLoadingProducts, setIsLoadingProducts] = React.useState(true);
-
   const [localLines, setLocalLines] = React.useState<InventoryLine[] | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isAddProductOpen, setIsAddProductOpen] = React.useState(false);
@@ -76,8 +75,37 @@ export default function SessionPage() {
   const [isDeletingSession, setIsDeletingSession] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
+  const originalLines = React.useMemo(() => lines, [lines]);
+  const hasUnsavedChanges = React.useMemo(() => {
+    if (!originalLines || !localLines) return false;
+    // A simple JSON diff is performant enough for this.
+    return JSON.stringify(originalLines) !== JSON.stringify(localLines);
+  }, [originalLines, localLines]);
 
-  // --- FIX: Redirect if session is not found after loading ---
+  const productsInSession = React.useMemo(() => new Set(localLines?.map(line => line.productId)), [localLines]);
+  
+  const groupedProductOptions = React.useMemo(() => {
+    if (!allProducts) return [];
+
+    const availableProducts = allProducts.filter(p => p.isActive && !productsInSession.has(p.id));
+
+    const groups: Record<string, { value: string; label: string }[]> = {};
+    
+    availableProducts.forEach(p => {
+      const category = translateCategory(p.category);
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push({ value: p.id, label: buildProductDisplayName(p.name, p.bottleVolumeMl) });
+    });
+
+    return Object.entries(groups)
+      .map(([label, options]) => ({ label, options }))
+      .sort((a,b) => a.label.localeCompare(b.label));
+
+  }, [allProducts, productsInSession]);
+
+
   React.useEffect(() => {
     if (isLoadingSession) return;
     if (!session) {
@@ -90,7 +118,6 @@ export default function SessionPage() {
     }
   }, [isLoadingSession, session, router, toast]);
 
-  // --- FIX: One-time fetch for products instead of real-time subscription ---
   React.useEffect(() => {
     if (!firestore) return;
 
@@ -122,16 +149,6 @@ export default function SessionPage() {
     return () => { cancelled = true; };
   }, [firestore, toast]);
 
-
-  // Memoize the original lines from Firestore to compare for changes
-  const originalLines = React.useMemo(() => lines, [lines]);
-  const hasUnsavedChanges = React.useMemo(() => {
-    if (!originalLines || !localLines) return false;
-    // A simple JSON diff is performant enough for this.
-    return JSON.stringify(originalLines) !== JSON.stringify(localLines);
-  }, [originalLines, localLines]);
-
-
   React.useEffect(() => {
     if (lines) {
       setLocalLines(lines);
@@ -160,47 +177,9 @@ export default function SessionPage() {
             title: "Не удалось удалить инвентаризацию", 
             description: e?.message ?? "Произошла неизвестная ошибка."
         });
-        // We don't set isDeletingSession back to false because the component is already unmounted.
     }
   };
   
-  const isLoading = isLoadingSession || isLoadingLines || isLoadingProducts;
-
-  // --- FIX: Don't render anything until we know if the session exists or if we are deleting ---
-  if (isLoading || !session || isDeletingSession) {
-    return (
-        <div className="flex items-center justify-center h-full pt-20">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-    );
-  }
-
-  // All code below this point will ONLY run if `session` exists and we are not deleting.
-
-  const productsInSession = React.useMemo(() => new Set(localLines?.map(line => line.productId)), [localLines]);
-  
-  const groupedProductOptions = React.useMemo(() => {
-    if (!allProducts) return [];
-
-    const availableProducts = allProducts.filter(p => p.isActive && !productsInSession.has(p.id));
-
-    const groups: Record<string, { value: string; label: string }[]> = {};
-    
-    availableProducts.forEach(p => {
-      const category = translateCategory(p.category);
-      if (!groups[category]) {
-        groups[category] = [];
-      }
-      groups[category].push({ value: p.id, label: buildProductDisplayName(p.name, p.bottleVolumeMl) });
-    });
-
-    return Object.entries(groups)
-      .map(([label, options]) => ({ label, options }))
-      .sort((a,b) => a.label.localeCompare(b.label));
-
-  }, [allProducts, productsInSession]);
-
-
   const handleAddProductToSession = async (productId: string) => {
     if (!productId || !barId || !firestore) return;
     setIsAddingProduct(true);
@@ -369,6 +348,16 @@ export default function SessionPage() {
     };
     reader.readAsText(file);
   };
+  
+  const isLoading = isLoadingSession || isLoadingLines || isLoadingProducts;
+
+  if (isLoading || !session || isDeletingSession) {
+    return (
+        <div className="flex items-center justify-center h-full pt-20">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+    );
+  }
 
   const getStatusVariant = (status: (typeof session.status)) => {
     switch (status) {

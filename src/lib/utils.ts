@@ -160,13 +160,11 @@ function translateNameOnly(name: string): string {
       return productNameTranslations.get(normalized)!;
   }
   
-  // Fallback to transliteration if name contains Latin characters
   const hasLatin = (s: string) => /[A-Za-z]/.test(s);
   if (hasLatin(name)) {
       return fallbackTransliterate(name);
   }
 
-  // If no translation and no Latin chars, return original
   return name;
 }
 
@@ -196,7 +194,6 @@ export function buildProductDisplayName(name: string, bottleVolumeMl?: number | 
   const { baseName, volumeMl: fromName } = extractVolume(name);
   const translatedName = translateNameOnly(baseName);
 
-  // Priority: bottleVolumeMl field > volume from name string
   const finalVolume = bottleVolumeMl ?? fromName;
   
   if (finalVolume) {
@@ -206,7 +203,6 @@ export function buildProductDisplayName(name: string, bottleVolumeMl?: number | 
   return translatedName;
 }
 
-// Legacy function for direct translation, kept for specific use cases if any.
 export const translateProductName = buildProductDisplayName;
 
 
@@ -307,7 +303,6 @@ export function dedupeProductsByName(products: Product[]): Product[] {
   const normalizeForDedupe = (s: string) => s.toLowerCase().replace(/\s+/g, '').replace(/мл/g, 'ml');
 
   for (const item of products) {
-    // Key now includes volume for uniqueness
     const key = `${normalizeForDedupe(item.name)}:${item.bottleVolumeMl}`;
     const existing = map.get(key);
 

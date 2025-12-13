@@ -94,72 +94,12 @@ async function seedInitialProducts(firestore: Firestore): Promise<void> {
 
 
 /**
- * Seeds a few completed inventory sessions for demonstration purposes.
- * This is NOT idempotent and will only run if no sessions exist for the bar.
- */
-async function seedDemoInventorySessions(firestore: Firestore, barId: string, userId: string): Promise<void> {
-    const sessionsCollectionRef = collection(firestore, 'bars', barId, 'inventorySessions');
-    const sessionsQuery = query(sessionsCollectionRef, limit(1)); 
-
-    const sessionsSnapshot = await getDocs(sessionsQuery);
-    if (!sessionsSnapshot.empty) {
-        return; // Sessions already exist, so we don't seed demo data.
-    }
-
-    // Fetch some products to use in the demo sessions
-    const productsSnapshot = await getDocs(query(collection(firestore, 'products'), limit(10)));
-    const products = productsSnapshot.docs.map(d => d.data() as Product);
-    if (products.length === 0) return; // Can't seed sessions without products
-
-    const batch = writeBatch(firestore);
-    const now = new Date();
-    const dates = [
-        new Date(now.getFullYear(), now.getMonth(), now.getDate() - 14),
-        new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7),
-        new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1),
-    ];
-
-    for (const sessionDate of dates) {
-        const sessionRef = doc(sessionsCollectionRef);
-        const sessionData: Omit<InventorySession, 'id'> = {
-            barId,
-            name: `Инвентаризация от ${sessionDate.toLocaleDateString('ru-RU')}`,
-            status: 'completed',
-            createdByUserId: userId,
-            createdAt: Timestamp.fromDate(sessionDate),
-            closedAt: Timestamp.fromDate(new Date(sessionDate.getTime() + 86400000)), // +1 day
-        };
-        batch.set(sessionRef, { ...sessionData, id: sessionRef.id });
-
-        for (const product of products) {
-            const lineRef = doc(collection(sessionRef, 'lines'));
-
-            const startStock = Math.floor(Math.random() * 1000) + product.bottleVolumeMl;
-            const purchases = (Math.random() > 0.5) ? product.bottleVolumeMl : 0;
-            const sales = Math.floor(Math.random() * 20) + 10;
-            const theoreticalEndStock = startStock + purchases - (sales * product.portionVolumeMl);
-            const variance = (Math.random() - 0.5) * (product.portionVolumeMl * 2); // +/- 2 portions
-            const endStock = Math.max(0, Math.round(theoreticalEndStock + variance));
-
-            const partialLine = { id: lineRef.id, productId: product.id, inventorySessionId: sessionRef.id, startStock, purchases, sales, endStock };
-            const calculatedFields = calculateLineFields(partialLine, product);
-
-            batch.set(lineRef, { ...partialLine, ...calculatedFields });
-        }
-    }
-
-    await batch.commit();
-}
-
-
-/**
  * A combined seeding function to be called after user/bar documents are confirmed to exist.
  */
 async function seedInitialData(firestore: Firestore, barId: string, userId: string): Promise<void> {
     try {
-        // Run sequentially to ensure products exist before demo sessions are created.
         await seedInitialProducts(firestore);
-        await seedDemoInventorySessions(firestore, barId, userId);
+        // DEMO SESSIONS REMOVED
     } catch(e) {
         console.error("Error during initial data seeding:", e);
         // We don't rethrow here to avoid blocking the UI if seeding fails.

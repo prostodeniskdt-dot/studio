@@ -63,8 +63,6 @@ export default function SessionPage() {
   const [isCompleting, setIsCompleting] = React.useState(false);
   const [isAddingProduct, setIsAddingProduct] = React.useState(false);
   
-  const didNotFoundRef = React.useRef(false);
-  
   const sessionRef = useMemoFirebase(() => 
     firestore && barId ? doc(firestore, 'bars', barId, 'inventorySessions', id) : null,
     [firestore, barId, id]
@@ -79,49 +77,21 @@ export default function SessionPage() {
 
   const [allProducts, setAllProducts] = React.useState<Product[] | null>(null);
   const [isLoadingProducts, setIsLoadingProducts] = React.useState(true);
+  
+  const hasNavigatedRef = React.useRef(false);
 
-  const isReady = !!(firestore && user && barId && id && sessionRef);
-
-  // --- START DIAGNOSTICS ---
   React.useEffect(() => {
-    console.debug('[session page debug]', { 
-      id, 
-      isReady,
-      userId: user?.uid,
-      barId,
-      sessionRefPath: sessionRef?.path,
-      isLoadingSession, 
-      sessionIsNull: session === null, 
-      hasError: !!sessionError, 
-      hasSessionRef: !!sessionRef 
-    });
-
-    if (sessionRef) {
-      getDoc(sessionRef).then(snap => {
-        console.debug('[getDoc direct check]', {
-          path: sessionRef.path,
-          exists: snap.exists(),
+    // If loading is finished, there's no session data, no error, and we haven't tried to navigate yet...
+    if (!isLoadingSession && !session && !sessionError && !hasNavigatedRef.current) {
+        hasNavigatedRef.current = true; // Mark that we are attempting navigation
+        toast({
+            variant: 'destructive',
+            title: 'Инвентаризация не найдена',
+            description: 'Возможно, она была удалена. Перенаправляем на список инвентаризаций.',
         });
-      });
+        router.replace('/dashboard/sessions');
     }
-  }, [id, isReady, user, barId, sessionRef, isLoadingSession, session, sessionError]);
-
-  React.useEffect(() => {
-    if (!isReady || isLoadingSession || sessionError) return;
-
-    if (session === null) {
-      if (didNotFoundRef.current) return;
-      didNotFoundRef.current = true;
-
-      toast({
-        variant: "destructive",
-        title: "Инвентаризация не найдена (DEBUG)",
-        description: "Автоматический редирект отключен для диагностики.",
-      });
-      // router.replace("/dashboard/sessions"); // <--- REDIRECT DISABLED
-    }
-  }, [isReady, isLoadingSession, session, sessionError, router, toast]);
-  // --- END DIAGNOSTICS ---
+  }, [isLoadingSession, session, sessionError, router, toast]);
 
 
   React.useEffect(() => {
@@ -380,16 +350,7 @@ export default function SessionPage() {
     reader.readAsText(file);
   };
   
-  if (isDeletingSession) {
-      return (
-          <div className="flex items-center justify-center h-full pt-20">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-      );
-  }
-
-  // Handle loading and error states first
-  if (!isReady || isLoadingSession) {
+  if (isLoadingSession) {
     return (
       <div className="flex items-center justify-center h-full pt-20">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -402,12 +363,11 @@ export default function SessionPage() {
   }
   
   if (!session) {
+    // The useEffect hook above will handle the redirect, so we just show a loader here
+    // to prevent flashing content or errors.
     return (
       <div className="flex items-center justify-center h-full pt-20">
-        <div className="text-center p-4 bg-destructive/10 rounded-md">
-            <h3 className="font-bold text-destructive">Инвентаризация не найдена (DEBUG)</h3>
-            <p className="text-sm text-destructive-foreground">Редирект отключен. Проверьте консоль.</p>
-        </div>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }

@@ -106,7 +106,7 @@ export default function SessionPage() {
       if (!groups[category]) {
         groups[category] = [];
       }
-      groups[category].push({ value: p.id, label: translateProductName(p.name) });
+      groups[category].push({ value: p.id, label: translateProductName(p.name, p.bottleVolumeMl) });
     });
 
     return Object.entries(groups)
@@ -135,7 +135,7 @@ export default function SessionPage() {
             ...calculateLineFields({}, product),
         };
         await setDoc(newLineRef, newLineData);
-        toast({ title: "Продукт добавлен", description: `"${product?.name ? translateProductName(product.name) : ''}" добавлен в инвентаризацию.` });
+        toast({ title: "Продукт добавлен", description: `"${product ? translateProductName(product.name, product.bottleVolumeMl) : ''}" добавлен в инвентаризацию.` });
         setIsAddProductOpen(false);
     } catch (serverError) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/inventorySessions/${id}/lines`, operation: 'create' }));
@@ -206,7 +206,7 @@ export default function SessionPage() {
       const product = allProducts.find(p => p.id === line.productId);
       return [
         line.productId,
-        product ? translateProductName(product.name).replace(/,/g, '') : '',
+        product ? translateProductName(product.name, product.bottleVolumeMl).replace(/,/g, '') : '',
         line.startStock,
         line.purchases,
         line.sales,

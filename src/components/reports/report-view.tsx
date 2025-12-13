@@ -97,7 +97,7 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
     csvContent += "Продукт,Начало (мл),Покупки (мл),Продажи (порции),Теор. конец (мл),Факт. конец (мл),Разница (мл),Разница (руб.)\n";
     allCalculatedLines.forEach(line => {
       const row = [
-        line.product ? translateProductName(line.product.name) : '',
+        line.product ? translateProductName(line.product.name, line.product.bottleVolumeMl) : '',
         line.startStock,
         line.purchases,
         line.sales,
@@ -211,7 +211,7 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
                 <CardContent>
                     {topLosses.length > 0 ? (
                         <ResponsiveContainer width="100%" height={250}>
-                            <RechartsBarChart data={topLosses.map(l => ({ ...l, loss: -l.differenceMoney, name: l.product ? translateProductName(l.product.name) : '' }))} layout="vertical" margin={{ left: 20, right: 20 }}>
+                            <RechartsBarChart data={topLosses.map(l => ({ ...l, loss: -l.differenceMoney, name: l.product ? translateProductName(l.product.name, l.product.bottleVolumeMl) : '' }))} layout="vertical" margin={{ left: 20, right: 20 }}>
                                 <XAxis type="number" hide />
                                 <YAxis dataKey="name" type="category" interval={0} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} width={120} axisLine={false} tickLine={false}/>
                                 <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} formatter={(value: number) => [formatCurrency(value), 'Потеря']} />
@@ -281,9 +281,9 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
                                         </TableCell>
                                     </TableRow>
                                 )}
-                                {lines.sort((a,b) => (a.product ? translateProductName(a.product.name) : '').localeCompare(b.product ? translateProductName(b.product.name) : '')).map(line => (
+                                {lines.sort((a,b) => (a.product ? translateProductName(a.product.name, a.product.bottleVolumeMl) : '').localeCompare(b.product ? translateProductName(b.product.name, b.product.bottleVolumeMl) : '')).map(line => (
                                     <TableRow key={line.id}>
-                                        <TableCell className="font-medium pl-12">{line.product ? translateProductName(line.product.name) : ''}</TableCell>
+                                        <TableCell className="font-medium pl-12">{line.product ? translateProductName(line.product.name, line.product.bottleVolumeMl) : ''}</TableCell>
                                         <TableCell className="text-right font-mono">{Math.round(line.theoreticalEndStock)}</TableCell>
                                         <TableCell className="text-right font-mono">{line.endStock}</TableCell>
                                         <TableCell className={cn("text-right font-mono", line.differenceVolume >= 0 ? 'text-green-600' : 'text-destructive')}>

@@ -112,10 +112,10 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                         </TableCell>
                       </TableRow>
                     )}
-                    {subCategoryLines.sort((a,b) => translateProductName(a.product?.name ?? '').localeCompare(translateProductName(b.product?.name ?? ''))).map(line => {
+                    {subCategoryLines.sort((a,b) => translateProductName(a.product?.name ?? '', a.product?.bottleVolumeMl).localeCompare(translateProductName(b.product?.name ?? '', b.product?.bottleVolumeMl))).map(line => {
                       return (
                         <TableRow key={line.id} className={cn(line.hasChanged && 'bg-yellow-500/10')}>
-                          <TableCell className="font-medium pl-4 md:pl-10">{line.product ? translateProductName(line.product.name) : 'Неизвестный продукт'}</TableCell>
+                          <TableCell className="font-medium pl-4 md:pl-10">{line.product ? translateProductName(line.product.name, line.product.bottleVolumeMl) : 'Неизвестный продукт'}</TableCell>
                           <TableCell className="text-right hidden md:table-cell">
                             {isEditable ? (
                               <Input type="number" value={line.startStock} onChange={e => handleInputChange(line.id!, 'startStock', e.target.value)} className="w-24 text-right ml-auto" />

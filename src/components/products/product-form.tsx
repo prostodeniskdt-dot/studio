@@ -102,6 +102,8 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   });
 
   const watchedCategory = form.watch('category');
+  const watchedName = form.watch('name');
+  const watchedVolume = form.watch('bottleVolumeMl');
 
   React.useEffect(() => {
     if (form.formState.isDirty) {
@@ -121,6 +123,10 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     const productData = {
         ...data,
         defaultSupplierId: data.defaultSupplierId || null,
+        reorderPointMl: data.reorderPointMl || null,
+        reorderQuantity: data.reorderQuantity || null,
+        fullBottleWeightG: data.fullBottleWeightG || null,
+        emptyBottleWeightG: data.emptyBottleWeightG || null,
         id: productRef.id,
         updatedAt: serverTimestamp(),
         createdAt: product?.createdAt || serverTimestamp(),
@@ -155,7 +161,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
               <FormControl>
                 <Input placeholder="Jameson" {...field} />
               </FormControl>
-              <FormDescription>Отображаемое имя: {translateProductName(field.value)}</FormDescription>
+              <FormDescription>Отображаемое имя: {translateProductName(watchedName, watchedVolume)}</FormDescription>
               <FormMessage />
             </FormItem>
           )}

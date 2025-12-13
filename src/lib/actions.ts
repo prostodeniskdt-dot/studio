@@ -24,7 +24,7 @@ export async function analyzeVariance(line: CalculatedInventoryLine): Promise<An
       throw new Error("Product data is missing for analysis.");
     }
     const analysisInput: AnalyzeInventoryVarianceInput = {
-      productName: translateProductName(line.product.name),
+      productName: translateProductName(line.product.name, line.product.bottleVolumeMl),
       theoreticalEndStock: line.theoreticalEndStock,
       endStock: line.endStock,
       sales: line.sales,

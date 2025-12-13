@@ -51,7 +51,7 @@ export default function UnifiedCalculatorPage() {
     return uniqueProducts.filter(p => {
       const categoryMatch = !selectedCategory || p.category === selectedCategory;
       const subCategoryMatch = !selectedSubCategory || p.subCategory === selectedSubCategory;
-      const searchMatch = !searchTerm || translateProductName(p.name).toLowerCase().includes(searchTerm.toLowerCase());
+      const searchMatch = !searchTerm || translateProductName(p.name, p.bottleVolumeMl).toLowerCase().includes(searchTerm.toLowerCase());
       return categoryMatch && subCategoryMatch && searchMatch;
     });
   }, [products, selectedCategory, selectedSubCategory, searchTerm]);
@@ -65,7 +65,7 @@ export default function UnifiedCalculatorPage() {
       if (!groups[category]) {
         groups[category] = [];
       }
-      groups[category].push({ value: p.id, label: translateProductName(p.name) });
+      groups[category].push({ value: p.id, label: translateProductName(p.name, p.bottleVolumeMl) });
     });
 
     return Object.entries(groups)
@@ -219,16 +219,17 @@ export default function UnifiedCalculatorPage() {
             await batch.commit();
             toast({
                 title: "Данные отправлены",
-                description: `Остаток для продукта ${translateProductName(product.name)} (${volume} мл) добавлен в текущую инвентаризацию.`,
+                description: `Остаток для продукта ${translateProductName(product.name, product.bottleVolumeMl)} (${volume} мл) добавлен в текущую инвентаризацию.`,
             });
         } else {
             const lineDoc = linesSnapshot.docs[0];
             const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines', lineDoc.id);
+            const product = products?.find(p => p.id === selectedProductId);
             const updateData = { endStock: volume };
             await updateDoc(lineRef, updateData);
             toast({
                 title: "Данные отправлены",
-                description: `Остаток для продукта ${translateProductName(products?.find(p => p.id === selectedProductId)?.name || '')} (${volume} мл) обновлен в текущую инвентаризацию.`,
+                description: `Остаток для продукта ${product ? translateProductName(product.name, product.bottleVolumeMl) : ''} (${volume} мл) обновлен в текущую инвентаризацию.`,
             });
         }
     } catch (serverError: any) {

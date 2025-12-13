@@ -132,7 +132,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
       header: 'Название',
       cell: ({ row }) => {
         const product = row.original;
-        return <div>{translateProductName(product.name)}</div>;
+        return <div>{translateProductName(product.name, product.bottleVolumeMl)}</div>;
       },
     },
     {
@@ -425,7 +425,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
         </>
          <SheetContent className="w-full sm:w-[480px] sm:max-w-none overflow-y-auto">
             <SheetHeader>
-                <SheetTitle>{editingProduct ? `Редактировать: ${translateProductName(editingProduct.name)}` : 'Добавить новый продукт'}</SheetTitle>
+                <SheetTitle>{editingProduct ? `Редактировать: ${translateProductName(editingProduct.name, editingProduct.bottleVolumeMl)}` : 'Добавить новый продукт'}</SheetTitle>
             </SheetHeader>
             <ProductForm product={editingProduct} onFormSubmit={handleCloseSheet} />
         </SheetContent>

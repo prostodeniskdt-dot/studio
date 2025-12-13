@@ -39,7 +39,7 @@ export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnal
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Анализ отклонений: {line.product ? translateProductName(line.product.name) : ''}</DialogTitle>
+          <DialogTitle>Анализ отклонений: {line.product ? translateProductName(line.product.name, line.product.bottleVolumeMl) : ''}</DialogTitle>
           <DialogDescription>
             AI-аналитика <span className={varianceColor}>{varianceType} в {Math.abs(Math.round(line.differenceVolume))}мл ({formatCurrency(Math.abs(line.differenceMoney))})</span>.
           </DialogDescription>

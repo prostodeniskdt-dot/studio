@@ -119,35 +119,47 @@ function fallbackTransliterate(text: string): string {
     text = text.toLowerCase();
     let i = 0;
     while (i < text.length) {
-        // Check for 3-char combinations first
         if (i + 2 < text.length && translitMap[text.substring(i, i + 3)]) {
             result += translitMap[text.substring(i, i + 3)];
             i += 3;
-        } // Then 2-char combinations
+        } 
         else if (i + 1 < text.length && translitMap[text.substring(i, i + 2)]) {
             result += translitMap[text.substring(i, i + 2)];
             i += 2;
-        } // Then single chars
+        } 
         else if (translitMap[text[i]]) {
             result += translitMap[text[i]];
             i += 1;
-        } // If no match, keep original char (e.g., numbers, symbols)
+        } 
         else {
             result += text[i];
             i += 1;
         }
     }
-    // Capitalize first letter
     return result.charAt(0).toUpperCase() + result.slice(1);
 }
 
-export function translateProductName(name: string): string {
+const normalize = (s: string) =>
+  s
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/[’']/g, "'");
+
+export function translateProductName(name: string, volume?: number): string {
     if (!name) return '';
-    const normalizedName = name.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[’']/g, "'");
-    if (productNameTranslations.has(normalizedName)) {
-        return productNameTranslations.get(normalizedName)!;
+    const normalizedName = normalize(name);
+    
+    let translated = productNameTranslations.get(normalizedName);
+    if (!translated) {
+        translated = fallbackTransliterate(name);
     }
-    return fallbackTransliterate(name);
+
+    if (volume) {
+        return `${translated} ${volume}мл`;
+    }
+
+    return translated;
 }
 
 
@@ -203,6 +215,7 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
         'Gold': 'Золотой',
         'Dark': 'Темный',
         'Spiced': 'Пряный',
+        'White': 'Белый', // Added for both Rum and Wine
         
         // Gin
         'London Dry': 'Лондонский сухой',
@@ -211,7 +224,6 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
 
         // Wine
         'Red': 'Красное',
-        'White': 'Белое',
         'Rose': 'Розовое',
         'Sparkling': 'Игристое',
 
@@ -237,12 +249,6 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
     
     return translations[subCategory] || subCategory;
 }
-
-const normalize = (s: string) =>
-  s
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, " ");
 
 export function dedupeProductsByName(products: Product[]): Product[] {
   const map = new Map<string, Product>();

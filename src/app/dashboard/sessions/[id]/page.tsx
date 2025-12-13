@@ -5,7 +5,7 @@ import { useParams, notFound, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { InventoryTable } from "@/components/sessions/inventory-table";
 import { Button } from "@/components/ui/button";
-import { FileText, Loader2, Save, XCircle, Download, Upload, PlusCircle, MoreVertical, Trash2 } from "lucide-react";
+import { FileText, Loader2, Save, MoreVertical, Trash2, Download, Upload, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { translateStatus, buildProductDisplayName } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine } from '@/lib/types';
@@ -27,7 +27,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Dialog,
@@ -62,16 +61,20 @@ export default function SessionPage() {
   const [isDeletingSession, setIsDeletingSession] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
+  // New state to control redirection and disable data fetching
+  const [isRedirecting, setIsRedirecting] = React.useState(false);
+
+
   // All hooks are now at the top level
   const sessionRef = useMemoFirebase(() => 
-    firestore && barId ? doc(firestore, 'bars', barId, 'inventorySessions', id) : null,
-    [firestore, barId, id]
+    !isRedirecting && firestore && barId ? doc(firestore, 'bars', barId, 'inventorySessions', id) : null,
+    [isRedirecting, firestore, barId, id]
   );
   const { data: session, isLoading: isLoadingSession } = useDoc<InventorySession>(sessionRef);
 
   const linesRef = useMemoFirebase(() =>
-    firestore && barId ? collection(firestore, 'bars', barId, 'inventorySessions', id, 'lines') : null,
-    [firestore, barId, id]
+    !isRedirecting && firestore && barId ? collection(firestore, 'bars', barId, 'inventorySessions', id, 'lines') : null,
+    [isRedirecting, firestore, barId, id]
   );
   const { data: lines, isLoading: isLoadingLines } = useCollection<InventoryLine>(linesRef);
 
@@ -84,7 +87,7 @@ export default function SessionPage() {
     if (!originalLines || !localLines) return false;
     return JSON.stringify(originalLines) !== JSON.stringify(localLines);
   }, [originalLines, localLines]);
-
+  
   const productsInSession = React.useMemo(() => new Set(localLines?.map(line => line.productId)), [localLines]);
   
   const groupedProductOptions = React.useMemo(() => {
@@ -103,18 +106,15 @@ export default function SessionPage() {
       .sort((a,b) => a.label.localeCompare(b.label));
   }, [allProducts, productsInSession]);
   
+  
   // Effects
   React.useEffect(() => {
     if (isLoadingSession) return;
     if (!session) {
-      toast({
-        variant: "destructive",
-        title: "Инвентаризация не найдена",
-        description: "Возможно, она была удалена. Вы будете перенаправлены.",
-      });
+      setIsRedirecting(true);
       router.replace("/dashboard/sessions");
     }
-  }, [isLoadingSession, session, router, toast]);
+  }, [isLoadingSession, session, router]);
 
   React.useEffect(() => {
     if (!firestore) return;
@@ -154,9 +154,18 @@ export default function SessionPage() {
     if (!firestore || !barId) return;
 
     setIsDeletingSession(true);
+    setIsDeleteDialogOpen(false); // Close dialog immediately
+    
+    // 1. Immediately signal redirection to stop all data processing on this page
+    setIsRedirecting(true);
+
+    // 2. Start navigation
     router.replace("/dashboard/sessions");
+
+    // 3. Wait for the next paint to allow UI to unmount
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
+    // 4. Perform heavy deletion in the background
     try {
         await deleteSessionWithLinesClient(firestore, barId, id);
         toast({ title: "Инвентаризация удалена." });
@@ -337,15 +346,30 @@ export default function SessionPage() {
     reader.readAsText(file);
   };
   
-  const isLoading = isLoadingSession || isLoadingLines || isLoadingProducts;
+  if (isRedirecting || isDeletingSession) {
+      return (
+          <div className="flex items-center justify-center h-full pt-20">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+      );
+  }
 
-  if (isLoading || !session || isDeletingSession) {
+  // Show loader while initial session data is being fetched
+  if (isLoadingSession) {
     return (
-        <div className="flex items-center justify-center h-full pt-20">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+      <div className="flex items-center justify-center h-full pt-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
     );
   }
+  
+  // If session doesn't exist, the useEffect will trigger a redirect.
+  // Render null to prevent rendering heavy UI before redirect happens.
+  if (!session) {
+    return null;
+  }
+  
+  const isLoading = isLoadingLines || isLoadingProducts;
 
   const getStatusVariant = (status: (typeof session.status)) => {
     switch (status) {
@@ -458,14 +482,14 @@ export default function SessionPage() {
         </div>
       </div>
       <div className="overflow-x-auto">
-       {localLines && allProducts && (
+       {isLoading ? <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div> : (localLines && allProducts && (
         <InventoryTable 
             lines={localLines} 
             setLines={setLocalLines} 
             products={allProducts}
             isEditable={isEditable} 
         />
-      )}
+      ))}
       </div>
        <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
         <DialogContent>
@@ -500,6 +524,7 @@ export default function SessionPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteSession} className="bg-destructive hover:bg-destructive/90">
+                {isDeletingSession ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                 Удалить
             </AlertDialogAction>
           </AlertDialogFooter>

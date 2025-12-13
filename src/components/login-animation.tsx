@@ -4,6 +4,12 @@ export function LoginAnimation({ className }: { className?: string }) {
   return (
     <div className={cn("w-full max-w-xs p-8", className)}>
       <svg viewBox="0 0 100 80" className="w-full h-auto">
+        {/* Guide lines */}
+        <line x1="0" y1="0" x2="100" y2="0" stroke="hsl(var(--muted-foreground))" strokeWidth="0.5" strokeDasharray="2 2" opacity="0.3" />
+        <line x1="0" y1="20" x2="100" y2="20" stroke="hsl(var(--muted-foreground))" strokeWidth="0.5" strokeDasharray="2 2" opacity="0.3" />
+        <line x1="0" y1="40" x2="100" y2="40" stroke="hsl(var(--muted-foreground))" strokeWidth="0.5" strokeDasharray="2 2" opacity="0.3" />
+        <line x1="0" y1="60" x2="100" y2="60" stroke="hsl(var(--muted-foreground))" strokeWidth="0.5" strokeDasharray="2 2" opacity="0.3" />
+
         {/* Ground line */}
         <line x1="0" y1="80" x2="100" y2="80" stroke="hsl(var(--muted-foreground))" strokeWidth="0.5" />
         

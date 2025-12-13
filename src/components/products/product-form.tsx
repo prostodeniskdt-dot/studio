@@ -103,7 +103,6 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
 
   const watchedCategory = form.watch('category');
   const watchedName = form.watch('name');
-  const watchedVolume = form.watch('bottleVolumeMl');
 
   React.useEffect(() => {
     if (form.formState.isDirty) {
@@ -121,7 +120,6 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     
     const finalName = translateProductName(data.name);
 
-    // Ensure `undefined` values are converted to `null` or omitted
     const productData = {
         ...data,
         name: finalName,
@@ -153,12 +151,8 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   }
   
   const finalDisplayName = React.useMemo(() => {
-    const translated = translateProductName(watchedName);
-    if(watchedVolume > 0){
-        return `${translated} ${watchedVolume}мл`;
-    }
-    return translated;
-  }, [watchedName, watchedVolume])
+    return translateProductName(watchedName);
+  }, [watchedName])
 
   return (
     <Form {...form}>
@@ -170,7 +164,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             <FormItem>
               <FormLabel>Название продукта (оригинал)</FormLabel>
               <FormControl>
-                <Input placeholder="Jameson" {...field} />
+                <Input placeholder="Jameson 700 мл" {...field} />
               </FormControl>
               <FormDescription>Отображаемое имя: {finalDisplayName}</FormDescription>
               <FormMessage />

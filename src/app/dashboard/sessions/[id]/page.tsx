@@ -7,10 +7,10 @@ import { InventoryTable } from "@/components/sessions/inventory-table";
 import { Button } from "@/components/ui/button";
 import { FileText, Loader2, Save, XCircle, Download, Upload, PlusCircle } from "lucide-react";
 import Link from "next/link";
-import { translateStatus } from "@/lib/utils";
+import { translateStatus, buildProductDisplayName } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, collection, query, setDoc, writeBatch, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, collection, query, setDoc, writeBatch, serverTimestamp, updateDoc, getDocs } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,11 +63,8 @@ export default function SessionPage() {
   );
   const { data: lines, isLoading: isLoadingLines } = useCollection<InventoryLine>(linesRef);
 
-  const productsRef = useMemoFirebase(() =>
-    firestore ? collection(firestore, 'products') : null,
-    [firestore]
-  );
-  const { data: allProducts, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
+  const [allProducts, setAllProducts] = React.useState<Product[] | null>(null);
+  const [isLoadingProducts, setIsLoadingProducts] = React.useState(true);
 
   const [localLines, setLocalLines] = React.useState<InventoryLine[] | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -76,6 +73,52 @@ export default function SessionPage() {
   const [isSaving, setIsSaving] = React.useState(false);
   const [isCompleting, setIsCompleting] = React.useState(false);
   const [isAddingProduct, setIsAddingProduct] = React.useState(false);
+
+  // --- FIX: Redirect if session is not found after loading ---
+  React.useEffect(() => {
+    if (isLoadingSession) return;
+    if (!session) {
+      toast({
+        variant: "destructive",
+        title: "Инвентаризация не найдена",
+        description: "Возможно, она была удалена. Вы будете перенаправлены.",
+      })
+      router.replace("/dashboard/sessions");
+    }
+  }, [isLoadingSession, session, router, toast]);
+
+  // --- FIX: One-time fetch for products instead of real-time subscription ---
+  React.useEffect(() => {
+    if (!firestore) return;
+
+    let cancelled = false;
+    setIsLoadingProducts(true);
+
+    const fetchProducts = async () => {
+        try {
+            const productsQuery = query(collection(firestore, "products"));
+            const snapshot = await getDocs(productsQuery);
+            if (!cancelled) {
+                setAllProducts(snapshot.docs.map(d => d.data() as Product));
+            }
+        } catch (error) {
+            console.error("Failed to fetch products:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Не удалось загрузить продукты'
+            });
+        } finally {
+            if (!cancelled) {
+                setIsLoadingProducts(false);
+            }
+        }
+    }
+    
+    fetchProducts();
+
+    return () => { cancelled = true; };
+  }, [firestore, toast]);
+
 
   // Memoize the original lines from Firestore to compare for changes
   const originalLines = React.useMemo(() => lines, [lines]);
@@ -106,7 +149,7 @@ export default function SessionPage() {
       if (!groups[category]) {
         groups[category] = [];
       }
-      groups[category].push({ value: p.id, label: p.name });
+      groups[category].push({ value: p.id, label: buildProductDisplayName(p.name, p.bottleVolumeMl) });
     });
 
     return Object.entries(groups)
@@ -135,7 +178,7 @@ export default function SessionPage() {
             ...calculateLineFields({}, product),
         };
         await setDoc(newLineRef, newLineData);
-        toast({ title: "Продукт добавлен", description: `"${product?.name}" добавлен в инвентаризацию.` });
+        toast({ title: "Продукт добавлен", description: `"${product ? buildProductDisplayName(product.name, product.bottleVolumeMl) : ''}" добавлен в инвентаризацию.` });
         setIsAddProductOpen(false);
     } catch (serverError) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/inventorySessions/${id}/lines`, operation: 'create' }));
@@ -206,7 +249,7 @@ export default function SessionPage() {
       const product = allProducts.find(p => p.id === line.productId);
       return [
         line.productId,
-        product?.name.replace(/,/g, '') || '',
+        product ? buildProductDisplayName(product.name, product.bottleVolumeMl).replace(/,/g, '') : '',
         line.startStock,
         line.purchases,
         line.sales,
@@ -288,18 +331,8 @@ export default function SessionPage() {
 
   const isLoading = isLoadingSession || isLoadingLines || isLoadingProducts;
 
-  if (isLoading) {
-    return (
-        <div className="flex items-center justify-center h-full pt-20">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-    );
-  }
-
-  if (!session) {
-     if (!isLoadingSession) {
-      notFound();
-    }
+  // --- FIX: Don't render anything until we know if the session exists ---
+  if (isLoading || !session) {
     return (
         <div className="flex items-center justify-center h-full pt-20">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -438,3 +471,5 @@ export default function SessionPage() {
     </>
   );
 }
+
+    

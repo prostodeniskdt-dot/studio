@@ -10,7 +10,7 @@ import Link from "next/link";
 import { translateStatus, buildProductDisplayName } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, collection, query, setDoc, writeBatch, serverTimestamp, updateDoc, getDocs } from 'firebase/firestore';
+import { doc, collection, query, setDoc, writeBatch, serverTimestamp, updateDoc, getDocs, getDoc } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,6 +82,30 @@ export default function SessionPage() {
 
   const isReady = !!(firestore && user && barId && id && sessionRef);
 
+  // --- START DIAGNOSTICS ---
+  React.useEffect(() => {
+    console.debug('[session page debug]', { 
+      id, 
+      isReady,
+      userId: user?.uid,
+      barId,
+      sessionRefPath: sessionRef?.path,
+      isLoadingSession, 
+      sessionIsNull: session === null, 
+      hasError: !!sessionError, 
+      hasSessionRef: !!sessionRef 
+    });
+
+    if (sessionRef) {
+      getDoc(sessionRef).then(snap => {
+        console.debug('[getDoc direct check]', {
+          path: sessionRef.path,
+          exists: snap.exists(),
+        });
+      });
+    }
+  }, [id, isReady, user, barId, sessionRef, isLoadingSession, session, sessionError]);
+
   React.useEffect(() => {
     if (!isReady || isLoadingSession || sessionError) return;
 
@@ -91,12 +115,14 @@ export default function SessionPage() {
 
       toast({
         variant: "destructive",
-        title: "Инвентаризация не найдена",
-        description: "Возможно, она была удалена или у вас нет доступа.",
+        title: "Инвентаризация не найдена (DEBUG)",
+        description: "Автоматический редирект отключен для диагностики.",
       });
-      router.replace("/dashboard/sessions");
+      // router.replace("/dashboard/sessions"); // <--- REDIRECT DISABLED
     }
   }, [isReady, isLoadingSession, session, sessionError, router, toast]);
+  // --- END DIAGNOSTICS ---
+
 
   React.useEffect(() => {
     if (!firestore) return;
@@ -126,10 +152,10 @@ export default function SessionPage() {
   }, [firestore, toast]);
 
   React.useEffect(() => {
-    if (lines !== null) {
+    if (lines) {
       setLocalLines(lines);
     } else {
-      setLocalLines([]); // Ensure localLines is an empty array if lines are null (e.g., new session)
+      setLocalLines([]);
     }
   }, [lines]);
 
@@ -375,12 +401,13 @@ export default function SessionPage() {
     return <div className="text-center text-destructive p-4">Ошибка загрузки сессии: {sessionError.message}</div>;
   }
   
-  // If we have passed the ready checks and session is still null, the useEffect will handle redirection.
-  // We can show a loader for a frame to avoid flashing content.
   if (!session) {
     return (
       <div className="flex items-center justify-center h-full pt-20">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="text-center p-4 bg-destructive/10 rounded-md">
+            <h3 className="font-bold text-destructive">Инвентаризация не найдена (DEBUG)</h3>
+            <p className="text-sm text-destructive-foreground">Редирект отключен. Проверьте консоль.</p>
+        </div>
       </div>
     );
   }

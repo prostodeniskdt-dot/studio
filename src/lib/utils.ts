@@ -191,13 +191,11 @@ export function extractVolume(original: string): { baseName: string; volumeMl?: 
 
 
 export function buildProductDisplayName(name: string, bottleVolumeMl?: number | null): string {
-  const { baseName, volumeMl: fromName } = extractVolume(name);
+  const { baseName } = extractVolume(name);
   const translatedName = translateNameOnly(baseName);
 
-  const finalVolume = bottleVolumeMl ?? fromName;
-  
-  if (finalVolume) {
-    return `${translatedName} ${finalVolume}мл`;
+  if (bottleVolumeMl) {
+    return `${translatedName} ${bottleVolumeMl}мл`;
   }
   
   return translatedName;

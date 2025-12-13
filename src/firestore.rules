@@ -11,7 +11,7 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      // Это правильный и безопасный способ проверки роли для list операций
+      // This is the correct and secure way to check roles for list/query operations.
       return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
@@ -20,9 +20,9 @@ service cloud.firestore {
     }
 
     match /roles_admin/{userId} {
-      // Разрешаем пользователю читать свой собственный статус админа
-      allow get: if isOwner(userId); 
-      // Только админы могут видеть кто еще админ (хотя тут только один)
+      // A user should be able to check if they are an admin.
+      allow get: if isOwner(userId);
+      // Only admins can see who else is an admin.
       allow list: if isAdmin();
     }
 
@@ -31,6 +31,7 @@ service cloud.firestore {
       allow list: if isAdmin();
       allow create: if isOwner(userId);
       allow update: if isOwner(userId) || isAdmin();
+      // An admin can delete any user except themselves.
       allow delete: if isAdmin() && request.auth.uid != userId;
     }
     

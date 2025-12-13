@@ -11,7 +11,6 @@ import { translateStatus, buildProductDisplayName } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, collection, query, setDoc, writeBatch, serverTimestamp, updateDoc, getDocs } from 'firebase/firestore';
-import { deleteSessionWithLinesClient } from '@/lib/firestore-utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +26,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Dialog,
@@ -40,6 +40,7 @@ import { Combobox } from '@/components/ui/combobox';
 import { translateCategory } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { calculateLineFields } from '@/lib/calculations';
+import { deleteSessionWithLinesClient } from '@/lib/firestore-utils';
 
 export default function SessionPage() {
   console.count("[session-page] render");
@@ -52,21 +53,20 @@ export default function SessionPage() {
 
   const barId = user ? `bar_${user.uid}` : null;
   
-  const [localLines, setLocalLines] = React.useState<InventoryLine[] | null>(null);
+  // New state to control redirection and disable data fetching
+  const [isRedirecting, setIsRedirecting] = React.useState(false);
+  const [isDeletingSession, setIsDeletingSession] = React.useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+
+  // All hooks are now at the top level
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [localLines, setLocalLines] = React.useState<InventoryLine[] | null>(null);
   const [isAddProductOpen, setIsAddProductOpen] = React.useState(false);
 
   const [isSaving, setIsSaving] = React.useState(false);
   const [isCompleting, setIsCompleting] = React.useState(false);
   const [isAddingProduct, setIsAddingProduct] = React.useState(false);
-  const [isDeletingSession, setIsDeletingSession] = React.useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-
-  // New state to control redirection and disable data fetching
-  const [isRedirecting, setIsRedirecting] = React.useState(false);
-
-
-  // All hooks are now at the top level
+  
   const sessionRef = useMemoFirebase(() => 
     !isRedirecting && firestore && barId ? doc(firestore, 'bars', barId, 'inventorySessions', id) : null,
     [isRedirecting, firestore, barId, id]
@@ -157,16 +157,13 @@ export default function SessionPage() {
     setIsDeletingSession(true);
     setIsDeleteDialogOpen(false); // Close dialog immediately
     
-    // 1. Immediately signal redirection to stop all data processing on this page
-    setIsRedirecting(true);
-
-    // 2. Start navigation
+    // 1. Start navigation
     router.replace("/dashboard/sessions");
 
-    // 3. Wait for the next paint to allow UI to unmount
+    // 2. Wait for the next paint to allow UI to unmount
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
-    // 4. Perform heavy deletion in the background
+    // 3. Perform heavy deletion in the background
     try {
         await deleteSessionWithLinesClient(firestore, barId, id);
         toast({ title: "Инвентаризация удалена." });

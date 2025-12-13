@@ -24,7 +24,8 @@ service cloud.firestore {
       // Allow the designated admin to create their own role document, one time.
       allow create: if isOwner(userId) && request.auth.token.email == 'prostodeniskdt@gmail.com';
       allow get: if isOwner(userId);
-      allow list, update, delete: if false; // Secure by default
+      // Deny list/update/delete for security. list isn't needed.
+      allow list, update, delete: if false; 
     }
 
     match /users/{userId} {
@@ -82,3 +83,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

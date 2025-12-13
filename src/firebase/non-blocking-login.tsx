@@ -177,13 +177,9 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
     if (!firestore || !user) return;
 
     try {
+        // --- Step 1: Ensure User document exists ---
         const userRef = doc(firestore, 'users', user.uid);
-        const barRef = doc(firestore, 'bars', `bar_${user.uid}`);
-        
         const userDoc = await getDoc(userRef);
-        const barDoc = await getDoc(barRef);
-
-        const batch = writeBatch(firestore);
         let wasUserCreated = false;
 
         if (!userDoc.exists()) {
@@ -192,39 +188,40 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
                 id: user.uid,
                 displayName: displayName,
                 email: user.email,
-                role: 'manager' as const,
+                role: 'manager' as const, // Default role
                 createdAt: serverTimestamp(),
             };
-            batch.set(userRef, userData);
+            await setDoc(userRef, userData); // Await user creation
             wasUserCreated = true;
         }
+        
+        // --- Step 1.5: Ensure Admin Role document exists if it's the admin user ---
+        const isAppAdmin = user.email === 'prostodeniskdt@gmail.com';
+        if (isAppAdmin) {
+            const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
+            await setDoc(adminRoleRef, { isAdmin: true }, { merge: true }); // Use set with merge to be safe
+        }
+
+        // --- Step 2: Ensure Bar document exists ---
+        const barId = `bar_${user.uid}`;
+        const barRef = doc(firestore, 'bars', barId);
+        const barDoc = await getDoc(barRef);
 
         if (!barDoc.exists()) {
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
             const barData = {
-                id: barRef.id,
+                id: barId,
                 name: `Бар ${displayName}`,
                 location: 'Не указано',
                 ownerUserId: user.uid,
             };
-            batch.set(barRef, barData);
+            await setDoc(barRef, barData); // Await bar creation
+            
+            // If the user was brand new, seed their bar with initial data.
+            if (wasUserCreated) {
+                await seedInitialData(firestore, barId, user.uid);
+            }
         }
-
-        await batch.commit();
-        
-        const isAppAdmin = user.email === 'prostodeniskdt@gmail.com';
-        if (isAppAdmin) {
-            const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
-            // This set is separate and will use the specific 'create' rule for admins.
-            await setDoc(adminRoleRef, { isAdmin: true }, { merge: true });
-        }
-
-
-        // If the user was newly created, also seed their bar with initial data.
-        if (wasUserCreated) {
-            await seedInitialData(firestore, barRef.id, user.uid);
-        }
-
     } catch (e: any) {
         console.error("A non-recoverable error occurred during user/bar document check:", e);
         throw new Error(`Не удалось проверить или создать необходимые документы: ${e.message}`);
@@ -266,3 +263,5 @@ export async function initiateEmailSignIn(
     throw error;
   }
 }
+
+    

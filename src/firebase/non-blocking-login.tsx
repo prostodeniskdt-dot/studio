@@ -230,10 +230,7 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
             }
         }
     } catch (e: any) {
-        console.error("A non-recoverable error occurred during user/bar document check:", { 
-            code: e.code, 
-            message: e.message 
-        });
+        console.error("A non-recoverable error occurred during user/bar document check:", e);
         throw new Error(`Не удалось проверить или создать необходимые документы: ${e.message}`);
     }
 }

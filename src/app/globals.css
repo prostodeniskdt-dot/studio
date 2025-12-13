@@ -102,35 +102,46 @@
     }
   }
 
+  @keyframes move-text {
+    0%, 100% {
+      y: 80;
+      opacity: 0;
+    }
+    10% {
+      opacity: 0;
+    }
+    40%, 60% {
+      y: calc(75 - var(--bar-height, 50px));
+      opacity: 1;
+    }
+    90% {
+      opacity: 0;
+    }
+  }
+
   .bar {
     animation: grow-bar 4s infinite ease-in-out;
     rx: 2;
     ry: 2;
   }
+  
+  .bar-text {
+    font-size: 8px;
+    font-weight: 500;
+    text-anchor: middle;
+    fill: hsl(var(--foreground));
+    animation: move-text 4s infinite ease-in-out;
+  }
 
-  .bar-1 {
-    --bar-height: 50px;
-    fill: hsl(var(--chart-1));
-    animation-delay: 0s;
-  }
-  .bar-2 {
-    --bar-height: 70px;
-    fill: hsl(var(--chart-2));
-    animation-delay: 0.2s;
-  }
-  .bar-3 {
-    --bar-height: 40px;
-    fill: hsl(var(--chart-3));
-    animation-delay: 0.4s;
-  }
-  .bar-4 {
-    --bar-height: 60px;
-    fill: hsl(var(--chart-4));
-    animation-delay: 0.6s;
-  }
-  .bar-5 {
-    --bar-height: 55px;
-    fill: hsl(var(--chart-5));
-    animation-delay: 0.8s;
-  }
+  .bar-1 { --bar-height: 50px; fill: hsl(var(--chart-1)); animation-delay: 0s; }
+  .bar-2 { --bar-height: 70px; fill: hsl(var(--chart-2)); animation-delay: 0.2s; }
+  .bar-3 { --bar-height: 40px; fill: hsl(var(--chart-3)); animation-delay: 0.4s; }
+  .bar-4 { --bar-height: 60px; fill: hsl(var(--chart-4)); animation-delay: 0.6s; }
+  .bar-5 { --bar-height: 55px; fill: hsl(var(--chart-5)); animation-delay: 0.8s; }
+
+  .bar-text-1 { --bar-height: 50px; animation-delay: 0s; }
+  .bar-text-2 { --bar-height: 70px; animation-delay: 0.2s; }
+  .bar-text-3 { --bar-height: 40px; animation-delay: 0.4s; }
+  .bar-text-4 { --bar-height: 60px; animation-delay: 0.6s; }
+  .bar-text-5 { --bar-height: 55px; animation-delay: 0.8s; }
 }

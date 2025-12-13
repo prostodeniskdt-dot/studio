@@ -43,7 +43,6 @@ import { calculateLineFields } from '@/lib/calculations';
 import { deleteSessionWithLinesClient } from '@/lib/firestore-utils';
 
 export default function SessionPage() {
-  console.count("[session-page] render");
   const params = useParams();
   const id = params.id as string;
   const { user } = useUser();
@@ -53,12 +52,9 @@ export default function SessionPage() {
 
   const barId = user ? `bar_${user.uid}` : null;
   
-  // New state to control redirection and disable data fetching
-  const [isRedirecting, setIsRedirecting] = React.useState(false);
   const [isDeletingSession, setIsDeletingSession] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
-  // All hooks are now at the top level
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [localLines, setLocalLines] = React.useState<InventoryLine[] | null>(null);
   const [isAddProductOpen, setIsAddProductOpen] = React.useState(false);
@@ -68,28 +64,33 @@ export default function SessionPage() {
   const [isAddingProduct, setIsAddingProduct] = React.useState(false);
   
   const sessionRef = useMemoFirebase(() => 
-    !isRedirecting && firestore && barId ? doc(firestore, 'bars', barId, 'inventorySessions', id) : null,
-    [isRedirecting, firestore, barId, id]
+    firestore && barId ? doc(firestore, 'bars', barId, 'inventorySessions', id) : null,
+    [firestore, barId, id]
   );
-  const { data: session, isLoading: isLoadingSession } = useDoc<InventorySession>(sessionRef);
+  const { data: session, isLoading: isLoadingSession, error: sessionError } = useDoc<InventorySession>(sessionRef);
 
   const linesRef = useMemoFirebase(() =>
-    !isRedirecting && firestore && barId ? collection(firestore, 'bars', barId, 'inventorySessions', id, 'lines') : null,
-    [isRedirecting, firestore, barId, id]
+    firestore && barId ? collection(firestore, 'bars', barId, 'inventorySessions', id, 'lines') : null,
+    [firestore, barId, id]
   );
   const { data: lines, isLoading: isLoadingLines } = useCollection<InventoryLine>(linesRef);
 
   const [allProducts, setAllProducts] = React.useState<Product[] | null>(null);
   const [isLoadingProducts, setIsLoadingProducts] = React.useState(true);
 
-  // Effects
   React.useEffect(() => {
-    if (isLoadingSession) return;
-    if (!session) {
-      setIsRedirecting(true);
+    // Wait until the loading is finished before checking for the session.
+    if (!isLoadingSession && !session) {
+      // If loading is done and there's still no session, then redirect.
+      // This prevents redirecting while the data is still being fetched.
+      toast({
+        variant: "destructive",
+        title: "Инвентаризация не найдена",
+        description: "Возможно, она была удалена.",
+      });
       router.replace("/dashboard/sessions");
     }
-  }, [isLoadingSession, session, router]);
+  }, [isLoadingSession, session, router, toast]);
 
   React.useEffect(() => {
     if (!firestore) return;
@@ -155,15 +156,12 @@ export default function SessionPage() {
     if (!firestore || !barId) return;
 
     setIsDeletingSession(true);
-    setIsDeleteDialogOpen(false); // Close dialog immediately
+    setIsDeleteDialogOpen(false); 
     
-    // 1. Start navigation
     router.replace("/dashboard/sessions");
 
-    // 2. Wait for the next paint to allow UI to unmount
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
-    // 3. Perform heavy deletion in the background
     try {
         await deleteSessionWithLinesClient(firestore, barId, id);
         toast({ title: "Инвентаризация удалена." });
@@ -344,7 +342,7 @@ export default function SessionPage() {
     reader.readAsText(file);
   };
   
-  if (isRedirecting || isDeletingSession) {
+  if (isDeletingSession) {
       return (
           <div className="flex items-center justify-center h-full pt-20">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -352,8 +350,7 @@ export default function SessionPage() {
       );
   }
 
-  // Show loader while initial session data is being fetched
-  if (isLoadingSession) {
+  if (isLoadingSession || !session) {
     return (
       <div className="flex items-center justify-center h-full pt-20">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -361,10 +358,8 @@ export default function SessionPage() {
     );
   }
   
-  // If session doesn't exist, the useEffect will trigger a redirect.
-  // Render null to prevent rendering heavy UI before redirect happens.
-  if (!session) {
-    return null;
+  if (sessionError) {
+    return <div className="text-center text-destructive p-4">Ошибка загрузки сессии: {sessionError.message}</div>;
   }
   
   const isLoading = isLoadingLines || isLoadingProducts;

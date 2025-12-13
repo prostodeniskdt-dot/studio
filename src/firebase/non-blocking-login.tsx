@@ -182,13 +182,10 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
 
     try {
         const userDoc = await getDoc(userRef);
-        const barDoc = await getDoc(barRef);
-        let docsJustCreated = false;
-        
+
         if (!userDoc.exists()) {
-            docsJustCreated = true;
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
-            // Write the user document first and wait for it to complete.
+            // Create user doc first
             await setDoc(userRef, {
                 id: user.uid,
                 displayName: displayName,
@@ -196,26 +193,22 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
                 role: 'manager', // Default role
                 createdAt: serverTimestamp(),
             });
-        }
 
-        if (!barDoc.exists()) {
-            docsJustCreated = true;
-            const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
-            // Then write the bar document and wait for it to complete.
-            await setDoc(barRef, {
-                id: barId,
-                name: `Бар ${displayName}`,
-                location: 'Не указано',
-                ownerUserId: user.uid,
-            });
-        }
-        
-        // If we just created the core docs, it's a new user, so seed all data.
-        if (docsJustCreated) {
+            // Then create bar doc
+            const barDoc = await getDoc(barRef);
+            if (!barDoc.exists()) {
+                 await setDoc(barRef, {
+                    id: barId,
+                    name: `Бар ${displayName}`,
+                    location: 'Не указано',
+                    ownerUserId: user.uid,
+                });
+            }
+           
+            // Seed data only for brand new users
             await seedInitialData(firestore, barId, user.uid);
         } else {
-            // If the user already existed, just ensure the product catalog is up-to-date.
-            // This is where the product name translation will happen for existing users.
+             // If the user already existed, just ensure the product catalog is up-to-date.
             await seedInitialProducts(firestore);
         }
 

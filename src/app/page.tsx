@@ -84,14 +84,7 @@ export default function LoginPage() {
   return (
     <div className="w-full min-h-screen bg-background">
       <div className="container relative grid h-screen flex-col items-center justify-center lg:max-w-none lg:grid-cols-2 lg:px-0">
-        <div className="relative h-full flex-col p-10 text-white flex">
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage: "url(https://images.unsplash.com/photo-1554102682-5d7c4b146202?q=80&w=1974&auto=format&fit=crop)",
-              filter: "brightness(0.4)",
-            }}
-          />
+        <div className="relative hidden h-full flex-col bg-muted p-10 text-primary-foreground lg:flex">
           <div className="relative z-20 flex items-center text-lg font-medium">
              <AppLogo className="text-primary" />
           </div>
@@ -102,10 +95,10 @@ export default function LoginPage() {
 
           <div className="relative z-20 mt-auto">
             <blockquote className="space-y-2">
-              <p className="text-lg font-medium text-yellow-300">
+              <p className="text-lg font-medium text-foreground">
                 &ldquo;Эта система инвентаризации — лучшее, что случалось с моим баром. Просто, эффективно и экономит мне кучу денег!&rdquo;
               </p>
-              <footer className="text-sm text-yellow-300/80">Владелец бара</footer>
+              <footer className="text-sm text-muted-foreground">Владелец бара</footer>
             </blockquote>
           </div>
         </div>

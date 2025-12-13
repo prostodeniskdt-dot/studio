@@ -2,65 +2,76 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function signedIn() {
+    function isSignedIn() {
       return request.auth != null;
     }
 
-    function isOwner(uid) {
-      return signedIn() && request.auth.uid == uid;
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
     
+    function isAdmin() {
+      // This is the correct and secure way to check roles for list/query operations.
+      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
     function isBarOwnerByPath(barId) {
-        return signedIn() && barId == 'bar_' + request.auth.uid;
+        return isSignedIn() && barId == 'bar_' + request.auth.uid;
+    }
+
+    match /roles_admin/{userId} {
+      // A user should be able to check if they are an admin.
+      allow get: if isOwner(userId);
+      // Only admins can see who else is an admin.
+      allow list: if isAdmin();
     }
 
     match /users/{userId} {
-      allow read, update, delete: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
       allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      // An admin can delete any user except themselves.
+      allow delete: if isAdmin() && request.auth.uid != userId;
     }
     
     match /products/{productId} {
-        allow read, list: if signedIn();
-        // For simplicity in this app, allow any signed-in user to add/edit products.
-        // In a real-world scenario, this would likely be restricted to admins.
-        allow create, update: if signedIn();
-        allow delete: if signedIn();
+        allow read, list: if isSignedIn();
+        allow create, update, delete: if isSignedIn();
     }
 
     match /bars/{barId} {
-      // The user can create a bar document if the barId corresponds to their own userId.
       allow create: if isBarOwnerByPath(barId) && request.resource.data.ownerUserId == request.auth.uid;
-
-      // The owner of the bar can read, update, and delete it.
-      allow read, update, delete: if isBarOwnerByPath(barId);
+      allow read, update, delete: if isBarOwnerByPath(barId) || isAdmin();
+      allow list: if isAdmin();
 
       match /members/{memberId} {
-        // The bar owner can manage members.
-        allow read, list, create, update, delete: if isBarOwnerByPath(barId);
+        allow read, list: if isBarOwnerByPath(barId) || isAdmin();
+        allow create, update, delete: if isBarOwnerByPath(barId);
       }
       
       match /suppliers/{supplierId} {
-         // The bar owner can manage suppliers for their bar.
-         allow read, list, create, update, delete: if isBarOwnerByPath(barId);
+         allow read, list: if isBarOwnerByPath(barId) || isAdmin();
+         allow create, update, delete: if isBarOwnerByPath(barId);
       }
 
       match /purchaseOrders/{purchaseOrderId} {
-        // The bar owner can manage purchase orders.
-        allow read, list, create, update, delete: if isBarOwnerByPath(barId);
+        allow read, list: if isBarOwnerByPath(barId) || isAdmin();
+        allow create, update, delete: if isBarOwnerByPath(barId);
         
         match /lines/{lineId} {
-           // The bar owner can manage lines within their own purchase orders.
-           allow read, list, create, update, delete: if isBarOwnerByPath(barId);
+           allow read, list: if isBarOwnerByPath(barId) || isAdmin();
+           allow create, update, delete: if isBarOwnerByPath(barId);
         }
       }
 
       match /inventorySessions/{inventorySessionId} {
-        // The bar owner can manage inventory sessions for their bar.
-        allow read, list, create, update, delete: if isBarOwnerByPath(barId);
+        allow read, list: if isBarOwnerByPath(barId) || isAdmin();
+        allow create, update, delete: if isBarOwnerByPath(barId);
 
         match /lines/{inventoryLineId} {
-          // The bar owner can manage lines within their own inventory sessions.
-          allow read, list, create, update, delete: if isBarOwnerByPath(barId);
+          allow read, list: if isBarOwnerByPath(barId) || isAdmin();
+          allow create, update, delete: if isBarOwnerByPath(barId);
         }
       }
     }

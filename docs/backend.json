@@ -354,7 +354,8 @@
                 "type": "object",
                 "properties": {
                     "isAdmin": { "type": "boolean", "const": true }
-                }
+                },
+                "required": ["isAdmin"]
             },
             "description": "Documents in this collection denote admin roles. The existence of a document for a user ID signifies that the user has admin rights. This is used for fast, secure checks in Firestore rules."
         }

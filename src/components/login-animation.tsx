@@ -20,7 +20,7 @@ export function LoginAnimation({ className }: { className?: string }) {
         <rect className="bar bar-4" x="60" y="80" width="18" height="0" />
         <rect className="bar bar-5" x="80" y="80" width="18" height="0" />
 
-        {/* Animated Numbers */}
+        {/* Animated Numbers (now rendered on top of bars) */}
         <text className="bar-text bar-text-1" x="9" y="80">62%</text>
         <text className="bar-text bar-text-2" x="29" y="80">87%</text>
         <text className="bar-text bar-text-3" x="49" y="80">50%</text>

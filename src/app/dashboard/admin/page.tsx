@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, doc } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { AdminUsersTable } from '@/components/admin/admin-users-table';
@@ -13,31 +13,25 @@ export default function AdminPage() {
   const firestore = useFirestore();
   const router = useRouter();
 
-  // Check if the current user has an admin role document.
-  const adminRoleRef = useMemoFirebase(() => 
-    firestore && user ? doc(firestore, 'roles_admin', user.uid) : null,
-    [firestore, user]
-  );
-  const { data: adminRole, isLoading: isLoadingAdminRole } = useDoc(adminRoleRef);
-  
-  const isAuthorizedAdmin = adminRole?.isAdmin === true;
+  // Простая и надежная проверка администратора по email
+  const isAuthorizedAdmin = !isUserLoading && user?.email === 'prostodeniskdt@gmail.com';
 
+  React.useEffect(() => {
+    // Если загрузка пользователя завершена и он не является админом, перенаправляем его
+    if (!isUserLoading && !isAuthorizedAdmin) {
+      router.replace('/dashboard');
+    }
+  }, [user, isUserLoading, isAuthorizedAdmin, router]);
+
+  // Запрос пользователей будет выполнен только после подтверждения прав администратора
   const usersQuery = useMemoFirebase(() =>
-    // Only attempt to fetch users if the user is an authorized admin.
     firestore && isAuthorizedAdmin ? query(collection(firestore, 'users')) : null,
     [firestore, isAuthorizedAdmin]
   );
   
   const { data: users, isLoading: isLoadingUsers, error } = useCollection<UserProfile>(usersQuery);
 
-  React.useEffect(() => {
-    // If auth/role checks are done and user is not an admin, redirect them.
-    if (!isUserLoading && !isLoadingAdminRole && !isAuthorizedAdmin) {
-      router.replace('/dashboard');
-    }
-  }, [user, isUserLoading, isLoadingAdminRole, isAuthorizedAdmin, router]);
-
-  const showLoader = isUserLoading || isLoadingAdminRole;
+  const showLoader = isUserLoading;
 
   if (showLoader) {
     return (
@@ -47,8 +41,8 @@ export default function AdminPage() {
     );
   }
   
+  // Этот блок будет показан кратковременно перед редиректом
   if (!isAuthorizedAdmin) {
-    // This state is temporary while the useEffect redirect kicks in.
     return (
        <div className="flex justify-center items-center h-full">
         <p>У вас нет прав для доступа к этой странице.</p>

@@ -2,9 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ------------------------------------------------------------------------
-    // Helper Functions
-    // ------------------------------------------------------------------------
     function isSignedIn() {
       return request.auth != null;
     }
@@ -12,39 +9,21 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-
-    function isAdmin() {
-      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
-    }
     
+    function isAdmin() {
+      // Проверка по email — это просто и надежно для одного администратора.
+      return request.auth != null && request.auth.token.email == 'prostodeniskdt@gmail.com';
+    }
+
     function isBarOwnerByPath(barId) {
         return isSignedIn() && barId == 'bar_' + request.auth.uid;
     }
 
-    // ------------------------------------------------------------------------
-    // Collection Rules
-    // ------------------------------------------------------------------------
-    match /roles_admin/{userId} {
-      // Any signed-in user can read admin roles to check status. This is safe
-      // as these documents only contain a boolean flag.
-      // Only an existing admin can write/list these documents.
-      allow read: if isSignedIn();
-      allow list, write: if isAdmin();
-    }
-    
     match /users/{userId} {
-      // An admin can read any user profile. A user can read their own.
       allow read: if isOwner(userId) || isAdmin();
-      // Only an admin can list all users.
       allow list: if isAdmin();
-      
-      // A user can create their own profile.
       allow create: if isOwner(userId);
-
-      // An admin can update any user. A user can update their own.
       allow update: if isOwner(userId) || isAdmin();
-      
-      // An admin can delete any user except for themselves.
       allow delete: if isAdmin() && request.auth.uid != userId;
     }
     

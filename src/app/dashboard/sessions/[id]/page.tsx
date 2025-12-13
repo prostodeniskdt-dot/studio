@@ -42,6 +42,7 @@ import { useToast } from '@/hooks/use-toast';
 import { calculateLineFields } from '@/lib/calculations';
 
 export default function SessionPage() {
+  console.count("[session-page] render");
   const params = useParams();
   const id = params.id as string;
   const { user } = useUser();
@@ -81,32 +82,6 @@ export default function SessionPage() {
   const [allProducts, setAllProducts] = React.useState<Product[] | null>(null);
   const [isLoadingProducts, setIsLoadingProducts] = React.useState(true);
 
-  const originalLines = React.useMemo(() => lines, [lines]);
-
-  const hasUnsavedChanges = React.useMemo(() => {
-    if (!originalLines || !localLines) return false;
-    return JSON.stringify(originalLines) !== JSON.stringify(localLines);
-  }, [originalLines, localLines]);
-  
-  const productsInSession = React.useMemo(() => new Set(localLines?.map(line => line.productId)), [localLines]);
-  
-  const groupedProductOptions = React.useMemo(() => {
-    if (!allProducts) return [];
-    const availableProducts = allProducts.filter(p => p.isActive && !productsInSession.has(p.id));
-    const groups: Record<string, { value: string; label: string }[]> = {};
-    availableProducts.forEach(p => {
-      const category = translateCategory(p.category);
-      if (!groups[category]) {
-        groups[category] = [];
-      }
-      groups[category].push({ value: p.id, label: buildProductDisplayName(p.name, p.bottleVolumeMl) });
-    });
-    return Object.entries(groups)
-      .map(([label, options]) => ({ label, options }))
-      .sort((a,b) => a.label.localeCompare(b.label));
-  }, [allProducts, productsInSession]);
-  
-  
   // Effects
   React.useEffect(() => {
     if (isLoadingSession) return;
@@ -149,6 +124,32 @@ export default function SessionPage() {
     }
   }, [lines]);
 
+  const originalLines = React.useMemo(() => lines, [lines]);
+
+  const hasUnsavedChanges = React.useMemo(() => {
+    if (!originalLines || !localLines) return false;
+    return JSON.stringify(originalLines) !== JSON.stringify(localLines);
+  }, [originalLines, localLines]);
+  
+  const productsInSession = React.useMemo(() => new Set(localLines?.map(line => line.productId)), [localLines]);
+  
+  const groupedProductOptions = React.useMemo(() => {
+    if (!allProducts) return [];
+    const availableProducts = allProducts.filter(p => p.isActive && !productsInSession.has(p.id));
+    const groups: Record<string, { value: string; label: string }[]> = {};
+    availableProducts.forEach(p => {
+      const category = translateCategory(p.category);
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push({ value: p.id, label: buildProductDisplayName(p.name, p.bottleVolumeMl) });
+    });
+    return Object.entries(groups)
+      .map(([label, options]) => ({ label, options }))
+      .sort((a,b) => a.label.localeCompare(b.label));
+  }, [allProducts, productsInSession]);
+  
+  
   // Event Handlers
   const handleDeleteSession = async () => {
     if (!firestore || !barId) return;

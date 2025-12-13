@@ -20,6 +20,7 @@ type InventoryTableProps = {
 type GroupedLines = Record<string, Record<string, LocalCalculatedLine[]>>;
 
 export function InventoryTable({ lines, setLines, products, isEditable }: InventoryTableProps) {
+  console.count("[inventory-table] render");
 
   const productsById = React.useMemo(() => {
     const m = new Map<string, Product>();
@@ -29,6 +30,7 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
     return m;
   }, [products]);
 
+  console.time("calc_lines");
   const calculatedLines = React.useMemo(() => {
     return lines
       .map(line => {
@@ -39,6 +41,7 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
       })
       .filter((l): l is LocalCalculatedLine => l !== null);
   }, [lines, productsById]);
+  console.timeEnd("calc_lines");
 
 
   const groupedAndSortedLines = React.useMemo(() => {

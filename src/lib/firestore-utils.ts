@@ -27,6 +27,7 @@ export async function deleteSessionWithLinesClient(
   barId: string,
   sessionId: string
 ) {
+  console.time("deleteSessionWithLinesClient");
   const sessionRef = doc(firestore, "bars", barId, "inventorySessions", sessionId);
   const linesCol = collection(sessionRef, "lines");
 
@@ -60,4 +61,5 @@ export async function deleteSessionWithLinesClient(
 
   // After all lines are deleted, delete the main session document itself.
   await deleteDoc(sessionRef);
+  console.timeEnd("deleteSessionWithLinesClient");
 }

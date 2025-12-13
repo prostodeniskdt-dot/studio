@@ -28,6 +28,23 @@
           "type": "string",
           "description": "The timestamp when the user was created.",
           "format": "date-time"
+        },
+        "city": {
+          "type": "string",
+          "description": "The city where the user is located."
+        },
+        "establishment": {
+          "type": "string",
+          "description": "The name of the user's bar or establishment."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The user's phone number."
+        },
+        "socialLink": {
+          "type": "string",
+          "description": "A URL to the user's social media profile (e.g., Telegram, WhatsApp).",
+          "format": "uri"
         }
       },
       "required": [

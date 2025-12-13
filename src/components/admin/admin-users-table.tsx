@@ -95,6 +95,32 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
       },
     },
     {
+        accessorKey: 'establishment',
+        header: 'Заведение',
+        cell: ({ row }) => {
+            const user = row.original;
+            return (
+                <div>
+                    <div className="font-medium">{user.establishment || '-'}</div>
+                    <div className="text-sm text-muted-foreground">{user.city || '-'}</div>
+                </div>
+            )
+        }
+    },
+    {
+        accessorKey: 'phone',
+        header: 'Контакты',
+        cell: ({ row }) => {
+            const user = row.original;
+            return (
+                <div>
+                    <div>{user.phone || '-'}</div>
+                    {user.socialLink && <a href={user.socialLink} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline">Соцсеть</a>}
+                </div>
+            )
+        }
+    },
+    {
         accessorKey: 'createdAt',
         header: 'Дата регистрации',
         cell: ({ row }) => {

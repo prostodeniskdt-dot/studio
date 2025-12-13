@@ -94,14 +94,16 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <UserIcon />
-            Профиль
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <Link href="/dashboard/profile">
+              <UserIcon className="mr-2 h-4 w-4"/>
+              Профиль
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-            <LogOut />
+            <LogOut className="mr-2 h-4 w-4"/>
             Выйти
         </DropdownMenuItem>
       </DropdownMenuContent>

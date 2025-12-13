@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
@@ -27,7 +27,7 @@ export default function AdminPage() {
   );
   const { data: adminRoleDoc, isLoading: isAdminRoleLoading, error: adminRoleError } = useDoc(adminRoleRef);
   
-  // Хук для получения списка всех пользователей (выполняется всегда)
+  // Хук для получения списка всех пользователей (выполняется всегда, если есть firestore)
   const usersQuery = useMemoFirebase(() =>
     firestore ? query(collection(firestore, 'users')) : null,
     [firestore]
@@ -61,7 +61,8 @@ export default function AdminPage() {
       </Alert>
     )
   }
-
+  
+  // Запрос пользователей запускается только после проверки прав админа
   if (!isAuthorizedAdmin) {
      if (user?.email === 'prostodeniskdt@gmail.com') {
         return (

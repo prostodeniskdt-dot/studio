@@ -8,6 +8,11 @@ export interface UserProfile {
   email: string;
   role: UserRole;
   createdAt: Timestamp;
+  // New survey fields
+  city?: string;
+  establishment?: string;
+  phone?: string;
+  socialLink?: string;
 }
 
 export type ProductCategory = 'Whiskey' | 'Rum' | 'Vodka' | 'Gin' | 'Tequila' | 'Liqueur' | 'Wine' | 'Beer' | 'Syrup' | 'Brandy' | 'Vermouth' | 'Absinthe' | 'Bitters' | 'Other';

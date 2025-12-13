@@ -99,7 +99,7 @@ service cloud.firestore {
         // For simplicity, any signed-in user can add/edit products.
         // In a real-world scenario, this would likely be restricted to admins.
         allow create, update: if isSignedIn();
-        allow delete: if false; // Deletions should be soft (isActive: false) or admin-only
+        allow delete: if isSignedIn(); // Allow any signed-in user to delete
     }
 
     match /bars/{barId} {

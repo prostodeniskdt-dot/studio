@@ -171,7 +171,7 @@ async function seedInitialData(firestore: Firestore, barId: string, userId: stri
 /**
  * Ensures user and bar documents exist, creating them if necessary.
  * This is a critical setup step for any authenticated user.
- * It's split into two parts: ensuring docs and then seeding data.
+ * It's idempotent and safe to call on every dashboard load.
  */
 export async function ensureUserAndBarDocuments(firestore: Firestore, user: User): Promise<void> {
     if (!firestore || !user) return;
@@ -180,61 +180,61 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
     const barId = `bar_${user.uid}`;
     const barRef = doc(firestore, 'bars', barId);
     
-    const userDocSnapshot = await getDoc(userRef);
-
-    if (userDocSnapshot.exists()) {
-        // If the user already existed, just ensure the product catalog is up-to-date.
-        await seedInitialProducts(firestore);
-        return;
-    }
-
-    // --- User does not exist, create everything ---
-
-    const isAppAdmin = user.email === 'prostodeniskdt@gmail.com';
-    const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
-    
-    const batch = writeBatch(firestore);
-
-    // 1. Create User document
-    const userData = {
-        id: user.uid,
-        displayName: displayName,
-        email: user.email,
-        role: isAppAdmin ? 'admin' : 'manager', // Assign 'admin' role if email matches
-        createdAt: serverTimestamp(),
-    };
-    batch.set(userRef, userData, { merge: true });
-
-    // 2. Create Bar document
-    const barData = {
-        id: barId,
-        name: `Бар ${displayName}`,
-        location: 'Не указано',
-        ownerUserId: user.uid,
-    };
-    batch.set(barRef, barData, { merge: true });
-
-    // 3. Create admin role document if user is admin
-    if (isAppAdmin) {
-        const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
-        batch.set(adminRoleRef, { isAdmin: true });
-    }
-
     try {
-        console.log("Attempting to write user, bar, and admin role documents...");
-        await batch.commit();
-        console.log("Documents write OK.");
-
-        // Seed initial data only for brand new users
-        await seedInitialData(firestore, barId, user.uid);
+        const userDoc = await getDoc(userRef);
+        const barDoc = await getDoc(barRef);
+        const isAppAdmin = user.email === 'prostodeniskdt@gmail.com';
         
+        const batch = writeBatch(firestore);
+        let shouldCommit = false;
+
+        if (!userDoc.exists()) {
+            const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
+            const userData = {
+                id: user.uid,
+                displayName: displayName,
+                email: user.email,
+                role: isAppAdmin ? 'admin' : 'manager',
+                createdAt: serverTimestamp(),
+            };
+            batch.set(userRef, userData);
+            shouldCommit = true;
+        }
+
+        if (!barDoc.exists()) {
+            const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
+            const barData = {
+                id: barId,
+                name: `Бар ${displayName}`,
+                location: 'Не указано',
+                ownerUserId: user.uid,
+            };
+            batch.set(barRef, barData);
+            shouldCommit = true;
+        }
+        
+        if (isAppAdmin) {
+            const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
+            const adminDoc = await getDoc(adminRoleRef);
+            if (!adminDoc.exists()) {
+                batch.set(adminRoleRef, { isAdmin: true });
+                shouldCommit = true;
+            }
+        }
+        
+        if (shouldCommit) {
+            await batch.commit();
+            // Seed data only when the user document was newly created.
+            if (!userDoc.exists()) {
+                 await seedInitialData(firestore, barId, user.uid);
+            }
+        }
     } catch (e: any) {
-        console.error("A non-recoverable error occurred during user/bar creation:", { 
+        console.error("A non-recoverable error occurred during user/bar document check:", { 
             code: e.code, 
             message: e.message 
         });
-        // This is a critical failure. Re-throw to be caught by the layout.
-        throw new Error(`Не удалось создать необходимые документы в базе данных: ${e.message}`);
+        throw new Error(`Не удалось проверить или создать необходимые документы: ${e.message}`);
     }
 }
 

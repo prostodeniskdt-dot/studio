@@ -91,19 +91,19 @@ export default function LoginPage() {
             className="absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage:
-                "url(https://images.unsplash.com/photo-1579311318434-2c343b3b3f29?q=80&w=1974&auto=format&fit=crop)",
-              filter: "grayscale(80%) brightness(0.6)",
+                "url(https://images.unsplash.com/photo-1519682337058-224d4a54bf9e?q=80&w=2070&auto=format&fit=crop)",
+              filter: "brightness(0.2)",
             }}
           />
           <div className="relative z-20 flex items-center text-lg font-medium">
             <AppLogo />
           </div>
           <div className="relative z-20 mt-auto">
-            <blockquote className="space-y-2">
-              <p className="text-lg">
+            <blockquote className="space-y-2 text-primary">
+              <p className="text-lg font-medium">
                 &ldquo;Эта система инвентаризации — лучшее, что случалось с моим баром. Просто, эффективно и экономит мне кучу денег!&rdquo;
               </p>
-              <footer className="text-sm">Владелец бара</footer>
+              <footer className="text-sm text-primary/80">Владелец бара</footer>
             </blockquote>
           </div>
         </div>

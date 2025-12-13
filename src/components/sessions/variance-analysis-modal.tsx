@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Lightbulb } from 'lucide-react';
 import type { CalculatedInventoryLine } from '@/lib/types';
-import { analyzeVariance } from '@/lib/actions';
+import { analyzeVariance, type AnalyzeInventoryVarianceInput } from '@/lib/actions';
 import { formatCurrency, translateProductName } from '@/lib/utils';
 import { useServerAction } from '@/hooks/use-server-action';
 
@@ -21,11 +21,25 @@ export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnal
   
   const { execute: performAnalysis, isLoading, data, error } = useServerAction(analyzeVariance);
 
+  const getAnalysisInput = React.useCallback((): AnalyzeInventoryVarianceInput | null => {
+    if (!line?.product) return null;
+    return {
+      productName: translateProductName(line.product.name, line.product.bottleVolumeMl),
+      theoreticalEndStock: line.theoreticalEndStock,
+      endStock: line.endStock,
+      sales: line.sales,
+      purchases: line.purchases,
+      startStock: line.startStock,
+    };
+  }, [line]);
+
+
   const analysisCallback = React.useCallback(() => {
-    if (open && line) {
-        performAnalysis(line);
+    const input = getAnalysisInput();
+    if (open && input) {
+        performAnalysis(input);
     }
-  }, [line, open, performAnalysis]);
+  }, [getAnalysisInput, open, performAnalysis]);
 
   React.useEffect(() => {
      analysisCallback();
@@ -68,7 +82,10 @@ export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnal
         </div>
         <DialogFooter>
           <Button onClick={() => onOpenChange(false)} variant="outline">Закрыть</Button>
-          <Button onClick={() => performAnalysis(line)} disabled={isLoading}>
+          <Button onClick={() => {
+            const input = getAnalysisInput();
+            if (input) performAnalysis(input);
+          }} disabled={isLoading}>
             {isLoading ? "Анализ..." : "Повторить анализ"}
           </Button>
         </DialogFooter>

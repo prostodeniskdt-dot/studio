@@ -18,21 +18,9 @@ export type AnalyzeInventoryVarianceInput = {
 };
 export type AnalyzeInventoryVarianceOutput = { analysis: string; };
 
-export async function analyzeVariance(line: CalculatedInventoryLine): Promise<AnalyzeInventoryVarianceOutput> {
+export async function analyzeVariance(input: AnalyzeInventoryVarianceInput): Promise<AnalyzeInventoryVarianceOutput> {
   try {
-    if (!line.product) {
-      throw new Error("Product data is missing for analysis.");
-    }
-    const analysisInput: AnalyzeInventoryVarianceInput = {
-      productName: translateProductName(line.product.name, line.product.bottleVolumeMl),
-      theoreticalEndStock: line.theoreticalEndStock,
-      endStock: line.endStock,
-      sales: line.sales,
-      purchases: line.purchases,
-      startStock: line.startStock
-    };
-
-    const result = await analyzeInventoryVarianceFlow(analysisInput);
+    const result = await analyzeInventoryVarianceFlow(input);
     return result;
   } catch (e: any) {
     console.error("Variance analysis failed:", e);

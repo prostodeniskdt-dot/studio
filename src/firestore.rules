@@ -1,22 +1,3 @@
-/**
- * Core Philosophy:
- * This ruleset implements a role-based access control (RBAC) model combined with
- * user ownership and bar membership. There are three primary levels of access:
- * 1. Admins: Have global read and write permissions across all data. Admin status
- *    is determined by the existence of a document in the `/roles_admin` collection.
- * 2. Bar Owners: Users designated as the `ownerUserId` on a `/bars/{barId}` document
- *    have full control over that bar and all of its nested data. This is also reinforced
- *    by the convention that barId is 'bar_' + userId for the owner's primary bar.
- * 3. Bar Members: Users who have a document in the `/bars/{barId}/members` subcollection
- *    can access data within that bar according to their assigned role.
- * 4. Authenticated Users: Can manage their own user profile in `/users/{userId}`
- *    and can create new bars, which they will then own.
- *
- * Key Security Decisions for LIST operations:
- * `allow list` rules MUST NOT use `get()` or `exists()` calls to other documents.
- * The primary mechanism for subcollection listing is verifying ownership via barId structure
- * and ensuring the client query filters by that `barId`.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -24,7 +5,6 @@ service cloud.firestore {
     // ------------------------------------------------------------------------
     // Helper Functions
     // ------------------------------------------------------------------------
-
     function isSignedIn() {
       return request.auth != null;
     }
@@ -33,140 +13,77 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * Checks if the user is an admin.
-     * SAFE for ALL rule types because it checks a known, predictable path.
-     */
     function isAdmin() {
       return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
-
-    /**
-     * Checks if the user is the owner of the bar by inspecting the barId string.
-     * This is FAST and SAFE for LIST rules because it performs no database reads.
-     * It relies on the convention that barId is `bar_${userId}` for the primary bar.
-     */
+    
     function isBarOwnerByPath(barId) {
-      return isSignedIn() && barId == 'bar_' + request.auth.uid;
-    }
-    
-    /**
-     * Checks if the user is a member of the bar (either as staff or owner).
-     * SAFE for get, create, update, delete. UNSAFE for list.
-     */
-    function isBarMemberByRead(barId) {
-      let barDoc = get(/databases/$(database)/documents/bars/$(barId));
-      if (barDoc.data.ownerUserId == request.auth.uid) {
-        return true;
-      }
-      return exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid));
-    }
-    
-    // ------------------------------------------------------------------------
-    // Data Validation Functions
-    // ------------------------------------------------------------------------
-    
-    function isUserSchema(data) {
-      return data.id == request.auth.uid &&
-             data.displayName is string && data.displayName.size() > 0 &&
-             data.email is string &&
-             data.role in ['admin', 'manager', 'bartender'] &&
-             data.createdAt is timestamp;
-    }
-    
-    function isBarSchema(data) {
-       return data.id is string && data.id.size() > 0 &&
-              data.name is string && data.name.size() > 0 &&
-              data.location is string &&
-              data.ownerUserId == request.auth.uid;
+        return isSignedIn() && barId == 'bar_' + request.auth.uid;
     }
 
     // ------------------------------------------------------------------------
     // Collection Rules
     // ------------------------------------------------------------------------
-
     match /roles_admin/{userId} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin();
+      allow write: if isAdmin();
     }
     
     match /users/{userId} {
-      allow read: if isSignedIn() && (isOwner(userId) || isAdmin());
+      // An admin can read any user profile. A user can read their own.
+      allow read: if isOwner(userId) || isAdmin();
+      // Only an admin can list all users.
       allow list: if isAdmin();
       
-      allow create: if isSignedIn() 
-                    && isOwner(userId) 
-                    && isUserSchema(request.resource.data);
+      // A user can create their own profile.
+      allow create: if isOwner(userId);
 
-      allow update: if isSignedIn() 
-                    && (isOwner(userId) || isAdmin())
-                    // Fields that cannot be changed
-                    && request.resource.data.id == resource.data.id
-                    && request.resource.data.email == resource.data.email
-                    && request.resource.data.createdAt == resource.data.createdAt;
+      // An admin can update any user. A user can update their own.
+      allow update: if isOwner(userId) || isAdmin();
       
-      allow delete: if isAdmin() && request.auth.uid != userId; // Admin can delete anyone except themselves
+      // An admin can delete any user except for themselves.
+      allow delete: if isAdmin() && request.auth.uid != userId;
     }
     
     match /products/{productId} {
         allow read, list: if isSignedIn();
-        // For simplicity, any signed-in user can add/edit products.
-        // In a real-world scenario, this would likely be restricted to admins.
-        allow create, update: if isSignedIn();
-        allow delete: if isSignedIn(); // Allow any signed-in user to delete
+        allow create, update, delete: if isSignedIn();
     }
 
     match /bars/{barId} {
-      // The user can create a bar document if the barId corresponds to their own userId.
-      allow create: if isSignedIn() 
-                    && isBarOwnerByPath(barId)
-                    && isBarSchema(request.resource.data);
-
-      // The owner of the bar can read, update, and delete it.
-      // Admins can also read any bar.
-      allow read: if isBarOwnerByPath(barId) || isAdmin();
-      allow update, delete: if isBarOwnerByPath(barId);
+      allow create: if isBarOwnerByPath(barId) && request.resource.data.ownerUserId == request.auth.uid;
+      allow read, update, delete: if isBarOwnerByPath(barId) || isAdmin();
       allow list: if isAdmin();
 
       match /members/{memberId} {
-        // The bar owner can manage members. Admin can read/list.
         allow read, list: if isBarOwnerByPath(barId) || isAdmin();
         allow create, update, delete: if isBarOwnerByPath(barId);
       }
       
       match /suppliers/{supplierId} {
-         // The bar owner can manage suppliers for their bar.
          allow read, list: if isBarOwnerByPath(barId) || isAdmin();
          allow create, update, delete: if isBarOwnerByPath(barId);
       }
 
       match /purchaseOrders/{purchaseOrderId} {
-        // The bar owner can manage purchase orders. Admin can read/list.
         allow read, list: if isBarOwnerByPath(barId) || isAdmin();
         allow create, update, delete: if isBarOwnerByPath(barId);
         
         match /lines/{lineId} {
-           // The bar owner can manage lines within their own purchase orders. Admin can read/list.
            allow read, list: if isBarOwnerByPath(barId) || isAdmin();
            allow create, update, delete: if isBarOwnerByPath(barId);
         }
       }
 
       match /inventorySessions/{inventorySessionId} {
-        // The bar owner can manage inventory sessions for their bar. Admin can read/list.
         allow read, list: if isBarOwnerByPath(barId) || isAdmin();
         allow create, update, delete: if isBarOwnerByPath(barId);
 
         match /lines/{inventoryLineId} {
-          // The bar owner can manage lines within their own inventory sessions. Admin can read/list.
           allow read, list: if isBarOwnerByPath(barId) || isAdmin();
           allow create, update, delete: if isBarOwnerByPath(barId);
         }
       }
-    }
-    
-    // Catch-all rule to explicitly deny access to any other path.
-    match /{document=**} {
-      allow read, write: if false;
     }
   }
 }

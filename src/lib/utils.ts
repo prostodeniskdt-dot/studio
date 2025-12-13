@@ -168,21 +168,36 @@ function translateNameOnly(name: string): string {
   return name;
 }
 
-const VOLUME_RE = /(?:^|[\s(])(\d+(?:[.,]\d+)?)\s*(мл|ml|л|l|cl)(?=$|[\s)\],.])/giu;
+
+function normalizeInput(s: string) {
+  return (s ?? "")
+    .replace(/[\u200B-\u200D\uFEFF\u2060]/g, "") // zero-width
+    .replace(/[\u00A0\u202F\u2007]/g, " ")       // NBSP/тонкие пробелы
+    .trim();
+}
+
+// расширенный unit: мл|ml|мl|mл, и т.п.
+const VOLUME_RE =
+  /(?:^|[\s(])(\d+(?:[.,]\d+)?)\s*((?:мл|ml|[mм][lл])|(?:л|l)|(?:cl|[cс][lл]))(?=$|[\s)\],.])/giu;
 
 export function extractVolume(original: string): { baseName: string; volumeMl?: number } {
-  const s = (original ?? "").trim();
+  const s = normalizeInput(original);
   let lastMl: number | undefined;
 
   for (const m of s.matchAll(VOLUME_RE)) {
     const numRaw = (m[1] ?? "").replace(",", ".");
-    const unit = (m[2] ?? "").toLowerCase();
+    const unitRaw = (m[2] ?? "").toLowerCase();
     const value = Number(numRaw);
     if (!Number.isFinite(value)) continue;
 
-    if (unit === "мл" || unit === "ml") lastMl = Math.round(value);
-    else if (unit === "л" || unit === "l") lastMl = Math.round(value * 1000);
-    else if (unit === "cl") lastMl = Math.round(value * 10);
+    const unit =
+      /^(мл|ml|[mм][lл])$/.test(unitRaw) ? "ml" :
+      /^(л|l)$/.test(unitRaw) ? "l" :
+      "cl";
+
+    if (unit === "ml") lastMl = Math.round(value);
+    else if (unit === "l") lastMl = Math.round(value * 1000);
+    else lastMl = Math.round(value * 10);
   }
 
   const baseName = s.replace(VOLUME_RE, " ").replace(/\s+/g, " ").trim();
@@ -190,15 +205,13 @@ export function extractVolume(original: string): { baseName: string; volumeMl?: 
 }
 
 
-export function buildProductDisplayName(name: string, bottleVolumeMl?: number | null): string {
-  const { baseName } = extractVolume(name);
+export function buildProductDisplayName(originalName: string, bottleVolumeMl?: number | null): string {
+  const { baseName, volumeMl: fromName } = extractVolume(originalName);
   const translatedName = translateNameOnly(baseName);
 
-  if (bottleVolumeMl) {
-    return `${translatedName} ${bottleVolumeMl}мл`;
-  }
+  const volumeMl = bottleVolumeMl ?? fromName;
   
-  return translatedName;
+  return volumeMl ? `${translatedName} ${volumeMl}мл` : translatedName;
 }
 
 export const translateProductName = buildProductDisplayName;

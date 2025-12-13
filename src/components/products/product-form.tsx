@@ -77,6 +77,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: product ? {
         ...product,
+        name: buildProductDisplayName(product.name, product.bottleVolumeMl), // Show full name for editing
         subCategory: product.subCategory ?? undefined,
         imageUrl: product.imageUrl ?? undefined,
         fullBottleWeightG: product.fullBottleWeightG ?? undefined,
@@ -104,6 +105,8 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const watchedCategory = form.watch('category');
   const watchedName = form.watch('name');
   const watchedVolume = form.watch('bottleVolumeMl');
+  
+  const volumeTouchedRef = React.useRef(false);
 
   React.useEffect(() => {
     if (form.formState.isDirty) {
@@ -113,6 +116,21 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
       }
     }
   }, [watchedCategory, form]);
+
+  React.useEffect(() => {
+    const { baseName, volumeMl } = extractVolume(watchedName ?? "");
+    if (!volumeMl) return;
+  
+    // Если пользователь НЕ трогал объём руками — синхронизируем
+    if (!volumeTouchedRef.current) {
+      form.setValue("bottleVolumeMl", volumeMl, { shouldDirty: true });
+    }
+  
+    // Опционально: очистить name от объёма сразу, чтобы не было "500 мл" в поле
+    if (baseName !== (watchedName ?? "").trim()) {
+      form.setValue("name", baseName, { shouldDirty: true });
+    }
+  }, [watchedName, form]);
 
   function onSubmit(data: ProductFormValues) {
     if (!firestore) return;
@@ -277,7 +295,10 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             <FormItem>
             <FormLabel>Номинальный объем (мл)</FormLabel>
             <FormControl>
-                <Input type="number" {...field} />
+                <Input type="number" {...field} onChange={(e) => {
+                    volumeTouchedRef.current = true;
+                    field.onChange(e);
+                }}/>
             </FormControl>
             <FormMessage />
             </FormItem>

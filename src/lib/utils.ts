@@ -93,6 +93,7 @@ const productNameTranslations = new Map<string, string>([
     ["hennessy v.s", "Хеннесси V.S"],
     ["martini bianco", "Мартини Бьянко"],
     ["martini rosso", "Мартини Россо"],
+    ["cinzano rosso", "Чинзано Россо"],
     ["grenadine syrup", "Сироп Гренадин"],
     ["sugar syrup", "Сахарный сироп"],
     ["angostura bitters", "Ангостура Биттер"],
@@ -103,7 +104,6 @@ const productNameTranslations = new Map<string, string>([
     ["glenfiddich 12", "Гленфиддик 12"],
     ["nikka from the barrel", "Никка Фром зе Баррел"],
     ["connemara peated", "Коннемара Питед"],
-    ["cinzano rosso", "Чинзано Россо"],
 ]);
 
 const translitMap: { [key: string]: string } = {
@@ -155,6 +155,7 @@ const normalize = (s: string) =>
 export function translateProductName(name: string, volume?: number): string {
     if (!name) return '';
 
+    // Remove volume from name if it exists, to normalize it for dictionary lookup
     const nameWithoutVolume = name.replace(/\s*\d+\s?(мл|ml)\s*$/i, '').trim();
 
     // First, try to get a direct translation from the dictionary
@@ -168,10 +169,25 @@ export function translateProductName(name: string, volume?: number): string {
     
     // Now, handle the volume part
     if (volume) {
-        return `${translated} ${volume}мл`;
+        const volumeString = `${volume}мл`;
+        // Check if the translated name *already* contains a volume string that matches.
+        // This is a simple check and might not cover all edge cases but handles the primary issue.
+        if (!translated.includes(volumeString)) {
+             return `${translated} ${volumeString}`;
+        }
     }
 
-    return translated;
+    // If volume is not provided, or if it's already in the name, return the translated name
+    // This might also mean returning just the name if the original input had the volume.
+    // A better approach is to rely on the passed `volume` parameter.
+    const hasVolumeInOriginal = /\s*\d+\s?(мл|ml)\s*$/i.test(name);
+    if(hasVolumeInOriginal && !volume) {
+        return translated + " " + name.match(/\s*\d+\s?(мл|ml)\s*$/i)?.[0].trim();
+    }
+    
+    if(!volume) return translated;
+
+    return `${translated} ${volume}мл`;
 }
 
 
@@ -259,8 +275,11 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
         'uncategorized': 'Без подкатегории',
     };
     
-    // Also check for 'White' since it's used for Rum and Wine
-    if (subCategory === 'White') return 'Белый' / 'Белое';
+    if (subCategory === 'White') {
+       // This is ambiguous, can be for Wine or Rum. Assuming context is handled elsewhere.
+       // For now, a generic translation.
+       return 'Белое/Белый';
+    }
 
     return translations[subCategory] || subCategory;
 }

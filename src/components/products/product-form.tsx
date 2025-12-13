@@ -83,7 +83,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         emptyBottleWeightG: product.emptyBottleWeightG ?? undefined,
         reorderPointMl: product.reorderPointMl ?? undefined,
         reorderQuantity: product.reorderQuantity ?? undefined,
-        defaultSupplierId: product.defaultSupplierId ?? undefined,
+        defaultSupplierId: product.defaultSupplierId ?? null,
     } : {
       name: '',
       category: 'Other',
@@ -103,6 +103,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
 
   const watchedCategory = form.watch('category');
   const watchedName = form.watch('name');
+  const watchedVolume = form.watch('bottleVolumeMl');
 
   React.useEffect(() => {
     if (form.formState.isDirty) {
@@ -118,11 +119,11 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     setIsSaving(true);
     const productRef = product ? doc(firestore, 'products', product.id) : doc(collection(firestore, 'products'));
     
-    const finalName = translateProductName(data.name);
+    const finalName = translateProductName(data.name, data.bottleVolumeMl);
 
     const productData = {
         ...data,
-        name: finalName,
+        name: data.name, // Save the original name, display name is derived
         defaultSupplierId: data.defaultSupplierId || null,
         reorderPointMl: data.reorderPointMl || null,
         reorderQuantity: data.reorderQuantity || null,
@@ -151,8 +152,8 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   }
   
   const finalDisplayName = React.useMemo(() => {
-    return translateProductName(watchedName);
-  }, [watchedName])
+    return translateProductName(watchedName, watchedVolume);
+  }, [watchedName, watchedVolume])
 
   return (
     <Form {...form}>
@@ -164,7 +165,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             <FormItem>
               <FormLabel>Название продукта (оригинал)</FormLabel>
               <FormControl>
-                <Input placeholder="Jameson 700 мл" {...field} />
+                <Input placeholder="Jameson" {...field} />
               </FormControl>
               <FormDescription>Отображаемое имя: {finalDisplayName}</FormDescription>
               <FormMessage />

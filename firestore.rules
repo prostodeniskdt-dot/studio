@@ -93,8 +93,7 @@ service cloud.firestore {
 
     function isCreatingOwnBar(barId) {
       // The barId must be `bar_${userId}` and the ownerUserId field must match.
-      return barId == 'bar_' + request.auth.uid 
-        && request.resource.data.ownerUserId == request.auth.uid;
+      return barId == 'bar_' + request.auth.uid && request.resource.data.ownerUserId == request.auth.uid;
     }
 
     function isBarUpdateValid() {

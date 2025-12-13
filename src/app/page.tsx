@@ -14,7 +14,6 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import { LoginAnimation } from "@/components/login-animation";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Неверный формат электронной почты" }),
@@ -97,7 +96,7 @@ export default function LoginPage() {
           </div>
           
            <div className="relative z-20 flex flex-1 flex-col items-center justify-center">
-            <LoginAnimation />
+            {/* Animation placeholder */}
           </div>
 
           <div className="relative z-20 mt-auto">
@@ -195,5 +194,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    

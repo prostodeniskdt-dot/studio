@@ -14,7 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PlusCircle, Trash2, Loader2 } from 'lucide-react';
-import { formatCurrency, translateCategory } from '@/lib/utils';
+import { formatCurrency, translateCategory, translateProductName } from '@/lib/utils';
 import { Combobox, GroupedComboboxOption } from '../ui/combobox';
 import Image from 'next/image';
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
@@ -144,7 +144,7 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
       if (!groups[category]) {
         groups[category] = [];
       }
-      groups[category].push({ value: p.id, label: p.name });
+      groups[category].push({ value: p.id, label: translateProductName(p.name) });
     });
 
     return Object.entries(groups)
@@ -185,7 +185,7 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
                                     <Image src={line.product.imageUrl} alt={line.product.name} fill style={{objectFit: 'contain'}} />
                                 )}
                             </div>
-                            <div>{line.product?.name || 'Неизвестный продукт'}</div>
+                            <div>{line.product ? translateProductName(line.product.name) : 'Неизвестный продукт'}</div>
                         </div>
                     </TableCell>
                     <TableCell className="text-right">

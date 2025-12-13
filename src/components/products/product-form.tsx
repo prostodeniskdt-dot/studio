@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import type { Product, Supplier } from '@/lib/types';
-import { productCategories, productSubCategories, translateCategory, translateSubCategory } from '@/lib/utils';
+import { productCategories, productSubCategories, translateCategory, translateSubCategory, translateProductName } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { useFirestore, useUser, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
@@ -150,7 +150,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             <FormItem>
               <FormLabel>Название продукта</FormLabel>
               <FormControl>
-                <Input placeholder="Jameson 0.7L" {...field} />
+                <Input placeholder="Джемесон" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

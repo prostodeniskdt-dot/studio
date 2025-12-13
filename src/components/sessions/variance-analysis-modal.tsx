@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Lightbulb } from 'lucide-react';
 import type { CalculatedInventoryLine } from '@/lib/types';
 import { analyzeVariance } from '@/lib/actions';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, translateProductName } from '@/lib/utils';
 import { useServerAction } from '@/hooks/use-server-action';
 
 type VarianceAnalysisModalProps = {
@@ -39,7 +39,7 @@ export function VarianceAnalysisModal({ line, open, onOpenChange }: VarianceAnal
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Анализ отклонений: {line.product?.name}</DialogTitle>
+          <DialogTitle>Анализ отклонений: {line.product ? translateProductName(line.product.name) : ''}</DialogTitle>
           <DialogDescription>
             AI-аналитика <span className={varianceColor}>{varianceType} в {Math.abs(Math.round(line.differenceVolume))}мл ({formatCurrency(Math.abs(line.differenceMoney))})</span>.
           </DialogDescription>

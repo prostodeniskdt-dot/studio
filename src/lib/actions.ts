@@ -5,6 +5,7 @@ import type { CalculatedInventoryLine, InventoryLine, InventorySession, Product,
 import { getUpcomingHoliday, russianHolidays2024 } from './holidays';
 import { collection, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
+import { translateProductName } from './utils';
 
 
 export type AnalyzeInventoryVarianceInput = {
@@ -23,7 +24,7 @@ export async function analyzeVariance(line: CalculatedInventoryLine): Promise<An
       throw new Error("Product data is missing for analysis.");
     }
     const analysisInput: AnalyzeInventoryVarianceInput = {
-      productName: line.product.name,
+      productName: translateProductName(line.product.name),
       theoreticalEndStock: line.theoreticalEndStock,
       endStock: line.endStock,
       sales: line.sales,

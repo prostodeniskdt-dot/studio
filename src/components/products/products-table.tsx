@@ -38,7 +38,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import type { Product, ProductCategory } from '@/lib/types';
-import { formatCurrency, translateCategory, translateSubCategory, productCategories, productSubCategories, dedupeProductsByName } from '@/lib/utils';
+import { formatCurrency, translateCategory, translateSubCategory, productCategories, productSubCategories, dedupeProductsByName, translateProductName } from '@/lib/utils';
 import { ProductForm } from './product-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
@@ -132,7 +132,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
       header: 'Название',
       cell: ({ row }) => {
         const product = row.original;
-        return <div>{product.name}</div>;
+        return <div>{translateProductName(product.name)}</div>;
       },
     },
     {
@@ -425,7 +425,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
         </>
          <SheetContent className="w-full sm:w-[480px] sm:max-w-none overflow-y-auto">
             <SheetHeader>
-                <SheetTitle>{editingProduct ? 'Редактировать продукт' : 'Добавить новый продукт'}</SheetTitle>
+                <SheetTitle>{editingProduct ? `Редактировать: ${translateProductName(editingProduct.name)}` : 'Добавить новый продукт'}</SheetTitle>
             </SheetHeader>
             <ProductForm product={editingProduct} onFormSubmit={handleCloseSheet} />
         </SheetContent>

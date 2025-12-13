@@ -13,7 +13,7 @@ import type { InventorySession, Product, ProductCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
-import { translateCategory, productCategories, productSubCategories, translateSubCategory, dedupeProductsByName } from '@/lib/utils';
+import { translateCategory, productCategories, productSubCategories, translateSubCategory, dedupeProductsByName, translateProductName } from '@/lib/utils';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 
 export default function UnifiedCalculatorPage() {
@@ -51,7 +51,7 @@ export default function UnifiedCalculatorPage() {
     return uniqueProducts.filter(p => {
       const categoryMatch = !selectedCategory || p.category === selectedCategory;
       const subCategoryMatch = !selectedSubCategory || p.subCategory === selectedSubCategory;
-      const searchMatch = !searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const searchMatch = !searchTerm || translateProductName(p.name).toLowerCase().includes(searchTerm.toLowerCase());
       return categoryMatch && subCategoryMatch && searchMatch;
     });
   }, [products, selectedCategory, selectedSubCategory, searchTerm]);
@@ -65,7 +65,7 @@ export default function UnifiedCalculatorPage() {
       if (!groups[category]) {
         groups[category] = [];
       }
-      groups[category].push({ value: p.id, label: p.name });
+      groups[category].push({ value: p.id, label: translateProductName(p.name) });
     });
 
     return Object.entries(groups)
@@ -219,7 +219,7 @@ export default function UnifiedCalculatorPage() {
             await batch.commit();
             toast({
                 title: "Данные отправлены",
-                description: `Остаток для продукта ${product.name} (${volume} мл) добавлен в текущую инвентаризацию.`,
+                description: `Остаток для продукта ${translateProductName(product.name)} (${volume} мл) добавлен в текущую инвентаризацию.`,
             });
         } else {
             const lineDoc = linesSnapshot.docs[0];
@@ -228,7 +228,7 @@ export default function UnifiedCalculatorPage() {
             await updateDoc(lineRef, updateData);
             toast({
                 title: "Данные отправлены",
-                description: `Остаток для продукта ${products?.find(p => p.id === selectedProductId)?.name} (${volume} мл) обновлен в текущую инвентаризацию.`,
+                description: `Остаток для продукта ${translateProductName(products?.find(p => p.id === selectedProductId)?.name || '')} (${volume} мл) обновлен в текущую инвентаризацию.`,
             });
         }
     } catch (serverError: any) {

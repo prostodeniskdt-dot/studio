@@ -52,6 +52,58 @@ export function translateRole(role: UserRole): string {
     }
 }
 
+const productNameTranslations = new Map<string, string>([
+    ["Jameson", "Джемесон"],
+    ["Jack Daniel's", "Джек Дэниэлс"],
+    ["Macallan 12 Double Cask", "Макаллан 12 Дабл Каск"],
+    ["Chivas Regal 12", "Чивас Ригал 12"],
+    ["Maker's Mark", "Мэйкерс Марк"],
+    ["Havana Club 3 Anos", "Гавана Клуб 3 года"],
+    ["Captain Morgan Spiced Gold", "Капитан Морган Спайсд Голд"],
+    ["Bacardi Carta Blanca", "Бакарди Карта Бланка"],
+    ["The Kraken Black Spiced", "Кракен Блэк Спайсд"],
+    ["Zacapa 23", "Закапа 23"],
+    ["Russian Standard", "Русский Стандарт"],
+    ["Beluga Noble", "Белуга Нобл"],
+    ["Absolut", "Абсолют"],
+    ["Finlandia", "Финляндия"],
+    ["Grey Goose", "Грей Гус"],
+    ["Beefeater London Dry", "Бифитер Лондон Драй"],
+    ["Hendrick's", "Хендрикс"],
+    ["Bombay Sapphire", "Бомбей Сапфир"],
+    ["Tanqueray London Dry", "Танкерей Лондон Драй"],
+    ["Roku", "Року"],
+    ["Olmeca Blanco", "Ольмека Бланко"],
+    ["Patron Silver", "Патрон Сильвер"],
+    ["Sauza Silver", "Сауза Сильвер"],
+    ["Jose Cuervo Especial Silver", "Хосе Куэрво Эспесиаль Сильвер"],
+    ["Don Julio Blanco", "Дон Хулио Бланко"],
+    ["Aperol", "Апероль"],
+    ["Baileys Original", "Бейлис Ориджинал"],
+    ["Jagermeister", "Егермейстер"],
+    ["Cointreau", "Куантро"],
+    ["Campari", "Кампари"],
+    ["House Red Wine", "Вино красное (дом)"],
+    ["House White Wine", "Вино белое (дом)"],
+    ["Prosecco (Basic)", "Просекко (базовое)"],
+    ["Draft Light Beer", "Пиво светлое (кран)"],
+    ["Hoegaarden Witbier", "Хугарден Витбир"],
+    ["Guinness Draught", "Гиннесс Драфт"],
+    ["Ararat 5 Stars", "Арарат 5 звезд"],
+    ["Hennessy V.S", "Хеннесси V.S"],
+    ["Martini Bianco", "Мартини Бьянко"],
+    ["Martini Rosso", "Мартини Россо"],
+    ["Grenadine Syrup", "Сироп Гренадин"],
+    ["Sugar Syrup", "Сахарный сироп"],
+    ["Angostura Bitters", "Ангостура Биттер"],
+    ["Xenta Absenta", "Ксента Абсента"],
+]);
+
+export function translateProductName(name: string): string {
+    return productNameTranslations.get(name) || name;
+}
+
+
 export const productCategories: ProductCategory[] = ['Whiskey', 'Rum', 'Vodka', 'Gin', 'Tequila', 'Liqueur', 'Wine', 'Beer', 'Brandy', 'Vermouth', 'Absinthe', 'Bitters', 'Syrup', 'Other'];
 
 export const productSubCategories: Record<ProductCategory, ProductSubCategory[]> = {
@@ -93,7 +145,6 @@ export function translateCategory(category: ProductCategory): string {
 }
 
 export function translateSubCategory(subCategory: ProductSubCategory): string {
-    // A mapping object is safer for cases with duplicate names across categories
     const translations: Record<string, string> = {
         // Whiskey
         'Scotch': 'Шотландский',
@@ -102,7 +153,7 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
         'Japanese': 'Японский',
         
         // Rum
-        'White': 'Белый / Белое', // Generic for Rum and Wine
+        'White': 'Белый / Белое',
         'Gold': 'Золотой',
         'Dark': 'Темный',
         'Spiced': 'Пряный',

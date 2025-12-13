@@ -5,7 +5,7 @@ import type { InventoryLine, Product, CalculatedInventoryLine } from '@/lib/type
 import { calculateLineFields } from '@/lib/calculations';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { cn, formatCurrency, translateCategory, translateSubCategory } from '@/lib/utils';
+import { cn, formatCurrency, translateCategory, translateSubCategory, translateProductName } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
 type LocalCalculatedLine = CalculatedInventoryLine & { hasChanged?: boolean };
@@ -112,10 +112,10 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
                         </TableCell>
                       </TableRow>
                     )}
-                    {subCategoryLines.sort((a,b) => (a.product?.name ?? '').localeCompare(b.product?.name ?? '')).map(line => {
+                    {subCategoryLines.sort((a,b) => translateProductName(a.product?.name ?? '').localeCompare(translateProductName(b.product?.name ?? ''))).map(line => {
                       return (
                         <TableRow key={line.id} className={cn(line.hasChanged && 'bg-yellow-500/10')}>
-                          <TableCell className="font-medium pl-4 md:pl-10">{line.product?.name}</TableCell>
+                          <TableCell className="font-medium pl-4 md:pl-10">{line.product ? translateProductName(line.product.name) : 'Неизвестный продукт'}</TableCell>
                           <TableCell className="text-right hidden md:table-cell">
                             {isEditable ? (
                               <Input type="number" value={line.startStock} onChange={e => handleInputChange(line.id!, 'startStock', e.target.value)} className="w-24 text-right ml-auto" />

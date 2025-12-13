@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, BarChart3, Settings, Calculator, LineChart, Users, Truck, ShoppingCart, Shield } from 'lucide-react';
+import { Home, Package, BarChart3, Settings, Calculator, LineChart, Users, Truck, ShoppingCart, Shield, Bug } from 'lucide-react';
 import {
   SidebarHeader,
   Sidebar,
@@ -27,6 +27,8 @@ const menuItems = [
 ];
 
 const adminMenuItem = { href: '/dashboard/admin', label: 'Админка', icon: Shield };
+const debugMenuItem = { href: '/dashboard/admin/debug', label: 'Debug', icon: Bug };
+
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -63,6 +65,7 @@ export function AppSidebar() {
             </SidebarMenuItem>
           ))}
           {isAdmin && (
+            <>
              <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
@@ -75,6 +78,20 @@ export function AppSidebar() {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={isActive(debugMenuItem.href)}
+                tooltip={{ children: debugMenuItem.label }}
+                className="text-yellow-400 hover:text-yellow-300 hover:bg-sidebar-accent"
+              >
+                <Link href={debugMenuItem.href}>
+                  <debugMenuItem.icon />
+                  <span>{debugMenuItem.label}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            </>
           )}
         </SidebarMenu>
       </SidebarContent>

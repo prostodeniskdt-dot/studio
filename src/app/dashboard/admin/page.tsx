@@ -7,6 +7,9 @@ import type { UserProfile } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { AdminUsersTable } from '@/components/admin/admin-users-table';
 import { useRouter } from 'next/navigation';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ShieldAlert } from 'lucide-react';
+
 
 export default function AdminPage() {
   const { user, isUserLoading } = useUser();
@@ -19,19 +22,15 @@ export default function AdminPage() {
     [firestore, user]
   );
   
-  // Hook to fetch the admin role document. isLoading is true while fetching.
-  // data will be null if the document does not exist, or the document data if it exists.
-  const { data: adminRoleDoc, isLoading: isAdminRoleLoading } = useDoc(adminRoleRef);
+  const { data: adminRoleDoc, isLoading: isAdminRoleLoading, error: adminRoleError } = useDoc(adminRoleRef);
   
-  // Derived state to determine if the user is an authorized admin.
-  // This is only true AFTER loading is complete AND the document exists.
-  const isAuthorizedAdmin = !isAdminRoleLoading && adminRoleDoc !== null;
+  const isAuthorizedAdmin = !isAdminRoleLoading && !adminRoleError && adminRoleDoc !== null;
 
   // Effect to handle redirection if the user is not an admin.
   React.useEffect(() => {
     const allLoadsFinished = !isUserLoading && !isAdminRoleLoading;
     
-    // If all data is loaded and the user is determined not to be an admin, redirect.
+    // If all data is loaded and the user is determined not to be an admin (or there was an error), redirect.
     if (allLoadsFinished && !isAuthorizedAdmin) {
       router.replace('/dashboard');
     }
@@ -43,7 +42,7 @@ export default function AdminPage() {
     [firestore, isAuthorizedAdmin]
   );
   
-  const { data: users, isLoading: isLoadingUsers, error } = useCollection<UserProfile>(usersQuery);
+  const { data: users, isLoading: isLoadingUsers, error: usersError } = useCollection<UserProfile>(usersQuery);
 
   // Show a top-level loader while checking user auth and admin role.
   if (isUserLoading || isAdminRoleLoading) {
@@ -54,22 +53,37 @@ export default function AdminPage() {
     );
   }
   
+  // If there was an error fetching the admin role, show a specific error message.
+  if (adminRoleError) {
+    return (
+      <Alert variant="destructive" className="max-w-xl mx-auto">
+        <ShieldAlert className="h-4 w-4" />
+        <AlertTitle>Ошибка проверки прав администратора</AlertTitle>
+        <AlertDescription>
+          <p>Не удалось проверить ваш статус администратора. Это может быть связано с проблемой правил безопасности или конфигурации проекта.</p>
+          <p className="mt-2 text-xs">Детали: {adminRoleError.message}</p>
+          <p className="mt-2 text-xs">Убедитесь, что правила Firestore развернуты, и ваш проект (`projectId`) в коде совпадает с проектом в Firebase CLI.</p>
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
   // This block will render if loads are finished but the user is not an admin,
   // just before the useEffect redirects them.
   if (!isAuthorizedAdmin) {
     return (
        <div className="flex justify-center items-center h-full">
-        <p>У вас нет прав для доступа к этой странице.</p>
+        <p>У вас нет прав для доступа к этой странице. Вы будете перенаправлены...</p>
       </div>
     )
   }
 
   // If the user is an admin, show the main content.
-  if (error) {
+  if (usersError) {
     return (
       <div className="text-center text-destructive bg-destructive/10 p-4 rounded-md">
         <p>Не удалось загрузить пользователей.</p>
-        <p className="text-xs">{error.message}</p>
+        <p className="text-xs">{usersError.message}</p>
       </div>
     )
   }

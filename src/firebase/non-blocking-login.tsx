@@ -195,11 +195,16 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
             wasUserCreated = true;
         }
         
-        // --- Step 1.5: Ensure Admin Role document exists if it's the admin user ---
-        const isAppAdmin = user.email === 'prostodeniskdt@gmail.com';
-        if (isAppAdmin) {
+        // --- Step 1.5: Self-bootstrap Admin Role (non-blocking) ---
+        // This attempts to create the admin role doc. If it fails due to rules (e.g., doc exists),
+        // it will fail silently and not block the main flow.
+        if (user.email === 'prostodeniskdt@gmail.com') {
             const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
-            await setDoc(adminRoleRef, { isAdmin: true }, { merge: true }); // Use set with merge to be safe
+            setDoc(adminRoleRef, { isAdmin: true }).catch(error => {
+                // Log the error for debugging but don't throw, as it's not a critical failure for the user.
+                // The most common error here would be "permission-denied" if the doc already exists, which is fine.
+                console.warn("Could not self-bootstrap admin role (this is often normal if role already exists):", error.code);
+            });
         }
 
         // --- Step 2: Ensure Bar document exists ---
@@ -217,13 +222,11 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
             };
             await setDoc(barRef, barData);
             
-            // If the user was brand new, seed their bar with initial data.
             if (wasUserCreated) {
                 await seedInitialData(firestore, barId, user.uid);
             }
         }
     } catch (e: any) {
-        // LOG THE FULL ERROR OBJECT for detailed diagnosis.
         console.error("A non-recoverable error occurred during user/bar document check:", e);
         throw new Error(`Не удалось проверить или создать необходимые документы: ${e.message}`);
     }
@@ -264,5 +267,3 @@ export async function initiateEmailSignIn(
     throw error;
   }
 }
-
-    

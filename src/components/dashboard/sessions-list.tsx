@@ -27,7 +27,7 @@ import {
 import * as React from "react";
 import { useFirestore } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { deleteSessionWithLines } from "@/lib/actions";
+import { deleteSessionWithLinesClient } from "@/lib/firestore-utils";
 
 type SessionsListProps = {
   sessions: InventorySession[];
@@ -92,7 +92,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     setIsDeleting(true);
 
     try {
-        await deleteSessionWithLines(firestore, barId, idToDelete);
+        await deleteSessionWithLinesClient(firestore, barId, idToDelete);
         toast({ title: "Инвентаризация удалена." });
     } catch (e: any) {
         toast({ 

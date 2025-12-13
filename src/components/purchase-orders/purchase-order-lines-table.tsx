@@ -182,7 +182,7 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-md bg-muted overflow-hidden relative flex-shrink-0">
                                 {line.product?.imageUrl && (
-                                    <Image src={line.product.imageUrl} alt={line.product.name} fill style={{objectFit: 'contain'}} />
+                                    <Image src={line.product.imageUrl} alt={translateProductName(line.product.name)} fill style={{objectFit: 'contain'}} />
                                 )}
                             </div>
                             <div>{line.product ? translateProductName(line.product.name) : 'Неизвестный продукт'}</div>

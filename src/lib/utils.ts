@@ -105,9 +105,50 @@ const productNameTranslations = new Map<string, string>([
     ["connemara peated", "Коннемара Питед"],
 ]);
 
+const translitMap: { [key: string]: string } = {
+    'a': 'а', 'b': 'б', 'c': 'к', 'd': 'д', 'e': 'е', 'f': 'ф', 'g': 'г',
+    'h': 'х', 'i': 'и', 'j': 'дж', 'k': 'к', 'l': 'л', 'm': 'м', 'n': 'н',
+    'o': 'о', 'p': 'п', 'q': 'к', 'r': 'р', 's': 'с', 't': 'т', 'u': 'у',
+    'v': 'в', 'w': 'в', 'x': 'кс', 'y': 'й', 'z': 'з',
+    'ch': 'ч', 'sh': 'ш', 'sch': 'щ', 'yo': 'ё', 'zh': 'ж',
+    'kh': 'х', 'ts': 'ц', 'yu': 'ю', 'ya': 'я', 'ie': 'ие',
+};
+
+function fallbackTransliterate(text: string): string {
+    let result = '';
+    text = text.toLowerCase();
+    let i = 0;
+    while (i < text.length) {
+        // Check for 3-char combinations first
+        if (i + 2 < text.length && translitMap[text.substring(i, i + 3)]) {
+            result += translitMap[text.substring(i, i + 3)];
+            i += 3;
+        } // Then 2-char combinations
+        else if (i + 1 < text.length && translitMap[text.substring(i, i + 2)]) {
+            result += translitMap[text.substring(i, i + 2)];
+            i += 2;
+        } // Then single chars
+        else if (translitMap[text[i]]) {
+            result += translitMap[text[i]];
+            i += 1;
+        } // If no match, keep original char (e.g., numbers, symbols)
+        else {
+            result += text[i];
+            i += 1;
+        }
+    }
+    // Capitalize first letter
+    return result.charAt(0).toUpperCase() + result.slice(1);
+}
+
 export function translateProductName(name: string): string {
-    const normalizedName = name.trim().toLowerCase();
-    return productNameTranslations.get(normalizedName) || name;
+    if (!name) return '';
+    const normalizedName = name.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[’']/g, "'");
+    if (productNameTranslations.has(normalizedName)) {
+        return productNameTranslations.get(normalizedName)!;
+    }
+    // Fallback to transliteration if not in dictionary
+    return fallbackTransliterate(name);
 }
 
 
@@ -160,6 +201,7 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
         'Japanese': 'Японский',
         
         // Rum
+        'White': 'Белый',
         'Gold': 'Золотой',
         'Dark': 'Темный',
         'Spiced': 'Пряный',
@@ -171,7 +213,7 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
 
         // Wine
         'Red': 'Красное',
-        'White': 'Белое',
+        // 'White': 'Белое', // This was commented causing issues
         'Rose': 'Розовое',
         'Sparkling': 'Игристое',
 
@@ -194,6 +236,9 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
         'Other': 'Другое',
         'uncategorized': 'Без подкатегории',
     };
+    
+    // Add specific check for 'White' since it's in multiple categories
+    if (subCategory === 'White') return 'Белое';
 
     return translations[subCategory] || subCategory;
 }

@@ -170,13 +170,12 @@ function translateNameOnly(name: string): string {
   return name;
 }
 
-const VOLUME_RE = /(?:^|[\s(])(\d+(?:[.,]\d+)?)\s*(мл|ml|л|l|cl)\b[)\s]*?/gi;
+const VOLUME_RE = /(?:^|[\s(])(\d+(?:[.,]\d+)?)\s*(мл|ml|л|l|cl)(?=$|[\s)\],.])/giu;
 
 export function extractVolume(original: string): { baseName: string; volumeMl?: number } {
   const s = (original ?? "").trim();
   let lastMl: number | undefined;
 
-  // Find the last volume mentioned in the string
   for (const m of s.matchAll(VOLUME_RE)) {
     const numRaw = (m[1] ?? "").replace(",", ".");
     const unit = (m[2] ?? "").toLowerCase();
@@ -188,9 +187,7 @@ export function extractVolume(original: string): { baseName: string; volumeMl?: 
     else if (unit === "cl") lastMl = Math.round(value * 10);
   }
 
-  // Remove ALL volume mentions from the name to get a clean base name
   const baseName = s.replace(VOLUME_RE, " ").replace(/\s+/g, " ").trim();
-
   return { baseName, volumeMl: lastMl };
 }
 
@@ -335,5 +332,3 @@ export function dedupeProductsByName(products: Product[]): Product[] {
 
   return Array.from(map.values());
 }
-
-    

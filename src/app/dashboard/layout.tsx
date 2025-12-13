@@ -89,7 +89,7 @@ export default function DashboardLayout({
   // Как только все готово, рендерим полный layout с дочерними элементами.
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen w-full">
         <Sidebar>
           <AppSidebar />
         </Sidebar>

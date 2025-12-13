@@ -89,7 +89,7 @@ service cloud.firestore {
 
     function isCreatingOwnUser(userId) {
       // The user can only create their own user document.
-      return isOwner(userId) && request.resource.data.id == userId;
+      return isOwner(userId);
     }
 
     function isUserUpdateValid() {
@@ -180,8 +180,8 @@ service cloud.firestore {
       allow get: if canReadBarData(barId);
       allow list: if isSignedIn();
       allow create: if isSignedIn() && isCreatingOwnBar(barId);
-      allow update: if (isBarOwnerByPath(barId) || isAdmin()) && resourceExists() && isBarUpdateValid();
-      allow delete: if (isBarOwnerByPath(barId) || isAdmin()) && resourceExists();
+      allow update: if (canWriteBarData(barId)) && resourceExists() && isBarUpdateValid();
+      allow delete: if (canWriteBarData(barId)) && resourceExists();
 
       match /members/{userId} {
         allow get: if canReadBarData(barId);

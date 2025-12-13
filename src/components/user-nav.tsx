@@ -19,22 +19,43 @@ import { useUser, useAuth } from '@/firebase';
 import { LogOut, User as UserIcon, Loader2 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 export function UserNav() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleLogout = () => {
+    if (!auth) {
+        toast({
+            variant: "destructive",
+            title: "Ошибка выхода",
+            description: "Служба аутентификации недоступна."
+        });
+        return;
+    };
     signOut(auth).then(() => {
+        // This will trigger the useEffect in the layout/page to redirect.
         router.push('/');
+        toast({
+            title: "Вы вышли из системы"
+        });
+    }).catch((error) => {
+        console.error("Logout Error:", error);
+        toast({
+            variant: "destructive",
+            title: "Ошибка выхода",
+            description: "Не удалось выйти из системы. Пожалуйста, попробуйте еще раз."
+        });
     });
   };
 
   const getInitials = (name: string | null | undefined) => {
     if (!name) return '??';
     const names = name.split(' ');
-    if (names.length > 1) {
+    if (names.length > 1 && names[1]) {
       return names[0][0] + names[names.length - 1][0];
     }
     return names[0][0];

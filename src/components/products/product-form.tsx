@@ -148,10 +148,11 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Название продукта</FormLabel>
+              <FormLabel>Название продукта (оригинал)</FormLabel>
               <FormControl>
-                <Input placeholder="Джемесон" {...field} />
+                <Input placeholder="Jameson" {...field} />
               </FormControl>
+              <FormDescription>Отображаемое имя: {translateProductName(field.value)}</FormDescription>
               <FormMessage />
             </FormItem>
           )}

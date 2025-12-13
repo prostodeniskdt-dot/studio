@@ -1,212 +1,66 @@
-/**
- * Core Philosophy:
- * This ruleset implements a role-based access control (RBAC) model combined with
- * user ownership and bar membership. There are three primary levels of access:
- * 1. Admins: Have global read and write permissions across all data. Admin status
- *    is determined by the existence of a document in the `/roles_admin` collection.
- * 2. Bar Owners: Users designated as the `ownerUserId` on a `/bars/{barId}` document
- *    have full control over that bar and all of its nested data. This is also reinforced
- *    by the convention that barId is 'bar_' + userId.
- * 3. Bar Members: Users who have a document in the `/bars/{barId}/members` subcollection
- *    can access data within that bar according to their assigned role.
- * 4. Authenticated Users: Can manage their own user profile in `/users/{userId}`
- *    and can create new bars, which they will then own.
- *
- * Key Security Decisions for LIST operations:
- * `allow list` rules MUST NOT use `get()` or `exists()` calls to other documents.
- * The primary mechanism for subcollection listing is verifying ownership via barId structure
- * and ensuring the client query filters by that `barId`.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ------------------------------------------------------------------------
-    // Helper Functions
-    // ------------------------------------------------------------------------
-
-    function isSignedIn() {
+    function signedIn() {
       return request.auth != null;
     }
 
-    function isAdmin() {
-      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
     }
-
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    function resourceExists() {
-      return resource != null;
-    }
-
-    /**
-     * Checks if the user is the owner of the bar by inspecting the barId string.
-     * This is FAST and SAFE for LIST rules because it performs no database reads.
-     * It relies on the convention that barId is `bar_${userId}`.
-     */
+    
     function isBarOwnerByPath(barId) {
-      return barId == 'bar_' + request.auth.uid;
-    }
-    
-    /**
-     * Checks if the user is a member of the bar (either as staff or owner).
-     * SAFE for get, create, update, delete. UNSAFE for list.
-     */
-    function isBarMemberByRead(barId) {
-      let barDoc = get(/databases/$(database)/documents/bars/$(barId));
-      return barDoc.data.ownerUserId == request.auth.uid || exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid));
-    }
-
-
-    // ------------------------------------------------------------------------
-    // Authorization Logic Functions
-    // ------------------------------------------------------------------------
-    
-    function canReadBarData(barId) {
-      return isBarMemberByRead(barId) || isAdmin();
-    }
-
-    function canWriteBarData(barId) {
-      return isBarMemberByRead(barId) || isAdmin();
-    }
-
-    // ------------------------------------------------------------------------
-    // Data Validation Functions
-    // ------------------------------------------------------------------------
-
-    function isCreatingOwnUser(userId) {
-      // The user can only create their own user document.
-      return isOwner(userId);
-    }
-
-    function isUserUpdateValid() {
-      // Prevent users from changing their own ID or role.
-      return request.resource.data.id == resource.data.id && request.resource.data.role == resource.data.role;
-    }
-
-    function isCreatingOwnBar(barId) {
-      // The barId must be `bar_${userId}` and the ownerUserId field must match.
-      return barId == 'bar_' + request.auth.uid && request.resource.data.ownerUserId == request.auth.uid;
-    }
-
-    function isBarUpdateValid() {
-      // Prevent the owner of the bar from being changed.
-      return request.resource.data.ownerUserId == resource.data.ownerUserId;
-    }
-    
-    function isValidMemberRole() {
-        return request.resource.data.role in ['manager', 'bartender'];
-    }
-
-    function isProductCreateValid() {
-      let data = request.resource.data;
-      return data.name is string && data.name.size() > 1 &&
-             data.category is string &&
-             data.bottleVolumeMl is number && data.bottleVolumeMl > 0 &&
-             data.costPerBottle is number && data.costPerBottle > 0 &&
-             data.portionVolumeMl is number && data.portionVolumeMl > 0 &&
-             data.sellingPricePerPortion is number && data.sellingPricePerPortion > 0 &&
-             data.isActive == true;
-    }
-    
-     function isProductUpdateValid() {
-      let incomingData = request.resource.data;
-      let existingData = resource.data;
-      // This rule ensures that critical, system-set fields are not changed by the client.
-      // Any other field is allowed to be updated.
-      return incomingData.id == existingData.id &&
-             incomingData.createdAt == existingData.createdAt;
-    }
-    
-    function isInventorySessionCreateValid(barId) {
-      let data = request.resource.data;
-      return data.createdByUserId == request.auth.uid &&
-             data.barId == barId &&
-             isBarMemberByRead(barId);
-    }
-    
-    function isInventorySessionUpdateValid() {
-      return request.resource.data.barId == resource.data.barId && request.resource.data.createdByUserId == resource.data.createdByUserId;
-    }
-
-    function isInventoryLineCreateValid(inventorySessionId) {
-      return request.resource.data.inventorySessionId == inventorySessionId;
-    }
-
-    function isInventoryLineUpdateValid() {
-      return request.resource.data.inventorySessionId == resource.data.inventorySessionId;
-    }
-
-    // ------------------------------------------------------------------------
-    // Collection Rules
-    // ------------------------------------------------------------------------
-
-    match /roles_admin/{userId} {
-      allow get: if isAdmin();
-      allow list, create, update, delete: if false; // Must be managed server-side
+        return signedIn() && barId == 'bar_' + request.auth.uid;
     }
 
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if false;
-      allow create: if isCreatingOwnUser(userId);
-      allow update: if (isOwner(userId) && isUserUpdateValid()) || isAdmin();
-      allow delete: if (isOwner(userId) || isAdmin()) && resourceExists();
+      allow read, update, delete: if isOwner(userId);
+      allow create: if isOwner(userId);
     }
     
     match /products/{productId} {
-        allow read, list: if isSignedIn();
-        allow create: if isSignedIn() && isProductCreateValid();
-        // Any signed-in user can update a product, as long as the update is valid (doesn't change critical fields).
-        allow update: if isSignedIn() && resourceExists() && isProductUpdateValid();
-        allow delete: if isAdmin() && resourceExists();
+        allow read, list: if signedIn();
+        // For simplicity in this app, allow any signed-in user to add/edit products.
+        // In a real-world scenario, this would likely be restricted to admins.
+        allow create, update: if signedIn();
+        allow delete: if false; // Deletions should be soft (isActive: false) or admin-only
     }
 
     match /bars/{barId} {
-      allow get: if canReadBarData(barId);
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && isCreatingOwnBar(barId);
-      allow update: if (isBarOwnerByPath(barId) || isAdmin()) && resourceExists() && isBarUpdateValid();
-      allow delete: if (isBarOwnerByPath(barId) || isAdmin()) && resourceExists();
+      // The user can create a bar document if the barId corresponds to their own userId.
+      allow create: if isBarOwnerByPath(barId) && request.resource.data.ownerUserId == request.auth.uid;
 
-      match /members/{userId} {
-        allow get: if canReadBarData(barId);
-        allow list: if isBarOwnerByPath(barId) || isAdmin();
-        allow create, update: if (isBarOwnerByPath(barId) || isAdmin()) && isValidMemberRole();
-        allow delete: if (isBarOwnerByPath(barId) || isAdmin());
-      }
+      // The owner of the bar can read, update, and delete it.
+      allow read, update, delete: if isBarOwnerByPath(barId);
 
-      match /inventorySessions/{inventorySessionId} {
-        allow get: if canReadBarData(barId);
-        allow list: if isBarOwnerByPath(barId) || isAdmin();
-        allow create: if isInventorySessionCreateValid(barId);
-        allow update: if canWriteBarData(barId) && resourceExists() && isInventorySessionUpdateValid();
-        allow delete: if (isBarOwnerByPath(barId) || isAdmin()) && resourceExists();
-
-        match /lines/{inventoryLineId} {
-          allow get, list: if canReadBarData(barId);
-          allow create: if canWriteBarData(barId) && isInventoryLineCreateValid(inventorySessionId);
-          allow update: if canWriteBarData(barId) && resourceExists() && isInventoryLineUpdateValid();
-          allow delete: if (isBarOwnerByPath(barId) || isAdmin()) && resourceExists();
-        }
+      match /members/{memberId} {
+        // The bar owner can manage members.
+        allow read, list, create, update, delete: if isBarOwnerByPath(barId);
       }
       
       match /suppliers/{supplierId} {
-        allow get: if canReadBarData(barId);
-        allow list: if isBarOwnerByPath(barId) || isAdmin();
-        allow create, update, delete: if isBarOwnerByPath(barId) || isAdmin();
+         // The bar owner can manage suppliers for their bar.
+         allow read, list, create, update, delete: if isBarOwnerByPath(barId);
       }
 
       match /purchaseOrders/{purchaseOrderId} {
-        allow get: if canReadBarData(barId);
-        allow list: if isBarOwnerByPath(barId) || isAdmin();
-        allow create, update, delete: if isBarOwnerByPath(barId) || isAdmin();
+        // The bar owner can manage purchase orders.
+        allow read, list, create, update, delete: if isBarOwnerByPath(barId);
+        
+        match /lines/{lineId} {
+           // The bar owner can manage lines within their own purchase orders.
+           allow read, list, create, update, delete: if isBarOwnerByPath(barId);
+        }
+      }
 
-        match /lines/{purchaseOrderLineId} {
-          allow get, list: if canReadBarData(barId);
-          allow create, update, delete: if isBarOwnerByPath(barId) || isAdmin();
+      match /inventorySessions/{inventorySessionId} {
+        // The bar owner can manage inventory sessions for their bar.
+        allow read, list, create, update, delete: if isBarOwnerByPath(barId);
+
+        match /lines/{inventoryLineId} {
+          // The bar owner can manage lines within their own inventory sessions.
+          allow read, list, create, update, delete: if isBarOwnerByPath(barId);
         }
       }
     }

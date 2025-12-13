@@ -180,46 +180,55 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
     const barId = `bar_${user.uid}`;
     const barRef = doc(firestore, 'bars', barId);
 
+    const userDocExists = (await getDoc(userRef)).exists();
+
+    if (userDocExists) {
+        // If the user already existed, just ensure the product catalog is up-to-date.
+        await seedInitialProducts(firestore);
+        return;
+    }
+
+    // --- User does not exist, create everything ---
+
+    const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
+    const userData = {
+        id: user.uid,
+        displayName: displayName,
+        email: user.email,
+        role: 'manager', // Default role
+        createdAt: serverTimestamp(),
+    };
+    const barData = {
+        id: barId,
+        name: `Бар ${displayName}`,
+        location: 'Не указано',
+        ownerUserId: user.uid,
+    };
+
     try {
-        const userDoc = await getDoc(userRef);
+        console.log("Attempting to write user document...");
+        await setDoc(userRef, userData, { merge: true });
+        console.log("User document write OK.");
+    } catch (e: any) {
+        console.error("User document write FAILED", { code: e.code, message: e.message, path: userRef.path, data: userData });
+        throw e; // Re-throw to be caught by the outer try/catch
+    }
+    
+    try {
+        console.log("Attempting to write bar document...");
+        await setDoc(barRef, barData, { merge: true });
+        console.log("Bar document write OK.");
+    } catch(e: any) {
+        console.error("Bar document write FAILED", { code: e.code, message: e.message, path: barRef.path, data: barData });
+        throw e; // Re-throw to be caught by the outer try/catch
+    }
 
-        if (!userDoc.exists()) {
-            const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
-            
-            // Create user and bar docs sequentially
-            await setDoc(userRef, {
-                id: user.uid,
-                displayName: displayName,
-                email: user.email,
-                role: 'manager', // Default role
-                createdAt: serverTimestamp(),
-            });
-
-            await setDoc(barRef, {
-                id: barId,
-                name: `Бар ${displayName}`,
-                location: 'Не указано',
-                ownerUserId: user.uid,
-            });
-           
-            // Seed data only for brand new users
-            await seedInitialData(firestore, barId, user.uid);
-        } else {
-             // If the user already existed, just ensure the product catalog is up-to-date.
-            await seedInitialProducts(firestore);
-        }
-
-    } catch (serverError: any) {
-        // Create a more specific error for the developer console
-        const permissionError = new FirestorePermissionError({ 
-            path: `users/${user.uid} or bars/${barId}`,
-            operation: 'write',
-            requestResourceData: { userId: user.uid, barId: barId }
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        
-        // Re-throw a more user-friendly error to be displayed in the UI
-        throw new Error(serverError.message || `Не удалось создать необходимые документы в базе данных. Возможно, у вас недостаточно прав. Пожалуйста, проверьте правила безопасности Firestore.`);
+    try {
+        // Seed initial data only for brand new users
+        await seedInitialData(firestore, barId, user.uid);
+    } catch (e) {
+        // Log seeding errors but don't block the user.
+        console.error("Initial data seeding failed, but user/bar docs were created.", e);
     }
 }
 

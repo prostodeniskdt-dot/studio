@@ -21,11 +21,11 @@ export function LoginAnimation({ className }: { className?: string }) {
         <rect className="bar bar-5" x="80" y="80" width="18" height="0" />
 
         {/* Animated Numbers */}
-        <text className="bar-text bar-text-1" x="9" y="80">25k</text>
-        <text className="bar-text bar-text-2" x="29" y="80">42k</text>
-        <text className="bar-text bar-text-3" x="49" y="80">18k</text>
-        <text className="bar-text bar-text-4" x="69" y="80">35k</text>
-        <text className="bar-text bar-text-5" x="89" y="80">29k</text>
+        <text className="bar-text bar-text-1" x="9" y="80">62%</text>
+        <text className="bar-text bar-text-2" x="29" y="80">87%</text>
+        <text className="bar-text bar-text-3" x="49" y="80">50%</text>
+        <text className="bar-text bar-text-4" x="69" y="80">75%</text>
+        <text className="bar-text bar-text-5" x="89" y="80">68%</text>
       </svg>
     </div>
   );

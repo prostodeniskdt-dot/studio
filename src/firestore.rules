@@ -78,7 +78,7 @@ service cloud.firestore {
     function canWriteBarData(barId) {
       return isBarMemberByRead(barId) || isAdmin();
     }
-    
+
     // ------------------------------------------------------------------------
     // Data Validation Functions
     // ------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, BarChart3, Settings, Calculator, LineChart, Users, Truck, ShoppingCart } from 'lucide-react';
+import { Home, Package, BarChart3, Settings, Calculator, LineChart, Users, Truck, ShoppingCart, Shield } from 'lucide-react';
 import {
   SidebarHeader,
   Sidebar,
@@ -13,6 +13,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { AppLogo } from '@/components/app-logo';
+import { useUser } from '@/firebase';
 
 const menuItems = [
   { href: '/dashboard', label: 'Панель', icon: Home },
@@ -25,8 +26,13 @@ const menuItems = [
   { href: '/dashboard/staff', label: 'Персонал', icon: Users },
 ];
 
+const adminMenuItem = { href: '/dashboard/admin', label: 'Админка', icon: Shield };
+
 export function AppSidebar() {
   const pathname = usePathname();
+  const { user } = useUser();
+
+  const isAdmin = user?.email === 'prostodeniskdt@gmail.com';
 
   const isActive = (path: string) => {
     if (path === '/dashboard') {
@@ -56,6 +62,20 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
+          {isAdmin && (
+             <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={isActive(adminMenuItem.href)}
+                tooltip={{ children: adminMenuItem.label }}
+              >
+                <Link href={adminMenuItem.href}>
+                  <adminMenuItem.icon />
+                  <span>{adminMenuItem.label}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>

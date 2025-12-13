@@ -33,6 +33,13 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      // Check if the user's email is the admin email.
+      // This is less secure than checking a custom claim or a document,
+      // but it's the simplest way based on the user's request.
+      return request.auth.token.email == 'prostodeniskdt@gmail.com';
+    }
+
     /**
      * Checks if the user is the owner of the bar by inspecting the barId string.
      * This is FAST and SAFE for LIST rules because it performs no database reads.
@@ -78,20 +85,21 @@ service cloud.firestore {
     // ------------------------------------------------------------------------
 
     match /users/{userId} {
-      allow read: if isSignedIn() && isOwner(userId);
+      allow read: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
       
       allow create: if isSignedIn() 
                     && isOwner(userId) 
                     && isUserSchema(request.resource.data);
 
       allow update: if isSignedIn() 
-                    && isOwner(userId)
+                    && (isOwner(userId) || isAdmin())
                     // Fields that cannot be changed
                     && request.resource.data.id == resource.data.id
                     && request.resource.data.email == resource.data.email
                     && request.resource.data.createdAt == resource.data.createdAt;
       
-      allow delete: if false; // Users should not be able to delete their own accounts through the app
+      allow delete: if isAdmin() && request.auth.uid != userId; // Admin can delete anyone except themselves
     }
     
     match /products/{productId} {
@@ -109,35 +117,44 @@ service cloud.firestore {
                     && isBarSchema(request.resource.data);
 
       // The owner of the bar can read, update, and delete it.
-      allow read, update, delete: if isBarOwnerByPath(barId);
+      // Admins can also read any bar.
+      allow read: if isBarOwnerByPath(barId) || isAdmin();
+      allow update, delete: if isBarOwnerByPath(barId);
+      allow list: if isAdmin();
 
       match /members/{memberId} {
-        // The bar owner can manage members.
-        allow read, list, create, update, delete: if isBarOwnerByPath(barId);
+        // The bar owner can manage members. Admin can read/list.
+        allow read, list: if isBarOwnerByPath(barId) || isAdmin();
+        allow create, update, delete: if isBarOwnerByPath(barId);
       }
       
       match /suppliers/{supplierId} {
          // The bar owner can manage suppliers for their bar.
-         allow read, list, create, update, delete: if isBarOwnerByPath(barId);
+         allow read, list: if isBarOwnerByPath(barId) || isAdmin();
+         allow create, update, delete: if isBarOwnerByPath(barId);
       }
 
       match /purchaseOrders/{purchaseOrderId} {
-        // The bar owner can manage purchase orders.
-        allow read, list, create, update, delete: if isBarOwnerByPath(barId);
+        // The bar owner can manage purchase orders. Admin can read/list.
+        allow read, list: if isBarOwnerByPath(barId) || isAdmin();
+        allow create, update, delete: if isBarOwnerByPath(barId);
         
         match /lines/{lineId} {
-           // The bar owner can manage lines within their own purchase orders.
-           allow read, list, create, update, delete: if isBarOwnerByPath(barId);
+           // The bar owner can manage lines within their own purchase orders. Admin can read/list.
+           allow read, list: if isBarOwnerByPath(barId) || isAdmin();
+           allow create, update, delete: if isBarOwnerByPath(barId);
         }
       }
 
       match /inventorySessions/{inventorySessionId} {
-        // The bar owner can manage inventory sessions for their bar.
-        allow read, list, create, update, delete: if isBarOwnerByPath(barId);
+        // The bar owner can manage inventory sessions for their bar. Admin can read/list.
+        allow read, list: if isBarOwnerByPath(barId) || isAdmin();
+        allow create, update, delete: if isBarOwnerByPath(barId);
 
         match /lines/{inventoryLineId} {
-          // The bar owner can manage lines within their own inventory sessions.
-          allow read, list, create, update, delete: if isBarOwnerByPath(barId);
+          // The bar owner can manage lines within their own inventory sessions. Admin can read/list.
+          allow read, list: if isBarOwnerByPath(barId) || isAdmin();
+          allow create, update, delete: if isBarOwnerByPath(barId);
         }
       }
     }

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn, translateStatus } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MoreVertical, Trash2, Loader2 } from "lucide-react";
-import { Timestamp, doc, deleteDoc, writeBatch, collection, getDocs } from "firebase/firestore";
+import { Timestamp } from "firebase/firestore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,8 +25,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import * as React from "react";
-import { useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { useFirestore } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { deleteSessionWithLines } from "@/lib/actions";
 
 type SessionsListProps = {
   sessions: InventorySession[];
@@ -34,10 +35,24 @@ type SessionsListProps = {
 };
 
 export function SessionsList({ sessions, barId }: SessionsListProps) {
-  const [sessionToDelete, setSessionToDelete] = React.useState<InventorySession | null>(null);
+  const [sessionToDeleteId, setSessionToDeleteId] = React.useState<string | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const firestore = useFirestore();
   const { toast } = useToast();
+
+  const sessionToDelete = React.useMemo(
+    () => sessions.find(s => s.id === sessionToDeleteId) ?? null,
+    [sessions, sessionToDeleteId]
+  );
+  
+  // Safeguard: if the session to delete disappears from the list (e.g. deleted in another tab), close the dialog.
+  React.useEffect(() => {
+    if (!sessionToDeleteId) return;
+    if (!sessions.some(s => s.id === sessionToDeleteId)) {
+        setSessionToDeleteId(null);
+    }
+  }, [sessions, sessionToDeleteId]);
+
 
   const getStatusVariant = (status: InventorySession['status']) => {
     switch (status) {
@@ -64,34 +79,27 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
   }
 
   const handleDeleteClick = (session: InventorySession) => {
-    setSessionToDelete(session);
+    setSessionToDeleteId(session.id);
   };
 
   const confirmDelete = async () => {
-    if (!sessionToDelete || !barId || !firestore) return;
-
-    setIsDeleting(true);
-    const sessionRef = doc(firestore, 'bars', barId, 'inventorySessions', sessionToDelete.id);
+    if (!sessionToDeleteId || !barId || !firestore) return;
     
+    const idToDelete = sessionToDeleteId;
+    
+    // Close the dialog immediately to prevent UI race conditions
+    setSessionToDeleteId(null);
+    setIsDeleting(true);
+
     try {
-        const linesRef = collection(sessionRef, 'lines');
-        const linesSnapshot = await getDocs(linesRef);
-        const batch = writeBatch(firestore);
-
-        linesSnapshot.forEach(lineDoc => batch.delete(lineDoc.ref));
-        
-        batch.delete(sessionRef);
-
-        await batch.commit();
-        
+        await deleteSessionWithLines(firestore, barId, idToDelete);
         toast({ title: "Инвентаризация удалена." });
-        setSessionToDelete(null); 
-
-    } catch (serverError: any) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: sessionRef.path,
-            operation: 'delete'
-        }));
+    } catch (e: any) {
+        toast({ 
+            variant: "destructive", 
+            title: "Не удалось удалить инвентаризацию", 
+            description: e?.message ?? "Произошла неизвестная ошибка."
+        });
     } finally {
         setIsDeleting(false);
     }
@@ -151,7 +159,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
         </Card>
       ))}
     </div>
-     <AlertDialog open={!!sessionToDelete} onOpenChange={(open) => !open && setSessionToDelete(null)}>
+     <AlertDialog open={!!sessionToDeleteId} onOpenChange={(open) => !open && setSessionToDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Вы уверены?</AlertDialogTitle>

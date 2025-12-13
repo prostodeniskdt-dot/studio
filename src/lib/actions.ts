@@ -3,7 +3,7 @@
 import { analyzeInventoryVariance as analyzeInventoryVarianceFlow } from '@/ai/flows/analyze-inventory-variance';
 import type { CalculatedInventoryLine, InventoryLine, InventorySession, Product, PurchaseOrder } from './types';
 import { getUpcomingHoliday, russianHolidays2024 } from './holidays';
-import { collection, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, writeBatch, serverTimestamp, getDocs, query, orderBy, limit, startAfter } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { translateProductName } from './utils';
 
@@ -147,4 +147,46 @@ export async function createPurchaseOrdersFromSession(input: CreatePurchaseOrder
         console.error("Failed to create purchase orders:", e);
         throw new Error(`Не удалось создать заказы на закупку: ${e.message}`);
     }
+}
+
+/**
+ * Deletes an inventory session and all its subcollection 'lines' documents in batches.
+ * This is a safe way to delete a large number of subcollection documents without
+ * hitting Firestore's 500-operation limit per batch and without freezing the client.
+ *
+ * @param firestore - The Firestore instance.
+ * @param barId - The ID of the bar.
+ * @param sessionId - The ID of the inventory session to delete.
+ */
+export async function deleteSessionWithLines(firestore: any, barId: string, sessionId: string) {
+  const sessionRef = doc(firestore, "bars", barId, "inventorySessions", sessionId);
+  const linesCol = collection(sessionRef, "lines");
+
+  let lastDoc: any = null;
+
+  while (true) {
+    // Create a query to fetch a batch of line documents.
+    // We order by document ID (`__name__`) for stable pagination.
+    const q = lastDoc
+      ? query(linesCol, orderBy("__name__"), startAfter(lastDoc), limit(450))
+      : query(linesCol, orderBy("__name__"), limit(450));
+
+    const snapshot = await getDocs(q);
+    
+    // If no documents are returned, we're done deleting the subcollection.
+    if (snapshot.empty) {
+      break;
+    }
+
+    // Create a new batch and delete the documents from the current snapshot.
+    const batch = writeBatch(firestore);
+    snapshot.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+
+    // Set the last document from this batch to be the starting point for the next query.
+    lastDoc = snapshot.docs[snapshot.docs.length - 1];
+  }
+
+  // After all lines are deleted, delete the main session document itself.
+  await deleteDoc(sessionRef);
 }

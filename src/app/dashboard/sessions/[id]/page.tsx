@@ -27,6 +27,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Dialog,
@@ -51,6 +52,17 @@ export default function SessionPage() {
 
   const barId = user ? `bar_${user.uid}` : null;
   
+  const [localLines, setLocalLines] = React.useState<InventoryLine[] | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isAddProductOpen, setIsAddProductOpen] = React.useState(false);
+
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [isCompleting, setIsCompleting] = React.useState(false);
+  const [isAddingProduct, setIsAddingProduct] = React.useState(false);
+  const [isDeletingSession, setIsDeletingSession] = React.useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+
+  // All hooks are now at the top level
   const sessionRef = useMemoFirebase(() => 
     firestore && barId ? doc(firestore, 'bars', barId, 'inventorySessions', id) : null,
     [firestore, barId, id]
@@ -65,20 +77,11 @@ export default function SessionPage() {
 
   const [allProducts, setAllProducts] = React.useState<Product[] | null>(null);
   const [isLoadingProducts, setIsLoadingProducts] = React.useState(true);
-  const [localLines, setLocalLines] = React.useState<InventoryLine[] | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [isAddProductOpen, setIsAddProductOpen] = React.useState(false);
-
-  const [isSaving, setIsSaving] = React.useState(false);
-  const [isCompleting, setIsCompleting] = React.useState(false);
-  const [isAddingProduct, setIsAddingProduct] = React.useState(false);
-  const [isDeletingSession, setIsDeletingSession] = React.useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
   const originalLines = React.useMemo(() => lines, [lines]);
+
   const hasUnsavedChanges = React.useMemo(() => {
     if (!originalLines || !localLines) return false;
-    // A simple JSON diff is performant enough for this.
     return JSON.stringify(originalLines) !== JSON.stringify(localLines);
   }, [originalLines, localLines]);
 
@@ -86,11 +89,8 @@ export default function SessionPage() {
   
   const groupedProductOptions = React.useMemo(() => {
     if (!allProducts) return [];
-
     const availableProducts = allProducts.filter(p => p.isActive && !productsInSession.has(p.id));
-
     const groups: Record<string, { value: string; label: string }[]> = {};
-    
     availableProducts.forEach(p => {
       const category = translateCategory(p.category);
       if (!groups[category]) {
@@ -98,14 +98,12 @@ export default function SessionPage() {
       }
       groups[category].push({ value: p.id, label: buildProductDisplayName(p.name, p.bottleVolumeMl) });
     });
-
     return Object.entries(groups)
       .map(([label, options]) => ({ label, options }))
       .sort((a,b) => a.label.localeCompare(b.label));
-
   }, [allProducts, productsInSession]);
-
-
+  
+  // Effects
   React.useEffect(() => {
     if (isLoadingSession) return;
     if (!session) {
@@ -113,17 +111,15 @@ export default function SessionPage() {
         variant: "destructive",
         title: "Инвентаризация не найдена",
         description: "Возможно, она была удалена. Вы будете перенаправлены.",
-      })
+      });
       router.replace("/dashboard/sessions");
     }
   }, [isLoadingSession, session, router, toast]);
 
   React.useEffect(() => {
     if (!firestore) return;
-
     let cancelled = false;
     setIsLoadingProducts(true);
-
     const fetchProducts = async () => {
         try {
             const productsQuery = query(collection(firestore, "products"));
@@ -142,10 +138,8 @@ export default function SessionPage() {
                 setIsLoadingProducts(false);
             }
         }
-    }
-    
+    };
     fetchProducts();
-
     return () => { cancelled = true; };
   }, [firestore, toast]);
 
@@ -155,23 +149,18 @@ export default function SessionPage() {
     }
   }, [lines]);
 
+  // Event Handlers
   const handleDeleteSession = async () => {
     if (!firestore || !barId) return;
 
     setIsDeletingSession(true);
-    setIsDeleteDialogOpen(false);
-
-    // 1. Redirect away from the page immediately
     router.replace("/dashboard/sessions");
-
-    // 2. Wait for the next paint to allow UI to update
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
-    // 3. Perform the deletion in the background
     try {
         await deleteSessionWithLinesClient(firestore, barId, id);
         toast({ title: "Инвентаризация удалена." });
-    } catch (e: any) {
+    } catch(e: any) {
         toast({ 
             variant: "destructive", 
             title: "Не удалось удалить инвентаризацию", 
@@ -219,7 +208,6 @@ export default function SessionPage() {
             
             const calculatedFields = calculateLineFields(line, product);
             const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', id, 'lines', line.id);
-            // We only need to write the user-editable fields and the calculated ones
             const { startStock, purchases, sales, endStock } = line;
             batch.update(lineRef, {
                 startStock,
@@ -243,7 +231,7 @@ export default function SessionPage() {
     setIsCompleting(true);
     try {
       if (hasUnsavedChanges) {
-          await handleSaveChanges(); // First, save any pending changes
+          await handleSaveChanges();
       }
       await updateDoc(sessionRef, {
         status: 'completed',

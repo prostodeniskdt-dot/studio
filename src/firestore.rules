@@ -15,17 +15,10 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    function isBarOwnerByPath(barId) {
-        // A bar owner is identified by the barId matching 'bar_' + their uid.
-        // This check requires that the user document already exists.
-        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager' && barId == 'bar_' + request.auth.uid;
-    }
-
     match /roles_admin/{userId} {
-      // A user should be able to check if they are an admin.
+      // Only the user can check if they are an admin. No one can list, create, or delete roles from the client.
       allow get: if isOwner(userId);
-      // Only admins can see who else is an admin.
-      allow list: if isAdmin();
+      allow list, create, update, delete: if false;
     }
 
     match /users/{userId} {
@@ -47,6 +40,11 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid && barId == 'bar_' + request.auth.uid;
       allow read, update, delete: if isBarOwnerByPath(barId) || isAdmin();
       allow list: if isAdmin();
+
+      function isBarOwnerByPath(barId) {
+        // A bar owner is identified by the barId matching 'bar_' + their uid.
+        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager' && barId == 'bar_' + request.auth.uid;
+      }
 
       match /members/{memberId} {
         allow read, list: if isBarOwnerByPath(barId) || isAdmin();

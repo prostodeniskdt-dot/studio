@@ -177,14 +177,13 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
     if (!firestore || !user) return;
 
     try {
-        // --- Step 1: Ensure User and Admin Role documents exist ---
+        // --- Step 1: Ensure User document exists ---
         const userRef = doc(firestore, 'users', user.uid);
         const userDoc = await getDoc(userRef);
-        const isAppAdmin = user.email === 'prostodeniskdt@gmail.com';
         let wasUserCreated = false;
 
         if (!userDoc.exists()) {
-            const batch = writeBatch(firestore);
+            const isAppAdmin = user.email === 'prostodeniskdt@gmail.com';
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
             const userData = {
                 id: user.uid,
@@ -193,14 +192,7 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
                 role: isAppAdmin ? 'admin' : 'manager',
                 createdAt: serverTimestamp(),
             };
-            batch.set(userRef, userData);
-            
-            if (isAppAdmin) {
-                const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
-                batch.set(adminRoleRef, { isAdmin: true });
-            }
-            
-            await batch.commit();
+            await setDoc(userRef, userData);
             wasUserCreated = true;
         }
 

@@ -18,13 +18,17 @@ import {
 import { useUser, useAuth } from '@/firebase';
 import { LogOut, User as UserIcon, Loader2 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 export function UserNav() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
+  const router = useRouter();
 
   const handleLogout = () => {
-    signOut(auth);
+    signOut(auth).then(() => {
+        router.push('/');
+    });
   };
 
   const getInitials = (name: string | null | undefined) => {

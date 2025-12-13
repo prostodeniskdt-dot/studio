@@ -196,6 +196,7 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
         }
 
         // --- Step 2: Ensure Bar document exists ---
+        // This runs after user creation is confirmed, avoiding the rule paradox.
         const barId = `bar_${user.uid}`;
         const barRef = doc(firestore, 'bars', barId);
         const barDoc = await getDoc(barRef);
@@ -210,6 +211,7 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
             };
             await setDoc(barRef, barData);
             
+            // If the user was brand new, seed their bar with initial data.
             if (wasUserCreated) {
                 await seedInitialData(firestore, barId, user.uid);
             }

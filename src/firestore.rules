@@ -15,6 +15,11 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
+    function isBarOwner(barId) {
+      // Simple, robust check that doesn't rely on cross-document reads.
+      return isSignedIn() && barId == 'bar_' + request.auth.uid;
+    }
+
     match /roles_admin/{userId} {
       allow get: if isOwner(userId);
       // Secure, one-time-only create for the designated admin email.
@@ -47,11 +52,6 @@ service cloud.firestore {
         allow create, update, delete: if isSignedIn();
     }
 
-    function isBarOwner(barId) {
-      // Simple, robust check that doesn't rely on cross-document reads.
-      return isSignedIn() && barId == 'bar_' + request.auth.uid;
-    }
-    
     match /bars/{barId} {
       // Allow creation only if the bar ID matches the user's UID and they are creating it for themselves.
       allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid && barId == 'bar_' + request.auth.uid;
@@ -59,7 +59,6 @@ service cloud.firestore {
       // Use the simplified owner check for all other operations.
       allow read, update, delete: if isBarOwner(barId) || isAdmin();
       allow list: if isAdmin();
-
 
       match /members/{memberId} {
         allow read, list: if isBarOwner(barId) || isAdmin();

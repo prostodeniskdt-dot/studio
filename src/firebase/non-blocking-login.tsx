@@ -180,9 +180,9 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
     const barId = `bar_${user.uid}`;
     const barRef = doc(firestore, 'bars', barId);
 
-    const userDocExists = (await getDoc(userRef)).exists();
+    const userDocSnapshot = await getDoc(userRef);
 
-    if (userDocExists) {
+    if (userDocSnapshot.exists()) {
         // If the user already existed, just ensure the product catalog is up-to-date.
         await seedInitialProducts(firestore);
         return;
@@ -209,26 +209,21 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
         console.log("Attempting to write user document...");
         await setDoc(userRef, userData, { merge: true });
         console.log("User document write OK.");
-    } catch (e: any) {
-        console.error("User document write FAILED", { code: e.code, message: e.message, path: userRef.path, data: userData });
-        throw e; // Re-throw to be caught by the outer try/catch
-    }
-    
-    try {
+
         console.log("Attempting to write bar document...");
         await setDoc(barRef, barData, { merge: true });
         console.log("Bar document write OK.");
-    } catch(e: any) {
-        console.error("Bar document write FAILED", { code: e.code, message: e.message, path: barRef.path, data: barData });
-        throw e; // Re-throw to be caught by the outer try/catch
-    }
 
-    try {
         // Seed initial data only for brand new users
         await seedInitialData(firestore, barId, user.uid);
-    } catch (e) {
-        // Log seeding errors but don't block the user.
-        console.error("Initial data seeding failed, but user/bar docs were created.", e);
+        
+    } catch (e: any) {
+        console.error("A non-recoverable error occurred during user/bar creation:", { 
+            code: e.code, 
+            message: e.message 
+        });
+        // This is a critical failure. Re-throw to be caught by the layout.
+        throw new Error(`Не удалось создать необходимые документы в базе данных: ${e.message}`);
     }
 }
 

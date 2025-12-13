@@ -30,7 +30,7 @@ service cloud.firestore {
     }
 
     function isOwner(userId) {
-      return request.auth.uid == userId;
+      return isSignedIn() && request.auth.uid == userId;
     }
 
     /**
@@ -39,7 +39,7 @@ service cloud.firestore {
      * It relies on the convention that barId is `bar_${userId}` for the primary bar.
      */
     function isBarOwnerByPath(barId) {
-      return barId == 'bar_' + request.auth.uid;
+      return isSignedIn() && barId == 'bar_' + request.auth.uid;
     }
     
     /**

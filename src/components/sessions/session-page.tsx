@@ -7,7 +7,7 @@ import { InventoryTable } from "@/components/sessions/inventory-table";
 import { Button } from "@/components/ui/button";
 import { FileText, Loader2, Save, XCircle, Download, Upload, PlusCircle } from "lucide-react";
 import Link from "next/link";
-import { translateStatus, translateProductName } from "@/lib/utils";
+import { translateStatus, buildProductDisplayName } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, collection, query, setDoc, writeBatch, serverTimestamp, updateDoc } from 'firebase/firestore';
@@ -106,7 +106,7 @@ export default function SessionPage() {
       if (!groups[category]) {
         groups[category] = [];
       }
-      groups[category].push({ value: p.id, label: translateProductName(p.name, p.bottleVolumeMl) });
+      groups[category].push({ value: p.id, label: buildProductDisplayName(p.name, p.bottleVolumeMl) });
     });
 
     return Object.entries(groups)
@@ -135,7 +135,7 @@ export default function SessionPage() {
             ...calculateLineFields({}, product),
         };
         await setDoc(newLineRef, newLineData);
-        toast({ title: "Продукт добавлен", description: `"${product ? translateProductName(product.name, product.bottleVolumeMl) : ''}" добавлен в инвентаризацию.` });
+        toast({ title: "Продукт добавлен", description: `"${product ? buildProductDisplayName(product.name, product.bottleVolumeMl) : ''}" добавлен в инвентаризацию.` });
         setIsAddProductOpen(false);
     } catch (serverError) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/inventorySessions/${id}/lines`, operation: 'create' }));
@@ -206,7 +206,7 @@ export default function SessionPage() {
       const product = allProducts.find(p => p.id === line.productId);
       return [
         line.productId,
-        product ? translateProductName(product.name, product.bottleVolumeMl).replace(/,/g, '') : '',
+        product ? buildProductDisplayName(product.name, product.bottleVolumeMl).replace(/,/g, '') : '',
         line.startStock,
         line.purchases,
         line.sales,

@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import type { Product, Supplier } from '@/lib/types';
-import { productCategories, productSubCategories, translateCategory, translateSubCategory, translateProductName } from '@/lib/utils';
+import { productCategories, productSubCategories, translateCategory, translateSubCategory, buildProductDisplayName, extractVolume } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { useFirestore, useUser, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
@@ -119,11 +119,12 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     setIsSaving(true);
     const productRef = product ? doc(firestore, 'products', product.id) : doc(collection(firestore, 'products'));
     
-    const finalName = translateProductName(data.name, data.bottleVolumeMl);
+    // Use the base name for saving, volume is a separate field.
+    const { baseName } = extractVolume(data.name);
 
     const productData = {
         ...data,
-        name: data.name, // Save the original name, display name is derived
+        name: baseName, // Save the base name only
         defaultSupplierId: data.defaultSupplierId || null,
         reorderPointMl: data.reorderPointMl || null,
         reorderQuantity: data.reorderQuantity || null,
@@ -152,7 +153,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   }
   
   const finalDisplayName = React.useMemo(() => {
-    return translateProductName(watchedName, watchedVolume);
+    return buildProductDisplayName(watchedName, watchedVolume);
   }, [watchedName, watchedVolume])
 
   return (

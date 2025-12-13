@@ -49,7 +49,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import type { Product, ProductCategory } from '@/lib/types';
-import { formatCurrency, translateCategory, translateSubCategory, productCategories, productSubCategories, dedupeProductsByName, translateProductName } from '@/lib/utils';
+import { formatCurrency, translateCategory, translateSubCategory, productCategories, productSubCategories, dedupeProductsByName, buildProductDisplayName } from '@/lib/utils';
 import { ProductForm } from './product-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
@@ -117,7 +117,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
 
     try {
         await deleteDoc(productRef);
-        toast({ title: "Продукт удален", description: `Продукт "${translateProductName(productToDelete.name, productToDelete.bottleVolumeMl)}" был безвозвратно удален.` });
+        toast({ title: "Продукт удален", description: `Продукт "${buildProductDisplayName(productToDelete.name, productToDelete.bottleVolumeMl)}" был безвозвратно удален.` });
         setProductToDelete(null);
     } catch (serverError) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -170,7 +170,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
       header: 'Название',
       cell: ({ row }) => {
         const product = row.original;
-        return <div>{translateProductName(product.name, product.bottleVolumeMl)}</div>;
+        return <div>{buildProductDisplayName(product.name, product.bottleVolumeMl)}</div>;
       },
     },
     {
@@ -471,7 +471,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
           </>
           <SheetContent className="w-full sm:w-[480px] sm:max-w-none overflow-y-auto">
               <SheetHeader>
-                  <SheetTitle>{editingProduct ? `Редактировать: ${translateProductName(editingProduct.name, editingProduct.bottleVolumeMl)}` : 'Добавить новый продукт'}</SheetTitle>
+                  <SheetTitle>{editingProduct ? `Редактировать: ${buildProductDisplayName(editingProduct.name, editingProduct.bottleVolumeMl)}` : 'Добавить новый продукт'}</SheetTitle>
               </SheetHeader>
               <ProductForm product={editingProduct} onFormSubmit={handleCloseSheet} />
           </SheetContent>
@@ -481,7 +481,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
             <AlertDialogHeader>
                 <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
                 <AlertDialogDescription>
-                Вы собираетесь безвозвратно удалить продукт <span className="font-semibold">"{productToDelete ? translateProductName(productToDelete.name, productToDelete.bottleVolumeMl) : ''}"</span>. Это действие нельзя отменить.
+                Вы собираетесь безвозвратно удалить продукт <span className="font-semibold">"{productToDelete ? buildProductDisplayName(productToDelete.name, productToDelete.bottleVolumeMl) : ''}"</span>. Это действие нельзя отменить.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

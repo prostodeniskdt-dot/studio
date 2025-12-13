@@ -82,9 +82,13 @@ export function Combobox({
                 {group.options.map((option) => (
                   <CommandItem
                     key={option.value}
-                    value={option.value}
+                    value={option.label} // Filtering should happen on the display label
                     onSelect={(currentValue) => {
-                      onSelect(currentValue === value ? "" : currentValue)
+                      // We find the option by label to get its value
+                      const selectedOption = flatOptions.find(opt => opt.label.toLowerCase() === currentValue.toLowerCase());
+                      if (selectedOption) {
+                        onSelect(selectedOption.value === value ? "" : selectedOption.value)
+                      }
                       setOpen(false)
                     }}
                   >

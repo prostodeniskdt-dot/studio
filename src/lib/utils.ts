@@ -59,9 +59,11 @@ const productNameTranslations = new Map<string, string>([
     ["chivas regal 12", "Чивас Ригал 12"],
     ["maker's mark", "Мэйкерс Марк"],
     ["havana club 3 anos", "Гавана Клуб 3 года"],
+    ["havana club 3 года", "Гавана Клуб 3 года"],
     ["captain morgan spiced gold", "Капитан Морган Спайсд Голд"],
     ["bacardi carta blanca", "Бакарди Карта Бланка"],
     ["the kraken black spiced", "Кракен Блэк Спайсд"],
+    ["kraken black spiced", "Кракен Блэк Спайсд"],
     ["zacapa 23", "Закапа 23"],
     ["russian standard", "Русский Стандарт"],
     ["beluga noble", "Белуга Нобл"],
@@ -101,6 +103,7 @@ const productNameTranslations = new Map<string, string>([
     ["monkey shoulder", "Манки Шолдер"],
     ["suntory toki", "Сантори Токи"],
     ["the balvenie 12 doublewood", "Зе Балвени 12 ДаблВуд"],
+    ["balvenie 12 doublewood", "Балвени 12 ДаблВуд"],
     ["glenfiddich 12", "Гленфиддик 12"],
     ["nikka from the barrel", "Никка Фром зе Баррел"],
     ["connemara peated", "Коннемара Питед"],
@@ -139,12 +142,10 @@ function fallbackTransliterate(text: string): string {
             i += 1;
         }
     }
-    // Capitalize first letter of each word
     return result.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 }
 
-
-const normalize = (s: string) =>
+const normalizeKey = (s: string) =>
   s
     .trim()
     .toLowerCase()
@@ -152,42 +153,45 @@ const normalize = (s: string) =>
     .replace(/[–—]/g, "-")
     .replace(/\s+/g, " ");
 
-export function translateProductName(name: string, volume?: number): string {
-    if (!name) return '';
+function translateNameOnly(name: string): string {
+  if (!name) return '';
+  const normalized = normalizeKey(name);
+  return productNameTranslations.get(normalized) || fallbackTransliterate(name);
+}
 
-    // Remove volume from name if it exists, to normalize it for dictionary lookup
-    const nameWithoutVolume = name.replace(/\s*\d+\s?(мл|ml)\s*$/i, '').trim();
+export function extractVolume(original: string): { baseName: string; volumeMl?: number } {
+  if (!original) return { baseName: '' };
+  const s = original.trim();
+  const re = /(?:^|\s)(\d+(?:[.,]\d+)?)\s*(мл|ml|л|l|cl)\b/i;
+  const match = s.match(re);
 
-    // First, try to get a direct translation from the dictionary
-    const normalizedName = normalize(nameWithoutVolume);
-    let translated = productNameTranslations.get(normalizedName);
+  if (!match) return { baseName: s };
 
-    // If no translation found, use fallback transliteration
-    if (!translated) {
-        translated = fallbackTransliterate(nameWithoutVolume);
-    }
-    
-    // Now, handle the volume part
-    if (volume) {
-        const volumeString = `${volume}мл`;
-        // Check if the translated name *already* contains a volume string that matches.
-        // This is a simple check and might not cover all edge cases but handles the primary issue.
-        if (!translated.includes(volumeString)) {
-             return `${translated} ${volumeString}`;
-        }
-    }
+  const numRaw = match[1].replace(",", ".");
+  const unit = match[2].toLowerCase();
+  const value = Number(numRaw);
 
-    // If volume is not provided, or if it's already in the name, return the translated name
-    // This might also mean returning just the name if the original input had the volume.
-    // A better approach is to rely on the passed `volume` parameter.
-    const hasVolumeInOriginal = /\s*\d+\s?(мл|ml)\s*$/i.test(name);
-    if(hasVolumeInOriginal && !volume) {
-        return translated + " " + name.match(/\s*\d+\s?(мл|ml)\s*$/i)?.[0].trim();
-    }
-    
-    if(!volume) return translated;
+  if (!Number.isFinite(value)) return { baseName: s };
 
-    return `${translated} ${volume}мл`;
+  let volumeMl: number | undefined;
+  if (unit === "мл" || unit === "ml") volumeMl = Math.round(value);
+  else if (unit === "л" || unit === "l") volumeMl = Math.round(value * 1000);
+  else if (unit === "cl") volumeMl = Math.round(value * 10);
+
+  const baseName = s.replace(re, " ").replace(/\s+/g, " ").trim();
+  return { baseName, volumeMl };
+}
+
+
+export function buildProductDisplayName(name: string, nominalVolumeMl?: number | null): string {
+  const { baseName } = extractVolume(name);
+  const translatedName = translateNameOnly(baseName);
+  
+  if (nominalVolumeMl) {
+    return `${translatedName} ${nominalVolumeMl}мл`;
+  }
+  
+  return translatedName;
 }
 
 
@@ -275,9 +279,7 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
         'uncategorized': 'Без подкатегории',
     };
     
-    if (subCategory === 'White') {
-       // This is ambiguous, can be for Wine or Rum. Assuming context is handled elsewhere.
-       // For now, a generic translation.
+    if (subCategory === 'White' && !translations[subCategory]) {
        return 'Белое/Белый';
     }
 
@@ -287,10 +289,11 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
 export function dedupeProductsByName(products: Product[]): Product[] {
   const map = new Map<string, Product>();
 
+  // More aggressive normalization
   const normalizeForDedupe = (s: string) => s.toLowerCase().replace(/\s+/g, '').replace(/мл/g, 'ml');
 
   for (const item of products) {
-    // Use a composite key of normalized name and bottle volume to determine uniqueness.
+    // The key is now based on normalized name AND volume.
     const key = `${normalizeForDedupe(item.name)}:${item.bottleVolumeMl}`;
     const existing = map.get(key);
 
@@ -299,12 +302,14 @@ export function dedupeProductsByName(products: Product[]): Product[] {
       continue;
     }
 
-    // If an item with the same name and volume exists, prefer the active one.
+    // Prefer active items
     if (item.isActive && !existing.isActive) {
       map.set(key, item);
+      continue;
     }
-    // If both are active or both inactive, prefer the one most recently updated.
-    else if (item.isActive === existing.isActive) {
+    
+    // If status is the same, prefer the one updated more recently.
+    if (item.isActive === existing.isActive) {
         const existingTime = existing.updatedAt?.toMillis?.() ?? 0;
         const itemTime = item.updatedAt?.toMillis?.() ?? 0;
         if (itemTime > existingTime) {

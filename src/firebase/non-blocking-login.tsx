@@ -184,12 +184,27 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
 
         if (!userDoc.exists()) {
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
+            
+            // Retrieve extra details from session storage
+            let extraDetails = {};
+            const detailsJson = sessionStorage.getItem('new_user_details');
+            if (detailsJson) {
+                try {
+                    extraDetails = JSON.parse(detailsJson);
+                    // Clear it after reading
+                    sessionStorage.removeItem('new_user_details');
+                } catch(e) {
+                    console.error("Could not parse new user details from session storage", e);
+                }
+            }
+
             const userData = {
                 id: user.uid,
                 displayName: displayName,
                 email: user.email,
                 role: 'manager' as const, // Default role
                 createdAt: serverTimestamp(),
+                ...extraDetails
             };
             await setDoc(userRef, userData);
             wasUserCreated = true;

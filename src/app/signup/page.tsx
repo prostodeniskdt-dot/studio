@@ -19,6 +19,10 @@ const signupSchema = z.object({
   name: z.string().min(2, { message: "Имя должно содержать не менее 2 символов" }),
   email: z.string().email({ message: "Неверный формат электронной почты" }),
   password: z.string().min(6, { message: "Пароль должен содержать не менее 6 символов" }),
+  city: z.string().optional(),
+  establishment: z.string().optional(),
+  phone: z.string().optional(),
+  socialLink: z.string().url({ message: 'Пожалуйста, введите корректную ссылку.' }).optional().or(z.literal('')),
 });
 
 type SignupFormInputs = z.infer<typeof signupSchema>;
@@ -54,9 +58,23 @@ export default function SignupPage() {
     }
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      // After creating the user, update their profile with the display name.
-      await updateProfile(userCredential.user, { displayName: data.name });
-      // The useUser effect will handle the redirect on successful sign-in
+      
+      const profileData = {
+        displayName: data.name,
+        // We can't store extra data in the Auth profile,
+        // so we'll pass it to the session storage to be picked up by ensureUserAndBarDocuments
+      };
+
+      await updateProfile(userCredential.user, profileData);
+      
+      // Store extra details in session storage to be picked up on the dashboard page
+      sessionStorage.setItem('new_user_details', JSON.stringify({
+          city: data.city,
+          establishment: data.establishment,
+          phone: data.phone,
+          socialLink: data.socialLink,
+      }));
+
     } catch(e: any) {
         toast({
             variant: "destructive",
@@ -66,7 +84,6 @@ export default function SignupPage() {
     }
   };
   
-  // Show a loader while checking for user auth state or if the form is submitting
   if (isUserLoading || isSubmitting) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -75,7 +92,6 @@ export default function SignupPage() {
     );
   }
 
-  // If user is already logged in, they will be redirected by the useEffect.
   if (user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -99,47 +115,52 @@ export default function SignupPage() {
           </CardHeader>
           <CardContent>
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-              <div>
-                <Label htmlFor="name">Полное имя</Label>
-                <div className="mt-2">
-                  <Input
-                    id="name"
-                    type="text"
-                    autoComplete="name"
-                    required
-                    placeholder="Иван Иванов"
-                    {...register("name")}
-                  />
-                  {errors.name && <p className="text-xs text-destructive mt-1">{errors.name.message}</p>}
+              <div className="grid grid-cols-1 gap-y-6">
+                <div>
+                  <Label htmlFor="name">Полное имя</Label>
+                  <div className="mt-2">
+                    <Input id="name" type="text" autoComplete="name" required placeholder="Иван Иванов" {...register("name")} />
+                    {errors.name && <p className="text-xs text-destructive mt-1">{errors.name.message}</p>}
+                  </div>
                 </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="email">Адрес электронной почты</Label>
-                <div className="mt-2">
-                  <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    placeholder="you@example.com"
-                     {...register("email")}
-                  />
-                   {errors.email && <p className="text-xs text-destructive mt-1">{errors.email.message}</p>}
+                
+                <div>
+                  <Label htmlFor="email">Адрес электронной почты</Label>
+                  <div className="mt-2">
+                    <Input id="email" type="email" autoComplete="email" required placeholder="you@example.com" {...register("email")} />
+                    {errors.email && <p className="text-xs text-destructive mt-1">{errors.email.message}</p>}
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <Label htmlFor="password">Пароль</Label>
-                <div className="mt-2">
-                  <Input
-                    id="password"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    {...register("password")}
-                  />
-                  {errors.password && <p className="text-xs text-destructive mt-1">{errors.password.message}</p>}
+                <div>
+                  <Label htmlFor="password">Пароль</Label>
+                  <div className="mt-2">
+                    <Input id="password" type="password" autoComplete="new-password" required {...register("password")} />
+                    {errors.password && <p className="text-xs text-destructive mt-1">{errors.password.message}</p>}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <Label htmlFor="city">Город</Label>
+                        <Input id="city" placeholder="Москва" {...register('city')} />
+                        {errors.city && <p className="text-xs text-destructive mt-1">{errors.city.message}</p>}
+                    </div>
+                    <div>
+                        <Label htmlFor="establishment">Заведение</Label>
+                        <Input id="establishment" placeholder="Бар 'Мечта'" {...register('establishment')} />
+                        {errors.establishment && <p className="text-xs text-destructive mt-1">{errors.establishment.message}</p>}
+                    </div>
+                </div>
+                 <div>
+                  <Label htmlFor="phone">Номер телефона</Label>
+                  <Input id="phone" type="tel" placeholder="+7 (999) 123-45-67" {...register('phone')} />
+                  {errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone.message}</p>}
+                </div>
+                 <div>
+                  <Label htmlFor="socialLink">Ссылка на Telegram / WhatsApp</Label>
+                  <Input id="socialLink" placeholder="https://t.me/username" {...register('socialLink')} />
+                  {errors.socialLink && <p className="text-xs text-destructive mt-1">{errors.socialLink.message}</p>}
                 </div>
               </div>
 

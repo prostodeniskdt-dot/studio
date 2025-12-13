@@ -91,8 +91,8 @@ const productNameTranslations = new Map<string, string>([
     ["guinness draught", "Гиннесс Драфт"],
     ["ararat 5 stars", "Арарат 5 звезд"],
     ["hennessy v.s", "Хеннесси V.S"],
-    ["martini bianco", "Мартини бьянко"],
-    ["martini rosso", "Мартини россо"],
+    ["martini bianco", "Мартини Бьянко"],
+    ["martini rosso", "Мартини Россо"],
     ["grenadine syrup", "Сироп Гренадин"],
     ["sugar syrup", "Сахарный сироп"],
     ["angostura bitters", "Ангостура Биттер"],
@@ -119,8 +119,13 @@ function fallbackTransliterate(text: string): string {
     text = text.toLowerCase();
     let i = 0;
     while (i < text.length) {
+        const threeChar = text.substring(i, i + 3);
         const twoChar = text.substring(i, i + 2);
-        if (translitMap[twoChar]) {
+        
+        if (translitMap[threeChar]) {
+            result += translitMap[threeChar];
+            i += 3;
+        } else if (translitMap[twoChar]) {
             result += translitMap[twoChar];
             i += 2;
         } 
@@ -221,6 +226,7 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
         'Japanese': 'Японский',
         
         // Rum
+        'White': 'Белый',
         'Gold': 'Золотой',
         'Dark': 'Темный',
         'Spiced': 'Пряный',
@@ -232,7 +238,6 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
 
         // Wine
         'Red': 'Красное',
-        'White': 'Белое',
         'Rose': 'Розовое',
         'Sparkling': 'Игристое',
 
@@ -256,15 +261,20 @@ export function translateSubCategory(subCategory: ProductSubCategory): string {
         'uncategorized': 'Без подкатегории',
     };
     
+    // Also check for 'White' since it's used for Rum and Wine
+    if (subCategory === 'White') return 'Белый' / 'Белое';
+
     return translations[subCategory] || subCategory;
 }
 
 export function dedupeProductsByName(products: Product[]): Product[] {
   const map = new Map<string, Product>();
 
+  const normalizeForDedupe = (s: string) => s.toLowerCase().replace(/\s+/g, '').replace(/мл/g, 'ml');
+
   for (const item of products) {
-    // Use a composite key of name and bottle volume to determine uniqueness.
-    const key = `${normalize(item.name)}:${item.bottleVolumeMl}`;
+    // Use a composite key of normalized name and bottle volume to determine uniqueness.
+    const key = `${normalizeForDedupe(item.name)}:${item.bottleVolumeMl}`;
     const existing = map.get(key);
 
     if (!existing) {
@@ -273,7 +283,6 @@ export function dedupeProductsByName(products: Product[]): Product[] {
     }
 
     // If an item with the same name and volume exists, prefer the active one.
-    // This handles cases where a product might have been archived and re-added.
     if (item.isActive && !existing.isActive) {
       map.set(key, item);
     }

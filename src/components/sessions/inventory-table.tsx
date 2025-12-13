@@ -20,19 +20,25 @@ type InventoryTableProps = {
 type GroupedLines = Record<string, Record<string, LocalCalculatedLine[]>>;
 
 export function InventoryTable({ lines, setLines, products, isEditable }: InventoryTableProps) {
-  const [calculatedLines, setCalculatedLines] = React.useState<LocalCalculatedLine[]>([]);
 
-  // Effect to initialize or update the calculated lines when props change
-  React.useEffect(() => {
-    const newCalculatedLines = lines.map(line => {
-      const product = products.find(p => p.id === line.productId);
-      if (!product) return null;
-      const calculatedFields = calculateLineFields(line, product);
-      return { ...line, product, ...calculatedFields, hasChanged: false };
-    }).filter((l): l is LocalCalculatedLine => l !== null);
-    
-    setCalculatedLines(newCalculatedLines);
-  }, [lines, products]);
+  const productsById = React.useMemo(() => {
+    const m = new Map<string, Product>();
+    for (const p of products) {
+      m.set(p.id, p);
+    }
+    return m;
+  }, [products]);
+
+  const calculatedLines = React.useMemo(() => {
+    return lines
+      .map(line => {
+        const product = productsById.get(line.productId);
+        if (!product) return null;
+        const calculatedFields = calculateLineFields(line, product);
+        return { ...line, product, ...calculatedFields, hasChanged: false };
+      })
+      .filter((l): l is LocalCalculatedLine => l !== null);
+  }, [lines, productsById]);
 
 
   const groupedAndSortedLines = React.useMemo(() => {
@@ -64,8 +70,6 @@ export function InventoryTable({ lines, setLines, products, isEditable }: Invent
   };
 
   const totals = React.useMemo(() => {
-    // This calculation now relies on the `calculatedLines` which is derived from parent state
-    // but its own calculations are internal to this component's effect.
     return calculatedLines.reduce(
       (acc, line) => {
         acc.differenceMoney += line.differenceMoney;

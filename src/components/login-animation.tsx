@@ -30,7 +30,7 @@ export function LoginAnimation() {
           y="60"
           width="50"
           height="85"
-          fill="hsl(var(--primary))"
+          fill="hsl(var(--primary) / 0.8)"
           clipPath="url(#liquidClip)"
         />
       </g>
@@ -55,3 +55,5 @@ export function LoginAnimation() {
     </svg>
   );
 }
+
+    

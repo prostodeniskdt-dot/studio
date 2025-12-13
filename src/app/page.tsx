@@ -84,11 +84,11 @@ export default function LoginPage() {
   return (
     <div className="w-full min-h-screen bg-background">
       <div className="container relative grid h-screen flex-col items-center justify-center lg:max-w-none lg:grid-cols-2 lg:px-0">
-        <div className="relative h-full flex-col bg-muted p-10 text-white flex">
+        <div className="relative h-full flex-col p-10 text-white flex">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage: "url(https://images.unsplash.com/photo-1554102622-9214d2355523?q=80&w=2070&auto=format&fit=crop)",
+              backgroundImage: "url(https://images.unsplash.com/photo-1514362545857-3bc96c4cc7a1?q=80&w=2070&auto=format&fit=crop)",
               filter: "brightness(0.3)",
             }}
           />
@@ -195,3 +195,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    

@@ -177,10 +177,17 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
     if (!firestore || !user) return;
 
     try {
-        // --- Step 1: Ensure User document exists ---
         const userRef = doc(firestore, 'users', user.uid);
+        const barRef = doc(firestore, 'bars', `bar_${user.uid}`);
+        const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
+
         const userDoc = await getDoc(userRef);
+        const barDoc = await getDoc(barRef);
+        const adminRoleDoc = await getDoc(adminRoleRef);
+        
         let wasUserCreated = false;
+        
+        const batch = writeBatch(firestore);
 
         if (!userDoc.exists()) {
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
@@ -188,45 +195,35 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
                 id: user.uid,
                 displayName: displayName,
                 email: user.email,
-                role: 'manager' as const, // Default role
+                role: 'manager' as const,
                 createdAt: serverTimestamp(),
             };
-            await setDoc(userRef, userData);
+            batch.set(userRef, userData);
             wasUserCreated = true;
         }
-        
-        // --- Step 1.5: Ensure Admin Role document exists if it's the admin user ---
-        const isAppAdmin = user.email === 'prostodeniskdt@gmail.com';
-        if (isAppAdmin) {
-            const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
-            const adminRoleDoc = await getDoc(adminRoleRef);
-            if (!adminRoleDoc.exists()) {
-                // This call is now allowed by the updated security rules
-                await setDoc(adminRoleRef, { isAdmin: true });
-            }
-        }
-
-        // --- Step 2: Ensure Bar document exists ---
-        // This runs after user creation is confirmed, avoiding the rule paradox.
-        const barId = `bar_${user.uid}`;
-        const barRef = doc(firestore, 'bars', barId);
-        const barDoc = await getDoc(barRef);
 
         if (!barDoc.exists()) {
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
             const barData = {
-                id: barId,
+                id: barRef.id,
                 name: `Бар ${displayName}`,
                 location: 'Не указано',
                 ownerUserId: user.uid,
             };
-            await setDoc(barRef, barData);
-            
-            // If the user was brand new, seed their bar with initial data.
-            if (wasUserCreated) {
-                await seedInitialData(firestore, barId, user.uid);
-            }
+            batch.set(barRef, barData);
         }
+        
+        const isAppAdmin = user.email === 'prostodeniskdt@gmail.com';
+        if (isAppAdmin && !adminRoleDoc.exists()) {
+            batch.set(adminRoleRef, { isAdmin: true });
+        }
+
+        await batch.commit();
+
+        if (wasUserCreated) {
+            await seedInitialData(firestore, barRef.id, user.uid);
+        }
+
     } catch (e: any) {
         console.error("A non-recoverable error occurred during user/bar document check:", e);
         throw new Error(`Не удалось проверить или создать необходимые документы: ${e.message}`);

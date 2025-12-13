@@ -39,13 +39,20 @@ service cloud.firestore {
 
     match /bars/{barId} {
       // Allow creation only if the bar ID matches the user's UID and they are creating it for themselves.
+      // This rule does NOT depend on a pre-existing user document, resolving the circular dependency.
       allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid && barId == 'bar_' + request.auth.uid;
+      
+      // Read/update/delete still require the user to be a manager or admin.
       allow read, update, delete: if isBarOwnerByPath(barId) || isAdmin();
       allow list: if isAdmin();
 
       function isBarOwnerByPath(barId) {
-        // A bar owner is identified by the barId matching 'bar_' + their uid.
-        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager' && barId == 'bar_' + request.auth.uid;
+        // A bar owner is identified by reading their existing user document.
+        // This works for existing users, not for creation.
+        var userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+        return isSignedIn() 
+                && userDoc.data.role == 'manager' 
+                && barId == 'bar_' + request.auth.uid;
       }
 
       match /members/{memberId} {

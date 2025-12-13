@@ -18,16 +18,28 @@ export default function AdminPage() {
   const firestore = useFirestore();
   const router = useRouter();
 
+  // --- ВСЕ ХУКИ ПЕРЕМЕЩЕНЫ ВВЕРХ ---
+
+  // Хук для получения роли администратора
   const adminRoleRef = useMemoFirebase(() => 
     firestore && user ? doc(firestore, 'roles_admin', user.uid) : null, 
     [firestore, user]
   );
-  
   const { data: adminRoleDoc, isLoading: isAdminRoleLoading, error: adminRoleError } = useDoc(adminRoleRef);
   
-  const isAuthorizedAdmin = adminRoleDoc !== null;
-  const finishedAllLoads = !isUserLoading && !isAdminRoleLoading;
+  // Хук для получения списка всех пользователей (выполняется всегда)
+  const usersQuery = useMemoFirebase(() =>
+    firestore ? query(collection(firestore, 'users')) : null,
+    [firestore]
+  );
+  const { data: users, isLoading: isLoadingUsers, error: usersError } = useCollection<UserProfile>(usersQuery);
 
+  // --- КОНЕЦ БЛОКА ХУКОВ ---
+
+
+  const isAuthorizedAdmin = adminRoleDoc !== null;
+
+  // Условная логика рендеринга теперь идет ПОСЛЕ всех хуков
   if (isUserLoading || isAdminRoleLoading) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -78,14 +90,8 @@ export default function AdminPage() {
     )
   }
 
-  // --- From this point on, user is an authorized admin ---
-  const usersQuery = useMemoFirebase(() =>
-    firestore ? query(collection(firestore, 'users')) : null,
-    [firestore]
-  );
+  // --- Отсюда пользователь — авторизованный администратор ---
   
-  const { data: users, isLoading: isLoadingUsers, error: usersError } = useCollection<UserProfile>(usersQuery);
-
   if (usersError) {
     return (
       <div className="text-center text-destructive bg-destructive/10 p-4 rounded-md">

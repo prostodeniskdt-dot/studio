@@ -9,6 +9,7 @@ import {
   QuerySnapshot,
   CollectionReference,
 } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -63,8 +64,9 @@ export function useCollection<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
-    // If the query isn't ready (e.g., waiting for user ID), set state accordingly.
-    if (!memoizedTargetRefOrQuery) {
+    // If the query isn't ready or user is not authenticated, set state accordingly.
+    // This prevents queries with `auth: null`.
+    if (!memoizedTargetRefOrQuery || !getAuth().currentUser) {
       setData(null);
       setIsLoading(false); // Set loading to false as there's nothing to fetch.
       setError(null);

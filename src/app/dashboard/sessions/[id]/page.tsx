@@ -120,6 +120,8 @@ export default function SessionPage() {
   }, [firestore, toast]);
 
   React.useEffect(() => {
+    // Only set local lines if the lines data has been fetched.
+    // This now correctly handles the initial state where lines can be null.
     if (lines) {
       setLocalLines(lines);
     }
@@ -132,7 +134,10 @@ export default function SessionPage() {
     return JSON.stringify(originalLines) !== JSON.stringify(localLines);
   }, [originalLines, localLines]);
   
-  const productsInSession = React.useMemo(() => new Set(localLines?.map(line => line.productId)), [localLines]);
+  const productsInSession = React.useMemo(() => {
+    if (!localLines) return new Set();
+    return new Set(localLines.map(line => line.productId));
+  }, [localLines]);
   
   const groupedProductOptions = React.useMemo(() => {
     if (!allProducts) return [];

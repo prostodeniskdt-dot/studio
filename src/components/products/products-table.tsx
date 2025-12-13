@@ -92,7 +92,17 @@ export function ProductsTable({ products }: { products: Product[] }) {
       });
   }
 
-  const uniqueProducts = React.useMemo(() => Array.from(new Map(products.map(p => [p.id, p])).values()), [products]);
+  const uniqueProducts = React.useMemo(() => {
+    // Ensure products are unique by their canonical `id` field, not the document id
+    const productMap = new Map<string, Product>();
+    products.forEach(p => {
+        if (!productMap.has(p.id)) {
+            productMap.set(p.id, p);
+        }
+    });
+    return Array.from(productMap.values());
+  }, [products]);
+
 
   const columns: ColumnDef<Product>[] = [
     {

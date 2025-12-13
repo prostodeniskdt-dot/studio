@@ -50,16 +50,12 @@ export function Combobox({
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
 
-  const getSelectedLabel = () => {
-    if (!value) return placeholder;
-    for (const group of options) {
-        const found = group.options.find(option => option.value === value);
-        if (found) return found.label;
-    }
-    return placeholder;
-  };
-  
-  const selectedLabel = getSelectedLabel();
+  const flatOptions = React.useMemo(() => options.flatMap(group => group.options), [options]);
+
+  const selectedLabel = React.useMemo(() => {
+    return flatOptions.find(option => option.value === value)?.label || placeholder;
+  }, [value, flatOptions, placeholder]);
+
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -86,9 +82,8 @@ export function Combobox({
                 {group.options.map((option) => (
                   <CommandItem
                     key={option.value}
-                    value={option.label} // Value for searching
-                    onSelect={(currentValue) => { // currentValue is the label
-                      // Find the option by label and get its value
+                    value={option.label}
+                    onSelect={() => {
                       onSelect(option.value === value ? "" : option.value)
                       setOpen(false)
                     }}

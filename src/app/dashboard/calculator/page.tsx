@@ -45,7 +45,15 @@ export default function UnifiedCalculatorPage() {
 
   const filteredProducts = React.useMemo(() => {
     if (!products) return [];
-    let uniqueProducts = Array.from(new Map(products.map(p => [p.id, p])).values());
+    
+    // Ensure products are unique by their canonical `id` field.
+    const productMap = new Map<string, Product>();
+    products.forEach(p => {
+        if (!productMap.has(p.id)) {
+            productMap.set(p.id, p);
+        }
+    });
+    const uniqueProducts = Array.from(productMap.values());
 
     return uniqueProducts.filter(p => {
       const categoryMatch = !selectedCategory || p.category === selectedCategory;

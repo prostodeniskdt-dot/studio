@@ -70,16 +70,10 @@ function getInitialProductData(): ProductSeedData[] {
     ];
 }
 
-/**
- * Seeds the product catalog if it's missing products or updates existing ones.
- * This is an idempotent operation using hardcoded IDs.
- */
 async function seedInitialProducts(firestore: Firestore): Promise<void> {
-    // Check if products have already been seeded to avoid re-seeding on every login
     const productsCheckQuery = query(collection(firestore, "products"), limit(1));
     const productsSnapshot = await getDocs(productsCheckQuery);
     if (!productsSnapshot.empty) {
-        // Products exist, no need to seed.
         return;
     }
 
@@ -93,73 +87,66 @@ async function seedInitialProducts(firestore: Firestore): Promise<void> {
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         };
-        // Use set with merge to create or update, ensuring all fields are correct.
         batch.set(docRef, productData, { merge: true });
     }
     
     await batch.commit();
 }
 
-
-/**
- * A combined seeding function to be called after user/bar documents are confirmed to exist.
- */
 async function seedInitialData(firestore: Firestore, barId: string, userId: string): Promise<void> {
     try {
         await seedInitialProducts(firestore);
-        // DEMO SESSIONS REMOVED
     } catch(e) {
         console.error("Error during initial data seeding:", e);
-        // We don't rethrow here to avoid blocking the UI if seeding fails.
-        // The core app can still function.
     }
 }
 
 
-/**
- * Ensures user and bar documents exist, creating them if necessary.
- * This is a critical setup step for any authenticated user.
- * It's idempotent and safe to call on every dashboard load.
- */
 export async function ensureUserAndBarDocuments(firestore: Firestore, user: User): Promise<void> {
     if (!firestore || !user) return;
 
     try {
-        // --- Step 1: Ensure User document exists ---
         const userRef = doc(firestore, 'users', user.uid);
         const userDoc = await getDoc(userRef);
         let wasUserCreated = false;
+        
+        // 1. Всегда пытаемся прочитать данные из sessionStorage
+        let extraDetails = {};
+        const detailsJson = sessionStorage.getItem('new_user_details');
+        if (detailsJson) {
+            try {
+                extraDetails = JSON.parse(detailsJson);
+            } catch(e) {
+                console.error("Could not parse new user details from session storage", e);
+                sessionStorage.removeItem('new_user_details'); // Очищаем битые данные
+            }
+        }
+        const hasExtraDetails = Object.keys(extraDetails).length > 0;
 
+        // 2. Логика создания/обновления документа пользователя
         if (!userDoc.exists()) {
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
-            
-            // Retrieve extra details from session storage
-            let extraDetails = {};
-            const detailsJson = sessionStorage.getItem('new_user_details');
-            if (detailsJson) {
-                try {
-                    extraDetails = JSON.parse(detailsJson);
-                    // Clear it after reading
-                    sessionStorage.removeItem('new_user_details');
-                } catch(e) {
-                    console.error("Could not parse new user details from session storage", e);
-                }
-            }
-
             const userData = {
                 id: user.uid,
                 displayName: displayName,
                 email: user.email,
-                role: 'manager' as const, // Default role
+                role: 'manager' as const,
                 createdAt: serverTimestamp(),
-                ...extraDetails
+                ...extraDetails // Добавляем данные из анкеты
             };
             await setDoc(userRef, userData);
             wasUserCreated = true;
+            if (hasExtraDetails) {
+                 sessionStorage.removeItem('new_user_details'); // Очищаем после успешной записи
+            }
+        } else if (hasExtraDetails) {
+            // 3. Если документ уже есть, но есть данные в storage, дописываем их
+            await setDoc(userRef, extraDetails, { merge: true });
+            sessionStorage.removeItem('new_user_details'); // Очищаем после успешной записи
         }
 
-        // --- Step 2: Ensure Bar document exists ---
-        // This runs after user creation is confirmed, avoiding the rule paradox.
+
+        // 4. Логика создания бара (остается без изменений)
         const barId = `bar_${user.uid}`;
         const barRef = doc(firestore, 'bars', barId);
         const barDoc = await getDoc(barRef);
@@ -174,7 +161,6 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
             };
             await setDoc(barRef, barData);
             
-            // If the user was brand new, seed their bar with initial data.
             if (wasUserCreated) {
                 await seedInitialData(firestore, barId, user.uid);
             }
@@ -186,10 +172,6 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
 }
 
 
-/**
- * Initiates email sign-up and updates the user's profile.
- * Document creation is handled by the DashboardLayout.
- */
 export async function initiateEmailSignUp(
   auth: Auth,
   { name, email, password }: { name: string, email: string, password: string }
@@ -204,10 +186,6 @@ export async function initiateEmailSignUp(
   }
 }
 
-/**
- * Initiates email sign-in.
- * Document creation is handled by the DashboardLayout.
- */
 export async function initiateEmailSignIn(
   auth: Auth,
   { email, password }: { email: string, password: string }

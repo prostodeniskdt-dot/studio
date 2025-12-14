@@ -56,6 +56,23 @@ export default function SignupPage() {
       });
       return;
     }
+
+    const extraDetails = {
+      city: data.city,
+      establishment: data.establishment,
+      phone: data.phone,
+      socialLink: data.socialLink,
+    };
+
+    const detailsToStore = Object.fromEntries(
+      Object.entries(extraDetails).filter(([_, v]) => v)
+    );
+    
+    // 1. Устраняем гонку: записываем данные ДО вызова auth
+    if (Object.keys(detailsToStore).length > 0) {
+      sessionStorage.setItem('new_user_details', JSON.stringify(detailsToStore));
+    }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       
@@ -65,24 +82,11 @@ export default function SignupPage() {
 
       await updateProfile(userCredential.user, profileData);
       
-      // Store extra details in session storage to be picked up on the dashboard page
-      const extraDetails = {
-          city: data.city,
-          establishment: data.establishment,
-          phone: data.phone,
-          socialLink: data.socialLink,
-      };
-      
-      // Filter out empty fields before saving
-      const detailsToStore = Object.fromEntries(
-        Object.entries(extraDetails).filter(([_, v]) => v)
-      );
-
-      if (Object.keys(detailsToStore).length > 0) {
-        sessionStorage.setItem('new_user_details', JSON.stringify(detailsToStore));
-      }
+      // useEffect перенаправит на дашборд, где ensureUserAndBarDocuments подхватит данные
 
     } catch(e: any) {
+        // 2. Очищаем sessionStorage в случае ошибки
+        sessionStorage.removeItem('new_user_details');
         toast({
             variant: "destructive",
             title: "Ошибка регистрации",

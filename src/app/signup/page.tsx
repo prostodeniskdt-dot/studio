@@ -68,7 +68,6 @@ export default function SignupPage() {
       Object.entries(extraDetails).filter(([_, v]) => v)
     );
     
-    // 1. Устраняем гонку: записываем данные ДО вызова auth
     if (Object.keys(detailsToStore).length > 0) {
       sessionStorage.setItem('new_user_details', JSON.stringify(detailsToStore));
     }
@@ -82,15 +81,20 @@ export default function SignupPage() {
 
       await updateProfile(userCredential.user, profileData);
       
-      // useEffect перенаправит на дашборд, где ensureUserAndBarDocuments подхватит данные
-
     } catch(e: any) {
-        // 2. Очищаем sessionStorage в случае ошибки
-        sessionStorage.removeItem('new_user_details');
+        if (Object.keys(detailsToStore).length > 0) {
+            sessionStorage.removeItem('new_user_details');
+        }
+        
+        let description = e.message;
+        if (e.code === 'auth/email-already-in-use') {
+            description = 'Этот email уже зарегистрирован. Пожалуйста, войдите или используйте другой адрес.';
+        }
+        
         toast({
             variant: "destructive",
             title: "Ошибка регистрации",
-            description: e.message,
+            description: description,
         });
     }
   };

@@ -61,19 +61,26 @@ export default function SignupPage() {
       
       const profileData = {
         displayName: data.name,
-        // We can't store extra data in the Auth profile,
-        // so we'll pass it to the session storage to be picked up by ensureUserAndBarDocuments
       };
 
       await updateProfile(userCredential.user, profileData);
       
       // Store extra details in session storage to be picked up on the dashboard page
-      sessionStorage.setItem('new_user_details', JSON.stringify({
+      const extraDetails = {
           city: data.city,
           establishment: data.establishment,
           phone: data.phone,
           socialLink: data.socialLink,
-      }));
+      };
+      
+      // Filter out empty fields before saving
+      const detailsToStore = Object.fromEntries(
+        Object.entries(extraDetails).filter(([_, v]) => v)
+      );
+
+      if (Object.keys(detailsToStore).length > 0) {
+        sessionStorage.setItem('new_user_details', JSON.stringify(detailsToStore));
+      }
 
     } catch(e: any) {
         toast({

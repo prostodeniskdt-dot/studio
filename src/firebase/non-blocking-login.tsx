@@ -75,6 +75,14 @@ function getInitialProductData(): ProductSeedData[] {
  * This is an idempotent operation using hardcoded IDs.
  */
 async function seedInitialProducts(firestore: Firestore): Promise<void> {
+    // Check if products have already been seeded to avoid re-seeding on every login
+    const productsCheckQuery = query(collection(firestore, "products"), limit(1));
+    const productsSnapshot = await getDocs(productsCheckQuery);
+    if (!productsSnapshot.empty) {
+        // Products exist, no need to seed.
+        return;
+    }
+
     const productsToSeed = getInitialProductData();
     const batch = writeBatch(firestore);
 

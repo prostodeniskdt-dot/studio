@@ -61,6 +61,8 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
 
   const onSubmit = async (data: AddStaffFormValues) => {
     if (!firestore) return;
+    let userId: string | null = null;
+    let userDocData: any = null;
 
     try {
         const usersRef = collection(firestore, 'users');
@@ -73,22 +75,25 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
                 title: "Пользователь не найден", 
                 description: `Пользователь с email ${data.email} не зарегистрирован в системе. Попросите его сначала создать аккаунт.`
             });
-            return; // Ранний выход, если пользователь не найден
+            return;
         }
 
         const userDoc = userSnapshot.docs[0];
-        const userId = userDoc.id;
+        userId = userDoc.id;
+        userDocData = userDoc.data();
         
         const memberRef = doc(firestore, 'bars', barId, 'members', userId);
         
+        // --- FIX: Create the correct data object based on the schema ---
         const memberData = {
             userId: userId,
             role: data.role
         };
+        // --- END FIX ---
         
         await setDoc(memberRef, memberData);
         
-        toast({ title: "Сотрудник добавлен", description: `${userDoc.data().displayName} (${data.email}) теперь в вашей команде.` });
+        toast({ title: "Сотрудник добавлен", description: `${userDocData.displayName} (${data.email}) теперь в вашей команде.` });
         onOpenChange(false);
         reset();
 
@@ -103,12 +108,11 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
             description
         });
         
-        // Отправка ошибки в emitter для отладки
-        // На этом этапе мы уже знаем, что поиск пользователя не был проблемой
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-             path: `bars/${barId}/members`,
+             path: `bars/${barId}/members/${userId || '(lookup failed)'}`,
              operation: 'create',
-             requestResourceData: data // Показываем исходные данные, которые привели к ошибке
+             // Pass the data that was intended to be written for accurate debugging
+             requestResourceData: { userId, role: data.role } 
         }));
     }
   };

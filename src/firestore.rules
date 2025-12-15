@@ -11,8 +11,7 @@ service cloud.firestore {
     }
     
     function isNotBanned(userId) {
-      // Use a ternary operator which evaluates correctly in Rules.
-      // If the document exists, check the isBanned flag. Otherwise, return true (not banned).
+      // Allow if the user document doesn't exist yet, OR if the isBanned flag is not explicitly true.
       return exists(/databases/$(database)/documents/users/$(userId)) ?
         get(/databases/$(database)/documents/users/$(userId)).data.isBanned != true :
         true;
@@ -24,15 +23,6 @@ service cloud.firestore {
 
     function isBarOwner(barId) {
       return isSignedIn() && barId == 'bar_' + request.auth.uid && isNotBanned(request.auth.uid);
-    }
-
-    match /email_to_uid/{emailLower} {
-      allow get: if isSignedIn() && isNotBanned(request.auth.uid);
-      allow create: if isSignedIn() 
-                    && request.auth.uid == request.resource.data.uid 
-                    && request.resource.data.keys().hasOnly(['uid','createdAt'])
-                    && emailLower == request.auth.token.email.lower();
-      allow update, delete, list: if false;
     }
 
     match /roles_admin/{userId} {
@@ -65,19 +55,6 @@ service cloud.firestore {
       
       allow read, update, delete: if isBarOwner(barId) || isAdmin();
       allow list: if isAdmin();
-
-      match /members/{memberId} {
-        allow read, list: if isBarOwner(barId) || isAdmin();
-        allow create: if isBarOwner(barId) 
-                      && request.resource.data.keys().hasOnly(['userId','role','invitedAt','invitedBy']) 
-                      && request.resource.data.userId == memberId 
-                      && request.resource.data.invitedBy == request.auth.uid
-                      && request.resource.data.role in ['bartender','manager'];
-        allow update: if isBarOwner(barId) 
-                      && request.resource.data.userId == memberId
-                      && request.resource.data.role in ['bartender','manager'];
-        allow delete: if isBarOwner(barId);
-      }
       
       match /suppliers/{supplierId} {
          allow read, list: if isBarOwner(barId) || isAdmin();

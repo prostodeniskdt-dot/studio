@@ -10,7 +10,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { StaffTable } from '@/components/staff/staff-table';
 import { SuppliersTable } from '@/components/suppliers/suppliers-table';
 
 export default function AdminUserDetailsPage() {
@@ -27,12 +26,6 @@ export default function AdminUserDetailsPage() {
 
   const barId = userId ? `bar_${userId}` : null;
   
-  const staffQuery = useMemoFirebase(() =>
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'members')) : null,
-    [firestore, barId]
-  );
-  const { data: staff, isLoading: isLoadingStaff } = useCollection<BarMember>(staffQuery);
-
   const suppliersQuery = useMemoFirebase(() =>
     firestore && barId ? query(collection(firestore, 'bars', barId, 'suppliers')) : null,
     [firestore, barId]
@@ -40,7 +33,7 @@ export default function AdminUserDetailsPage() {
   const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
 
 
-  const isLoading = isLoadingProfile || isLoadingStaff || isLoadingSuppliers;
+  const isLoading = isLoadingProfile || isLoadingSuppliers;
 
   if (isLoading) {
     return (
@@ -110,16 +103,6 @@ export default function AdminUserDetailsPage() {
                 </div>
              </dl>
           </CardContent>
-        </Card>
-
-        <Card>
-            <CardHeader>
-                <CardTitle>Сотрудники бара</CardTitle>
-                <CardDescription>Список сотрудников, которых этот пользователь добавил в свой бар.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <StaffTable staff={staff || []} barId={barId!} />
-            </CardContent>
         </Card>
         
         <Card>

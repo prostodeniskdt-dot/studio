@@ -103,6 +103,8 @@ export interface Bar {
 export interface BarMember {
     userId: string;
     role: 'manager' | 'bartender';
+    invitedAt: Timestamp;
+    invitedBy: string;
     // for UI
     userProfile?: UserProfile;
 }

@@ -19,27 +19,6 @@ import { productCategories, productSubCategories } from '@/lib/utils';
 
 type ProductSeedData = Omit<Product, 'createdAt' | 'updatedAt'>;
 
-async function ensureEmailIndex(firestore: Firestore, user: User): Promise<void> {
-    if (!user.email) return;
-
-    const emailLower = user.email.toLowerCase();
-    const indexRef = doc(firestore, 'email_to_uid', emailLower);
-
-    try {
-        const docSnap = await getDoc(indexRef);
-        if (!docSnap.exists()) {
-            await setDoc(indexRef, {
-                uid: user.uid,
-                createdAt: serverTimestamp(),
-            });
-        }
-    } catch(e) {
-        // This might fail if rules are not yet deployed, but it's not critical to block the login flow.
-        console.warn(`Could not ensure email index for ${user.email}:`, e);
-    }
-}
-
-
 function getInitialProductData(): ProductSeedData[] {
     const getImage = (id: string) => PlaceHolderImages.find(p => p.id.toLowerCase() === id.toLowerCase())?.imageUrl ?? PlaceHolderImages.find(p => p.id === 'other')!.imageUrl;
 
@@ -125,9 +104,6 @@ async function seedInitialData(firestore: Firestore, barId: string, userId: stri
 
 export async function ensureUserAndBarDocuments(firestore: Firestore, user: User): Promise<void> {
     if (!firestore || !user) return;
-
-    // Ensure email_to_uid index is created
-    await ensureEmailIndex(firestore, user);
 
     try {
         const userRef = doc(firestore, 'users', user.uid);
@@ -222,5 +198,3 @@ export async function initiateEmailSignIn(
     throw error;
   }
 }
-
-    

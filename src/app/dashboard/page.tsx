@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, BarChart3, Package, Loader2, LineChart, Users } from "lucide-react";
+import { PlusCircle, BarChart3, Package, Loader2, LineChart, Truck, ShoppingCart } from "lucide-react";
 import { SessionsList } from "@/components/dashboard/sessions-list";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -103,7 +103,7 @@ export default function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-4 text-sm">
+             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 text-sm">
                 <Link href="/dashboard/products" className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
                     <Package className="h-7 w-7 md:h-8 md:w-8 text-primary shrink-0" />
                     <div className="hidden sm:block">
@@ -125,11 +125,11 @@ export default function DashboardPage() {
                         <p className="text-muted-foreground text-xs">Отчеты и данные</p>
                     </div>
                 </Link>
-                 <Link href="/dashboard/staff" className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
-                    <Users className="h-7 w-7 md:h-8 md:w-8 text-primary shrink-0" />
+                 <Link href="/dashboard/suppliers" className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
+                    <Truck className="h-7 w-7 md:h-8 md:w-8 text-primary shrink-0" />
                     <div className="hidden sm:block">
-                        <h3 className="font-semibold">Персонал</h3>
-                        <p className="text-muted-foreground text-xs">Команда бара</p>
+                        <h3 className="font-semibold">Поставщики</h3>
+                        <p className="text-muted-foreground text-xs">Контакты поставщиков</p>
                     </div>
                 </Link>
             </div>

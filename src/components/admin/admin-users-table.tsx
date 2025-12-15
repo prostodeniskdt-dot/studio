@@ -1,13 +1,14 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { MoreHorizontal, User as UserIcon, Trash2, Loader2 } from 'lucide-react';
+import { MoreHorizontal, User as UserIcon, Trash2, Loader2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -41,6 +42,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
 import { Badge } from '../ui/badge';
+import Link from 'next/link';
 
 interface AdminUsersTableProps {
   users: UserProfile[];
@@ -50,9 +52,11 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
   const { user: adminUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const router = useRouter();
   const [processingUserId, setProcessingUserId] = React.useState<string | null>(null);
 
-  const handleBanToggle = (user: UserProfile) => {
+  const handleBanToggle = (e: React.MouseEvent, user: UserProfile) => {
+    e.stopPropagation(); // Prevent row click event
     if (!firestore || !adminUser || adminUser.uid === user.id) return;
 
     setProcessingUserId(user.id);
@@ -73,6 +77,10 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
       .finally(() => {
         setProcessingUserId(null);
       });
+  };
+
+  const handleRowClick = (userId: string) => {
+    router.push(`/dashboard/admin/users/${userId}`);
   };
 
   const columns: ColumnDef<UserProfile>[] = [
@@ -140,24 +148,32 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
     },
     {
       id: 'actions',
-      header: 'Блокировка',
+      header: 'Действия',
       cell: ({ row }) => {
         const user = row.original;
         const isSelf = adminUser?.uid === user.id;
         const isProcessing = processingUserId === user.id;
         
         return (
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-end gap-2">
             {isProcessing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Switch
-                checked={!!user.isBanned}
-                onCheckedChange={() => handleBanToggle(user)}
-                disabled={isSelf || isProcessing}
-                aria-label={user.isBanned ? 'Разблокировать пользователя' : 'Заблокировать пользователя'}
-              />
+              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <span className="text-xs text-muted-foreground">{user.isBanned ? 'Заблокирован' : 'Активен'}</span>
+                <Switch
+                  checked={!!user.isBanned}
+                  onCheckedChange={(checked) => handleBanToggle(new MouseEvent('click') as any, user)}
+                  disabled={isSelf || isProcessing}
+                  aria-label={user.isBanned ? 'Разблокировать пользователя' : 'Заблокировать пользователя'}
+                />
+              </div>
             )}
+             <Button variant="ghost" size="icon" asChild>
+                <Link href={`/dashboard/admin/users/${user.id}`} onClick={(e) => e.stopPropagation()}>
+                    <ArrowRight className="h-4 w-4" />
+                </Link>
+            </Button>
           </div>
         );
       },
@@ -201,7 +217,7 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
             <TableBody>
                 {table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
+                    <TableRow key={row.id} onClick={() => handleRowClick(row.original.id)} className="cursor-pointer">
                     {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>
                         {flexRender(

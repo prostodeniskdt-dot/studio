@@ -25,7 +25,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, isUserLoading } = useUser();
-  const uid = user?.uid ?? null;
+  const uid = user ? user.uid : null;
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();

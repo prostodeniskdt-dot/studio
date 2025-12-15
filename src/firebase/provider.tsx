@@ -181,16 +181,21 @@ type MemoizedFirebaseObject<T> = T & { __memo?: boolean };
  */
 export function useMemoFirebase<T extends object | null>(factory: () => T, deps: DependencyList): T {
   const memoized = useMemo(() => {
-    const value = factory();
-    if (value) {
-      // Add a non-enumerable property to mark the object as memoized.
-      Object.defineProperty(value, '__memo', {
-        value: true,
-        writable: false,
-        enumerable: false,
-      });
+    try {
+      const value = factory();
+      if (value) {
+        // Add a non-enumerable property to mark the object as memoized.
+        Object.defineProperty(value, '__memo', {
+          value: true,
+          writable: false,
+          enumerable: false,
+        });
+      }
+      return value;
+    } catch (err) {
+        console.error("[useMemoFirebase] Factory function failed during execution:", err);
+        return null as T;
     }
-    return value;
   }, deps); // eslint-disable-line react-hooks/exhaustive-deps
 
   return memoized as T;

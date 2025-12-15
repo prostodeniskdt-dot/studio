@@ -62,9 +62,6 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
   const onSubmit = async (data: AddStaffFormValues) => {
     if (!firestore) return;
 
-    let userId = '';
-    let memberData: { userId: string; role: 'manager' | 'bartender' } | null = null;
-
     try {
         const usersRef = collection(firestore, 'users');
         const q = query(usersRef, where('email', '==', data.email), limit(1));
@@ -76,15 +73,15 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
                 title: "Пользователь не найден", 
                 description: `Пользователь с email ${data.email} не зарегистрирован в системе. Попросите его сначала создать аккаунт.`
             });
-            return;
+            return; // Ранний выход, если пользователь не найден
         }
 
         const userDoc = userSnapshot.docs[0];
-        userId = userDoc.id;
+        const userId = userDoc.id;
         
         const memberRef = doc(firestore, 'bars', barId, 'members', userId);
         
-        memberData = {
+        const memberData = {
             userId: userId,
             role: data.role
         };
@@ -106,11 +103,12 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
             description
         });
         
-        // This will now correctly report the data that was intended for writing.
+        // Отправка ошибки в emitter для отладки
+        // На этом этапе мы уже знаем, что поиск пользователя не был проблемой
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-             path: `bars/${barId}/members/${userId || '(lookup failed)'}`,
+             path: `bars/${barId}/members`,
              operation: 'create',
-             requestResourceData: memberData 
+             requestResourceData: data // Показываем исходные данные, которые привели к ошибке
         }));
     }
   };

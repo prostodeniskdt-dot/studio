@@ -25,15 +25,16 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, isUserLoading } = useUser();
+  const uid = user?.uid ?? null;
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
   const [isDataReady, setIsDataReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const userProfileRef = useMemoFirebase(() => 
-    firestore && user ? doc(firestore, 'users', user.uid) : null,
-    [firestore, user]
+  const userProfileRef = useMemoFirebase(
+    () => (firestore && uid ? doc(firestore, 'users', uid) : null),
+    [firestore, uid]
   );
   const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileRef);
 

@@ -3,7 +3,7 @@ import * as React from 'react';
 import { useParams, notFound } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query } from 'firebase/firestore';
-import type { UserProfile, BarMember, Supplier } from '@/lib/types';
+import type { UserProfile, Supplier } from '@/lib/types';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';

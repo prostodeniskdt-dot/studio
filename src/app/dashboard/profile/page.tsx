@@ -37,12 +37,19 @@ export default function ProfilePage() {
 
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
+    defaultValues: {
+      displayName: '',
+      city: '',
+      establishment: '',
+      phone: '',
+      socialLink: '',
+    }
   });
 
   React.useEffect(() => {
     if (userProfile) {
       reset({
-        displayName: userProfile.displayName,
+        displayName: userProfile.displayName || '',
         city: userProfile.city || '',
         establishment: userProfile.establishment || '',
         phone: userProfile.phone || '',

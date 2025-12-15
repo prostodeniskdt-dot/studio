@@ -86,9 +86,11 @@ export default function SignupPage() {
             sessionStorage.removeItem('new_user_details');
         }
         
-        let description = e.message;
+        let description = "Произошла неизвестная ошибка.";
         if (e.code === 'auth/email-already-in-use') {
             description = 'Этот email уже зарегистрирован. Пожалуйста, войдите или используйте другой адрес.';
+        } else if (e.message) {
+            description = e.message;
         }
         
         toast({

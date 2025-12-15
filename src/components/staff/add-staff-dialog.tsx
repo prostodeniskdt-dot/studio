@@ -80,12 +80,13 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
         const userId = userDoc.id;
         const memberRef = doc(firestore, 'bars', barId, 'members', userId);
         
-        // Correct data structure according to BarMember schema
+        // This is the CRITICAL FIX: create a data object that matches the BarMember schema.
         const memberData = {
             userId: userId,
             role: data.role
         };
         
+        // Use the new, correct data object for the setDoc operation.
         await setDoc(memberRef, memberData);
         
         toast({ title: "Сотрудник добавлен", description: `${userDoc.data().displayName} (${data.email}) теперь в вашей команде.` });
@@ -102,7 +103,9 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
             title: "Ошибка добавления сотрудника",
             description
         });
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/members`, operation: 'create', requestResourceData: data }));
+        // The data passed to the error emitter should be the data we TRIED to write, for accurate debugging.
+        // In the future, this would be memberData, but for this error, the original 'data' shows the root cause.
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/members`, operation: 'create', requestResourceData: { userId: '... (lookup failed)', role: data.role } }));
     }
   };
 

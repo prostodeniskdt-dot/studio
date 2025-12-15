@@ -100,15 +100,6 @@ export interface Bar {
   ownerUserId: string;
 }
 
-export interface BarMember {
-    userId: string;
-    role: 'manager' | 'bartender';
-    invitedAt: Timestamp;
-    invitedBy: string;
-    // for UI
-    userProfile?: UserProfile;
-}
-
 export interface Supplier {
     id: string;
     barId: string;

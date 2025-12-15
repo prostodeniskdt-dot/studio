@@ -11,9 +11,9 @@ service cloud.firestore {
     }
     
     function isNotBanned(userId) {
-      // Check for the existence AND value of the isBanned flag.
-      // Deny if isBanned is explicitly true. Allow if it's false or doesn't exist.
-      return get(/databases/$(database)/documents/users/$(userId)).data.isBanned != true;
+      // Allow if the user document doesn't exist yet, OR if the isBanned flag is not explicitly true.
+      return !exists(/databases/$(database)/documents/users/$(userId))
+        || get(/databases/$(database)/documents/users/$(userId)).data.isBanned != true;
     }
 
     function isAdmin() {

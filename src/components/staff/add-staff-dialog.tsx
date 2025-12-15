@@ -25,7 +25,7 @@ import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import { translateRole } from '@/lib/utils';
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, getDocs, query, where, doc, setDoc, limit } from 'firebase/firestore';
+import { collection, getDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 const addStaffSchema = z.object({
@@ -56,20 +56,23 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
     },
   });
 
+  const { user: authUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
 
   const onSubmit = async (data: AddStaffFormValues) => {
-    if (!firestore) return;
-    let userId: string | null = null;
-    let userDocData: any = null;
+    if (!firestore || !authUser) return;
+
+    const emailLower = data.email.trim().toLowerCase();
+    
+    // Step 1: Lookup user in the email_to_uid index
+    const indexRef = doc(firestore, 'email_to_uid', emailLower);
+    let memberUid: string;
+    let memberDataForToast: any = {};
 
     try {
-        const usersRef = collection(firestore, 'users');
-        const q = query(usersRef, where('email', '==', data.email), limit(1));
-        const userSnapshot = await getDocs(q);
-
-        if (userSnapshot.empty) {
+        const idxSnap = await getDoc(indexRef);
+        if (!idxSnap.exists()) {
             toast({ 
                 variant: 'destructive', 
                 title: "Пользователь не найден", 
@@ -77,34 +80,50 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
             });
             return;
         }
+        memberUid = idxSnap.data().uid;
+        const userRef = doc(firestore, 'users', memberUid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            memberDataForToast = userSnap.data();
+        }
 
-        const userDoc = userSnapshot.docs[0];
-        userId = userDoc.id;
-        userDocData = userDoc.data();
+    } catch (lookupError: any) {
+        console.error("Error looking up user by email index:", lookupError);
+        toast({
+            variant: "destructive",
+            title: "Ошибка поиска пользователя",
+            description: lookupError.message || "Не удалось проверить email."
+        });
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+             path: `email_to_uid/${emailLower}`,
+             operation: 'get',
+        }));
+        return;
+    }
+
+
+    // Step 2: Write to the members subcollection
+    const memberRef = doc(firestore, 'bars', barId, 'members', memberUid);
+    const memberDocData = {
+        userId: memberUid,
+        role: data.role,
+        invitedAt: serverTimestamp(),
+        invitedBy: authUser.uid,
+    };
+    
+    try {
+        await setDoc(memberRef, memberDocData, { merge: true });
         
-        const memberRef = doc(firestore, 'bars', barId, 'members', userId);
-        
-        // --- FIX: Create the correct data object based on the schema ---
-        const memberData = {
-            userId: userId,
-            role: data.role
-        };
-        // --- END FIX ---
-        
-        await setDoc(memberRef, memberData);
-        
-        toast({ title: "Сотрудник добавлен", description: `${userDocData.displayName} (${data.email}) теперь в вашей команде.` });
+        toast({ title: "Сотрудник добавлен", description: `${memberDataForToast.displayName || data.email} теперь в вашей команде.` });
         onOpenChange(false);
         reset();
 
-    } catch(error: any) {
-        // Construct the correct data that was SUPPOSED to be written for a more useful error message.
-        const intendedData = { userId: userId, role: data.role };
-
+    } catch(writeError: any) {
+        console.error("Error writing member document:", writeError);
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-             path: `bars/${barId}/members/${userId || '(lookup failed)'}`,
+             path: memberRef.path,
              operation: 'create',
-             requestResourceData: intendedData // Use the corrected data object here.
+             requestResourceData: memberDocData
         }));
     }
   };
@@ -158,3 +177,5 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
     </Dialog>
   );
 }
+
+    

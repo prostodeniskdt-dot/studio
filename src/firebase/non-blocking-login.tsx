@@ -101,16 +101,46 @@ async function seedInitialData(firestore: Firestore, barId: string, userId: stri
     }
 }
 
+async function ensureEmailIndex(firestore: Firestore, user: User): Promise<void> {
+    if (!user.email) return;
+
+    const emailLower = user.email.toLowerCase();
+    const indexRef = doc(firestore, 'email_to_uid', emailLower);
+
+    try {
+        const indexDoc = await getDoc(indexRef);
+        if (!indexDoc.exists()) {
+            await setDoc(indexRef, {
+                uid: user.uid,
+                createdAt: serverTimestamp()
+            });
+        }
+    } catch (e: any) {
+        // We catch and emit this specific error for debugging, but we don't block the login flow
+        if (e.code === 'permission-denied') {
+             errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: indexRef.path,
+                operation: 'create',
+                requestResourceData: { uid: user.uid },
+            }));
+        }
+        console.error(`Failed to ensure email index for ${emailLower}:`, e);
+    }
+}
+
 
 export async function ensureUserAndBarDocuments(firestore: Firestore, user: User): Promise<void> {
     if (!firestore || !user) return;
 
     try {
+        // Ensure email index is created or exists
+        await ensureEmailIndex(firestore, user);
+
         const userRef = doc(firestore, 'users', user.uid);
         const userDoc = await getDoc(userRef);
         let wasUserCreated = false;
         
-        // 1. Всегда пытаемся прочитать данные из sessionStorage
+        // 1. Always try to read from sessionStorage
         let extraDetails = {};
         const detailsJson = sessionStorage.getItem('new_user_details');
         if (detailsJson) {
@@ -118,12 +148,12 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
                 extraDetails = JSON.parse(detailsJson);
             } catch(e) {
                 console.error("Could not parse new user details from session storage", e);
-                sessionStorage.removeItem('new_user_details'); // Очищаем битые данные
+                sessionStorage.removeItem('new_user_details'); // Clear corrupted data
             }
         }
         const hasExtraDetails = Object.keys(extraDetails).length > 0;
 
-        // 2. Логика создания/обновления документа пользователя
+        // 2. User document creation/update logic
         if (!userDoc.exists()) {
             const displayName = user.displayName || user.email?.split('@')[0] || `User_${user.uid.substring(0,5)}`;
             const userData = {
@@ -132,21 +162,21 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
                 email: user.email,
                 role: 'manager' as const,
                 createdAt: serverTimestamp(),
-                ...extraDetails // Добавляем данные из анкеты
+                ...extraDetails // Add survey data
             };
             await setDoc(userRef, userData);
             wasUserCreated = true;
             if (hasExtraDetails) {
-                 sessionStorage.removeItem('new_user_details'); // Очищаем после успешной записи
+                 sessionStorage.removeItem('new_user_details'); // Clear after successful write
             }
         } else if (hasExtraDetails) {
-            // 3. Если документ уже есть, но есть данные в storage, дописываем их
+            // 3. If doc exists but there is data in storage, merge it
             await setDoc(userRef, extraDetails, { merge: true });
-            sessionStorage.removeItem('new_user_details'); // Очищаем после успешной записи
+            sessionStorage.removeItem('new_user_details'); // Clear after successful write
         }
 
 
-        // 4. Логика создания бара (остается без изменений)
+        // 4. Bar creation logic (remains unchanged)
         const barId = `bar_${user.uid}`;
         const barRef = doc(firestore, 'bars', barId);
         const barDoc = await getDoc(barRef);
@@ -166,6 +196,7 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
             }
         }
     } catch (e: any) {
+        // This is a critical failure, we re-throw to let the UI handle it (e.g., show an error page)
         console.error("A non-recoverable error occurred during user/bar document check:", e);
         throw new Error(`Не удалось проверить или создать необходимые документы: ${e.message}`);
     }

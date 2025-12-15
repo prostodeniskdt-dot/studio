@@ -13,6 +13,7 @@ export interface UserProfile {
   establishment?: string;
   phone?: string;
   socialLink?: string;
+  isBanned?: boolean;
 }
 
 export type ProductCategory = 'Whiskey' | 'Rum' | 'Vodka' | 'Gin' | 'Tequila' | 'Liqueur' | 'Wine' | 'Beer' | 'Syrup' | 'Brandy' | 'Vermouth' | 'Absinthe' | 'Bitters' | 'Other';

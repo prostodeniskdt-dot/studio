@@ -8,11 +8,14 @@ import {
 import { UserNav } from "@/components/user-nav";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ClientOnly } from "@/components/client-only";
-import { useUser, useFirestore } from "@/firebase";
+import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShieldX } from "lucide-react";
 import { ensureUserAndBarDocuments } from "@/firebase/non-blocking-login";
+import type { UserProfile } from "@/lib/types";
+import { doc } from "firebase/firestore";
+import { Button } from "@/components/ui/button";
 
 
 export default function DashboardLayout({
@@ -26,19 +29,22 @@ export default function DashboardLayout({
   const [isDataReady, setIsDataReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const userProfileRef = useMemoFirebase(() => 
+    firestore && user ? doc(firestore, 'users', user.uid) : null,
+    [firestore, user]
+  );
+  const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileRef);
+
   useEffect(() => {
     if (isUserLoading) {
-      // Пока проверяется статус аутентификации, ничего не делаем.
       return;
     }
 
     if (!user) {
-      // Если загрузка завершена и пользователя нет, перенаправляем на главную.
       router.replace('/');
       return;
     }
 
-    // Если есть пользователь и firestore, убеждаемся в наличии документов.
     if (user && firestore) {
       let isMounted = true;
       
@@ -52,7 +58,6 @@ export default function DashboardLayout({
           if (isMounted) {
             console.error("Failed to ensure user/bar documents:", err);
             setError(err.message || "Не удалось инициализировать данные пользователя.");
-            // Мы все равно устанавливаем data ready, чтобы показать сообщение об ошибке
             setIsDataReady(true);
           }
         });
@@ -64,8 +69,9 @@ export default function DashboardLayout({
   }, [user, isUserLoading, firestore, router]);
 
 
-  // Пока загружается статус пользователя ИЛИ мы ждем создания документов, показываем загрузчик.
-  if (isUserLoading || !isDataReady) {
+  const isLoading = isUserLoading || !isDataReady || isLoadingProfile;
+  
+  if (isLoading) {
      return (
       <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -74,7 +80,19 @@ export default function DashboardLayout({
     );
   }
   
-  // Если при инициализации произошла ошибка, показываем ее.
+  if (userProfile?.isBanned) {
+     return (
+        <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background p-4 text-center">
+            <ShieldX className="h-16 w-16 text-destructive" />
+            <h2 className="text-2xl font-semibold text-destructive">Ваш аккаунт заблокирован</h2>
+            <p className="max-w-md text-muted-foreground">Доступ к приложению ограничен администратором. Если вы считаете, что это ошибка, обратитесь в поддержку.</p>
+             <Button onClick={() => router.replace('/')} variant="outline">
+                Вернуться на главную
+            </Button>
+        </div>
+     );
+  }
+
   if (error) {
      return (
       <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background p-4 text-center">
@@ -85,8 +103,6 @@ export default function DashboardLayout({
     );
   }
 
-
-  // Как только все готово, рендерим полный layout с дочерними элементами.
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">

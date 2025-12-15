@@ -7,7 +7,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { MoreHorizontal, User as UserIcon, Trash2 } from 'lucide-react';
+import { MoreHorizontal, User as UserIcon, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -36,36 +36,42 @@ import {
 } from '@/components/ui/alert-dialog';
 import type { UserProfile } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { useFirestore, errorEmitter, FirestorePermissionError, useUser } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { Switch } from '../ui/switch';
+import { Badge } from '../ui/badge';
 
 interface AdminUsersTableProps {
   users: UserProfile[];
 }
 
 export function AdminUsersTable({ users }: AdminUsersTableProps) {
-  const [userToDelete, setUserToDelete] = React.useState<UserProfile | null>(null);
+  const { user: adminUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const [processingUserId, setProcessingUserId] = React.useState<string | null>(null);
 
-  const handleDeleteClick = (user: UserProfile) => {
-    setUserToDelete(user);
-  };
+  const handleBanToggle = (user: UserProfile) => {
+    if (!firestore || !adminUser || adminUser.uid === user.id) return;
 
-  const confirmDelete = () => {
-    if (!userToDelete || !firestore) return;
-    const userRef = doc(firestore, 'users', userToDelete.id);
-    
-    deleteDoc(userRef)
+    setProcessingUserId(user.id);
+    const userRef = doc(firestore, 'users', user.id);
+    const newBanStatus = !user.isBanned;
+
+    updateDoc(userRef, { isBanned: newBanStatus })
       .then(() => {
-        toast({ title: "Пользователь удален." });
+        toast({ title: newBanStatus ? "Пользователь заблокирован" : "Пользователь разблокирован" });
       })
       .catch((error) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: userRef.path, operation: 'delete' }));
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'update',
+          requestResourceData: { isBanned: newBanStatus }
+        }));
       })
       .finally(() => {
-        setUserToDelete(null);
+        setProcessingUserId(null);
       });
   };
 
@@ -121,39 +127,37 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
         }
     },
     {
-        accessorKey: 'createdAt',
-        header: 'Дата регистрации',
-        cell: ({ row }) => {
-            const date = (row.getValue('createdAt') as any)?.toDate();
-            return date ? date.toLocaleDateString('ru-RU') : 'Неизвестно';
-        }
+      accessorKey: 'isBanned',
+      header: 'Статус',
+      cell: ({ row }) => {
+        const user = row.original;
+        return (
+          <Badge variant={user.isBanned ? 'destructive' : 'default'}>
+            {user.isBanned ? 'Заблокирован' : 'Активен'}
+          </Badge>
+        );
+      },
     },
     {
       id: 'actions',
+      header: 'Блокировка',
       cell: ({ row }) => {
         const user = row.original;
-        const isAdmin = user.email === 'prostodeniskdt@gmail.com';
+        const isSelf = adminUser?.uid === user.id;
+        const isProcessing = processingUserId === user.id;
+        
         return (
-          <div className="text-right">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0" disabled={isAdmin}>
-                  <span className="sr-only">Открыть меню</span>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Действия</DropdownMenuLabel>
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
-                  onClick={() => handleDeleteClick(user)}
-                  disabled={isAdmin}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Удалить пользователя
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="flex items-center justify-center gap-2">
+            {isProcessing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Switch
+                checked={!!user.isBanned}
+                onCheckedChange={() => handleBanToggle(user)}
+                disabled={isSelf || isProcessing}
+                aria-label={user.isBanned ? 'Разблокировать пользователя' : 'Заблокировать пользователя'}
+              />
+            )}
           </div>
         );
       },
@@ -171,7 +175,7 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
         <div className="flex items-center justify-between py-4">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Управление пользователями</h1>
-                <p className="text-muted-foreground">Просмотр и удаление учетных записей пользователей.</p>
+                <p className="text-muted-foreground">Просмотр и блокировка учетных записей пользователей.</p>
             </div>
         </div>
         <div className="rounded-md border">
@@ -221,20 +225,6 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
             </TableBody>
             </Table>
         </div>
-      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
-          <AlertDialogContent>
-              <AlertDialogHeader>
-                  <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                      Вы собираетесь безвозвратно удалить пользователя <span className="font-semibold">{userToDelete?.displayName} ({userToDelete?.email})</span>. Это действие нельзя отменить.
-                  </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                  <AlertDialogCancel>Отмена</AlertDialogCancel>
-                  <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Удалить</AlertDialogAction>
-              </AlertDialogFooter>
-          </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

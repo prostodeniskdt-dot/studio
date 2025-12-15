@@ -10,53 +10,48 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
     
+    function isNotBanned(userId) {
+      // Check for the existence AND value of the isBanned flag.
+      // Deny if isBanned is explicitly true. Allow if it's false or doesn't exist.
+      return get(/databases/$(database)/documents/users/$(userId)).data.isBanned != true;
+    }
+
     function isAdmin() {
-      // This is the correct and secure way to check roles for list/query operations.
       return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
     function isBarOwner(barId) {
-      // Simple, robust check that doesn't rely on cross-document reads.
-      return isSignedIn() && barId == 'bar_' + request.auth.uid;
+      return isSignedIn() && barId == 'bar_' + request.auth.uid && isNotBanned(request.auth.uid);
     }
 
     match /roles_admin/{userId} {
       allow get: if isOwner(userId);
-      // Secure, one-time-only create for the designated admin email.
-      // This allows the client to bootstrap the admin role safely.
       allow create: if isOwner(userId) 
                     && request.auth.token.email == "prostodeniskdt@gmail.com"
                     && !exists(/databases/$(database)/documents/roles_admin/$(userId))
                     && request.resource.data.keys().hasOnly(["isAdmin"])
                     && request.resource.data.isAdmin == true;
       
-      // Explicitly deny list, update, delete for security.
       allow list, update, delete: if false;
     }
 
     match /users/{userId} {
-      // A user can read their own profile, or an admin can read any profile.
       allow read: if isOwner(userId) || isAdmin();
-      // Only admins can list all users.
       allow list: if isAdmin();
-      // A user can create their own profile.
       allow create: if isOwner(userId);
-      // A user can update their own profile, or an admin can update any profile.
-      allow update: if isOwner(userId) || isAdmin();
-      // An admin can delete any user except themselves.
-      allow delete: if isAdmin() && request.auth.uid != userId;
+      // An admin can update any user. A user can update their own profile if they are not banned.
+      allow update: if isAdmin() || (isOwner(userId) && isNotBanned(userId));
+      allow delete: if false; // Deleting user documents is disabled. Use ban flag instead.
     }
     
     match /products/{productId} {
-        allow read, list: if isSignedIn();
-        allow create, update, delete: if isSignedIn();
+        allow read, list: if isSignedIn() && isNotBanned(request.auth.uid);
+        allow create, update, delete: if isSignedIn() && isNotBanned(request.auth.uid);
     }
 
     match /bars/{barId} {
-      // Allow creation only if the bar ID matches the user's UID and they are creating it for themselves.
-      allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid && barId == 'bar_' + request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid && barId == 'bar_' + request.auth.uid && isNotBanned(request.auth.uid);
       
-      // Use the simplified owner check for all other operations.
       allow read, update, delete: if isBarOwner(barId) || isAdmin();
       allow list: if isAdmin();
 

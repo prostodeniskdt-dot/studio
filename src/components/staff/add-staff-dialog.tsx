@@ -25,15 +25,13 @@ import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import { translateRole } from '@/lib/utils';
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, getDocs, query, where, doc, setDoc, limit, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, setDoc, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 
 const addStaffSchema = z.object({
   firstName: z.string().min(1, 'Имя обязательно'),
   lastName: z.string().min(1, 'Фамилия обязательна'),
   email: z.string().email('Неверный формат email.'),
-  password: z.string().min(6, 'Пароль должен быть не менее 6 символов.'),
   phone: z.string().optional(),
   socialLink: z.string().optional(),
   role: z.enum(['manager', 'bartender']),
@@ -60,33 +58,19 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
       firstName: '',
       lastName: '',
       email: '',
-      password: '',
       phone: '',
       socialLink: '',
       role: 'bartender',
     },
   });
 
-  const { auth: ownerAuth } = useUser(); // We need the auth instance of the currently logged in owner
   const firestore = useFirestore();
   const { toast } = useToast();
 
   const onSubmit = async (data: AddStaffFormValues) => {
-    if (!firestore || !ownerAuth) return;
+    if (!firestore) return;
 
     try {
-        // We can't create a user directly with the main auth instance.
-        // This would require Admin SDK which we don't have on the client.
-        // The flow must be:
-        // 1. Owner invites by email.
-        // 2. The invited person gets an email, clicks a link to sign up themselves.
-        // 3. During sign up, a special token is used to associate them with the bar.
-
-        // The request is to create the user directly. This is a security risk.
-        // A better approach is to create a pending invitation.
-        // However, to fulfill the request as close as possible without server-side logic:
-        // We will just add a member document. The user must exist.
-
         const usersRef = collection(firestore, 'users');
         const q = query(usersRef, where('email', '==', data.email), limit(1));
         const userSnapshot = await getDocs(q);
@@ -106,20 +90,21 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
         
         await setDoc(memberRef, { userId, role: data.role });
 
-        // Update the user's profile with details if they were provided
         const userProfileRef = doc(firestore, 'users', userId);
         const profileUpdateData: Record<string, any> = {};
         if (data.phone) profileUpdateData.phone = data.phone;
         if (data.socialLink) profileUpdateData.socialLink = data.socialLink;
-        if (data.firstName && data.lastName) {
-             profileUpdateData.displayName = `${data.firstName} ${data.lastName}`;
+        
+        const newDisplayName = `${data.firstName} ${data.lastName}`.trim();
+        if (newDisplayName && newDisplayName !== userDoc.data().displayName) {
+             profileUpdateData.displayName = newDisplayName;
         }
         
         if (Object.keys(profileUpdateData).length > 0) {
             await setDoc(userProfileRef, profileUpdateData, { merge: true });
         }
         
-        toast({ title: "Сотрудник добавлен", description: `${userDoc.data().displayName} теперь в вашей команде.` });
+        toast({ title: "Сотрудник добавлен", description: `${newDisplayName} теперь в вашей команде.` });
         onOpenChange(false);
         reset();
 

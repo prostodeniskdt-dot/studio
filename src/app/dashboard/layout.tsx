@@ -8,7 +8,7 @@ import {
 import { UserNav } from "@/components/user-nav";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ClientOnly } from "@/components/client-only";
-import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { Loader2, ShieldX } from "lucide-react";
@@ -16,6 +16,7 @@ import { ensureUserAndBarDocuments } from "@/firebase/non-blocking-login";
 import type { UserProfile } from "@/lib/types";
 import { doc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
+import { signOut } from "firebase/auth";
 
 
 export default function DashboardLayout({
@@ -24,6 +25,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, isUserLoading } = useUser();
+  const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
   const [isDataReady, setIsDataReady] = useState(false);
@@ -69,6 +71,16 @@ export default function DashboardLayout({
   }, [user, isUserLoading, firestore, router]);
 
 
+  const handleLogoutAndRedirect = () => {
+    if (auth) {
+      signOut(auth).then(() => {
+        router.replace('/');
+      });
+    } else {
+      router.replace('/');
+    }
+  };
+
   const isLoading = isUserLoading || !isDataReady || isLoadingProfile;
   
   if (isLoading) {
@@ -86,7 +98,7 @@ export default function DashboardLayout({
             <ShieldX className="h-16 w-16 text-destructive" />
             <h2 className="text-2xl font-semibold text-destructive">Ваш аккаунт заблокирован</h2>
             <p className="max-w-md text-muted-foreground">Доступ к приложению ограничен администратором. Если вы считаете, что это ошибка, обратитесь в поддержку.</p>
-             <Button onClick={() => router.replace('/')} variant="outline">
+             <Button onClick={handleLogoutAndRedirect} variant="outline">
                 Вернуться на главную
             </Button>
         </div>

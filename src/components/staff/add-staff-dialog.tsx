@@ -98,21 +98,13 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
         reset();
 
     } catch(error: any) {
-        let description = error.message || "Произошла неизвестная ошибка.";
-        if (error.code === 'permission-denied') {
-            description = 'У вас нет прав для выполнения этого действия.';
-        }
-        toast({
-            variant: "destructive",
-            title: "Ошибка добавления сотрудника",
-            description
-        });
-        
+        // Construct the correct data that was SUPPOSED to be written for a more useful error message.
+        const intendedData = { userId: userId, role: data.role };
+
         errorEmitter.emit('permission-error', new FirestorePermissionError({
              path: `bars/${barId}/members/${userId || '(lookup failed)'}`,
              operation: 'create',
-             // Pass the data that was intended to be written for accurate debugging
-             requestResourceData: { userId, role: data.role } 
+             requestResourceData: intendedData // Use the corrected data object here.
         }));
     }
   };

@@ -29,11 +29,7 @@ import { collection, getDocs, query, where, doc, setDoc, limit } from 'firebase/
 import { useToast } from '@/hooks/use-toast';
 
 const addStaffSchema = z.object({
-  firstName: z.string().min(1, 'Имя обязательно'),
-  lastName: z.string().min(1, 'Фамилия обязательна'),
   email: z.string().email('Неверный формат email.'),
-  phone: z.string().optional(),
-  socialLink: z.string().optional(),
   role: z.enum(['manager', 'bartender']),
 });
 
@@ -55,11 +51,7 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
   } = useForm<AddStaffFormValues>({
     resolver: zodResolver(addStaffSchema),
     defaultValues: {
-      firstName: '',
-      lastName: '',
       email: '',
-      phone: '',
-      socialLink: '',
       role: 'bartender',
     },
   });
@@ -89,22 +81,8 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
         const memberRef = doc(firestore, 'bars', barId, 'members', userId);
         
         await setDoc(memberRef, { userId, role: data.role });
-
-        const userProfileRef = doc(firestore, 'users', userId);
-        const profileUpdateData: Record<string, any> = {};
-        if (data.phone) profileUpdateData.phone = data.phone;
-        if (data.socialLink) profileUpdateData.socialLink = data.socialLink;
         
-        const newDisplayName = `${data.firstName} ${data.lastName}`.trim();
-        if (newDisplayName && newDisplayName !== userDoc.data().displayName) {
-             profileUpdateData.displayName = newDisplayName;
-        }
-        
-        if (Object.keys(profileUpdateData).length > 0) {
-            await setDoc(userProfileRef, profileUpdateData, { merge: true });
-        }
-        
-        toast({ title: "Сотрудник добавлен", description: `${newDisplayName} теперь в вашей команде.` });
+        toast({ title: "Сотрудник добавлен", description: `${userDoc.data().displayName} (${data.email}) теперь в вашей команде.` });
         onOpenChange(false);
         reset();
 
@@ -137,29 +115,6 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
             <Label htmlFor="email">Email сотрудника</Label>
             <Input id="email" placeholder="user@example.com" {...register('email')} />
             {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">Имя</Label>
-                <Input id="firstName" placeholder="Иван" {...register('firstName')} />
-                 {errors.firstName && <p className="text-sm text-destructive">{errors.firstName.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Фамилия</Label>
-                <Input id="lastName" placeholder="Иванов" {...register('lastName')} />
-                 {errors.lastName && <p className="text-sm text-destructive">{errors.lastName.message}</p>}
-              </div>
-          </div>
-          
-           <div className="space-y-2">
-            <Label htmlFor="phone">Телефон (необязательно)</Label>
-            <Input id="phone" {...register('phone')} />
-          </div>
-
-           <div className="space-y-2">
-            <Label htmlFor="socialLink">Telegram (необязательно)</Label>
-            <Input id="socialLink" placeholder="@username" {...register('socialLink')} />
           </div>
 
           <div className="space-y-2">

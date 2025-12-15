@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, BarChart3, Settings, Calculator, LineChart, Users, Truck, ShoppingCart, Shield, Bug } from 'lucide-react';
+import { Home, Package, BarChart3, Settings, Calculator, LineChart, Truck, ShoppingCart, Shield, Bug } from 'lucide-react';
 import {
   SidebarHeader,
   Sidebar,

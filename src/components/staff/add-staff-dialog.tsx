@@ -62,6 +62,9 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
   const onSubmit = async (data: AddStaffFormValues) => {
     if (!firestore) return;
 
+    let userId = '';
+    let memberData: { userId: string; role: 'manager' | 'bartender' } | null = null;
+
     try {
         const usersRef = collection(firestore, 'users');
         const q = query(usersRef, where('email', '==', data.email), limit(1));
@@ -77,16 +80,15 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
         }
 
         const userDoc = userSnapshot.docs[0];
-        const userId = userDoc.id;
+        userId = userDoc.id;
+        
         const memberRef = doc(firestore, 'bars', barId, 'members', userId);
         
-        // This is the CRITICAL FIX: create a data object that matches the BarMember schema.
-        const memberData = {
+        memberData = {
             userId: userId,
             role: data.role
         };
         
-        // Use the new, correct data object for the setDoc operation.
         await setDoc(memberRef, memberData);
         
         toast({ title: "Сотрудник добавлен", description: `${userDoc.data().displayName} (${data.email}) теперь в вашей команде.` });
@@ -103,9 +105,13 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
             title: "Ошибка добавления сотрудника",
             description
         });
-        // The data passed to the error emitter should be the data we TRIED to write, for accurate debugging.
-        // In the future, this would be memberData, but for this error, the original 'data' shows the root cause.
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/members`, operation: 'create', requestResourceData: { userId: '... (lookup failed)', role: data.role } }));
+        
+        // This will now correctly report the data that was intended for writing.
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+             path: `bars/${barId}/members/${userId || '(lookup failed)'}`,
+             operation: 'create',
+             requestResourceData: memberData 
+        }));
     }
   };
 

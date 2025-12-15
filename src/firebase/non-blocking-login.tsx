@@ -102,7 +102,7 @@ async function seedInitialData(firestore: Firestore, barId: string, userId: stri
 }
 
 async function ensureEmailIndex(firestore: Firestore, user: User): Promise<void> {
-    if (!user.email) return;
+    if (!user || !user.email) return;
 
     const emailLower = user.email.toLowerCase();
     const indexRef = doc(firestore, 'email_to_uid', emailLower);

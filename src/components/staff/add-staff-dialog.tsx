@@ -80,7 +80,13 @@ export function AddStaffDialog({ open, onOpenChange, barId }: AddStaffDialogProp
         const userId = userDoc.id;
         const memberRef = doc(firestore, 'bars', barId, 'members', userId);
         
-        await setDoc(memberRef, { userId, role: data.role });
+        // Correct data structure according to BarMember schema
+        const memberData = {
+            userId: userId,
+            role: data.role
+        };
+        
+        await setDoc(memberRef, memberData);
         
         toast({ title: "Сотрудник добавлен", description: `${userDoc.data().displayName} (${data.email}) теперь в вашей команде.` });
         onOpenChange(false);

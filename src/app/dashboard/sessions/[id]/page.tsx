@@ -41,6 +41,7 @@ import { translateCategory } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { calculateLineFields } from '@/lib/calculations';
 import { deleteSessionWithLinesClient } from '@/lib/firestore-utils';
+import { Progress } from '@/components/ui/progress';
 
 export default function SessionPage() {
   const params = useParams();
@@ -54,6 +55,7 @@ export default function SessionPage() {
   
   const [isDeletingSession, setIsDeletingSession] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  const [deleteProgress, setDeleteProgress] = React.useState(0);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [localLines, setLocalLines] = React.useState<InventoryLine[] | null>(null);
@@ -140,14 +142,15 @@ export default function SessionPage() {
     if (!firestore || !barId) return;
 
     setIsDeletingSession(true);
-    setIsDeleteDialogOpen(false); 
+    setIsDeleteDialogOpen(false);
+    setDeleteProgress(0);
     
     router.replace("/dashboard/sessions");
 
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
     try {
-        await deleteSessionWithLinesClient(firestore, barId, id);
+        await deleteSessionWithLinesClient(firestore, barId, id, setDeleteProgress);
         toast({ title: "Инвентаризация удалена." });
     } catch(e: unknown) {
         const errorMessage = e instanceof Error ? e.message : "Произошла неизвестная ошибка.";
@@ -156,6 +159,8 @@ export default function SessionPage() {
             title: "Не удалось удалить инвентаризацию", 
             description: errorMessage
         });
+    } finally {
+        setDeleteProgress(0);
     }
   };
   
@@ -180,7 +185,13 @@ export default function SessionPage() {
         await setDoc(newLineRef, newLineData);
         toast({ title: "Продукт добавлен", description: `"${product ? buildProductDisplayName(product.name, product.bottleVolumeMl) : ''}" добавлен в инвентаризацию.` });
         setIsAddProductOpen(false);
-    } catch (serverError) {
+    } catch (serverError: unknown) {
+        const errorMessage = serverError instanceof Error ? serverError.message : 'Не удалось добавить продукт';
+        toast({
+            variant: "destructive",
+            title: "Ошибка",
+            description: errorMessage,
+        });
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/inventorySessions/${id}/lines`, operation: 'create' }));
     } finally {
         setIsAddingProduct(false);
@@ -209,7 +220,13 @@ export default function SessionPage() {
         });
         await batch.commit();
         toast({ title: "Изменения сохранены" });
-    } catch (serverError) {
+    } catch (serverError: unknown) {
+        const errorMessage = serverError instanceof Error ? serverError.message : 'Не удалось сохранить изменения';
+        toast({
+            variant: "destructive",
+            title: "Ошибка сохранения",
+            description: errorMessage,
+        });
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/inventorySessions/${id}/lines`, operation: 'update' }));
     } finally {
         setIsSaving(false);
@@ -232,7 +249,13 @@ export default function SessionPage() {
           description: "Инвентаризация завершена и отчет готов.",
       });
       router.push(`/dashboard/sessions/${id}/report`);
-    } catch(serverError) {
+    } catch(serverError: unknown) {
+        const errorMessage = serverError instanceof Error ? serverError.message : 'Не удалось завершить инвентаризацию';
+        toast({
+            variant: "destructive",
+            title: "Ошибка",
+            description: errorMessage,
+        });
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: sessionRef.path, operation: 'update' }));
     } finally {
       setIsCompleting(false);
@@ -502,12 +525,18 @@ export default function SessionPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteSession} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogCancel disabled={isDeletingSession}>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteSession} disabled={isDeletingSession} className="bg-destructive hover:bg-destructive/90">
                 {isDeletingSession ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                Удалить
+                {isDeletingSession ? 'Удаление...' : 'Удалить'}
             </AlertDialogAction>
           </AlertDialogFooter>
+          {isDeletingSession && deleteProgress > 0 && (
+            <div className="px-6 pb-4">
+              <Progress value={deleteProgress} className="w-full" />
+              <p className="text-xs text-muted-foreground mt-2 text-center">{deleteProgress}%</p>
+            </div>
+          )}
         </AlertDialogContent>
       </AlertDialog>
     </>

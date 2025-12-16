@@ -89,10 +89,10 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
     [allCalculatedLines]
   );
 
-  const varianceCompositionData = [
+  const varianceCompositionData = React.useMemo(() => [
       { name: 'Излишки', value: totals.totalSurplus, fill: 'hsl(var(--chart-2))' },
       { name: 'Потери', value: Math.abs(totals.totalLoss), fill: 'hsl(var(--destructive))' },
-  ].filter(item => item.value > 0);
+  ].filter(item => item.value > 0), [totals]);
 
   const needsReorder = React.useMemo(() =>
     allCalculatedLines.some(line => line.product?.reorderPointMl && line.endStock < line.product.reorderPointMl),

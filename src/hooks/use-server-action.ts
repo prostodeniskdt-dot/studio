@@ -30,8 +30,8 @@ export function useServerAction<TInput, TOutput>(
       if (options.onSuccess) {
         options.onSuccess(result);
       }
-    } catch (e: any) {
-      const errorMessage = e.message || 'Произошла неизвестная ошибка';
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : 'Произошла неизвестная ошибка';
       setError(errorMessage);
       if (options.onError) {
         options.onError(errorMessage);

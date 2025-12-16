@@ -235,10 +235,15 @@ export default function UnifiedCalculatorPage() {
             });
         }
     } catch (serverError: unknown) {
+        const errorMessage = serverError instanceof Error ? serverError.message : 'Не удалось отправить данные в инвентаризацию';
+        toast({
+            variant: "destructive",
+            title: "Ошибка",
+            description: errorMessage,
+        });
         const operation = 'write';
         const permissionError = new FirestorePermissionError({ path: `bars/${barId}/inventorySessions`, operation });
         errorEmitter.emit('permission-error', permissionError);
-        console.error('Failed to save calculation:', serverError);
     } finally {
         setIsSending(false);
     }

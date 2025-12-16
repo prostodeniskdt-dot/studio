@@ -28,6 +28,7 @@ import * as React from "react";
 import { useFirestore } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { deleteSessionWithLinesClient } from "@/lib/firestore-utils";
+import { Progress } from "@/components/ui/progress";
 
 type SessionsListProps = {
   sessions: InventorySession[];
@@ -37,6 +38,7 @@ type SessionsListProps = {
 export function SessionsList({ sessions, barId }: SessionsListProps) {
   const [sessionToDeleteId, setSessionToDeleteId] = React.useState<string | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [deleteProgress, setDeleteProgress] = React.useState(0);
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -81,18 +83,21 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     const idToDelete = sessionToDeleteId;
     
     setIsDeleting(true);
+    setDeleteProgress(0);
 
     try {
-        await deleteSessionWithLinesClient(firestore, barId, idToDelete);
+        await deleteSessionWithLinesClient(firestore, barId, idToDelete, setDeleteProgress);
         toast({ title: "Инвентаризация удалена." });
-    } catch (e: any) {
+    } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : "Произошла неизвестная ошибка.";
         toast({ 
             variant: "destructive", 
             title: "Не удалось удалить инвентаризацию", 
-            description: e?.message ?? "Произошла неизвестная ошибка."
+            description: errorMessage
         });
     } finally {
         setIsDeleting(false);
+        setDeleteProgress(0);
         setSessionToDeleteId(null);
     }
   };
@@ -160,12 +165,18 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Отмена</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
               {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
               {isDeleting ? 'Удаление...' : 'Удалить'}
             </AlertDialogAction>
           </AlertDialogFooter>
+          {isDeleting && deleteProgress > 0 && (
+            <div className="px-6 pb-4">
+              <Progress value={deleteProgress} className="w-full" />
+              <p className="text-xs text-muted-foreground mt-2 text-center">{deleteProgress}%</p>
+            </div>
+          )}
         </AlertDialogContent>
       </AlertDialog>
     </>

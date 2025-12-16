@@ -75,7 +75,13 @@ export default function SessionsPage() {
         }
         
         router.push(`/dashboard/sessions/${sessionId}`);
-    } catch (serverError) {
+    } catch (serverError: unknown) {
+        const errorMessage = serverError instanceof Error ? serverError.message : 'Не удалось создать инвентаризацию';
+        toast({
+            variant: "destructive",
+            title: "Ошибка",
+            description: errorMessage,
+        });
         const permissionError = new FirestorePermissionError({ path: `bars/${barId}/inventorySessions`, operation: 'create' });
         errorEmitter.emit('permission-error', permissionError);
     } finally {

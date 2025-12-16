@@ -44,6 +44,9 @@ import { calculateLineFields } from '@/lib/calculations';
 import { deleteSessionWithLinesClient } from '@/lib/firestore-utils';
 import { SessionHeader } from '@/components/sessions/session-header';
 import { SessionActions } from '@/components/sessions/session-actions';
+import { useOffline } from '@/hooks/use-offline';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { WifiOff } from 'lucide-react';
 
 export default function SessionPage() {
   const params = useParams();

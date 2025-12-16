@@ -5,6 +5,7 @@ import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 import { MoreHorizontal, PlusCircle, Trash2 } from 'lucide-react';
@@ -68,7 +69,7 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
       .then(() => {
         toast({ title: "Поставщик удален." });
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: supplierRef.path, operation: 'delete' }));
       })
       .finally(() => {
@@ -131,6 +132,12 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
     data: suppliers,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
   });
 
   return (
@@ -184,6 +191,29 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
             </TableBody>
           </Table>
         </div>
+        <div className="flex items-center justify-between px-2 py-4">
+          <div className="text-sm text-muted-foreground">
+            Показано {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} - {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, suppliers.length)} из {suppliers.length}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Назад
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Вперед
+            </Button>
+          </div>
+        </div>
         <SheetContent>
           <SheetHeader>
             <SheetTitle>{editingSupplier ? 'Редактировать поставщика' : 'Добавить поставщика'}</SheetTitle>
@@ -191,7 +221,7 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
           <SupplierForm barId={barId} supplier={editingSupplier} onFormSubmit={handleCloseSheet} />
         </SheetContent>
       </Sheet>
-      <AlertDialog open={!!supplierToDelete} onOpenChange={(open) => !open && setSupplierToDelete(null)}>
+      <AlertDialog open={!!supplierToDelete} onOpenChange={(open: boolean) => !open && setSupplierToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Вы уверены?</AlertDialogTitle>

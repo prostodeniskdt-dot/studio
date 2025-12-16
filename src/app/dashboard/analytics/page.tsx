@@ -3,7 +3,7 @@
 import * as React from 'react';
 import dynamic from 'next/dynamic';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, Timestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import type { InventorySession, InventoryLine } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { useRelatedCollection } from '@/hooks/use-related-collection';
@@ -21,7 +21,7 @@ export default function AnalyticsPage() {
   const barId = user ? `bar_${user.uid}` : null;
   
   const sessionsQuery = useMemoFirebase(() =>
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions'), where('status', '==', 'completed')) : null,
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions'), where('status', '==', 'completed'), orderBy('closedAt', 'desc')) : null,
     [firestore, barId]
   );
   const { data: sessions, isLoading: isLoadingSessions } = useCollection<InventorySession>(sessionsQuery);
@@ -40,17 +40,7 @@ export default function AnalyticsPage() {
     return sessions.map(session => ({
       ...session,
       lines: linesBySession[session.id] || []
-    })).sort((a, b) => {
-      const dateA = a.closedAt instanceof Timestamp ? a.closedAt.toMillis() : 
-        (a.closedAt && typeof a.closedAt === 'object' && 'seconds' in a.closedAt) 
-          ? (a.closedAt.seconds as number) * 1000 
-          : 0;
-      const dateB = b.closedAt instanceof Timestamp ? b.closedAt.toMillis() : 
-        (b.closedAt && typeof b.closedAt === 'object' && 'seconds' in b.closedAt) 
-          ? (b.closedAt.seconds as number) * 1000 
-          : 0;
-      return dateA - dateB;
-    });
+    }));
   }, [sessions, linesBySession]);
 
   const isLoading = isLoadingSessions || isLoadingLines;

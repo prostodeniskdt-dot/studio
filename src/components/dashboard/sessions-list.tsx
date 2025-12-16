@@ -39,6 +39,8 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
   const [sessionToDeleteId, setSessionToDeleteId] = React.useState<string | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteProgress, setDeleteProgress] = React.useState(0);
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 9; // 3x3 grid
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -111,11 +113,15 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     return <div className="text-center text-muted-foreground py-10">Инвентаризаций пока нет. Начните первую!</div>;
   }
 
+  const totalPages = Math.ceil(sessions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedSessions = sessions.slice(startIndex, endIndex);
 
   return (
     <>
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {sessions.map((session) => (
+      {paginatedSessions.map((session) => (
         <Card key={session.id} className="flex flex-col">
           <CardHeader>
             <div className="flex justify-between items-start">
@@ -156,6 +162,34 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
         </Card>
       ))}
     </div>
+    {totalPages > 1 && (
+      <div className="flex items-center justify-between mt-6">
+        <div className="text-sm text-muted-foreground">
+          Показано {startIndex + 1} - {Math.min(endIndex, sessions.length)} из {sessions.length}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((prev: number) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            Назад
+          </Button>
+          <div className="text-sm text-muted-foreground">
+            Страница {currentPage} из {totalPages}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((prev: number) => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Вперед
+          </Button>
+        </div>
+      </div>
+    )}
      <AlertDialog open={!!sessionToDeleteId} onOpenChange={setSessionToDeleteId}>
         <AlertDialogContent>
           <AlertDialogHeader>

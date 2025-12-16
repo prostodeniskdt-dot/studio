@@ -16,7 +16,7 @@ import { useServerAction } from '@/hooks/use-server-action';
 import { createPurchaseOrdersFromSession } from '@/lib/actions';
 
 
-const ReportView = dynamic(() => import('@/components/reports/report-view').then(mod => mod.ReportView), {
+const ReportView = dynamic(() => import('@/components/reports/report-view').then(mod => ({ default: mod.ReportView })), {
     ssr: false,
     loading: () => <div className="flex items-center justify-center h-full pt-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
 });

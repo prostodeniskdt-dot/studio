@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Firestore, collection, query, getDocs, QueryConstraint } from 'firebase/firestore';
+import { logger } from '@/lib/logger';
 
 /**
  * Hook for loading related subcollections efficiently.
@@ -82,7 +83,7 @@ export function useRelatedCollection<T extends { id: string }>(
         }
         const error = err instanceof Error ? err : new Error(String(err));
         setError(error);
-        console.error('Error fetching related collection:', error);
+        logger.error('Error fetching related collection:', error);
       } finally {
         if (!abortController.signal.aborted) {
           setIsLoading(false);

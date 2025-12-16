@@ -6,6 +6,7 @@ import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 import { MoreHorizontal, PlusCircle, Trash2, ArrowRight } from 'lucide-react';
@@ -79,7 +80,7 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
         const linesRef = collection(orderRef, 'lines');
         const linesSnapshot = await getDocs(linesRef);
         const batch = writeBatch(firestore);
-        linesSnapshot.forEach(lineDoc => batch.delete(lineDoc.ref));
+        linesSnapshot.forEach((lineDoc) => batch.delete(lineDoc.ref));
         batch.delete(orderRef);
         
         await batch.commit();
@@ -174,6 +175,12 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
     data: orders,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
   });
 
   return (
@@ -231,6 +238,29 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
                     </TableBody>
                 </Table>
                 </div>
+                <div className="flex items-center justify-between px-2 py-4">
+                  <div className="text-sm text-muted-foreground">
+                    Показано {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} - {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, orders.length)} из {orders.length}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => table.previousPage()}
+                      disabled={!table.getCanPreviousPage()}
+                    >
+                      Назад
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => table.nextPage()}
+                      disabled={!table.getCanNextPage()}
+                    >
+                      Вперед
+                    </Button>
+                  </div>
+                </div>
             </CardContent>
         </Card>
         
@@ -241,7 +271,7 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
           <PurchaseOrderForm barId={barId} suppliers={suppliers} order={editingOrder} onFormSubmit={handleCloseSheet} />
         </SheetContent>
       </Sheet>
-      <AlertDialog open={!!orderToDelete} onOpenChange={(open) => !open && setOrderToDelete(null)}>
+      <AlertDialog open={!!orderToDelete} onOpenChange={(open: boolean) => !open && setOrderToDelete(null)}>
           <AlertDialogContent>
               <AlertDialogHeader>
                   <AlertDialogTitle>Вы уверены?</AlertDialogTitle>

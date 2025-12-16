@@ -2,8 +2,8 @@
 
 import * as React from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
-import type { PurchaseOrder, PurchaseOrderLine } from '@/lib/types';
+import { collection, query, orderBy } from 'firebase/firestore';
+import type { PurchaseOrder, PurchaseOrderLine, Supplier } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { PurchaseOrdersTable } from '@/components/purchase-orders/purchase-orders-table';
 import { useRelatedCollection } from '@/hooks/use-related-collection';
@@ -20,7 +20,7 @@ export default function PurchaseOrdersPage() {
   const barId = user ? `bar_${user.uid}` : null;
   
   const ordersQuery = useMemoFirebase(() =>
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'purchaseOrders')) : null,
+    firestore && barId ? query(collection(firestore, 'bars', barId, 'purchaseOrders'), orderBy('orderDate', 'desc')) : null,
     [firestore, barId]
   );
   const { data: orders, isLoading: isLoadingOrders } = useCollection<PurchaseOrder>(ordersQuery);
@@ -40,7 +40,7 @@ export default function PurchaseOrdersPage() {
   // Create suppliers map for O(1) lookup
   const suppliersMap = React.useMemo(() => {
     const map = new Map<string, Supplier>();
-    suppliers?.forEach(s => map.set(s.id, s));
+    suppliers?.forEach((s: Supplier) => map.set(s.id, s));
     return map;
   }, [suppliers]);
 
@@ -55,7 +55,7 @@ export default function PurchaseOrdersPage() {
         supplier: suppliersMap.get(order.supplierId),
         totalAmount: totalAmount,
       };
-    }).sort((a, b) => (b.orderDate?.toMillis() ?? 0) - (a.orderDate?.toMillis() ?? 0));
+    });
   }, [orders, suppliersMap, allOrderLines]);
 
   const isLoading = isLoadingOrders || isLoadingSuppliers || isLoadingLines;

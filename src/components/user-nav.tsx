@@ -20,6 +20,7 @@ import { LogOut, User as UserIcon, Loader2 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 export function UserNav() {
   const auth = useAuth();
@@ -43,7 +44,7 @@ export function UserNav() {
             title: "Вы вышли из системы"
         });
     }).catch((error) => {
-        console.error("Logout Error:", error);
+        logger.error("Logout Error:", error);
         toast({
             variant: "destructive",
             title: "Ошибка выхода",

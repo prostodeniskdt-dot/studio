@@ -13,6 +13,7 @@ import { getAuth } from 'firebase/auth';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useUser } from '@/firebase';
+import { logger } from '@/lib/logger';
 
 /** Utility type to add an 'id' field to a given type T. */
 export type WithId<T> = T & { id: string };
@@ -80,7 +81,7 @@ export function useCollection<T = any>(
     
     // Developer check: Ensure the passed query is memoized to prevent bugs.
     if (!memoizedTargetRefOrQuery.__memo) {
-      console.error(
+      logger.error(
         'useCollection Error: The query/reference was not created with useMemoFirebase. This can lead to infinite loops. Please wrap the query creation in useMemoFirebase.',
         memoizedTargetRefOrQuery
       );

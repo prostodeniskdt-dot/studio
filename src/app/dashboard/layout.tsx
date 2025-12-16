@@ -21,6 +21,7 @@ import type { UserProfile } from "@/lib/types";
 import { doc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { signOut } from "firebase/auth";
+import { logger } from "@/lib/logger";
 
 
 export default function DashboardLayout({
@@ -63,7 +64,7 @@ export default function DashboardLayout({
         })
         .catch((err: unknown) => {
           if (isMounted) {
-            console.error("Failed to ensure user/bar documents:", err);
+            logger.error("Failed to ensure user/bar documents:", err);
             const errorMessage = err instanceof Error ? err.message : "Не удалось инициализировать данные пользователя.";
             setError(errorMessage);
             setIsDataReady(true);

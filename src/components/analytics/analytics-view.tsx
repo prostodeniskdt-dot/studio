@@ -6,6 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { VarianceTrendChart } from '@/components/analytics/variance-trend-chart';
 
 export function AnalyticsView({ data }: { data: SessionWithLines[] }) {
+    // Filter out sessions without lines (they won't have meaningful data)
+    const sessionsWithData = data.filter(session => session.lines && session.lines.length > 0);
+    
     return (
         <>
             <div className="flex w-full items-center justify-between py-4">
@@ -19,10 +22,28 @@ export function AnalyticsView({ data }: { data: SessionWithLines[] }) {
                 <Card className="w-full">
                 <CardHeader>
                     <CardTitle>Динамика отклонений</CardTitle>
-                    <CardDescription>Общая сумма потерь и излишков по каждой завершенной инвентаризации.</CardDescription>
+                    <CardDescription>
+                        Общая сумма потерь и излишков по каждой завершенной инвентаризации.
+                        {sessionsWithData.length !== data.length && (
+                            <span className="block mt-1 text-xs text-muted-foreground">
+                                Показано {sessionsWithData.length} из {data.length} сессий (сессии без данных исключены)
+                            </span>
+                        )}
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {data.length > 0 ? <VarianceTrendChart data={data} /> : <p className="text-muted-foreground text-center py-10">Нет данных для анализа. Завершите хотя бы одну инвентаризацию.</p>}
+                    {sessionsWithData.length > 0 ? (
+                        <VarianceTrendChart data={sessionsWithData} />
+                    ) : (
+                        <div className="text-center py-10">
+                            <p className="text-muted-foreground mb-2">Нет данных для анализа.</p>
+                            <p className="text-sm text-muted-foreground">
+                                {data.length === 0 
+                                    ? "Завершите хотя бы одну инвентаризацию, чтобы увидеть аналитику."
+                                    : "Завершенные инвентаризации не содержат данных для анализа. Убедитесь, что в сессиях есть строки с данными."}
+                            </p>
+                        </div>
+                    )}
                 </CardContent>
                 </Card>
             </div>

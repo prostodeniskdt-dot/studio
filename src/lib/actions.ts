@@ -6,6 +6,7 @@ import { collection, doc, writeBatch, serverTimestamp } from 'firebase/firestore
 import { initializeFirebase } from '@/firebase/server';
 import { purchaseOrderSchema, purchaseOrderLineSchema } from './schemas';
 import { z } from 'zod';
+import { logger } from './logger';
 
 type CreatePurchaseOrdersInput = {
     lines: InventoryLine[];
@@ -77,7 +78,7 @@ export async function createPurchaseOrdersFromSession(input: unknown): Promise<C
         for (const supplierId in ordersBySupplier) {
             if (supplierId === 'unknown') {
                 // In a real app, you might want to handle this more gracefully
-                console.warn("Skipping order for products with unknown supplier.");
+                logger.warn("Skipping order for products with unknown supplier.");
                 continue;
             }
             const orderRef = doc(collection(firestore, 'bars', barId, 'purchaseOrders'));
@@ -119,7 +120,7 @@ export async function createPurchaseOrdersFromSession(input: unknown): Promise<C
             holidayName: upcomingHoliday || undefined,
         };
     } catch(e: unknown) {
-        console.error("Failed to create purchase orders:", e);
+        logger.error("Failed to create purchase orders:", e);
         const errorMessage = e instanceof Error ? e.message : String(e);
         throw new Error(`Не удалось создать заказы на закупку: ${errorMessage}`);
     }

@@ -93,11 +93,13 @@ async function seedInitialProducts(firestore: Firestore): Promise<void> {
     await batch.commit();
 }
 
+import { logger } from '@/lib/logger';
+
 async function seedInitialData(firestore: Firestore, barId: string, userId: string): Promise<void> {
     try {
         await seedInitialProducts(firestore);
     } catch(e) {
-        console.error("Error during initial data seeding:", e);
+        logger.error("Error during initial data seeding:", e);
     }
 }
 
@@ -118,7 +120,7 @@ async function ensureEmailIndex(firestore: Firestore, user: User): Promise<void>
     } catch (e: any) {
         // Log the error but don't block the login flow
         // The email index is optional and used for lookups, but not critical for authentication
-        console.warn(`Failed to ensure email index for ${emailLower}:`, e);
+        logger.warn(`Failed to ensure email index for ${emailLower}:`, e);
         // Don't emit permission-error here as it would block the login flow
         // This is a non-critical operation that can fail without affecting user authentication
     }
@@ -143,7 +145,7 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
             try {
                 extraDetails = JSON.parse(detailsJson);
             } catch(e) {
-                console.error("Could not parse new user details from session storage", e);
+                logger.error("Could not parse new user details from session storage", e);
                 sessionStorage.removeItem('new_user_details'); // Clear corrupted data
             }
         }
@@ -193,7 +195,7 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
         }
     } catch (e: any) {
         // This is a critical failure, we re-throw to let the UI handle it (e.g., show an error page)
-        console.error("A non-recoverable error occurred during user/bar document check:", e);
+        logger.error("A non-recoverable error occurred during user/bar document check:", e);
         throw new Error(`Не удалось проверить или создать необходимые документы: ${e.message}`);
     }
 }
@@ -208,7 +210,7 @@ export async function initiateEmailSignUp(
     await updateProfile(userCredential.user, { displayName: name });
     return userCredential;
   } catch (error) {
-    console.error("Error during email sign-up:", error);
+    logger.error("Error during email sign-up:", error);
     throw error;
   }
 }
@@ -221,7 +223,7 @@ export async function initiateEmailSignIn(
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential;
   } catch (error) {
-    console.error("Error during email sign-in:", error);
+    logger.error("Error during email sign-in:", error);
     throw error;
   }
 }

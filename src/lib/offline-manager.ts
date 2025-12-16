@@ -2,6 +2,8 @@
  * Offline manager for handling offline state and queuing operations
  */
 
+import { logger } from './logger';
+
 interface QueuedOperation {
   id: string;
   type: 'create' | 'update' | 'delete';
@@ -95,7 +97,7 @@ class OfflineManager {
     // For now, just clear the queue when coming back online
     if (this.isOnline && this.queue.length > 0) {
       // In a real implementation, you would retry each operation
-      console.log(`Processing ${this.queue.length} queued operations...`);
+      logger.log(`Processing ${this.queue.length} queued operations...`);
       this.queue = [];
       this.saveQueue();
     }
@@ -106,7 +108,7 @@ class OfflineManager {
       try {
         localStorage.setItem('offline_queue', JSON.stringify(this.queue));
       } catch (e) {
-        console.error('Failed to save offline queue:', e);
+        logger.error('Failed to save offline queue:', e);
       }
     }
   }
@@ -119,7 +121,7 @@ class OfflineManager {
           this.queue = JSON.parse(saved);
         }
       } catch (e) {
-        console.error('Failed to load offline queue:', e);
+        logger.error('Failed to load offline queue:', e);
       }
     }
   }

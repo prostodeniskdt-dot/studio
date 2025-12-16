@@ -11,6 +11,11 @@ export const logger = {
       console.log(...args);
     }
   },
+  info: (...args: unknown[]) => {
+    if (isDevelopment) {
+      console.info(...args);
+    }
+  },
   error: (...args: unknown[]) => {
     // Always log errors, even in production
     console.error(...args);

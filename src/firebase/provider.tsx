@@ -5,6 +5,7 @@ import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { logger } from '@/lib/logger';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -93,7 +94,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         }
       },
       (error) => { // Auth listener error
-        console.error("FirebaseProvider: onAuthStateChanged error:", error);
+        logger.error("FirebaseProvider: onAuthStateChanged error:", error);
         setUserAuthState({ user: null, isUserLoading: false, userError: error });
       }
     );
@@ -193,7 +194,7 @@ export function useMemoFirebase<T extends object | null>(factory: () => T, deps:
       }
       return value;
     } catch (err) {
-        console.error("[useMemoFirebase] Factory function failed during execution:", err);
+        logger.error("[useMemoFirebase] Factory function failed during execution:", err);
         return null as T;
     }
   }, deps); // eslint-disable-line react-hooks/exhaustive-deps

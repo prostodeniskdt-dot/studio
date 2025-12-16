@@ -1,7 +1,8 @@
 /**
- * Simple error monitoring utility.
- * In production, this should be replaced with a service like Sentry.
+ * Error monitoring utility with Sentry integration.
  */
+
+import { logger } from './logger';
 
 interface ErrorContext {
   userId?: string;
@@ -33,13 +34,28 @@ class ErrorMonitor {
       this.errors = this.errors.slice(-this.maxErrors);
     }
 
-    // In development, log to console
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('ErrorMonitor:', error, errorContext);
+    // Send to Sentry if available
+    if (typeof window !== 'undefined' && (window as any).Sentry) {
+      try {
+        const Sentry = (window as any).Sentry;
+        Sentry.captureException(error, {
+          contexts: {
+            custom: errorContext,
+          },
+          tags: {
+            path: errorContext.path,
+            userId: errorContext.userId,
+          },
+        });
+      } catch (sentryError) {
+        // Fallback to console if Sentry fails
+        logger.error('ErrorMonitor: Failed to send to Sentry', sentryError);
+        logger.error('ErrorMonitor:', error, errorContext);
+      }
+    } else {
+      // Fallback to logger if Sentry is not available
+      logger.error('ErrorMonitor:', error, errorContext);
     }
-
-    // In production, you would send to an error tracking service here
-    // Example: Sentry.captureException(error, { contexts: { custom: errorContext } });
   }
 
   /**

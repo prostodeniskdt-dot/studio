@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import type { InventorySession } from '@/lib/types';
+import { logger } from '@/lib/logger';
 
 interface SessionsContextValue {
   sessions: InventorySession[];
@@ -54,6 +55,14 @@ export function SessionsProvider({ children, barId }: { children: React.ReactNod
   );
   
   const { data: sessions, isLoading, error } = useCollection<InventorySession>(sessionsQuery);
+
+  // Обработка ошибок прав доступа - использовать кэш при ошибке
+  useEffect(() => {
+    if (error && cache && cache.barId === barId) {
+      logger.warn('Permission error loading sessions, using cache:', error);
+      // Не очищаем кэш при ошибке прав доступа, используем его
+    }
+  }, [error, cache, barId]);
 
   // Сохранить в localStorage при загрузке
   useEffect(() => {

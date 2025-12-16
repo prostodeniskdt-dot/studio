@@ -108,17 +108,27 @@ export function useCollection<T = any>(
             ? (memoizedTargetRefOrQuery as CollectionReference).path
             : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString();
 
-        const contextualError = new FirestorePermissionError({
-          operation: 'list',
-          path,
-        });
+        // Only emit permission errors for actual permission-denied errors
+        // Other errors (network, etc.) should be handled differently
+        if (error.code === 'permission-denied') {
+          const contextualError = new FirestorePermissionError({
+            operation: 'list',
+            path,
+          });
 
-        setError(contextualError);
-        setData(null);
-        setIsLoading(false);
+          setError(contextualError);
+          setData(null);
+          setIsLoading(false);
 
-        // trigger global error propagation
-        errorEmitter.emit('permission-error', contextualError);
+          // trigger global error propagation (but don't crash the app)
+          // The error is set in state, so components can handle it gracefully
+          errorEmitter.emit('permission-error', contextualError);
+        } else {
+          // For other errors, just set the error state without emitting
+          setError(error);
+          setData(null);
+          setIsLoading(false);
+        }
       }
     );
 

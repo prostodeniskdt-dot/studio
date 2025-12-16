@@ -1,26 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { logger } from '@/lib/logger';
 
 /**
  * An invisible component that listens for globally emitted 'permission-error' events.
- * It throws any received error to be caught by Next.js's global-error.tsx.
+ * Instead of crashing the app, it logs errors and allows components to handle them gracefully.
  */
 export function FirebaseErrorListener() {
-  // Use the specific error type for the state for type safety.
-  const [error, setError] = useState<FirestorePermissionError | null>(null);
+  const [errorCount, setErrorCount] = useState(0);
 
   useEffect(() => {
-    // The callback now expects a strongly-typed error, matching the event payload.
+    // The callback logs the error but doesn't crash the app
     const handleError = (error: FirestorePermissionError) => {
-      // Set error in state to trigger a re-render.
-      setError(error);
+      logger.error('Firestore Permission Error:', {
+        path: error.request.path,
+        operation: error.request.method,
+        auth: error.request.auth,
+      });
+      
+      // Increment error count to trigger re-render (for potential UI updates)
+      // But don't throw - let components handle errors through their error states
+      setErrorCount(prev => prev + 1);
     };
 
-    // The typed emitter will enforce that the callback for 'permission-error'
-    // matches the expected payload type (FirestorePermissionError).
     errorEmitter.on('permission-error', handleError);
 
     // Unsubscribe on unmount to prevent memory leaks.
@@ -29,11 +34,7 @@ export function FirebaseErrorListener() {
     };
   }, []);
 
-  // On re-render, if an error exists in state, throw it.
-  if (error) {
-    throw error;
-  }
-
-  // This component renders nothing.
+  // This component renders nothing and doesn't throw errors
+  // Components should handle errors through their own error states
   return null;
 }

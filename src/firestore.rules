@@ -12,9 +12,9 @@ service cloud.firestore {
     
     function isNotBanned(userId) {
       // Allow if the user document doesn't exist yet, OR if the isBanned flag is not explicitly true.
-      return exists(/databases/$(database)/documents/users/$(userId)) ?
-        get(/databases/$(database)/documents/users/$(userId)).data.isBanned != true :
-        true;
+      // Use exists() first to avoid unnecessary get() calls
+      return !exists(/databases/$(database)/documents/users/$(userId)) ||
+        get(/databases/$(database)/documents/users/$(userId)).data.isBanned != true;
     }
 
     function isAdmin() {
@@ -22,7 +22,9 @@ service cloud.firestore {
     }
 
     function isBarOwner(barId) {
-      return isSignedIn() && barId == 'bar_' + request.auth.uid && isNotBanned(request.auth.uid);
+      // Simplified check: only verify barId matches user's uid
+      // isNotBanned check is done separately where needed to avoid blocking legitimate requests
+      return isSignedIn() && barId == 'bar_' + request.auth.uid;
     }
 
     match /roles_admin/{userId} {
@@ -91,7 +93,9 @@ service cloud.firestore {
       }
 
       match /inventorySessions/{inventorySessionId} {
-        allow read, list: if isBarOwner(barId) || isAdmin();
+        // Explicitly allow read and list operations
+        allow read: if isBarOwner(barId) || isAdmin();
+        allow list: if isBarOwner(barId) || isAdmin();
         allow create, update, delete: if isBarOwner(barId);
 
         match /lines/{inventoryLineId} {

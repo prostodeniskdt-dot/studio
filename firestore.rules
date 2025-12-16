@@ -97,15 +97,18 @@ service cloud.firestore {
         }
       }
 
-      match /inventorySessions/{inventorySessionId} {
+    match /inventorySessions/{inventorySessionId} {
+      // Allow read/list if user is bar owner or admin
+      // Note: list operations require explicit allow list rule
+      allow read: if isBarOwner(barId) || isAdmin();
+      allow list: if isBarOwner(barId) || isAdmin();
+      allow create, update, delete: if isBarOwner(barId);
+
+      match /lines/{inventoryLineId} {
         allow read, list: if isBarOwner(barId) || isAdmin();
         allow create, update, delete: if isBarOwner(barId);
-
-        match /lines/{inventoryLineId} {
-          allow read, list: if isBarOwner(barId) || isAdmin();
-          allow create, update, delete: if isBarOwner(barId);
-        }
       }
+    }
     }
   }
 }

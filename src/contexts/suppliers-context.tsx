@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import type { Supplier } from '@/lib/types';
+import { logger } from '@/lib/logger';
 
 interface SuppliersContextValue {
   suppliers: Supplier[];
@@ -53,6 +54,14 @@ export function SuppliersProvider({ children, barId }: { children: React.ReactNo
   );
   
   const { data: suppliers, isLoading, error } = useCollection<Supplier>(suppliersQuery);
+
+  // Обработка ошибок прав доступа - использовать кэш при ошибке
+  useEffect(() => {
+    if (error && cache && cache.barId === barId) {
+      logger.warn('Permission error loading suppliers, using cache:', error);
+      // Не очищаем кэш при ошибке прав доступа, используем его
+    }
+  }, [error, cache, barId]);
 
   useEffect(() => {
     if (suppliers && suppliers.length > 0 && barId) {

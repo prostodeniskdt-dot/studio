@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Product } from '@/lib/types';
+import { logger } from '@/lib/logger';
 
 interface ProductsContextValue {
   products: Product[];
@@ -51,6 +52,14 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   );
   
   const { data: products, isLoading, error } = useCollection<Product>(productsQuery);
+
+  // Обработка ошибок прав доступа - использовать кэш при ошибке
+  useEffect(() => {
+    if (error && cache) {
+      logger.warn('Permission error loading products, using cache:', error);
+      // Не очищаем кэш при ошибке прав доступа, используем его
+    }
+  }, [error, cache]);
 
   // Сохранить в localStorage при загрузке
   useEffect(() => {

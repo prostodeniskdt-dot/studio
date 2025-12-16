@@ -13,8 +13,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { MoreHorizontal, ArrowUpDown, ChevronDown, PlusCircle, Loader2, Trash2 } from 'lucide-react';
+import { MoreHorizontal, ArrowUpDown, ChevronDown, PlusCircle, Loader2, Trash2, Search } from 'lucide-react';
 import { ProductSearch } from './product-search';
+import { Input } from '@/components/ui/input';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -46,7 +47,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import type { Product, ProductCategory } from '@/lib/types';
@@ -314,21 +314,50 @@ export function ProductsTable({ products }: { products: Product[] }) {
                       <h1 className="text-3xl font-bold tracking-tight">Продукты</h1>
                       <p className="text-muted-foreground">Управляйте каталогом товаров и их профилями для калькулятора.</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                      <ProductSearch
-                        value={globalFilter ?? ''}
-                        onChange={setGlobalFilter}
-                        onCategoryChange={handleCategoryChange}
-                        onSubCategoryChange={handleSubCategoryChange}
-                        selectedCategory={selectedCategory}
-                        selectedSubCategory={selectedSubCategory}
-                        showFilters={true}
-                        placeholder="Поиск по названию..."
-                        resultsCount={table.getFilteredRowModel().rows.length}
-                      />
+                  <div className="flex items-center gap-2 flex-wrap">
+                      <div className="relative flex-1 min-w-[200px]">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                              type="text"
+                              value={globalFilter ?? ''}
+                              onChange={(e) => setGlobalFilter(e.target.value)}
+                              placeholder="Поиск по названию..."
+                              className="pl-9"
+                          />
+                      </div>
+                      <Select
+                          value={selectedCategory ? selectedCategory : '__all__'}
+                          onValueChange={(value) => handleCategoryChange(value === '__all__' ? undefined : value as ProductCategory)}
+                      >
+                          <SelectTrigger className="w-[180px] h-9">
+                              <SelectValue placeholder="Все категории" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="__all__">Все категории</SelectItem>
+                              {productCategories.map((cat) => (
+                                  <SelectItem key={cat} value={cat}>{translateCategory(cat)}</SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                      {selectedCategory && subCategoryOptions.length > 0 && (
+                          <Select
+                              value={selectedSubCategory ? selectedSubCategory : '__all__'}
+                              onValueChange={(value) => handleSubCategoryChange(value === '__all__' ? undefined : value)}
+                          >
+                              <SelectTrigger className="w-[180px] h-9">
+                                  <SelectValue placeholder="Все подкатегории" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                  <SelectItem value="__all__">Все подкатегории</SelectItem>
+                                  {subCategoryOptions.map(subCat => (
+                                      <SelectItem key={subCat} value={subCat}>{translateSubCategory(subCat)}</SelectItem>
+                                  ))}
+                              </SelectContent>
+                          </Select>
+                      )}
                       <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                          <Button variant="outline">
+                          <Button variant="outline" className="h-9">
                               Колонки <ChevronDown className="ml-2 h-4 w-4" />
                           </Button>
                           </DropdownMenuTrigger>
@@ -363,44 +392,18 @@ export function ProductsTable({ products }: { products: Product[] }) {
                           </DropdownMenuContent>
                       </DropdownMenu>
                       <SheetTrigger asChild>
-                          <Button onClick={() => handleOpenSheet()}>
+                          <Button onClick={() => handleOpenSheet()} className="h-9">
                               <PlusCircle className="mr-2 h-4 w-4" />
                               Добавить
                           </Button>
                       </SheetTrigger>
                   </div>
               </div>
-              <div className="flex items-center gap-2 mb-4">
-                  <Select
-                      value={(table.getColumn('category')?.getFilterValue() as string) ?? '_all_'}
-                      onValueChange={(value) => table.getColumn('category')?.setFilterValue(value === '_all_' ? undefined : value)}
-                  >
-                      <SelectTrigger className="w-auto sm:w-[180px]">
-                      <SelectValue placeholder="Все категории" />
-                      </SelectTrigger>
-                      <SelectContent>
-                      <SelectItem value="_all_">Все категории</SelectItem>
-                      {productCategories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>{translateCategory(cat)}</SelectItem>
-                      ))}
-                      </SelectContent>
-                  </Select>
-                  <Select
-                      value={(table.getColumn('subCategory')?.getFilterValue() as string) ?? '_all_'}
-                      onValueChange={(value) => table.getColumn('subCategory')?.setFilterValue(value === '_all_' ? undefined : value)}
-                      disabled={!subCategoryOptions || subCategoryOptions.length === 0}
-                  >
-                      <SelectTrigger className="w-auto sm:w-[180px]">
-                      <SelectValue placeholder="Все подкатегории" />
-                      </SelectTrigger>
-                      <SelectContent>
-                      <SelectItem value="_all_">Все подкатегории</SelectItem>
-                      {subCategoryOptions?.map(subCat => (
-                              <SelectItem key={subCat} value={subCat}>{translateSubCategory(subCat)}</SelectItem>
-                          ))}
-                      </SelectContent>
-                  </Select>
-              </div>
+              {table.getFilteredRowModel().rows.length !== table.getRowModel().rows.length && (
+                  <div className="text-sm text-muted-foreground mb-4">
+                      Найдено продуктов: {table.getFilteredRowModel().rows.length}
+                  </div>
+              )}
             
           <div className="rounded-md border">
               <Table>

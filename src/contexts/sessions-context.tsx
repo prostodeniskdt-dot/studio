@@ -81,15 +81,18 @@ export function SessionsProvider({ children, barId }: { children: React.ReactNod
   }, [barId]);
 
   // Использовать кэш если данные еще загружаются
-  const effectiveSessions = sessions || (cache?.barId === barId ? cache.sessions : []) || [];
-  const effectiveIsLoading = isLoading && !cache;
+  const effectiveSessions = React.useMemo(() => 
+    sessions || (cache?.barId === barId ? cache.sessions : []) || [], 
+    [sessions, cache?.barId, cache?.sessions, barId]
+  );
+  const effectiveIsLoading = React.useMemo(() => isLoading && !cache, [isLoading, cache]);
 
-  const value: SessionsContextValue = {
+  const value: SessionsContextValue = React.useMemo(() => ({
     sessions: effectiveSessions,
     isLoading: effectiveIsLoading,
     error: error || null,
     refresh,
-  };
+  }), [effectiveSessions, effectiveIsLoading, error, refresh]);
 
   return (
     <SessionsContext.Provider value={value}>

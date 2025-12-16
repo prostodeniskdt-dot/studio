@@ -61,10 +61,11 @@ export default function DashboardLayout({
             setIsDataReady(true);
           }
         })
-        .catch((err: any) => {
+        .catch((err: unknown) => {
           if (isMounted) {
             console.error("Failed to ensure user/bar documents:", err);
-            setError(err.message || "Не удалось инициализировать данные пользователя.");
+            const errorMessage = err instanceof Error ? err.message : "Не удалось инициализировать данные пользователя.";
+            setError(errorMessage);
             setIsDataReady(true);
           }
         });

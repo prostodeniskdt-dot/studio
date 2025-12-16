@@ -20,6 +20,7 @@ export interface ProductSearchProps {
   placeholder?: string;
   resultsCount?: number;
   isLoading?: boolean;
+  inline?: boolean; // Новый проп для inline режима без вертикальных отступов
 }
 
 export function ProductSearch({
@@ -33,6 +34,7 @@ export function ProductSearch({
   placeholder = 'Поиск продуктов...',
   resultsCount,
   isLoading = false,
+  inline = false,
 }: ProductSearchProps) {
   const debouncedValue = useDebounce(value, 300);
   const [isSearching, setIsSearching] = React.useState(false);
@@ -54,32 +56,42 @@ export function ProductSearch({
     return productSubCategories[selectedCategory];
   }, [selectedCategory]);
 
+  const searchInput = (
+    <div className="relative flex-1 min-w-[200px]">
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="pl-9 pr-9"
+      />
+      {(isSearching || isLoading) && (
+        <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+      )}
+      {value && !isSearching && !isLoading && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6"
+          onClick={() => onChange('')}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  );
+
+  if (inline) {
+    // Inline режим - только input без обертки
+    return searchInput;
+  }
+
+  // Полный режим с фильтрами
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            className="pl-9 pr-9"
-          />
-          {(isSearching || isLoading) && (
-            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-          )}
-          {value && !isSearching && !isLoading && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6"
-              onClick={() => onChange('')}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+        {searchInput}
         {showFilters && (
           <>
             <Select

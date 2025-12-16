@@ -75,15 +75,15 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Использовать кэш если данные еще загружаются
-  const effectiveProducts = products || cache?.products || [];
-  const effectiveIsLoading = isLoading && !cache;
+  const effectiveProducts = React.useMemo(() => products || cache?.products || [], [products, cache?.products]);
+  const effectiveIsLoading = React.useMemo(() => isLoading && !cache, [isLoading, cache]);
 
-  const value: ProductsContextValue = {
+  const value: ProductsContextValue = React.useMemo(() => ({
     products: effectiveProducts,
     isLoading: effectiveIsLoading,
     error: error || null,
     refresh,
-  };
+  }), [effectiveProducts, effectiveIsLoading, error, refresh]);
 
   return (
     <ProductsContext.Provider value={value}>

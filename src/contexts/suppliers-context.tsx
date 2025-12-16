@@ -78,15 +78,18 @@ export function SuppliersProvider({ children, barId }: { children: React.ReactNo
     setForceRefresh(prev => prev + 1);
   }, [barId]);
 
-  const effectiveSuppliers = suppliers || (cache?.barId === barId ? cache.suppliers : []) || [];
-  const effectiveIsLoading = isLoading && !cache;
+  const effectiveSuppliers = React.useMemo(() => 
+    suppliers || (cache?.barId === barId ? cache.suppliers : []) || [], 
+    [suppliers, cache?.barId, cache?.suppliers, barId]
+  );
+  const effectiveIsLoading = React.useMemo(() => isLoading && !cache, [isLoading, cache]);
 
-  const value: SuppliersContextValue = {
+  const value: SuppliersContextValue = React.useMemo(() => ({
     suppliers: effectiveSuppliers,
     isLoading: effectiveIsLoading,
     error: error || null,
     refresh,
-  };
+  }), [effectiveSuppliers, effectiveIsLoading, error, refresh]);
 
   return (
     <SuppliersContext.Provider value={value}>

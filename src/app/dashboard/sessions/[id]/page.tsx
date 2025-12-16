@@ -101,7 +101,10 @@ export default function SessionPage() {
           // Использовать кэшированные данные временно
           setCachedSession({
             ...parsed,
-            createdAt: parsed.createdAt ? { toDate: () => new Date(parsed.createdAt), toMillis: () => new Date(parsed.createdAt).getTime() } as any : undefined,
+            createdAt: parsed.createdAt ? { 
+              toDate: () => new Date(parsed.createdAt), 
+              toMillis: () => new Date(parsed.createdAt).getTime() 
+            } as { toDate: () => Date; toMillis: () => number } : undefined,
           } as InventorySession);
         }
       } catch (e) {

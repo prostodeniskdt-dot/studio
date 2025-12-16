@@ -31,10 +31,16 @@ export function useRelatedCollectionRealtime<T extends { id: string }>(
   const unsubscribeRefs = useRef<Map<string, Unsubscribe>>(new Map());
 
   // Memoize parentIds to prevent unnecessary re-subscriptions
-  const memoizedParentIds = useMemo(() => parentIds, [parentIds.join(',')]);
+  const parentIdsKey = useMemo(() => parentIds.join(','), [parentIds.join(',')]);
+  
+  // Memoize query constraints string to prevent unnecessary re-subscriptions
+  const queryConstraintsKey = useMemo(() => 
+    queryConstraints ? JSON.stringify(queryConstraints) : '', 
+    [queryConstraints ? JSON.stringify(queryConstraints) : '']
+  );
 
   useEffect(() => {
-    if (!firestore || memoizedParentIds.length === 0) {
+    if (!firestore || parentIds.length === 0) {
       setData({});
       setIsLoading(false);
       return;
@@ -51,10 +57,10 @@ export function useRelatedCollectionRealtime<T extends { id: string }>(
 
     const newData: Record<string, T[]> = {};
     let loadedCount = 0;
-    const totalCount = memoizedParentIds.length;
+    const totalCount = parentIds.length;
 
     // Subscribe to each subcollection
-    memoizedParentIds.forEach((parentId) => {
+    parentIds.forEach((parentId) => {
       try {
         const path = buildPath(parentId);
         const colRef = collection(firestore, path);
@@ -112,7 +118,7 @@ export function useRelatedCollectionRealtime<T extends { id: string }>(
       });
       unsubscribeRefs.current.clear();
     };
-  }, [firestore, memoizedParentIds, buildPath, JSON.stringify(queryConstraints)]);
+  }, [firestore, parentIdsKey, buildPath, queryConstraintsKey]);
 
   return { data, isLoading, error };
 }

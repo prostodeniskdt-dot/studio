@@ -39,11 +39,12 @@ export default function AdminDebugPage() {
       } else {
         setTestResult('ℹ️ Документ не найден (exists() = false). Это ожидаемо, если роль еще не создана. Ошибки прав доступа не было.');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       setDocExists(false);
+      const error = e as { code?: string; message?: string };
       setTestResult(`❌ Ошибка!
-Код: ${e.code || 'N/A'}
-Сообщение: ${e.message}
+Код: ${error.code || 'N/A'}
+Сообщение: ${error.message || 'Неизвестная ошибка'}
 Это означает, что правила безопасности блокируют GET-запрос, или проект/правила не синхронизированы.`);
     } finally {
       setIsTesting(false);
@@ -63,11 +64,12 @@ export default function AdminDebugPage() {
         });
         // Re-run the test to show the updated status
         await runTest();
-    } catch(e: any) {
+    } catch(e: unknown) {
+        const error = e instanceof Error ? e : { message: 'Неизвестная ошибка' };
         toast({
             variant: "destructive",
             title: "Ошибка активации",
-            description: e.message || "Не удалось создать документ роли. Проверьте правила безопасности."
+            description: error.message || "Не удалось создать документ роли. Проверьте правила безопасности."
         });
     } finally {
         setIsActivating(false);

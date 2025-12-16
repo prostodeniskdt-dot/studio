@@ -7,8 +7,9 @@ import { SessionsList } from "@/components/dashboard/sessions-list";
 import { useRouter } from 'next/navigation';
 import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, query, getDocs, where, doc, setDoc, serverTimestamp, orderBy, limit } from 'firebase/firestore';
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { collection, query, getDocs, where, doc, setDoc, serverTimestamp, limit } from 'firebase/firestore';
+import { useSessions } from '@/contexts/sessions-context';
 
 
 export default function SessionsPage() {
@@ -20,12 +21,8 @@ export default function SessionsPage() {
 
   const barId = user ? `bar_${user.uid}` : null; 
 
-  const sessionsQuery = useMemoFirebase(() => 
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions'), orderBy('createdAt', 'desc')) : null,
-    [firestore, barId]
-  );
-  
-  const { data: sessions, isLoading: isLoadingSessions, error: sessionsError } = useCollection<InventorySession>(sessionsQuery);
+  // Использовать контекст сессий вместо прямой загрузки
+  const { sessions, isLoading: isLoadingSessions, error: sessionsError } = useSessions();
 
 
   const handleCreateSession = async () => {

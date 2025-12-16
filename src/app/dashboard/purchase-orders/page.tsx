@@ -3,10 +3,11 @@
 import * as React from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import type { PurchaseOrder, Supplier, PurchaseOrderLine } from '@/lib/types';
+import type { PurchaseOrder, PurchaseOrderLine } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { PurchaseOrdersTable } from '@/components/purchase-orders/purchase-orders-table';
 import { useRelatedCollection } from '@/hooks/use-related-collection';
+import { useSuppliers } from '@/contexts/suppliers-context';
 
 export type OrderWithSupplierAndTotal = PurchaseOrder & {
   supplier?: Supplier;
@@ -24,11 +25,8 @@ export default function PurchaseOrdersPage() {
   );
   const { data: orders, isLoading: isLoadingOrders } = useCollection<PurchaseOrder>(ordersQuery);
 
-  const suppliersQuery = useMemoFirebase(() =>
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'suppliers')) : null,
-    [firestore, barId]
-  );
-  const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
+  // Использовать контекст поставщиков вместо прямой загрузки
+  const { suppliers, isLoading: isLoadingSuppliers } = useSuppliers();
   
   // Use optimized hook for loading related collections
   const orderIds = React.useMemo(() => orders?.map(o => o.id) || [], [orders]);

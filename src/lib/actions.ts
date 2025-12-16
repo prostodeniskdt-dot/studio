@@ -4,6 +4,8 @@ import type { InventoryLine, Product } from './types';
 import { getUpcomingHoliday, russianHolidays2024 } from './holidays';
 import { collection, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase/server';
+import { purchaseOrderSchema, purchaseOrderLineSchema } from './schemas';
+import { z } from 'zod';
 
 type CreatePurchaseOrdersInput = {
     lines: InventoryLine[];
@@ -25,8 +27,17 @@ type CreatePurchaseOrdersOutput = {
  * Applies a multiplier for upcoming holidays.
  * @returns An object containing the IDs of created orders and other metadata.
  */
-export async function createPurchaseOrdersFromSession(input: CreatePurchaseOrdersInput): Promise<CreatePurchaseOrdersOutput> {
-    const { lines, products, barId, userId } = input;
+export async function createPurchaseOrdersFromSession(input: unknown): Promise<CreatePurchaseOrdersOutput> {
+    // Validate input with Zod
+    const inputSchema = z.object({
+        lines: z.array(z.any()), // InventoryLine schema would be complex, using any for now
+        products: z.array(z.any()), // Product schema
+        barId: z.string().min(1),
+        userId: z.string().min(1),
+    });
+    
+    const validated = inputSchema.parse(input);
+    const { lines, products, barId, userId } = validated;
     const { firestore } = initializeFirebase();
 
     const HOLIDAY_MULTIPLIER = 2; // Increase order by 2x for holidays

@@ -1,23 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
-import type { Supplier } from '@/lib/types';
+import { useUser } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 import { SuppliersTable } from '@/components/suppliers/suppliers-table';
+import { useSuppliers } from '@/contexts/suppliers-context';
 
 export default function SuppliersPage() {
   const { user } = useUser();
-  const firestore = useFirestore();
   const barId = user ? `bar_${user.uid}` : null;
 
-  const suppliersQuery = useMemoFirebase(() => 
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'suppliers')) : null,
-    [firestore, barId]
-  );
-  
-  const { data: suppliers, isLoading, error } = useCollection<Supplier>(suppliersQuery);
+  const { suppliers, isLoading, error } = useSuppliers();
 
   if (isLoading || !barId) {
     return (

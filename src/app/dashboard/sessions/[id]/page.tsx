@@ -42,7 +42,8 @@ import { translateCategory } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { calculateLineFields } from '@/lib/calculations';
 import { deleteSessionWithLinesClient } from '@/lib/firestore-utils';
-import { Progress } from '@/components/ui/progress';
+import { SessionHeader } from '@/components/sessions/session-header';
+import { SessionActions } from '@/components/sessions/session-actions';
 
 export default function SessionPage() {
   const params = useParams();
@@ -415,20 +416,6 @@ export default function SessionPage() {
   }
   
   const isLoading = isLoadingLines || isLoadingProducts;
-
-  const getStatusVariant = (status: (typeof effectiveSession.status)) => {
-    switch (status) {
-      case 'completed':
-        return 'default';
-      case 'in_progress':
-        return 'secondary';
-      case 'draft':
-        return 'outline';
-      default:
-        return 'default';
-    }
-  };
-  
   const isEditable = effectiveSession.status === 'in_progress';
 
   return (
@@ -440,92 +427,24 @@ export default function SessionPage() {
         className="hidden"
         accept=".csv"
       />
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-        <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{effectiveSession.name}</h1>
-              <p className="text-muted-foreground">
-                  {effectiveSession.createdAt && (effectiveSession.createdAt.toDate ? effectiveSession.createdAt.toDate().toLocaleDateString('ru-RU') : new Date(effectiveSession.createdAt).toLocaleDateString('ru-RU'))}
-              </p>
-            </div>
-            <Badge variant={getStatusVariant(effectiveSession.status)} className="capitalize text-base px-3 py-1">
-                {translateStatus(effectiveSession.status)}
-            </Badge>
-        </div>
-        <div className="flex items-center gap-2">
-            {effectiveSession.status === 'completed' ? (
-                <Button asChild>
-                    <Link href={`/dashboard/sessions/${effectiveSession.id}/report`}>
-                        <FileText className="mr-2 h-4 w-4" />
-                        Смотреть отчет
-                    </Link>
-                </Button>
-            ) : (
-                <>
-                    <Button variant="outline" onClick={() => setIsAddProductOpen(true)} disabled={!isEditable}>
-                      <PlusCircle className="mr-2 h-4 w-4"/>
-                      Добавить продукт
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline">
-                          Импорт/Экспорт
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onSelect={handleImportClick}>
-                            <Upload className="mr-2 h-4 w-4" />
-                            <span>Импорт из CSV</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={handleExportCSV}>
-                            <Download className="mr-2 h-4 w-4" />
-                            <span>Экспорт в CSV</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    <Button onClick={handleSaveChanges} variant="outline" disabled={!isEditable || isSaving || !hasUnsavedChanges}>
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        {isSaving ? 'Сохранение...' : 'Сохранить'}
-                    </Button>
-                     <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button disabled={!isEditable || isCompleting}>
-                                {isCompleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Завершить
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                            <AlertDialogTitle>Завершить инвентаризацию?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Все несохраненные изменения будут автоматически сохранены. После завершения вы не сможете вносить правки и будете перенаправлены на страницу отчета.
-                            </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                            <AlertDialogCancel>Отмена</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleCompleteSession}>Завершить</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </>
-            )}
-             <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-9 w-9">
-                        <MoreVertical className="h-4 w-4" />
-                        <span className="sr-only">Другие действия</span>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                     <DropdownMenuItem onSelect={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:text-destructive">
-                        <Trash2 className="mr-2 h-4 w-4"/>
-                        Удалить инвентаризацию
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </div>
-      </div>
+      <SessionHeader session={effectiveSession} isEditable={isEditable} />
+      <SessionActions
+        isEditable={isEditable}
+        isSaving={isSaving}
+        isCompleting={isCompleting}
+        isDeleting={isDeletingSession}
+        deleteProgress={deleteProgress}
+        hasUnsavedChanges={hasUnsavedChanges}
+        sessionName={effectiveSession.name}
+        onAddProduct={() => setIsAddProductOpen(true)}
+        onSave={handleSaveChanges}
+        onComplete={handleCompleteSession}
+        onDelete={handleDeleteSession}
+        onImportClick={handleImportClick}
+        onExportCSV={handleExportCSV}
+        isDeleteDialogOpen={isDeleteDialogOpen}
+        setIsDeleteDialogOpen={setIsDeleteDialogOpen}
+      />
       <div className="overflow-x-auto">
        {isLoading ? <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div> : (localLines && allProducts && (
         <InventoryTable 

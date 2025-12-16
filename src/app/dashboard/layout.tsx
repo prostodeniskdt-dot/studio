@@ -10,6 +10,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ClientOnly } from "@/components/client-only";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase";
 import { ProductsProvider } from "@/contexts/products-context";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { Loader2, ShieldX } from "lucide-react";
@@ -117,27 +118,37 @@ export default function DashboardLayout({
     );
   }
 
+  const barId = user ? `bar_${user.uid}` : null;
+
   return (
-    <ProductsProvider>
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full">
-          <Sidebar>
-            <AppSidebar />
-          </Sidebar>
-          <SidebarInset>
-            <ClientOnly>
-              <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 sm:px-6">
-                <SidebarTrigger className="md:hidden" />
-                <div className="flex-1" />
-                <UserNav />
-              </header>
-            </ClientOnly>
-            <main className="flex-1 flex flex-col p-4 sm:p-6">
-                {children}
-            </main>
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
-    </ProductsProvider>
+    <ErrorBoundary>
+      <ProductsProvider>
+        <SessionsProvider barId={barId}>
+          <SuppliersProvider barId={barId}>
+            <SidebarProvider>
+              <div className="flex min-h-screen w-full">
+                <Sidebar>
+                  <AppSidebar />
+                </Sidebar>
+                <SidebarInset>
+                  <ClientOnly>
+                    <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 sm:px-6">
+                      <SidebarTrigger className="md:hidden" />
+                      <div className="flex-1" />
+                      <UserNav />
+                    </header>
+                  </ClientOnly>
+                  <main className="flex-1 flex flex-col p-4 sm:p-6">
+                    <ErrorBoundary>
+                      {children}
+                    </ErrorBoundary>
+                  </main>
+                </SidebarInset>
+              </div>
+            </SidebarProvider>
+          </SuppliersProvider>
+        </SessionsProvider>
+      </ProductsProvider>
+    </ErrorBoundary>
   );
 }

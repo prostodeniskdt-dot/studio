@@ -22,8 +22,10 @@ service cloud.firestore {
 
     match /roles_admin/{userId} {
       allow get: if isOwner(userId);
+      // Allow creation only by existing admins (self-promotion prevention)
+      // The first admin must be created manually via Firebase Console
       allow create: if isOwner(userId)
-                    && request.auth.token.email == "prostodeniskdt@gmail.com"
+                    && isAdmin() // Only existing admins can create new admin roles
                     && request.resource.data.keys().hasOnly(["isAdmin"]) 
                     && request.resource.data.isAdmin == true
                     && !exists(/databases/$(database)/documents/roles_admin/$(userId));

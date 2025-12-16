@@ -7,6 +7,11 @@ import { getFirestore } from 'firebase/firestore';
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
+  // Prevent SSR execution - Firebase requires browser environment
+  if (typeof window === 'undefined') {
+    throw new Error('Firebase can only be initialized on the client side. This code is running on the server.');
+  }
+
   if (!getApps().length) {
     const firebaseApp = initializeApp(firebaseConfig);
     return getSdks(firebaseApp);

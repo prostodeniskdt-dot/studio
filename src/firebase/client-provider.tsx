@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, type ReactNode } from 'react';
+import React, { useState, useEffect, useRef, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
 import { logger } from '@/lib/logger';
@@ -13,16 +13,37 @@ interface FirebaseClientProviderProps {
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   const [initError, setInitError] = useState<Error | null>(null);
   const [firebaseServices, setFirebaseServices] = useState<ReturnType<typeof initializeFirebase> | null>(null);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     try {
       // Initialize Firebase on the client side, once per component mount.
       const services = initializeFirebase();
-      setFirebaseServices(services);
+      
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setFirebaseServices(services);
+      }
     } catch (error) {
       logger.error('Failed to initialize Firebase:', error);
-      setInitError(error instanceof Error ? error : new Error(String(error)));
+      
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        const errorMessage = error instanceof Error 
+          ? error.message 
+          : String(error);
+        const firebaseError = error instanceof Error 
+          ? error 
+          : new Error(`Firebase initialization failed: ${errorMessage}`);
+        setInitError(firebaseError);
+      }
     }
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []); // Empty dependency array ensures this runs only once on mount
 
   // Show error if initialization failed

@@ -10,7 +10,7 @@ import Link from "next/link";
 import { translateStatus, buildProductDisplayName } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, collection, query, setDoc, writeBatch, serverTimestamp, updateDoc, getDocs, getDoc } from 'firebase/firestore';
+import { doc, collection, query, setDoc, writeBatch, serverTimestamp, updateDoc, getDoc, where } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,10 +75,14 @@ export default function SessionPage() {
   );
   const { data: lines, isLoading: isLoadingLines } = useCollection<InventoryLine>(linesRef);
 
-  const [allProducts, setAllProducts] = React.useState<Product[] | null>(null);
-  const [isLoadingProducts, setIsLoadingProducts] = React.useState(true);
-  
   const hasNavigatedRef = React.useRef(false);
+
+  // Use useCollection for real-time product updates
+  const productsQuery = useMemoFirebase(() =>
+    firestore ? query(collection(firestore, 'products'), where('isActive', '==', true)) : null,
+    [firestore]
+  );
+  const { data: allProducts, isLoading: isLoadingProducts } = useCollection<Product>(productsQuery);
 
   React.useEffect(() => {
     // If loading is finished, there's no session data, no error, and we haven't tried to navigate yet...
@@ -92,34 +96,6 @@ export default function SessionPage() {
         router.replace('/dashboard/sessions');
     }
   }, [isLoadingSession, session, sessionError, router, toast]);
-
-
-  React.useEffect(() => {
-    if (!firestore) return;
-    let cancelled = false;
-    setIsLoadingProducts(true);
-    const fetchProducts = async () => {
-        try {
-            const productsQuery = query(collection(firestore, "products"));
-            const snapshot = await getDocs(productsQuery);
-            if (!cancelled) {
-                setAllProducts(snapshot.docs.map(d => d.data() as Product));
-            }
-        } catch (error) {
-            console.error("Failed to fetch products:", error);
-            toast({
-                variant: 'destructive',
-                title: 'Не удалось загрузить продукты'
-            });
-        } finally {
-            if (!cancelled) {
-                setIsLoadingProducts(false);
-            }
-        }
-    };
-    fetchProducts();
-    return () => { cancelled = true; };
-  }, [firestore, toast]);
 
   React.useEffect(() => {
     if (lines) {
@@ -173,11 +149,12 @@ export default function SessionPage() {
     try {
         await deleteSessionWithLinesClient(firestore, barId, id);
         toast({ title: "Инвентаризация удалена." });
-    } catch(e: any) {
+    } catch(e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : "Произошла неизвестная ошибка.";
         toast({ 
             variant: "destructive", 
             title: "Не удалось удалить инвентаризацию", 
-            description: e?.message ?? "Произошла неизвестная ошибка."
+            description: errorMessage
         });
     }
   };

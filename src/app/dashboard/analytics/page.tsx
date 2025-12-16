@@ -3,9 +3,10 @@
 import * as React from 'react';
 import dynamic from 'next/dynamic';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, where, Timestamp } from 'firebase/firestore';
 import type { InventorySession, InventoryLine } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
+import { useRelatedCollection } from '@/hooks/use-related-collection';
 
 const AnalyticsView = dynamic(() => import('@/components/analytics/analytics-view').then(mod => mod.AnalyticsView), {
   ssr: false,
@@ -25,59 +26,32 @@ export default function AnalyticsPage() {
   );
   const { data: sessions, isLoading: isLoadingSessions } = useCollection<InventorySession>(sessionsQuery);
 
-  const [sessionsWithLines, setSessionsWithLines] = React.useState<SessionWithLines[]>([]);
-  const [isLoadingLines, setIsLoadingLines] = React.useState(true);
+  // Use optimized hook for loading related collections
+  const sessionIds = React.useMemo(() => sessions?.map(s => s.id) || [], [sessions]);
+  const { data: linesBySession, isLoading: isLoadingLines } = useRelatedCollection<InventoryLine>(
+    firestore,
+    sessionIds,
+    (sessionId) => `bars/${barId}/inventorySessions/${sessionId}/lines`
+  );
 
-  React.useEffect(() => {
-    if (!firestore || !barId || !sessions) {
-      if(!isLoadingSessions) setIsLoadingLines(false);
-      return;
-    }
-
-    if (sessions.length === 0) {
-      setSessionsWithLines([]);
-      setIsLoadingLines(false);
-      return;
-    }
-
-    setIsLoadingLines(true);
-    const fetchLinesForSessions = async () => {
-      try {
-        const linesPromises = sessions.map(session => {
-            const linesQuery = query(collection(firestore, 'bars', barId, 'inventorySessions', session.id, 'lines'));
-            return getDocs(linesQuery).then(snapshot => ({
-                sessionId: session.id,
-                lines: snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as InventoryLine)
-            }));
-        });
-
-        const results = await Promise.all(linesPromises);
-        const linesBySession = results.reduce((acc, result) => {
-            acc[result.sessionId] = result.lines;
-            return acc;
-        }, {} as Record<string, InventoryLine[]>);
-
-        const populatedSessions = sessions.map(session => ({
-          ...session,
-          lines: linesBySession[session.id] || []
-        })).sort((a, b) => {
-            const dateA = a.closedAt instanceof Timestamp ? a.closedAt.toMillis() : (a.closedAt as any)?.seconds * 1000 || 0;
-            const dateB = b.closedAt instanceof Timestamp ? b.closedAt.toMillis() : (b.closedAt as any)?.seconds * 1000 || 0;
-            return dateA - dateB;
-        });
-        
-        setSessionsWithLines(populatedSessions);
-
-      } catch (error) {
-        console.error("Error fetching lines for sessions:", error);
-      } finally {
-        setIsLoadingLines(false);
-      }
-    };
-
-    fetchLinesForSessions();
+  const sessionsWithLines = React.useMemo<SessionWithLines[]>(() => {
+    if (!sessions) return [];
     
-  }, [firestore, barId, sessions, isLoadingSessions]);
+    return sessions.map(session => ({
+      ...session,
+      lines: linesBySession[session.id] || []
+    })).sort((a, b) => {
+      const dateA = a.closedAt instanceof Timestamp ? a.closedAt.toMillis() : 
+        (a.closedAt && typeof a.closedAt === 'object' && 'seconds' in a.closedAt) 
+          ? (a.closedAt.seconds as number) * 1000 
+          : 0;
+      const dateB = b.closedAt instanceof Timestamp ? b.closedAt.toMillis() : 
+        (b.closedAt && typeof b.closedAt === 'object' && 'seconds' in b.closedAt) 
+          ? (b.closedAt.seconds as number) * 1000 
+          : 0;
+      return dateA - dateB;
+    });
+  }, [sessions, linesBySession]);
 
   const isLoading = isLoadingSessions || isLoadingLines;
 

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import type { InventorySession, Product, InventoryLine, CalculatedInventoryLine } from '@/lib/types';
+import type { InventorySession, Product, InventoryLine, CalculatedInventoryLine, ProductCategory, ProductSubCategory } from '@/lib/types';
 import { calculateLineFields } from '@/lib/calculations';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -33,10 +33,17 @@ type GroupedLines = Record<string, Record<string, CalculatedInventoryLine[]>>;
 export function ReportView({ session, products, onCreatePurchaseOrder, isCreatingOrder }: ReportViewProps) {
   const { toast } = useToast();
 
+  // Create products map for O(1) lookup instead of O(n) find
+  const productsMap = React.useMemo(() => {
+    const map = new Map<string, Product>();
+    products.forEach(p => map.set(p.id, p));
+    return map;
+  }, [products]);
+
   const groupedAndSortedLines = React.useMemo(() => {
     if (!session.lines) return {};
     const calculatedLines = session.lines.map(line => {
-      const product = products.find(p => p.id === line.productId);
+      const product = productsMap.get(line.productId);
       if (!product) return null;
       const calculatedFields = calculateLineFields(line, product);
       return { ...line, product, ...calculatedFields };
@@ -55,7 +62,7 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
         acc[category][subCategory].push(line);
         return acc;
     }, {});
-  }, [session.lines, products]);
+  }, [session.lines, productsMap]);
   
   const allCalculatedLines = React.useMemo(() => 
     Object.values(groupedAndSortedLines).flatMap(sub => Object.values(sub).flat()),
@@ -77,7 +84,10 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
     );
   }, [allCalculatedLines]);
   
-  const topLosses = allCalculatedLines.filter(l => l.differenceMoney < 0).sort((a, b) => a.differenceMoney - b.differenceMoney).slice(0, 5);
+  const topLosses = React.useMemo(() => 
+    allCalculatedLines.filter(l => l.differenceMoney < 0).sort((a, b) => a.differenceMoney - b.differenceMoney).slice(0, 5),
+    [allCalculatedLines]
+  );
 
   const varianceCompositionData = [
       { name: 'Излишки', value: totals.totalSurplus, fill: 'hsl(var(--chart-2))' },
@@ -265,7 +275,7 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
                     <React.Fragment key={category}>
                         <TableRow className="bg-muted/20 hover:bg-muted/20">
                             <TableCell colSpan={6} className="font-bold text-base">
-                                {translateCategory(category as any)}
+                                {translateCategory(category as ProductCategory)}
                             </TableCell>
                         </TableRow>
                         {Object.entries(subCategories).map(([subCategory, lines]) => (
@@ -273,7 +283,7 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
                                 {subCategory !== 'uncategorized' && (
                                      <TableRow className="bg-muted/10 hover:bg-muted/10">
                                         <TableCell colSpan={6} className="py-2 pl-8 font-semibold text-sm">
-                                            {translateSubCategory(subCategory as any)}
+                                            {translateSubCategory(subCategory as ProductSubCategory)}
                                         </TableCell>
                                     </TableRow>
                                 )}

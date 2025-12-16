@@ -38,6 +38,13 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
   const firestore = useFirestore();
   const { toast } = useToast();
 
+  // Create products map for O(1) lookup
+  const productsMap = React.useMemo(() => {
+    const map = new Map<string, Product>();
+    products.forEach(p => map.set(p.id, p));
+    return map;
+  }, [products]);
+
   React.useEffect(() => {
     setLocalLines(lines);
   }, [lines]);
@@ -96,7 +103,7 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
   };
   
   const handleAddProduct = (productId: string) => {
-    const product = products.find(p => p.id === productId);
+    const product = productsMap.get(productId);
     if (!product || !firestore) return;
     setIsProcessing(true);
     setIsAdding(false);
@@ -126,9 +133,9 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
   const linesWithProducts = React.useMemo(() => {
     return localLines.map(line => ({
       ...line,
-      product: products.find(p => p.id === line.productId),
+      product: productsMap.get(line.productId),
     }));
-  }, [localLines, products]);
+  }, [localLines, productsMap]);
 
   const totalAmount = React.useMemo(() => {
     return linesWithProducts.reduce((sum, line) => sum + line.quantity * line.costPerItem, 0);

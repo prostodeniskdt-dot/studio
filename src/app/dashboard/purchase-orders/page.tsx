@@ -2,10 +2,11 @@
 
 import * as React from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import type { PurchaseOrder, Supplier, PurchaseOrderLine } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { PurchaseOrdersTable } from '@/components/purchase-orders/purchase-orders-table';
+import { useRelatedCollection } from '@/hooks/use-related-collection';
 
 export type OrderWithSupplierAndTotal = PurchaseOrder & {
   supplier?: Supplier;
@@ -29,48 +30,21 @@ export default function PurchaseOrdersPage() {
   );
   const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
   
-  const [allOrderLines, setAllOrderLines] = React.useState<Record<string, PurchaseOrderLine[]>>({});
-  const [isLoadingLines, setIsLoadingLines] = React.useState(true);
+  // Use optimized hook for loading related collections
+  const orderIds = React.useMemo(() => orders?.map(o => o.id) || [], [orders]);
+  const { data: allOrderLines, isLoading: isLoadingLines } = useRelatedCollection<PurchaseOrderLine>(
+    firestore,
+    orderIds,
+    (orderId) => `bars/${barId}/purchaseOrders/${orderId}/lines`
+  );
 
-  React.useEffect(() => {
-    if (!firestore || !barId || !orders) {
-      if(!isLoadingOrders) setIsLoadingLines(false);
-      return;
-    };
-    
-    if (orders.length === 0) {
-        setAllOrderLines({});
-        setIsLoadingLines(false);
-        return;
-    }
-    
-    setIsLoadingLines(true);
-    const fetchAllLines = async () => {
-        const linesPromises = orders.map(order => 
-            getDocs(query(collection(firestore, 'bars', barId, 'purchaseOrders', order.id, 'lines')))
-        );
-        
-        try {
-            const snapshotResults = await Promise.all(linesPromises);
-            
-            const linesByOrder = snapshotResults.reduce((acc, snapshot, index) => {
-                const orderId = orders[index].id;
-                acc[orderId] = snapshot.docs.map(doc => doc.data() as PurchaseOrderLine);
-                return acc;
-            }, {} as Record<string, PurchaseOrderLine[]>);
-            
-            setAllOrderLines(linesByOrder);
-        } catch (error) {
-            console.error("Error fetching all order lines:", error);
-        } finally {
-            setIsLoadingLines(false);
-        }
-    };
 
-    fetchAllLines();
-
-  }, [firestore, barId, orders, isLoadingOrders]);
-
+  // Create suppliers map for O(1) lookup
+  const suppliersMap = React.useMemo(() => {
+    const map = new Map<string, Supplier>();
+    suppliers?.forEach(s => map.set(s.id, s));
+    return map;
+  }, [suppliers]);
 
   const ordersWithDetails = React.useMemo<OrderWithSupplierAndTotal[]>(() => {
     if (!orders || !suppliers) return [];
@@ -80,11 +54,11 @@ export default function PurchaseOrdersPage() {
       const totalAmount = orderLines.reduce((sum, line) => sum + (line.quantity * line.costPerItem), 0);
       return {
         ...order,
-        supplier: suppliers.find(s => s.id === order.supplierId),
+        supplier: suppliersMap.get(order.supplierId),
         totalAmount: totalAmount,
       };
     }).sort((a, b) => (b.orderDate?.toMillis() ?? 0) - (a.orderDate?.toMillis() ?? 0));
-  }, [orders, suppliers, allOrderLines]);
+  }, [orders, suppliersMap, allOrderLines]);
 
   const isLoading = isLoadingOrders || isLoadingSuppliers || isLoadingLines;
   

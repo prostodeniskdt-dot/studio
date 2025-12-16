@@ -15,6 +15,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { translateCategory, productCategories, productSubCategories, translateSubCategory, dedupeProductsByName, buildProductDisplayName } from '@/lib/utils';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useDebounce } from '@/hooks/use-debounce';
 
 export default function UnifiedCalculatorPage() {
   const { toast } = useToast();
@@ -32,6 +33,7 @@ export default function UnifiedCalculatorPage() {
   const [selectedSubCategory, setSelectedSubCategory] = React.useState<string | undefined>();
   const [selectedProductId, setSelectedProductId] = React.useState<string | undefined>(undefined);
   const [searchTerm, setSearchTerm] = React.useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const [bottleVolume, setBottleVolume] = React.useState('');
   const [fullWeight, setFullWeight] = React.useState('');
@@ -51,10 +53,10 @@ export default function UnifiedCalculatorPage() {
     return uniqueProducts.filter(p => {
       const categoryMatch = !selectedCategory || p.category === selectedCategory;
       const subCategoryMatch = !selectedSubCategory || p.subCategory === selectedSubCategory;
-      const searchMatch = !searchTerm || buildProductDisplayName(p.name, p.bottleVolumeMl).toLowerCase().includes(searchTerm.toLowerCase());
+      const searchMatch = !debouncedSearchTerm || buildProductDisplayName(p.name, p.bottleVolumeMl).toLowerCase().includes(debouncedSearchTerm.toLowerCase());
       return categoryMatch && subCategoryMatch && searchMatch;
     });
-  }, [products, selectedCategory, selectedSubCategory, searchTerm]);
+  }, [products, selectedCategory, selectedSubCategory, debouncedSearchTerm]);
 
   const productOptions = React.useMemo<GroupedComboboxOption[]>(() => {
     if (filteredProducts.length === 0) return [];
@@ -232,10 +234,11 @@ export default function UnifiedCalculatorPage() {
                 description: `Остаток для продукта ${product ? buildProductDisplayName(product.name, product.bottleVolumeMl) : ''} (${volume} мл) обновлен в текущую инвентаризацию.`,
             });
         }
-    } catch (serverError: any) {
+    } catch (serverError: unknown) {
         const operation = 'write';
         const permissionError = new FirestorePermissionError({ path: `bars/${barId}/inventorySessions`, operation });
         errorEmitter.emit('permission-error', permissionError);
+        console.error('Failed to save calculation:', serverError);
     } finally {
         setIsSending(false);
     }

@@ -13,9 +13,11 @@ interface FirebaseClientProviderProps {
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   const [initError, setInitError] = useState<Error | null>(null);
   const [firebaseServices, setFirebaseServices] = useState<ReturnType<typeof initializeFirebase> | null>(null);
+  const [isClient, setIsClient] = useState(false);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
+    setIsClient(true);
     isMountedRef.current = true;
 
     try {
@@ -46,6 +48,17 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     };
   }, []); // Empty dependency array ensures this runs only once on mount
 
+  // During SSR or before hydration, show loading state
+  if (!isClient) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-muted-foreground">Загрузка...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Show error if initialization failed
   if (initError) {
     return (
@@ -56,7 +69,11 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
             Не удалось инициализировать Firebase: {initError.message}
           </p>
           <Button
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.location.reload();
+              }
+            }}
             className="mt-4"
           >
             Перезагрузить страницу

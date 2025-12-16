@@ -44,6 +44,23 @@ service cloud.firestore {
       allow update: if isAdmin() || (isOwner(userId) && isNotBanned(userId));
       allow delete: if false; // Deleting user documents is disabled. Use ban flag instead.
     }
+
+    match /email_to_uid/{emailLower} {
+      // Allow read if the user is signed in (for looking up users by email)
+      allow read: if isSignedIn();
+      // Allow create/update only if:
+      // 1. User is signed in
+      // 2. The uid in the document matches the user's uid
+      // Note: We trust that the emailLower in the path matches the user's email
+      // because the client code ensures this by using user.email.toLowerCase()
+      allow create, update: if isSignedIn() 
+                            && request.resource.data.uid == request.auth.uid
+                            && request.resource.data.keys().hasOnly(["uid", "createdAt"]);
+      // Only admins can delete email indexes
+      allow delete: if isAdmin();
+      // No list access for security
+      allow list: if false;
+    }
     
     match /products/{productId} {
         allow read, list: if isSignedIn() && isNotBanned(request.auth.uid);

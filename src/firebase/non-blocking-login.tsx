@@ -116,15 +116,11 @@ async function ensureEmailIndex(firestore: Firestore, user: User): Promise<void>
             });
         }
     } catch (e: any) {
-        // We catch and emit this specific error for debugging, but we don't block the login flow
-        if (e.code === 'permission-denied') {
-             errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: indexRef.path,
-                operation: 'create',
-                requestResourceData: { uid: user.uid },
-            }));
-        }
-        console.error(`Failed to ensure email index for ${emailLower}:`, e);
+        // Log the error but don't block the login flow
+        // The email index is optional and used for lookups, but not critical for authentication
+        console.warn(`Failed to ensure email index for ${emailLower}:`, e);
+        // Don't emit permission-error here as it would block the login flow
+        // This is a non-critical operation that can fail without affecting user authentication
     }
 }
 

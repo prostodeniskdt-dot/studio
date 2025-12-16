@@ -68,6 +68,15 @@ export default function SessionsPage() {
             await setDoc(newSessionRef, newSessionData);
 
             sessionId = newSessionRef.id;
+            
+            // Сохранить данные в sessionStorage для немедленного доступа (исправление race condition)
+            const sessionDataForCache = {
+                ...newSessionData,
+                createdAt: new Date().toISOString(), // Заменить serverTimestamp на дату для кэша
+                isNew: true // Флаг новой сессии
+            };
+            sessionStorage.setItem(`session_${sessionId}`, JSON.stringify(sessionDataForCache));
+            
             toast({
                 title: "Инвентаризация создана",
                 description: "Новая инвентаризация была успешно создана.",

@@ -9,7 +9,8 @@ import Link from "next/link";
 import { BarChart3, Loader2, ShoppingCart } from "lucide-react";
 import type { InventorySession, Product, InventoryLine, PurchaseOrder } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query } from 'firebase/firestore';
+import { doc, collection } from 'firebase/firestore';
+import { useProducts } from '@/contexts/products-context';
 import { useToast } from '@/hooks/use-toast';
 import { useServerAction } from '@/hooks/use-server-action';
 import { createPurchaseOrdersFromSession } from '@/lib/actions';
@@ -43,11 +44,8 @@ export default function SessionReportPage() {
   );
   const { data: lines, isLoading: isLoadingLines } = useCollection<InventoryLine>(linesRef);
 
-  const productsRef = useMemoFirebase(() =>
-    firestore ? query(collection(firestore, 'products')) : null,
-    [firestore]
-  );
-  const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
+  // Использовать контекст продуктов вместо прямой загрузки
+  const { products, isLoading: isLoadingProducts } = useProducts();
 
 
   const { execute: createOrders, isLoading: isCreatingOrder } = useServerAction(createPurchaseOrdersFromSession, {

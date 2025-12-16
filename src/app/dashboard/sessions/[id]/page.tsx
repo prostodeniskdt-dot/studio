@@ -11,6 +11,7 @@ import { translateStatus, buildProductDisplayName } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, collection, query, setDoc, writeBatch, serverTimestamp, updateDoc, getDoc, where } from 'firebase/firestore';
+import { useProducts } from '@/contexts/products-context';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,26 +79,66 @@ export default function SessionPage() {
   const { data: lines, isLoading: isLoadingLines } = useCollection<InventoryLine>(linesRef);
 
   const hasNavigatedRef = React.useRef(false);
+  const [cachedSession, setCachedSession] = React.useState<InventorySession | null>(null);
+  
+  // Использовать кэшированную сессию если реальная еще не загружена
+  const effectiveSession = session || cachedSession;
 
-  // Use useCollection for real-time product updates
-  const productsQuery = useMemoFirebase(() =>
-    firestore ? query(collection(firestore, 'products'), where('isActive', '==', true)) : null,
-    [firestore]
-  );
-  const { data: allProducts, isLoading: isLoadingProducts } = useCollection<Product>(productsQuery);
+  // Использовать контекст продуктов вместо прямой загрузки
+  const { products: allProducts, isLoading: isLoadingProducts } = useProducts();
+
+  // Проверить sessionStorage для новых сессий (исправление race condition)
+  React.useEffect(() => {
+    const cachedData = sessionStorage.getItem(`session_${id}`);
+    if (cachedData) {
+      try {
+        const parsed = JSON.parse(cachedData);
+        if (parsed.isNew) {
+          // Использовать кэшированные данные временно
+          setCachedSession({
+            ...parsed,
+            createdAt: parsed.createdAt ? { toDate: () => new Date(parsed.createdAt), toMillis: () => new Date(parsed.createdAt).getTime() } as any : undefined,
+          } as InventorySession);
+        }
+      } catch (e) {
+        // Игнорировать ошибки парсинга
+      }
+    }
+  }, [id]);
+
+  // Очистить sessionStorage после успешной загрузки
+  React.useEffect(() => {
+    if (session && cachedSession) {
+      sessionStorage.removeItem(`session_${id}`);
+      setCachedSession(null);
+    }
+  }, [session, id, cachedSession]);
 
   React.useEffect(() => {
-    // If loading is finished, there's no session data, no error, and we haven't tried to navigate yet...
-    if (!isLoadingSession && !session && !sessionError && !hasNavigatedRef.current) {
-        hasNavigatedRef.current = true; // Mark that we are attempting navigation
-        toast({
+    // Использовать кэшированную сессию если есть, иначе проверять загрузку
+    const currentSession = session || cachedSession;
+    
+    // Увеличить таймаут для проверки несуществующей сессии
+    if (!isLoadingSession && !currentSession && !sessionError && !hasNavigatedRef.current) {
+      // Подождать дополнительно для новых сессий
+      const isNewSession = cachedSession !== null;
+      const timeout = isNewSession ? 2000 : 500; // 2 секунды для новых, 500ms для старых
+      
+      const timer = setTimeout(() => {
+        if (!session && !isLoadingSession && !cachedSession) {
+          hasNavigatedRef.current = true;
+          toast({
             variant: 'destructive',
             title: 'Инвентаризация не найдена',
             description: 'Возможно, она была удалена. Перенаправляем на список инвентаризаций.',
-        });
-        router.replace('/dashboard/sessions');
+          });
+          router.replace('/dashboard/sessions');
+        }
+      }, timeout);
+
+      return () => clearTimeout(timer);
     }
-  }, [isLoadingSession, session, sessionError, router, toast]);
+  }, [isLoadingSession, session, cachedSession, sessionError, router, toast]);
 
   React.useEffect(() => {
     if (lines) {
@@ -350,7 +391,8 @@ export default function SessionPage() {
     reader.readAsText(file);
   };
   
-  if (isLoadingSession) {
+  // Показывать loading только если нет кэшированной сессии
+  if (isLoadingSession && !cachedSession) {
     return (
       <div className="flex items-center justify-center h-full pt-20">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -358,13 +400,13 @@ export default function SessionPage() {
     );
   }
 
-  if (sessionError) {
+  if (sessionError && !cachedSession) {
     return <div className="text-center text-destructive p-4">Ошибка загрузки сессии: {sessionError.message}</div>;
   }
   
-  if (!session) {
-    // The useEffect hook above will handle the redirect, so we just show a loader here
-    // to prevent flashing content or errors.
+  // Использовать effectiveSession для проверки существования
+  if (!effectiveSession) {
+    // Проверка уже обработана в useEffect с таймаутом
     return (
       <div className="flex items-center justify-center h-full pt-20">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -374,7 +416,7 @@ export default function SessionPage() {
   
   const isLoading = isLoadingLines || isLoadingProducts;
 
-  const getStatusVariant = (status: (typeof session.status)) => {
+  const getStatusVariant = (status: (typeof effectiveSession.status)) => {
     switch (status) {
       case 'completed':
         return 'default';
@@ -387,7 +429,7 @@ export default function SessionPage() {
     }
   };
   
-  const isEditable = session.status === 'in_progress';
+  const isEditable = effectiveSession.status === 'in_progress';
 
   return (
     <>
@@ -401,19 +443,19 @@ export default function SessionPage() {
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{session.name}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{effectiveSession.name}</h1>
               <p className="text-muted-foreground">
-                  {session.createdAt && `Создано ${session.createdAt?.toDate().toLocaleDateString('ru-RU')}`}
+                  {effectiveSession.createdAt && (effectiveSession.createdAt.toDate ? effectiveSession.createdAt.toDate().toLocaleDateString('ru-RU') : new Date(effectiveSession.createdAt).toLocaleDateString('ru-RU'))}
               </p>
             </div>
-            <Badge variant={getStatusVariant(session.status)} className="capitalize text-base px-3 py-1">
-                {translateStatus(session.status)}
+            <Badge variant={getStatusVariant(effectiveSession.status)} className="capitalize text-base px-3 py-1">
+                {translateStatus(effectiveSession.status)}
             </Badge>
         </div>
         <div className="flex items-center gap-2">
-            {session.status === 'completed' ? (
+            {effectiveSession.status === 'completed' ? (
                 <Button asChild>
-                    <Link href={`/dashboard/sessions/${session.id}/report`}>
+                    <Link href={`/dashboard/sessions/${effectiveSession.id}/report`}>
                         <FileText className="mr-2 h-4 w-4" />
                         Смотреть отчет
                     </Link>
@@ -521,7 +563,7 @@ export default function SessionPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
             <AlertDialogDescription>
-              Вы собираетесь безвозвратно удалить инвентаризацию "{session?.name}" и все связанные с ней данные. Это действие нельзя отменить.
+              Вы собираетесь безвозвратно удалить инвентаризацию "{effectiveSession?.name}" и все связанные с ней данные. Это действие нельзя отменить.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

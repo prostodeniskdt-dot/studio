@@ -40,11 +40,8 @@ export default function PurchaseOrderPage() {
     );
     const { data: lines, isLoading: isLoadingLines } = useCollection<PurchaseOrderLine>(linesRef);
 
-    const productsRef = useMemoFirebase(() =>
-        firestore ? collection(firestore, 'products') : null,
-        [firestore]
-    );
-    const { data: allProducts, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
+    // Использовать контекст продуктов вместо прямой загрузки
+    const { products: allProducts, isLoading: isLoadingProducts } = useProducts();
 
 
     const isLoading = isLoadingOrder || isLoadingSupplier || isLoadingLines || isLoadingProducts;

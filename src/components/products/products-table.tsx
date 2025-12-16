@@ -13,7 +13,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { MoreHorizontal, ArrowUpDown, ChevronDown, PlusCircle, Loader2, Search, Trash2 } from 'lucide-react';
+import { MoreHorizontal, ArrowUpDown, ChevronDown, PlusCircle, Loader2, Trash2 } from 'lucide-react';
+import { ProductSearch } from './product-search';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -279,7 +280,19 @@ export function ProductsTable({ products }: { products: Product[] }) {
   });
   
   const selectedCategory = table.getColumn('category')?.getFilterValue() as ProductCategory | undefined;
+  const selectedSubCategory = table.getColumn('subCategory')?.getFilterValue() as string | undefined;
   const subCategoryOptions = selectedCategory ? productSubCategories[selectedCategory] : [];
+
+  const handleCategoryChange = (category: ProductCategory | undefined) => {
+    table.getColumn('category')?.setFilterValue(category);
+    if (!category) {
+      table.getColumn('subCategory')?.setFilterValue(undefined);
+    }
+  };
+
+  const handleSubCategoryChange = (subCategory: string | undefined) => {
+    table.getColumn('subCategory')?.setFilterValue(subCategory);
+  };
 
   React.useEffect(() => {
       const currentSubCategory = table.getColumn('subCategory')?.getFilterValue();
@@ -299,15 +312,17 @@ export function ProductsTable({ products }: { products: Product[] }) {
                       <p className="text-muted-foreground">Управляйте каталогом товаров и их профилями для калькулятора.</p>
                   </div>
                   <div className="flex items-center gap-2">
-                      <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                              placeholder="Поиск по названию..."
-                              value={globalFilter ?? ''}
-                              onChange={e => setGlobalFilter(e.target.value)}
-                              className="pl-10 w-full sm:w-[250px]"
-                          />
-                      </div>
+                      <ProductSearch
+                        value={globalFilter ?? ''}
+                        onChange={setGlobalFilter}
+                        onCategoryChange={handleCategoryChange}
+                        onSubCategoryChange={handleSubCategoryChange}
+                        selectedCategory={selectedCategory}
+                        selectedSubCategory={selectedSubCategory}
+                        showFilters={true}
+                        placeholder="Поиск по названию..."
+                        resultsCount={table.getFilteredRowModel().rows.length}
+                      />
                       <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                           <Button variant="outline">

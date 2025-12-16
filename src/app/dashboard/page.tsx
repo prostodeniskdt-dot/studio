@@ -76,13 +76,29 @@ export default function DashboardPage() {
         
         await setDoc(newSessionRef, newSessionData);
 
+        const sessionId = newSessionRef.id;
+        
+        // Сохранить данные в sessionStorage для немедленного доступа (исправление race condition)
+        const sessionDataForCache = {
+            ...newSessionData,
+            createdAt: new Date().toISOString(), // Заменить serverTimestamp на дату для кэша
+            isNew: true // Флаг новой сессии
+        };
+        sessionStorage.setItem(`session_${sessionId}`, JSON.stringify(sessionDataForCache));
+
         toast({
             title: "Инвентаризация создана",
             description: "Новая инвентаризация была успешно создана.",
         });
         
-        router.push(`/dashboard/sessions/${newSessionRef.id}`);
-    } catch (serverError) {
+        router.push(`/dashboard/sessions/${sessionId}`);
+    } catch (serverError: unknown) {
+        const errorMessage = serverError instanceof Error ? serverError.message : 'Не удалось создать инвентаризацию';
+        toast({
+            variant: "destructive",
+            title: "Ошибка",
+            description: errorMessage,
+        });
         const permissionError = new FirestorePermissionError({ path: `bars/${barId}/inventorySessions`, operation: 'create' });
         errorEmitter.emit('permission-error', permissionError);
     } finally {

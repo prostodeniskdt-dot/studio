@@ -11,11 +11,12 @@ import { Weight, Send, Loader2, Search } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import type { InventorySession, Product, ProductCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { useProducts } from '@/contexts/products-context';
 import { translateCategory, productCategories, productSubCategories, translateSubCategory, dedupeProductsByName, buildProductDisplayName } from '@/lib/utils';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
-import { useDebounce } from '@/hooks/use-debounce';
+import { ProductSearch } from '@/components/products/product-search';
 
 export default function UnifiedCalculatorPage() {
   const { toast } = useToast();
@@ -33,7 +34,6 @@ export default function UnifiedCalculatorPage() {
   const [selectedSubCategory, setSelectedSubCategory] = React.useState<string | undefined>();
   const [selectedProductId, setSelectedProductId] = React.useState<string | undefined>(undefined);
   const [searchTerm, setSearchTerm] = React.useState('');
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const [bottleVolume, setBottleVolume] = React.useState('');
   const [fullWeight, setFullWeight] = React.useState('');
@@ -53,10 +53,10 @@ export default function UnifiedCalculatorPage() {
     return uniqueProducts.filter(p => {
       const categoryMatch = !selectedCategory || p.category === selectedCategory;
       const subCategoryMatch = !selectedSubCategory || p.subCategory === selectedSubCategory;
-      const searchMatch = !debouncedSearchTerm || buildProductDisplayName(p.name, p.bottleVolumeMl).toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+      const searchMatch = !searchTerm || buildProductDisplayName(p.name, p.bottleVolumeMl).toLowerCase().includes(searchTerm.toLowerCase());
       return categoryMatch && subCategoryMatch && searchMatch;
     });
-  }, [products, selectedCategory, selectedSubCategory, debouncedSearchTerm]);
+  }, [products, selectedCategory, selectedSubCategory, searchTerm]);
 
   const productOptions = React.useMemo<GroupedComboboxOption[]>(() => {
     if (filteredProducts.length === 0) return [];
@@ -75,12 +75,6 @@ export default function UnifiedCalculatorPage() {
       .sort((a,b) => a.label.localeCompare(b.label));
 
   }, [filteredProducts]);
-
-  const subCategoryOptions = React.useMemo(() => {
-    if (!selectedCategory || !productSubCategories[selectedCategory]) return [];
-    return productSubCategories[selectedCategory];
-  }, [selectedCategory]);
-
 
   const handleProductSelect = (productId: string) => {
     const product = products?.find(p => p.id === productId);
@@ -271,41 +265,19 @@ export default function UnifiedCalculatorPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">
-            <Label>Поиск и фильтр продуктов</Label>
+            <ProductSearch
+              value={searchTerm}
+              onChange={setSearchTerm}
+              onCategoryChange={handleCategoryChange}
+              onSubCategoryChange={handleSubCategoryChange}
+              selectedCategory={selectedCategory}
+              selectedSubCategory={selectedSubCategory}
+              showFilters={true}
+              placeholder="Поиск продуктов..."
+              resultsCount={filteredProducts.length}
+              isLoading={isLoadingProducts}
+            />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
-               <div className="relative lg:col-span-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Поиск по названию..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-               </div>
-               <Select onValueChange={(val) => handleCategoryChange(val as ProductCategory)} value={selectedCategory}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите категорию" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {productCategories.map(cat => (
-                      <SelectItem key={cat} value={cat}>{translateCategory(cat)}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select 
-                    onValueChange={handleSubCategoryChange} 
-                    value={selectedSubCategory ?? '_all_'} 
-                    disabled={!subCategoryOptions || subCategoryOptions.length === 0}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите подкатегорию" />
-                  </SelectTrigger>
-                  <SelectContent>
-                     <SelectItem value="_all_">Все подкатегории</SelectItem>
-                    {subCategoryOptions?.map(subCat => (
-                        <SelectItem key={subCat} value={subCat}>{translateSubCategory(subCat)}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
                 <Combobox 
                   options={productOptions}
                   value={selectedProductId}

@@ -10,6 +10,8 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ClientOnly } from "@/components/client-only";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase";
 import { ProductsProvider } from "@/contexts/products-context";
+import { SessionsProvider } from "@/contexts/sessions-context";
+import { SuppliersProvider } from "@/contexts/suppliers-context";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";

@@ -83,14 +83,14 @@ export function ProductSearch({
         {showFilters && (
           <>
             <Select
-              value={selectedCategory || ''}
-              onValueChange={(val) => onCategoryChange?.(val ? (val as ProductCategory) : undefined)}
+              value={selectedCategory || '__all__'}
+              onValueChange={(val) => onCategoryChange?.(val === '__all__' ? undefined : (val as ProductCategory))}
             >
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Категория" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Все категории</SelectItem>
+                <SelectItem value="__all__">Все категории</SelectItem>
                 {productCategories.map((cat) => (
                   <SelectItem key={cat} value={cat}>
                     {translateCategory(cat)}
@@ -100,14 +100,14 @@ export function ProductSearch({
             </Select>
             {selectedCategory && subCategoryOptions.length > 0 && (
               <Select
-                value={selectedSubCategory || ''}
-                onValueChange={(val) => onSubCategoryChange?.(val || undefined)}
+                value={selectedSubCategory || '__all__'}
+                onValueChange={(val) => onSubCategoryChange?.(val === '__all__' ? undefined : val)}
               >
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Подкатегория" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Все подкатегории</SelectItem>
+                  <SelectItem value="__all__">Все подкатегории</SelectItem>
                   {subCategoryOptions.map((subCat) => (
                     <SelectItem key={subCat} value={subCat}>
                       {subCat}

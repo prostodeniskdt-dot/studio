@@ -11,8 +11,8 @@ import { Weight, Send, Loader2, Search } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import type { InventorySession, Product, ProductCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { useUser, useFirestore } from '@/firebase';
+import { collection, orderBy, limit, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { useProducts } from '@/contexts/products-context';
 import { translateCategory, productCategories, productSubCategories, translateSubCategory, dedupeProductsByName, buildProductDisplayName } from '@/lib/utils';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
@@ -24,11 +24,8 @@ export default function UnifiedCalculatorPage() {
   const firestore = useFirestore();
   const barId = user ? `bar_${user.uid}` : null;
 
-  const productsQuery = useMemoFirebase(() => 
-      firestore ? query(collection(firestore, 'products'), where('isActive', '==', true)) : null,
-      [firestore]
-  );
-  const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsQuery);
+  // Использовать контекст продуктов вместо прямой загрузки
+  const { products, isLoading: isLoadingProducts } = useProducts();
 
   const [selectedCategory, setSelectedCategory] = React.useState<ProductCategory | undefined>();
   const [selectedSubCategory, setSelectedSubCategory] = React.useState<string | undefined>();

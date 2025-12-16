@@ -17,6 +17,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { PlusCircle, Save, MoreVertical, Trash2, Download, Upload, Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';

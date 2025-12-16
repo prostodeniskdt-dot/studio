@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { translateStatus } from '@/lib/utils';
 import { PurchaseOrderLinesTable } from '@/components/purchase-orders/purchase-order-lines-table';
+import { useProducts } from '@/contexts/products-context';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 

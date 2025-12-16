@@ -1,9 +1,9 @@
 'use server';
 
-import type { CalculatedInventoryLine, InventoryLine, InventorySession, Product, PurchaseOrder } from './types';
+import type { InventoryLine, Product } from './types';
 import { getUpcomingHoliday, russianHolidays2024 } from './holidays';
-import { collection, doc, writeBatch, serverTimestamp, getDocs, query, orderBy, limit, startAfter } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { collection, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase/server';
 
 type CreatePurchaseOrdersInput = {
     lines: InventoryLine[];
@@ -107,8 +107,9 @@ export async function createPurchaseOrdersFromSession(input: CreatePurchaseOrder
             holidayBonus: !!upcomingHoliday,
             holidayName: upcomingHoliday || undefined,
         };
-    } catch(e: any) {
+    } catch(e: unknown) {
         console.error("Failed to create purchase orders:", e);
-        throw new Error(`Не удалось создать заказы на закупку: ${e.message}`);
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        throw new Error(`Не удалось создать заказы на закупку: ${errorMessage}`);
     }
 }

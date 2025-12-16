@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import type { InventorySession, Product, ProductCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, orderBy, limit, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { useProducts } from '@/contexts/products-context';
 import { translateCategory, productCategories, productSubCategories, translateSubCategory, dedupeProductsByName, buildProductDisplayName } from '@/lib/utils';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
@@ -177,8 +177,9 @@ export default function UnifiedCalculatorPage() {
             return;
         }
 
-        const activeSession = sessionsSnapshot.docs[0].data() as InventorySession;
-        const activeSessionId = activeSession.id;
+        const activeSessionDoc = sessionsSnapshot.docs[0];
+        const activeSession = activeSessionDoc.data() as InventorySession;
+        const activeSessionId = activeSessionDoc.id;
       
         const linesColRef = collection(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines');
         const linesQuery = query(linesColRef, where('productId', '==', selectedProductId), limit(1));

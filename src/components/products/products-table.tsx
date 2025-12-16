@@ -196,21 +196,24 @@ export function ProductsTable({ products }: { products: Product[] }) {
       accessorKey: 'costPerBottle',
       header: ({ column }) => {
         return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Стоимость
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          <div className="text-right">
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              className="h-auto p-0 font-medium"
+            >
+              Стоимость
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
         );
       },
-      cell: ({ row }) => <div className="lowercase text-left pl-4">{formatCurrency(row.getValue('costPerBottle'))}</div>,
+      cell: ({ row }) => <div className="text-right">{formatCurrency(row.getValue('costPerBottle'))}</div>,
     },
     {
       accessorKey: 'bottleVolumeMl',
-      header: 'Объем',
-      cell: ({ row }) => <div>{row.getValue('bottleVolumeMl')} мл</div>,
+      header: () => <div className="text-right">Объем</div>,
+      cell: ({ row }) => <div className="text-right">{row.getValue('bottleVolumeMl')} мл</div>,
     },
     {
       accessorKey: 'isActive',

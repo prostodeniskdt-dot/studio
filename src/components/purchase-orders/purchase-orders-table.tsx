@@ -111,7 +111,7 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
       header: 'Дата заказа',
       cell: ({ row }) => {
         const date = (row.getValue('orderDate') as any).toDate();
-        return date.toLocaleDateString('ru-RU');
+        return <div className="text-left">{date.toLocaleDateString('ru-RU')}</div>;
       }
     },
     {
@@ -124,10 +124,10 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
     },
     {
         accessorKey: 'totalAmount',
-        header: 'Сумма',
+        header: () => <div className="text-right">Сумма</div>,
         cell: ({ row }) => {
             const amount = row.original.totalAmount;
-            return amount ? formatCurrency(amount) : '-';
+            return <div className="text-right">{amount ? formatCurrency(amount) : '-'}</div>;
         }
     },
     {

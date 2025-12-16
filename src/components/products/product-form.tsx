@@ -249,9 +249,9 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             name="portionVolumeMl"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Объем порции (мл)</FormLabel>
+                <FormLabel className="font-medium">Объем порции (мл)</FormLabel>
                 <FormControl>
-                    <Input type="number" {...field} />
+                    <Input type="number" {...field} className="text-left" />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
@@ -262,9 +262,9 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             name="sellingPricePerPortion"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Цена за порцию (₽)</FormLabel>
+                <FormLabel className="font-medium">Цена за порцию (₽)</FormLabel>
                 <FormControl>
-                    <Input type="number" step="0.01" {...field} />
+                    <Input type="number" step="0.01" {...field} className="text-left" />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
@@ -276,9 +276,9 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             name="costPerBottle"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Стоимость закупки (₽)</FormLabel>
+                <FormLabel className="font-medium">Стоимость закупки (₽)</FormLabel>
                 <FormControl>
-                    <Input type="number" step="0.01" {...field} />
+                    <Input type="number" step="0.01" {...field} className="text-left" />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
@@ -293,12 +293,12 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         name="bottleVolumeMl"
         render={({ field }) => (
             <FormItem>
-            <FormLabel>Номинальный объем (мл)</FormLabel>
+            <FormLabel className="font-medium">Номинальный объем (мл)</FormLabel>
             <FormControl>
                 <Input type="number" {...field} onChange={(e) => {
                     volumeTouchedRef.current = true;
                     field.onChange(e);
-                }}/>
+                }} className="text-left"/>
             </FormControl>
             <FormMessage />
             </FormItem>
@@ -310,9 +310,9 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             name="fullBottleWeightG"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Вес полной (г)</FormLabel>
+                <FormLabel className="font-medium">Вес полной (г)</FormLabel>
                 <FormControl>
-                    <Input type="number" {...field} value={field.value ?? ''} placeholder="1150"/>
+                    <Input type="number" {...field} value={field.value ?? ''} placeholder="1150" className="text-left"/>
                 </FormControl>
                 <FormMessage />
                 </FormItem>
@@ -323,9 +323,9 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             name="emptyBottleWeightG"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Вес пустой (г)</FormLabel>
+                <FormLabel className="font-medium">Вес пустой (г)</FormLabel>
                 <FormControl>
-                    <Input type="number" {...field} value={field.value ?? ''} placeholder="450"/>
+                    <Input type="number" {...field} value={field.value ?? ''} placeholder="450" className="text-left"/>
                 </FormControl>
                 <FormMessage />
                 </FormItem>
@@ -342,11 +342,11 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
                     name="reorderPointMl"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Минимальный остаток (мл)</FormLabel>
+                        <FormLabel className="font-medium">Минимальный остаток (мл)</FormLabel>
                         <FormControl>
-                            <Input type="number" {...field} value={field.value ?? ''} placeholder="Например, 350"/>
+                            <Input type="number" {...field} value={field.value ?? ''} placeholder="Например, 350" className="text-left"/>
                         </FormControl>
-                        <FormDescription>Когда остаток упадет ниже этого значения, товар попадет в автозаказ.</FormDescription>
+                        <FormDescription className="text-sm text-muted-foreground">Когда остаток упадет ниже этого значения, товар попадет в автозаказ.</FormDescription>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -356,11 +356,11 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
                     name="reorderQuantity"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Количество для заказа (бут.)</FormLabel>
+                        <FormLabel className="font-medium">Количество для заказа (бут.)</FormLabel>
                         <FormControl>
-                            <Input type="number" {...field} value={field.value ?? ''} placeholder="Например, 6"/>
+                            <Input type="number" {...field} value={field.value ?? ''} placeholder="Например, 6" className="text-left"/>
                         </FormControl>
-                        <FormDescription>Сколько бутылок заказывать, когда остаток низкий.</FormDescription>
+                        <FormDescription className="text-sm text-muted-foreground">Сколько бутылок заказывать, когда остаток низкий.</FormDescription>
                         <FormMessage />
                         </FormItem>
                     )}

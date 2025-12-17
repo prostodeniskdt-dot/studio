@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase';
+import { ClientOnly } from '@/components/client-only';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -21,8 +22,10 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased h-full bg-background`}>
         <FirebaseClientProvider>
           {children}
+          <ClientOnly>
+            <Toaster />
+          </ClientOnly>
         </FirebaseClientProvider>
-        <Toaster />
       </body>
     </html>
   );

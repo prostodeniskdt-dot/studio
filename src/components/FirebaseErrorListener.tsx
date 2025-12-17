@@ -15,6 +15,15 @@ export function FirebaseErrorListener() {
   useEffect(() => {
     // The callback logs the error but doesn't crash the app
     const handleError = (error: FirestorePermissionError) => {
+      const path = error.request.path || '';
+      
+      // Ошибки для коллекции premixes - это ожидаемое поведение для новых пользователей
+      // (коллекция может не существовать), поэтому логируем как предупреждение, а не ошибку
+      if (path.includes('/premixes')) {
+        logger.info('Premixes collection access denied (expected for new users or empty collections)');
+        return; // Не увеличиваем счетчик ошибок для premixes
+      }
+      
       logger.error('Firestore Permission Error:', {
         path: error.request.path,
         operation: error.request.method,

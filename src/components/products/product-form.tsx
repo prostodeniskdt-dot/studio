@@ -25,7 +25,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Combobox } from '@/components/ui/combobox';
+import { Combobox, type GroupedComboboxOption } from '@/components/ui/combobox';
 import type { Product, Supplier, PremixIngredient } from '@/lib/types';
 import { productCategories, productSubCategories, translateCategory, translateSubCategory, buildProductDisplayName, extractVolume } from '@/lib/utils';
 import { productCategorySchema } from '@/lib/schemas/product.schema';
@@ -143,6 +143,24 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const ingredientProducts = React.useMemo(() => {
     return allProducts.filter(p => !p.isPremix && p.category !== 'Premix');
   }, [allProducts]);
+  
+  // Группировка продуктов-ингредиентов по категориям для Combobox (как в калькуляторе)
+  const ingredientProductOptions = React.useMemo<GroupedComboboxOption[]>(() => {
+    if (ingredientProducts.length === 0) return [];
+    const groups: Record<string, { value: string; label: string }[]> = {};
+    
+    ingredientProducts.forEach(p => {
+      const category = translateCategory(p.category);
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push({ value: p.id, label: buildProductDisplayName(p.name, p.bottleVolumeMl) });
+    });
+
+    return Object.entries(groups)
+      .map(([label, options]) => ({ label, options }))
+      .sort((a,b) => a.label.localeCompare(b.label));
+  }, [ingredientProducts]);
   
   // Map для быстрого поиска продуктов по ID
   const productsMap = React.useMemo(() => {
@@ -461,16 +479,12 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
               <div className="flex gap-2">
                 <div className="flex-1">
                   <Combobox
-                    options={[{
-                      label: 'Продукты-ингредиенты',
-                      options: ingredientProducts.map(p => ({
-                        value: p.id,
-                        label: buildProductDisplayName(p.name, p.bottleVolumeMl),
-                      })),
-                    }]}
+                    options={ingredientProductOptions}
                     value={newIngredientProductId}
                     onSelect={setNewIngredientProductId}
                     placeholder="Выберите продукт-ингредиент"
+                    searchPlaceholder="Поиск продукта..."
+                    notFoundText="Продукт не найден."
                   />
                 </div>
                 <Input

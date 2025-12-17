@@ -80,17 +80,20 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
 
   // Обработка ошибок прав доступа - использовать кэш при ошибке
   useEffect(() => {
-    if (error) {
-      if (premixesError) {
-        // Ошибка при загрузке примиксов - это нормально, если коллекция еще не создана
-        logger.warn('Error loading premixes (this is OK if collection does not exist yet):', premixesError);
+    if (premixesError) {
+      // Ошибка при загрузке примиксов - это нормально, если коллекция еще не создана или нет прав
+      // Не логируем как критическую ошибку, так как это ожидаемое поведение для новых пользователей
+      if (premixesError instanceof Error && premixesError.message.includes('permission')) {
+        logger.info('Premixes collection not accessible (this is OK for new users or if collection does not exist)');
+      } else {
+        logger.warn('Error loading premixes:', premixesError);
       }
-      if (globalError) {
-        logger.warn('Permission error loading global products, using cache:', globalError);
-      }
-      if (cache && cache.barId === barId) {
-        // Не очищаем кэш при ошибке прав доступа, используем его
-      }
+    }
+    if (globalError) {
+      logger.warn('Permission error loading global products, using cache:', globalError);
+    }
+    if (error && cache && cache.barId === barId) {
+      // Не очищаем кэш при ошибке прав доступа, используем его
     }
   }, [error, premixesError, globalError, cache, barId]);
 

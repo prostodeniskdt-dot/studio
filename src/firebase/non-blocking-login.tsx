@@ -318,17 +318,19 @@ async function seedInitialProducts(firestore: Firestore): Promise<void> {
 
 async function addMissingProducts(firestore: Firestore): Promise<void> {
     try {
+        // Один запрос для получения всех существующих продуктов
+        const existingProductsSnapshot = await getDocs(collection(firestore, 'products'));
+        const existingProductIds = new Set(existingProductsSnapshot.docs.map(doc => doc.id));
+        
         const allProducts = getInitialProductData();
         const batch = writeBatch(firestore);
         let hasChanges = false;
 
-        for (const product of allProducts) {
-            const docRef = doc(firestore, 'products', product.id);
-            const productDoc = await getDoc(docRef);
-            
-            if (!productDoc.exists()) {
+        for (const seedProd of allProducts) {
+            if (!existingProductIds.has(seedProd.id)) {
+                const docRef = doc(firestore, 'products', seedProd.id);
                 const productData = {
-                    ...product,
+                    ...seedProd,
                     createdAt: serverTimestamp(),
                     updatedAt: serverTimestamp(),
                 };
@@ -339,9 +341,13 @@ async function addMissingProducts(firestore: Firestore): Promise<void> {
 
         if (hasChanges) {
             await batch.commit();
+            logger.info("Missing products added successfully.");
+        } else {
+            logger.info("No missing products to add.");
         }
     } catch (e) {
         logger.error("Error during adding missing products:", e);
+        throw e; // Re-throw to ensure error is propagated
     }
 }
 
@@ -448,6 +454,10 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
                 await seedInitialData(firestore, barId, user.uid);
             }
         }
+        
+        // Вызываем миграцию продуктов для всех пользователей (не только новых)
+        // Это гарантирует, что существующие пользователи получат новые продукты
+        await addMissingProducts(firestore);
     } catch (e: any) {
         // This is a critical failure, we re-throw to let the UI handle it (e.g., show an error page)
         logger.error("A non-recoverable error occurred during user/bar document check:", e);

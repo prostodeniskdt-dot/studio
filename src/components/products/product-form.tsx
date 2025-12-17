@@ -297,6 +297,9 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         });
         return;
       }
+      
+      // Перед сохранением пересчитать ratio для всех ингредиентов, чтобы гарантировать корректность
+      // Это важно если пользователь изменил volume но ingredients еще не обновились
     }
     
     setIsSaving(true);
@@ -314,6 +317,16 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     // Use the base name for saving, volume is a separate field.
     const { baseName } = extractVolume(data.name);
 
+    // Перед сохранением пересчитать ratio для всех ингредиентов примикса
+    // Это гарантирует корректность данных даже если пользователь изменил volume
+    let finalIngredients = ingredients;
+    if (isPremixProduct && data.bottleVolumeMl > 0 && ingredients.length > 0) {
+      finalIngredients = ingredients.map(ing => ({
+        ...ing,
+        ratio: ing.volumeMl / data.bottleVolumeMl,
+      }));
+    }
+
     const productData = {
         ...data,
         name: baseName, // Save the base name only
@@ -324,7 +337,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         emptyBottleWeightG: data.emptyBottleWeightG || null,
         // Поля для примиксов
         isPremix: isPremixProduct ? true : undefined,
-        premixIngredients: isPremixProduct ? ingredients : undefined,
+        premixIngredients: isPremixProduct ? finalIngredients : undefined,
         costCalculationMode: isPremixProduct ? costMode : undefined,
         barId: isPremixProduct ? barId : undefined,
         id: productRef.id,

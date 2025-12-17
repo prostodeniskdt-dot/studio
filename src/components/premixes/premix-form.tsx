@@ -71,7 +71,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
   const { user } = useUser();
   const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
-  const { globalProducts } = useProducts(); // Используем globalProducts для выбора ингредиентов
+  const { globalProducts, isLoading: isLoadingProducts } = useProducts(); // Используем globalProducts для выбора ингредиентов
   const [isSaving, setIsSaving] = React.useState(false);
   
   // Инициализация ингредиентов с правильным ratio
@@ -157,13 +157,17 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
   
   // Фильтр продуктов для ингредиентов: все глобальные продукты, исключая текущий редактируемый примикс
   // Используем globalProducts для выбора ингредиентов (только глобальные продукты, не примиксы)
+  // Используем length для стабильности зависимостей, но также включаем сам массив для корректной работы фильтрации
+  const globalProductsLength = globalProducts?.length ?? 0;
   const ingredientProducts = React.useMemo(() => {
+    if (!globalProducts || globalProducts.length === 0) return [];
     return globalProducts.filter(p => p.id !== premix?.id);
-  }, [globalProducts, premix?.id]);
+  }, [globalProducts, globalProductsLength, premix?.id]);
   
   // Группировка продуктов-ингредиентов по категориям для Combobox (как в калькуляторе)
+  const ingredientProductsLength = ingredientProducts.length;
   const ingredientProductOptions = React.useMemo<GroupedComboboxOption[]>(() => {
-    if (ingredientProducts.length === 0) return [];
+    if (!ingredientProducts || ingredientProducts.length === 0) return [];
     const groups: Record<string, { value: string; label: string }[]> = {};
     
     ingredientProducts.forEach(p => {
@@ -177,14 +181,15 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
     return Object.entries(groups)
       .map(([label, options]) => ({ label, options }))
       .sort((a,b) => a.label.localeCompare(b.label));
-  }, [ingredientProducts]);
+  }, [ingredientProducts, ingredientProductsLength]);
   
   // Map для быстрого поиска продуктов по ID
   const productsMap = React.useMemo(() => {
     const map = new Map<string, Product>();
+    if (!globalProducts || globalProducts.length === 0) return map;
     globalProducts.forEach(p => map.set(p.id, p));
     return map;
-  }, [globalProducts]);
+  }, [globalProducts, globalProductsLength]);
   
   // При изменении объема бутылки пересчитывать ratio для всех ингредиентов
   const prevVolumeRef = React.useRef(watchedVolume);
@@ -402,14 +407,20 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         <div className="space-y-4">
           <div className="flex gap-2">
             <div className="flex-1">
-              <Combobox
-                options={ingredientProductOptions}
-                value={newIngredientProductId}
-                onSelect={setNewIngredientProductId}
-                placeholder="Выберите продукт-ингредиент"
-                searchPlaceholder="Поиск продукта..."
-                notFoundText="Продукт не найден."
-              />
+              {isLoadingProducts ? (
+                <div className="flex items-center justify-center h-10 px-3 py-2 text-sm text-muted-foreground border rounded-md">
+                  Загрузка продуктов...
+                </div>
+              ) : (
+                <Combobox
+                  options={ingredientProductOptions}
+                  value={newIngredientProductId}
+                  onSelect={setNewIngredientProductId}
+                  placeholder="Выберите продукт-ингредиент"
+                  searchPlaceholder="Поиск продукта..."
+                  notFoundText="Продукт не найден."
+                />
+              )}
             </div>
             <Input
               type="number"

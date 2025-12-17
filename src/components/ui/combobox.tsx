@@ -92,11 +92,8 @@ export function Combobox({
                       // Вызываем callback с новым значением
                       onSelect(newValue);
                       
-                      // Закрываем popover
-                      // Используем requestAnimationFrame чтобы гарантировать, что состояние обновится
-                      requestAnimationFrame(() => {
-                        setOpen(false);
-                      });
+                      // Закрываем popover синхронно
+                      setOpen(false);
                     }}
                     onMouseDown={(e) => {
                       // Предотвращаем blur события, которые могут помешать выбору

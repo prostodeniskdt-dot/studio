@@ -161,10 +161,10 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   
   const volumeTouchedRef = React.useRef(false);
   
-  // Фильтр продуктов для ингредиентов: только глобальные (не примиксы)
+  // Фильтр продуктов для ингредиентов: все продукты, кроме текущего редактируемого (чтобы избежать циклических зависимостей)
   const ingredientProducts = React.useMemo(() => {
-    return allProducts.filter(p => !p.isPremix && p.category !== 'Premix');
-  }, [allProducts]);
+    return allProducts.filter(p => p.id !== product?.id);
+  }, [allProducts, product?.id]);
   
   // Группировка продуктов-ингредиентов по категориям для Combobox (как в калькуляторе)
   const ingredientProductOptions = React.useMemo<GroupedComboboxOption[]>(() => {

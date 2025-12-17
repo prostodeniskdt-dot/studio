@@ -92,6 +92,24 @@ service cloud.firestore {
         }
       }
 
+      match /premixes/{premixId} {
+        // Примиксы доступны только владельцу бара
+        allow read, list: if isBarOwner(barId) || isAdmin();
+        // При создании/обновлении проверяем, что это примикс и barId совпадает
+        allow create: if isBarOwner(barId) 
+                      && request.resource.data.barId == barId
+                      && request.resource.data.category == 'Premix'
+                      && request.resource.data.isPremix == true
+                      && isNotBanned(request.auth.uid);
+        allow update: if isBarOwner(barId) 
+                      && request.resource.data.barId == barId
+                      && request.resource.data.category == 'Premix'
+                      && request.resource.data.isPremix == true
+                      && resource.data.barId == barId // Защита от изменения barId
+                      && isNotBanned(request.auth.uid);
+        allow delete: if isBarOwner(barId) && isNotBanned(request.auth.uid);
+      }
+
       match /inventorySessions/{inventorySessionId} {
         // Explicitly allow read and list operations
         allow read: if isBarOwner(barId) || isAdmin();

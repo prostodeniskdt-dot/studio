@@ -9,7 +9,7 @@ import { Combobox, type GroupedComboboxOption } from '@/components/ui/combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Weight, Send, Loader2, Search } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import type { InventorySession, Product, ProductCategory } from '@/lib/types';
+import type { InventorySession, Product, ProductCategory, InventoryLine } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
 import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
@@ -17,6 +17,8 @@ import { useProducts } from '@/contexts/products-context';
 import { translateCategory, productCategories, productSubCategories, translateSubCategory, dedupeProductsByName, buildProductDisplayName } from '@/lib/utils';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import { ProductSearch } from '@/components/products/product-search';
+import { expandPremixToIngredients } from '@/lib/premix-utils';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function UnifiedCalculatorPage() {
   const { toast } = useToast();
@@ -41,6 +43,9 @@ export default function UnifiedCalculatorPage() {
   const [calculatedVolume, setCalculatedVolume] = React.useState<number | null>(null);
   
   const [isSending, setIsSending] = React.useState(false);
+  
+  // Состояние для разложения примиксов
+  const [shouldExpandPremix, setShouldExpandPremix] = React.useState(false);
 
   const filteredProducts = React.useMemo(() => {
     if (!products) return [];
@@ -77,12 +82,20 @@ export default function UnifiedCalculatorPage() {
     const product = products?.find(p => p.id === productId);
     setSelectedProductId(productId);
     setCalculatedVolume(null);
+    // Сбрасываем состояние разложения при выборе нового продукта
+    setShouldExpandPremix(false);
     if (product) {
         setBottleVolume(product.bottleVolumeMl?.toString() ?? '');
         setFullWeight(product.fullBottleWeightG?.toString() ?? '');
         setEmptyWeight(product.emptyBottleWeightG?.toString() ?? '');
     }
   };
+  
+  const selectedProduct = React.useMemo(() => {
+    return products?.find(p => p.id === selectedProductId);
+  }, [products, selectedProductId]);
+  
+  const isPremix = selectedProduct?.isPremix === true;
   
   const handleCategoryChange = (category: ProductCategory | undefined) => {
     setSelectedCategory(category);
@@ -147,7 +160,7 @@ export default function UnifiedCalculatorPage() {
   };
 
   const handleSendToInventory = async (volume: number | null) => {
-    if (volume === null || !selectedProductId || !barId || !firestore) {
+    if (volume === null || !selectedProductId || !barId || !firestore || !selectedProduct) {
       toast({
         variant: "destructive",
         title: "Ошибка",
@@ -180,22 +193,66 @@ export default function UnifiedCalculatorPage() {
         const activeSessionDoc = sessionsSnapshot.docs[0];
         const activeSession = activeSessionDoc.data() as InventorySession;
         const activeSessionId = activeSessionDoc.id;
-      
         const linesColRef = collection(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines');
-        const linesQuery = query(linesColRef, where('productId', '==', selectedProductId), limit(1));
-      
-        const linesSnapshot = await getDocs(linesQuery);
+        
+        // Если это примикс и включено разложение на ингредиенты
+        if (isPremix && shouldExpandPremix && selectedProduct.premixIngredients && selectedProduct.premixIngredients.length > 0) {
+          const batch = writeBatch(firestore);
+          
+          // Разложить примикс на ингредиенты
+          const ingredients = expandPremixToIngredients(selectedProduct, volume);
+          
+          // Для каждого ингредиента найти или создать линию
+          for (const ingredient of ingredients) {
+            const linesQuery = query(
+              linesColRef, 
+              where('productId', '==', ingredient.productId), 
+              limit(1)
+            );
+            const linesSnapshot = await getDocs(linesQuery);
+            
+            if (linesSnapshot.empty) {
+              // Создать новую линию
+              const newLineRef = doc(linesColRef);
+              const newLineData: InventoryLine = {
+                id: newLineRef.id,
+                productId: ingredient.productId,
+                inventorySessionId: activeSessionId,
+                startStock: 0,
+                purchases: 0,
+                sales: 0,
+                endStock: ingredient.volumeMl, // Новая линия - установить объем
+                theoreticalEndStock: 0,
+                differenceVolume: 0,
+                differenceMoney: 0,
+                differencePercent: 0,
+              };
+              batch.set(newLineRef, newLineData);
+            } else {
+              // Обновить существующую линию - СУММИРОВАТЬ с существующим остатком
+              const lineDoc = linesSnapshot.docs[0];
+              const lineRef = doc(linesColRef, lineDoc.id);
+              const existingLine = lineDoc.data() as InventoryLine;
+              batch.update(lineRef, { 
+                endStock: (existingLine.endStock || 0) + ingredient.volumeMl 
+              });
+            }
+          }
+          
+          await batch.commit();
+          toast({
+            title: "Примикс разложен на ингредиенты",
+            description: `Создано/обновлено ${ingredients.length} ингредиентов в инвентаризации. Объемы суммированы с существующими остатками.`,
+          });
+        } else {
+          // Обычная логика (как раньше) - создать/обновить одну линию для продукта/примикса
+          const linesQuery = query(linesColRef, where('productId', '==', selectedProductId), limit(1));
+          const linesSnapshot = await getDocs(linesQuery);
 
-        if (linesSnapshot.empty) {
-            const product = products?.find(p => p.id === selectedProductId);
-            if (!product) {
-                setIsSending(false);
-                return;
-            };
-
+          if (linesSnapshot.empty) {
             const batch = writeBatch(firestore);
             const newLineRef = doc(linesColRef);
-            const newLineData = {
+            const newLineData: InventoryLine = {
               id: newLineRef.id,
               productId: selectedProductId,
               inventorySessionId: activeSessionId,
@@ -212,19 +269,19 @@ export default function UnifiedCalculatorPage() {
             
             await batch.commit();
             toast({
-                title: "Данные отправлены",
-                description: `Остаток для продукта ${buildProductDisplayName(product.name, product.bottleVolumeMl)} (${volume} мл) добавлен в текущую инвентаризацию.`,
+              title: "Данные отправлены",
+              description: `Остаток для продукта ${buildProductDisplayName(selectedProduct.name, selectedProduct.bottleVolumeMl)} (${volume} мл) добавлен в текущую инвентаризацию.`,
             });
-        } else {
+          } else {
             const lineDoc = linesSnapshot.docs[0];
             const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines', lineDoc.id);
-            const product = products?.find(p => p.id === selectedProductId);
             const updateData = { endStock: volume };
             await updateDoc(lineRef, updateData);
             toast({
-                title: "Данные отправлены",
-                description: `Остаток для продукта ${product ? buildProductDisplayName(product.name, product.bottleVolumeMl) : ''} (${volume} мл) обновлен в текущую инвентаризацию.`,
+              title: "Данные отправлены",
+              description: `Остаток для продукта ${buildProductDisplayName(selectedProduct.name, selectedProduct.bottleVolumeMl)} (${volume} мл) обновлен в текущую инвентаризацию.`,
             });
+          }
         }
     } catch (serverError: unknown) {
         const errorMessage = serverError instanceof Error ? serverError.message : 'Не удалось отправить данные в инвентаризацию';
@@ -345,6 +402,28 @@ export default function UnifiedCalculatorPage() {
                     <div className="text-center p-4 rounded-lg bg-background">
                         <p className="text-base text-muted-foreground flex items-center justify-center gap-2"><Weight className='h-4 w-4'/> Рассчитанный объем:</p>
                         <p className="text-4xl font-bold text-primary">{calculatedVolume} мл</p>
+                        
+                        {/* Чекбокс для разложения примиксов */}
+                        {isPremix && (
+                          <div className="flex items-center justify-center space-x-2 mt-4 mb-2">
+                            <Checkbox
+                              id="expandPremix"
+                              checked={shouldExpandPremix}
+                              onCheckedChange={(checked) => setShouldExpandPremix(checked === true)}
+                            />
+                            <Label htmlFor="expandPremix" className="text-sm font-normal cursor-pointer">
+                              Разложить на ингредиенты при отправке
+                            </Label>
+                          </div>
+                        )}
+                        {isPremix && (
+                          <p className="text-xs text-muted-foreground mb-2">
+                            {shouldExpandPremix 
+                              ? 'Примикс будет разложен на ингредиенты, объемы суммируются с существующими остатками'
+                              : 'Примикс будет добавлен как единое целое в инвентаризацию'}
+                          </p>
+                        )}
+                        
                          <Button onClick={() => handleSendToInventory(calculatedVolume)} className="w-full mt-2" disabled={calculatedVolume === null || isSending || !barId}>
                             {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                             {isSending ? 'Отправка...' : 'Отправить в инвентаризацию'}

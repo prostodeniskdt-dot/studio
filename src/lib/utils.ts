@@ -217,7 +217,7 @@ export function buildProductDisplayName(originalName: string, bottleVolumeMl?: n
 export const translateProductName = buildProductDisplayName;
 
 
-export const productCategories: ProductCategory[] = ['Whiskey', 'Rum', 'Vodka', 'Gin', 'Tequila', 'Liqueur', 'Wine', 'Beer', 'Brandy', 'Vermouth', 'Absinthe', 'Bitters', 'Syrup', 'Other'];
+export const productCategories: ProductCategory[] = ['Whiskey', 'Rum', 'Vodka', 'Gin', 'Tequila', 'Liqueur', 'Wine', 'Beer', 'Brandy', 'Vermouth', 'Absinthe', 'Bitters', 'Premix', 'Syrup', 'Other'];
 
 export const productSubCategories: Record<ProductCategory, ProductSubCategory[]> = {
     Whiskey: ['Scotch', 'Irish', 'Bourbon', 'Japanese', 'Other'],
@@ -233,6 +233,7 @@ export const productSubCategories: Record<ProductCategory, ProductSubCategory[]>
     Syrup: [],
     Absinthe: [],
     Bitters: [],
+    Premix: [],
     Other: []
 };
 
@@ -252,6 +253,7 @@ export function translateCategory(category: ProductCategory): string {
         case 'Vermouth': return 'Вермут';
         case 'Absinthe': return 'Абсент';
         case 'Bitters': return 'Биттер';
+        case 'Premix': return 'Примиксы и заготовки';
         case 'Other': return 'Другое';
         default: return category;
     }

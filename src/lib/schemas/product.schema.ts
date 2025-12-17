@@ -14,8 +14,15 @@ export const productCategorySchema = z.enum([
   'Vermouth',
   'Absinthe',
   'Bitters',
+  'Premix',
   'Other',
 ]);
+
+export const premixIngredientSchema = z.object({
+  productId: z.string().min(1, 'ID продукта обязателен'),
+  volumeMl: z.number().positive('Объем должен быть положительным'),
+  ratio: z.number().min(0).max(1, 'Доля должна быть от 0 до 1'),
+});
 
 export const productSchema = z.object({
   id: z.string().min(1),
@@ -39,10 +46,51 @@ export const productSchema = z.object({
   reorderQuantity: z.number().positive().optional(),
   defaultSupplierId: z.string().optional(),
 
+  // Примиксы
+  isPremix: z.boolean().optional(),
+  premixIngredients: z.array(premixIngredientSchema).optional(),
+  barId: z.string().optional(),
+  costCalculationMode: z.enum(['auto', 'manual']).optional(),
+
   isActive: z.boolean(),
   createdAt: z.any(), // Firestore Timestamp
   updatedAt: z.any(), // Firestore Timestamp
-});
+}).refine(
+  (data) => {
+    const isPremix = data.category === 'Premix';
+    
+    // Если это примикс
+    if (isPremix) {
+      // premixIngredients обязателен и не пустой
+      if (!data.premixIngredients || data.premixIngredients.length === 0) {
+        return false;
+      }
+      // Сумма объемов ингредиентов не должна превышать объем бутылки
+      const totalVolume = data.premixIngredients.reduce((sum, ing) => sum + ing.volumeMl, 0);
+      if (totalVolume > data.bottleVolumeMl) {
+        return false;
+      }
+      // barId должен быть указан для примиксов
+      if (!data.barId) {
+        return false;
+      }
+      // isPremix должен быть true
+      if (data.isPremix !== true) {
+        return false;
+      }
+    } else {
+      // Для не-примиксов эти поля должны быть undefined
+      if (data.premixIngredients !== undefined || data.barId !== undefined || data.isPremix === true) {
+        return false;
+      }
+    }
+    
+    return true;
+  },
+  {
+    message: "Примикс должен иметь ингредиенты и barId, сумма объемов ингредиентов не должна превышать объем бутылки",
+  }
+);
 
 export type ProductInput = z.input<typeof productSchema>;
 export type ProductOutput = z.output<typeof productSchema>;

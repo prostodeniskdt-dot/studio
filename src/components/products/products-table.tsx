@@ -171,7 +171,15 @@ export function ProductsTable({ products }: { products: Product[] }) {
       header: 'Название',
       cell: ({ row }) => {
         const product = row.original;
-        return <div>{buildProductDisplayName(product.name, product.bottleVolumeMl)}</div>;
+        const isPremix = product.isPremix === true || product.category === 'Premix';
+        return (
+          <div className="flex items-center gap-2">
+            <span>{buildProductDisplayName(product.name, product.bottleVolumeMl)}</span>
+            {isPremix && (
+              <Badge variant="secondary" className="text-xs">Примикс</Badge>
+            )}
+          </div>
+        );
       },
     },
     {

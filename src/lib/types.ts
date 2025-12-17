@@ -16,7 +16,14 @@ export interface UserProfile {
   isBanned?: boolean;
 }
 
-export type ProductCategory = 'Whiskey' | 'Rum' | 'Vodka' | 'Gin' | 'Tequila' | 'Liqueur' | 'Wine' | 'Beer' | 'Syrup' | 'Brandy' | 'Vermouth' | 'Absinthe' | 'Bitters' | 'Other';
+export type ProductCategory = 'Whiskey' | 'Rum' | 'Vodka' | 'Gin' | 'Tequila' | 'Liqueur' | 'Wine' | 'Beer' | 'Syrup' | 'Brandy' | 'Vermouth' | 'Absinthe' | 'Bitters' | 'Premix' | 'Other';
+
+// Ингредиент в составе примикса
+export interface PremixIngredient {
+  productId: string; // ID продукта-ингредиента (из глобальной коллекции products)
+  volumeMl: number;  // Объем ингредиента в мл на один примикс
+  ratio: number;     // Доля от общего объема (0-1) - для валидации
+}
 export type WhiskeySubCategory = 'Scotch' | 'Irish' | 'Bourbon' | 'Japanese' | 'Other';
 export type RumSubCategory = 'White' | 'Gold' | 'Dark' | 'Spiced' | 'Other';
 export type GinSubCategory = 'London Dry' | 'Old Tom' | 'Plymouth' | 'Other';
@@ -49,6 +56,12 @@ export interface Product {
   reorderPointMl?: number;
   reorderQuantity?: number;
   defaultSupplierId?: string;
+
+  // Примиксы
+  isPremix?: boolean; // true если это примикс (category === 'Premix')
+  premixIngredients?: PremixIngredient[]; // Состав примикса
+  barId?: string; // ID бара для примиксов (undefined для глобальных продуктов)
+  costCalculationMode?: 'auto' | 'manual'; // 'auto' = сумма ингредиентов, 'manual' = указано вручную
 
   isActive: boolean;
   createdAt: Timestamp;

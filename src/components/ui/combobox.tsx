@@ -83,12 +83,24 @@ export function Combobox({
                   <CommandItem
                     key={option.value}
                     value={option.label} // Filtering should happen on the display label
-                    onSelect={() => {
+                    onSelect={(currentValue) => {
                       // Используем замыкание для прямого доступа к option.value
-                      // Это более надежно, чем поиск по label
+                      // currentValue из cmdk будет option.label, но мы используем option.value
                       const selectedValue = option.value;
-                      onSelect(selectedValue === value ? "" : selectedValue);
-                      setOpen(false);
+                      const newValue = selectedValue === value ? "" : selectedValue;
+                      
+                      // Вызываем callback с новым значением
+                      onSelect(newValue);
+                      
+                      // Закрываем popover
+                      // Используем requestAnimationFrame чтобы гарантировать, что состояние обновится
+                      requestAnimationFrame(() => {
+                        setOpen(false);
+                      });
+                    }}
+                    onMouseDown={(e) => {
+                      // Предотвращаем blur события, которые могут помешать выбору
+                      e.preventDefault();
                     }}
                   >
                     <Check

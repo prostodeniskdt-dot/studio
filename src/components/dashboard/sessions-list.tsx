@@ -190,7 +190,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
         </div>
       </div>
     )}
-     <AlertDialog open={!!sessionToDeleteId} onOpenChange={setSessionToDeleteId}>
+      <AlertDialog open={!!sessionToDeleteId} onOpenChange={(open) => !open && setSessionToDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Вы уверены?</AlertDialogTitle>

@@ -46,6 +46,7 @@ import { SessionHeader } from '@/components/sessions/session-header';
 import { SessionActions } from '@/components/sessions/session-actions';
 import { useOffline } from '@/hooks/use-offline';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
 import { WifiOff } from 'lucide-react';
 
 export default function SessionPage() {
@@ -93,6 +94,8 @@ export default function SessionPage() {
 
   // Проверить sessionStorage для новых сессий (исправление race condition)
   React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const cachedData = sessionStorage.getItem(`session_${id}`);
     if (cachedData) {
       try {
@@ -115,6 +118,7 @@ export default function SessionPage() {
 
   // Очистить sessionStorage после успешной загрузки
   React.useEffect(() => {
+    if (typeof window === 'undefined') return;
     if (session && cachedSession) {
       sessionStorage.removeItem(`session_${id}`);
       setCachedSession(null);

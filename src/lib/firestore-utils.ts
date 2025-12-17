@@ -13,6 +13,7 @@ import {
   type Firestore,
   type DocumentSnapshot,
   type DocumentData,
+  type Query,
 } from "firebase/firestore";
 
 /**
@@ -62,7 +63,7 @@ export async function deleteSessionWithLinesClient(
   while (true) {
     // Create a query to fetch a batch of line documents.
     // We order by document ID (`__name__`) for stable pagination.
-    const q = lastDoc
+    const q: Query<DocumentData> = lastDoc
       ? query(linesCol, orderBy("__name__"), startAfter(lastDoc), limit(450))
       : query(linesCol, orderBy("__name__"), limit(450));
 

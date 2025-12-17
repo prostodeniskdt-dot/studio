@@ -84,14 +84,14 @@ export default function UnifiedCalculatorPage() {
     }
   };
   
-  const handleCategoryChange = (category: ProductCategory) => {
+  const handleCategoryChange = (category: ProductCategory | undefined) => {
     setSelectedCategory(category);
     setSelectedSubCategory(undefined);
     setSelectedProductId(undefined);
     resetInputs();
   };
 
-  const handleSubCategoryChange = (subCategory: string) => {
+  const handleSubCategoryChange = (subCategory: string | undefined) => {
     setSelectedSubCategory(subCategory);
     setSelectedProductId(undefined);
     resetInputs();

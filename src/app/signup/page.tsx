@@ -68,7 +68,7 @@ export default function SignupPage() {
       Object.entries(extraDetails).filter(([_, v]) => v)
     );
     
-    if (Object.keys(detailsToStore).length > 0) {
+    if (typeof window !== 'undefined' && Object.keys(detailsToStore).length > 0) {
       sessionStorage.setItem('new_user_details', JSON.stringify(detailsToStore));
     }
 
@@ -82,7 +82,7 @@ export default function SignupPage() {
       await updateProfile(userCredential.user, profileData);
       
     } catch(e: any) {
-        if (Object.keys(detailsToStore).length > 0) {
+        if (typeof window !== 'undefined' && Object.keys(detailsToStore).length > 0) {
             sessionStorage.removeItem('new_user_details');
         }
         

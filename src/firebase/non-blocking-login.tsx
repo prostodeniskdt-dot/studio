@@ -140,13 +140,15 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
         
         // 1. Always try to read from sessionStorage
         let extraDetails = {};
-        const detailsJson = sessionStorage.getItem('new_user_details');
-        if (detailsJson) {
-            try {
-                extraDetails = JSON.parse(detailsJson);
-            } catch(e) {
-                logger.error("Could not parse new user details from session storage", e);
-                sessionStorage.removeItem('new_user_details'); // Clear corrupted data
+        if (typeof window !== 'undefined') {
+            const detailsJson = sessionStorage.getItem('new_user_details');
+            if (detailsJson) {
+                try {
+                    extraDetails = JSON.parse(detailsJson);
+                } catch(e) {
+                    logger.error("Could not parse new user details from session storage", e);
+                    sessionStorage.removeItem('new_user_details'); // Clear corrupted data
+                }
             }
         }
         const hasExtraDetails = Object.keys(extraDetails).length > 0;
@@ -164,13 +166,15 @@ export async function ensureUserAndBarDocuments(firestore: Firestore, user: User
             };
             await setDoc(userRef, userData);
             wasUserCreated = true;
-            if (hasExtraDetails) {
+            if (hasExtraDetails && typeof window !== 'undefined') {
                  sessionStorage.removeItem('new_user_details'); // Clear after successful write
             }
         } else if (hasExtraDetails) {
             // 3. If doc exists but there is data in storage, merge it
             await setDoc(userRef, extraDetails, { merge: true });
-            sessionStorage.removeItem('new_user_details'); // Clear after successful write
+            if (typeof window !== 'undefined') {
+                sessionStorage.removeItem('new_user_details'); // Clear after successful write
+            }
         }
 
 

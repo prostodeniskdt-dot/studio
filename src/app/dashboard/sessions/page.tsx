@@ -67,12 +67,14 @@ export default function SessionsPage() {
             sessionId = newSessionRef.id;
             
             // Сохранить данные в sessionStorage для немедленного доступа (исправление race condition)
-            const sessionDataForCache = {
-                ...newSessionData,
-                createdAt: new Date().toISOString(), // Заменить serverTimestamp на дату для кэша
-                isNew: true // Флаг новой сессии
-            };
-            sessionStorage.setItem(`session_${sessionId}`, JSON.stringify(sessionDataForCache));
+            if (typeof window !== 'undefined') {
+                const sessionDataForCache = {
+                    ...newSessionData,
+                    createdAt: new Date().toISOString(), // Заменить serverTimestamp на дату для кэша
+                    isNew: true // Флаг новой сессии
+                };
+                sessionStorage.setItem(`session_${sessionId}`, JSON.stringify(sessionDataForCache));
+            }
             
             toast({
                 title: "Инвентаризация создана",

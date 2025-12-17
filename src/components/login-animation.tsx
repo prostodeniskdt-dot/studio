@@ -92,11 +92,11 @@ export function LoginAnimation({ className }: { className?: string }) {
         <rect className="bar bar-5" x="80" y="0" width="18" height="80" style={{ '--v': 0.68 } as React.CSSProperties} />
 
         {/* Animated Numbers */}
-        <text className="bar-text" x="9" y="90" ref={el => textRefs.current[0] = el}>0%</text>
-        <text className="bar-text" x="29" y="90" ref={el => textRefs.current[1] = el}>0%</text>
-        <text className="bar-text" x="49" y="90" ref={el => textRefs.current[2] = el}>0%</text>
-        <text className="bar-text" x="69" y="90" ref={el => textRefs.current[3] = el}>0%</text>
-        <text className="bar-text" x="89" y="90" ref={el => textRefs.current[4] = el}>0%</text>
+        <text className="bar-text" x="9" y="90" ref={el => { textRefs.current[0] = el; }}>0%</text>
+        <text className="bar-text" x="29" y="90" ref={el => { textRefs.current[1] = el; }}>0%</text>
+        <text className="bar-text" x="49" y="90" ref={el => { textRefs.current[2] = el; }}>0%</text>
+        <text className="bar-text" x="69" y="90" ref={el => { textRefs.current[3] = el; }}>0%</text>
+        <text className="bar-text" x="89" y="90" ref={el => { textRefs.current[4] = el; }}>0%</text>
       </svg>
     </div>
   );

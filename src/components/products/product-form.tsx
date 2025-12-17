@@ -25,6 +25,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import type { Product, Supplier } from '@/lib/types';
 import { productCategories, productSubCategories, translateCategory, translateSubCategory, buildProductDisplayName, extractVolume } from '@/lib/utils';
+import { productCategorySchema } from '@/lib/schemas/product.schema';
 import { Separator } from '../ui/separator';
 import { useFirestore, useUser, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
@@ -34,7 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
-  category: z.enum(productCategories),
+  category: productCategorySchema,
   subCategory: z.string().optional(),
   imageUrl: z.string().optional(),
   

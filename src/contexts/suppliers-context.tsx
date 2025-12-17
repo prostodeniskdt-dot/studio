@@ -30,7 +30,7 @@ export function SuppliersProvider({ children, barId }: { children: React.ReactNo
   const [forceRefresh, setForceRefresh] = useState(0);
 
   useEffect(() => {
-    if (!barId) return;
+    if (typeof window === 'undefined' || !barId) return;
     
     try {
       const cached = localStorage.getItem(`${SUPPLIERS_CACHE_KEY}_${barId}`);
@@ -64,6 +64,7 @@ export function SuppliersProvider({ children, barId }: { children: React.ReactNo
   }, [error, cache, barId]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     if (suppliers && suppliers.length > 0 && barId) {
       const cached: CachedSuppliers = {
         suppliers,
@@ -80,7 +81,7 @@ export function SuppliersProvider({ children, barId }: { children: React.ReactNo
   }, [suppliers, barId]);
 
   const refresh = useCallback(() => {
-    if (barId) {
+    if (typeof window !== 'undefined' && barId) {
       localStorage.removeItem(`${SUPPLIERS_CACHE_KEY}_${barId}`);
     }
     setCache(null);

@@ -45,9 +45,10 @@ export default hasSentryConfig
         org: process.env.SENTRY_ORG,
         project: process.env.SENTRY_PROJECT,
         widenClientFileUpload: true,
-        transpileClientSDK: true,
         tunnelRoute: '/monitoring',
-        hideSourceMaps: true,
+        sourcemaps: {
+          disable: false,
+        },
         disableLogger: true,
         automaticVercelMonitors: true,
       }

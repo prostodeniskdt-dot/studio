@@ -30,6 +30,8 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
 
   // Загрузить из localStorage при монтировании
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     try {
       const cached = localStorage.getItem(PRODUCTS_CACHE_KEY);
       if (cached) {
@@ -63,6 +65,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
 
   // Сохранить в localStorage при загрузке
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     if (products && products.length > 0) {
       const cached: CachedProducts = {
         products,
@@ -78,7 +81,9 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   }, [products]);
 
   const refresh = useCallback(() => {
-    localStorage.removeItem(PRODUCTS_CACHE_KEY);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(PRODUCTS_CACHE_KEY);
+    }
     setCache(null);
     setForceRefresh(prev => prev + 1);
   }, []);

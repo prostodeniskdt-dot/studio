@@ -31,7 +31,7 @@ export function SessionsProvider({ children, barId }: { children: React.ReactNod
 
   // Загрузить из localStorage при монтировании
   useEffect(() => {
-    if (!barId) return;
+    if (typeof window === 'undefined' || !barId) return;
     
     try {
       const cached = localStorage.getItem(`${SESSIONS_CACHE_KEY}_${barId}`);
@@ -66,6 +66,7 @@ export function SessionsProvider({ children, barId }: { children: React.ReactNod
 
   // Сохранить в localStorage при загрузке
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     if (sessions && sessions.length > 0 && barId) {
       const cached: CachedSessions = {
         sessions,
@@ -82,7 +83,7 @@ export function SessionsProvider({ children, barId }: { children: React.ReactNod
   }, [sessions, barId]);
 
   const refresh = useCallback(() => {
-    if (barId) {
+    if (typeof window !== 'undefined' && barId) {
       localStorage.removeItem(`${SESSIONS_CACHE_KEY}_${barId}`);
     }
     setCache(null);

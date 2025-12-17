@@ -37,7 +37,7 @@ import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
-const orderStatuses: PurchaseOrderStatus[] = ['draft', 'ordered', 'partially_received', 'received', 'cancelled'];
+const orderStatuses = ['draft', 'ordered', 'partially_received', 'received', 'cancelled'] as const;
 const statusTranslations: Record<PurchaseOrderStatus, string> = {
     draft: 'Черновик',
     ordered: 'Заказан',

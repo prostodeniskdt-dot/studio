@@ -317,25 +317,42 @@ export default function SessionPage() {
   const handleExportCSV = () => {
     if (!localLines || !allProducts) return;
 
+    // Helper function to escape CSV values - always wrap in quotes for consistency
+    const escapeCSV = (value: string | number): string => {
+      const stringValue = String(value);
+      // Always wrap in quotes and escape double quotes by doubling them
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    };
+
+    // Use semicolon as separator for Russian locale Excel compatibility
+    const SEPARATOR = ';';
     const headers = ["productId", "productName", "startStock", "purchases", "sales", "endStock"];
+    const headerRow = headers.map(escapeCSV).join(SEPARATOR);
     
+    // Data rows
     const rows = localLines.map(line => {
       const product = allProducts.find(p => p.id === line.productId);
       return [
         line.productId,
-        product ? buildProductDisplayName(product.name, product.bottleVolumeMl).replace(/,/g, '') : '',
+        product ? buildProductDisplayName(product.name, product.bottleVolumeMl) : '',
         line.startStock,
         line.purchases,
         line.sales,
         line.endStock
-      ].join(',');
+      ].map(escapeCSV).join(SEPARATOR);
     });
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
+    // Use \r\n for Windows compatibility
+    const csvContent = [headerRow, ...rows].join('\r\n');
     
-    const encodedUri = encodeURI(csvContent);
+    // Add UTF-8 BOM at the beginning of the string for Excel compatibility
+    const BOM = '\uFEFF';
+    const csvWithBOM = BOM + csvContent;
+    
+    // Use data URI with proper encoding - this works better than encodeURI for CSV
+    const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvWithBOM);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", dataUri);
     link.setAttribute("download", `session_${id}_export.csv`);
     document.body.appendChild(link);
     link.click();

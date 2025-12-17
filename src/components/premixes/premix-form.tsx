@@ -19,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Combobox, type GroupedComboboxOption } from '@/components/ui/combobox';
 import type { Product, PremixIngredient } from '@/lib/types';
-import { buildProductDisplayName, extractVolume } from '@/lib/utils';
+import { buildProductDisplayName, extractVolume, translateCategory } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { useFirestore, useUser, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';

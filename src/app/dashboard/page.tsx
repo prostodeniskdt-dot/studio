@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, BarChart3, Package, Loader2, LineChart, Truck, ShoppingCart } from "lucide-react";
+import { PlusCircle, BarChart3, Package, Loader2, LineChart, Truck, ShoppingCart, FlaskConical } from "lucide-react";
 import { SessionsList } from "@/components/dashboard/sessions-list";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';

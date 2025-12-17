@@ -53,12 +53,21 @@ export async function deleteSessionWithLinesClient(
   if (totalCount === 0) {
     // No lines to delete, just delete the session
     await deleteDoc(sessionRef);
-    onProgress?.(100);
+    if (onProgress) {
+      requestAnimationFrame(() => {
+        try {
+          onProgress(100);
+        } catch (e) {
+          // Ignore errors if component is unmounted
+        }
+      });
+    }
     return;
   }
 
   let deletedCount = 0;
   lastDoc = null;
+  let batchNumber = 0;
 
   while (true) {
     // Create a query to fetch a batch of line documents.
@@ -81,10 +90,19 @@ export async function deleteSessionWithLinesClient(
 
     deletedCount += snapshot.docs.length;
     const progress = Math.round((deletedCount / totalCount) * 100);
-    onProgress?.(progress);
-
+    // Use requestAnimationFrame to ensure progress updates happen on next frame, preventing React warnings
+    if (onProgress) {
+      requestAnimationFrame(() => {
+        try {
+          onProgress(progress);
+        } catch (e) {
+          // Ignore errors if component is unmounted
+        }
+      });
+    }
     // Yield to the main thread to prevent UI freezing on large deletions
     await new Promise((resolve) => setTimeout(resolve, 0));
+    batchNumber++;
 
     // Set the last document from this batch to be the starting point for the next query.
     lastDoc = snapshot.docs[snapshot.docs.length - 1];
@@ -92,5 +110,14 @@ export async function deleteSessionWithLinesClient(
 
   // After all lines are deleted, delete the main session document itself.
   await deleteDoc(sessionRef);
-  onProgress?.(100);
+  // Use requestAnimationFrame to ensure progress updates happen on next frame
+  if (onProgress) {
+    requestAnimationFrame(() => {
+      try {
+        onProgress(100);
+      } catch (e) {
+        // Ignore errors if component is unmounted
+      }
+    });
+  }
 }

@@ -196,14 +196,12 @@ export default function SessionPage() {
     setIsDeletingSession(true);
     setIsDeleteDialogOpen(false);
     setDeleteProgress(0);
-    
-    router.replace("/dashboard/sessions");
-
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
     try {
         await deleteSessionWithLinesClient(firestore, barId, id, setDeleteProgress);
         toast({ title: "Инвентаризация удалена." });
+        // Navigate AFTER successful deletion to prevent component unmounting during async operation
+        router.replace("/dashboard/sessions");
     } catch(e: unknown) {
         const errorMessage = e instanceof Error ? e.message : "Произошла неизвестная ошибка.";
         toast({ 
@@ -211,6 +209,8 @@ export default function SessionPage() {
             title: "Не удалось удалить инвентаризацию", 
             description: errorMessage
         });
+        // Reset deleting state on error so user can try again
+        setIsDeletingSession(false);
     } finally {
         setDeleteProgress(0);
     }

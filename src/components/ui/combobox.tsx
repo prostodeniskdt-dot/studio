@@ -92,12 +92,10 @@ export function Combobox({
                       // Вызываем callback с новым значением
                       onSelect(newValue);
                       
-                      // Закрываем popover синхронно
-                      setOpen(false);
-                    }}
-                    onMouseDown={(e) => {
-                      // Предотвращаем blur события, которые могут помешать выбору
-                      e.preventDefault();
+                      // Закрываем popover с небольшой задержкой, чтобы дать время состоянию обновиться
+                      setTimeout(() => {
+                        setOpen(false);
+                      }, 0);
                     }}
                   >
                     <Check

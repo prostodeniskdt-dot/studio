@@ -8,6 +8,10 @@ import { purchaseOrderSchema, purchaseOrderLineSchema } from './schemas';
 import { z } from 'zod';
 import { logger } from './logger';
 
+// Re-export AI analysis function
+export { analyzeInventoryVariance } from '@/ai/flows/analyze-inventory-variance';
+export type { VarianceAnalysisInput, VarianceAnalysisResult } from '@/ai/flows/analyze-inventory-variance';
+
 type CreatePurchaseOrdersInput = {
     lines: InventoryLine[];
     products: Product[];

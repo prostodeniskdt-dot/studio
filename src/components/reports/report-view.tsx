@@ -159,59 +159,89 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
   };
   
   const handleExportCSV = () => {
-    // Helper function to escape CSV values
+    // Helper function to escape CSV values - always wrap in quotes for consistency
     const escapeCSV = (value: string | number): string => {
       const stringValue = String(value);
-      // If value contains comma, quote, or newline, wrap it in quotes and escape quotes
-      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-        return `"${stringValue.replace(/"/g, '""')}"`;
-      }
-      return stringValue;
+      // Always wrap in quotes and escape double quotes by doubling them
+      return `"${stringValue.replace(/"/g, '""')}"`;
     };
 
-    // Build CSV content with UTF-8 BOM for proper Russian character support in Excel
-    const BOM = '\uFEFF';
+    // Use semicolon as separator for Russian locale Excel compatibility
+    const SEPARATOR = ';';
     let csvLines: string[] = [];
     
-    // Header
-    csvLines.push("Продукт,Начало (мл),Покупки (мл),Продажи (порции),Теор. конец (мл),Факт. конец (мл),Разница (мл),Разница (руб.),Разница (%)");
+    // Header row - all values in quotes
+    const headerRow = [
+      'Продукт',
+      'Начало (мл)',
+      'Покупки (мл)',
+      'Продажи (порции)',
+      'Теор. конец (мл)',
+      'Факт. конец (мл)',
+      'Разница (мл)',
+      'Разница (руб.)',
+      'Разница (%)'
+    ].map(escapeCSV).join(SEPARATOR);
+    csvLines.push(headerRow);
     
     // Data rows
     allCalculatedLines.forEach(line => {
       const row = [
-        escapeCSV(line.product ? translateProductName(line.product.name, line.product.bottleVolumeMl) : ''),
-        escapeCSV(line.startStock),
-        escapeCSV(line.purchases),
-        escapeCSV(line.sales),
-        escapeCSV(Math.round(line.theoreticalEndStock)),
-        escapeCSV(line.endStock),
-        escapeCSV(Math.round(line.differenceVolume)),
-        escapeCSV(line.differenceMoney.toFixed(2)),
-        escapeCSV(line.differencePercent.toFixed(2))
-      ];
-      csvLines.push(row.join(","));
+        line.product ? translateProductName(line.product.name, line.product.bottleVolumeMl) : '',
+        line.startStock,
+        line.purchases,
+        line.sales,
+        Math.round(line.theoreticalEndStock),
+        line.endStock,
+        Math.round(line.differenceVolume),
+        line.differenceMoney.toFixed(2),
+        line.differencePercent.toFixed(2)
+      ].map(escapeCSV).join(SEPARATOR);
+      csvLines.push(row);
     });
     
     // Empty row for spacing
-    csvLines.push("");
+    csvLines.push('');
     
     // Totals row
-    csvLines.push(`ИТОГО,,,,,,,"${escapeCSV(totals.totalVariance.toFixed(2))}",""`);
+    const totalsRow = [
+      'ИТОГО',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      totals.totalVariance.toFixed(2),
+      ''
+    ].map(escapeCSV).join(SEPARATOR);
+    csvLines.push(totalsRow);
     
     // Additional summary rows
-    csvLines.push("");
-    csvLines.push("Сводка,");
-    csvLines.push(`Общее отклонение,"${escapeCSV(totals.totalVariance.toFixed(2))}"`);
-    csvLines.push(`Общая выручка,"${escapeCSV(totals.totalRevenue.toFixed(2))}"`);
-    csvLines.push(`Общая себестоимость,"${escapeCSV(totals.totalCost.toFixed(2))}"`);
-    csvLines.push(`Pour Cost %,"${escapeCSV(totals.totalRevenue > 0 ? ((totals.totalCost / totals.totalRevenue) * 100).toFixed(2) : '0.00')}"`);
-    csvLines.push(`Общие потери,"${escapeCSV(totals.totalLoss.toFixed(2))}"`);
-    csvLines.push(`Общие излишки,"${escapeCSV(totals.totalSurplus.toFixed(2))}"`);
+    csvLines.push('');
+    csvLines.push(escapeCSV('Сводка') + SEPARATOR);
+    csvLines.push([escapeCSV('Общее отклонение'), escapeCSV(totals.totalVariance.toFixed(2))].join(SEPARATOR));
+    csvLines.push([escapeCSV('Общая выручка'), escapeCSV(totals.totalRevenue.toFixed(2))].join(SEPARATOR));
+    csvLines.push([escapeCSV('Общая себестоимость'), escapeCSV(totals.totalCost.toFixed(2))].join(SEPARATOR));
+    csvLines.push([escapeCSV('Pour Cost %'), escapeCSV(totals.totalRevenue > 0 ? ((totals.totalCost / totals.totalRevenue) * 100).toFixed(2) : '0.00')].join(SEPARATOR));
+    csvLines.push([escapeCSV('Общие потери'), escapeCSV(totals.totalLoss.toFixed(2))].join(SEPARATOR));
+    csvLines.push([escapeCSV('Общие излишки'), escapeCSV(totals.totalSurplus.toFixed(2))].join(SEPARATOR));
     
-    const csvContent = BOM + csvLines.join("\n");
+    // Use \r\n for Windows compatibility
+    const csvContent = csvLines.join('\r\n');
+    
+    // Create UTF-8 BOM byte array for proper encoding detection in Excel
+    const BOM = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    const encoder = new TextEncoder();
+    const csvBytes = encoder.encode(csvContent);
+    
+    // Combine BOM with CSV content
+    const blobContent = new Uint8Array(BOM.length + csvBytes.length);
+    blobContent.set(BOM, 0);
+    blobContent.set(csvBytes, BOM.length);
     
     // Create blob with proper UTF-8 encoding
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([blobContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
@@ -221,7 +251,7 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    toast({ title: "Экспортировано в CSV", description: "Отчет был загружен." });
+    toast({ title: "Экспортировано в CSV", description: "Отчет был загружен. Для лучшей совместимости также доступен экспорт в Excel." });
   };
 
   const handleExportExcel = () => {

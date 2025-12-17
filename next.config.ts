@@ -1,4 +1,3 @@
-import { withSentryConfig } from '@sentry/nextjs';
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -30,27 +29,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Only wrap with Sentry if required env vars are present
-const hasSentryConfig = process.env.SENTRY_ORG && process.env.SENTRY_PROJECT;
-
-export default hasSentryConfig
-  ? withSentryConfig(
-      nextConfig,
-      {
-        // For all available options, see:
-        // https://github.com/getsentry/sentry-webpack-plugin#options
-
-        // Suppresses source map uploading logs during build
-        silent: true,
-        org: process.env.SENTRY_ORG,
-        project: process.env.SENTRY_PROJECT,
-        widenClientFileUpload: true,
-        tunnelRoute: '/monitoring',
-        sourcemaps: {
-          disable: false,
-        },
-        disableLogger: true,
-        automaticVercelMonitors: true,
-      }
-    )
-  : nextConfig;
+export default nextConfig;

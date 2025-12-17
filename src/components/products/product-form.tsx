@@ -31,7 +31,7 @@ import { productCategories, productSubCategories, translateCategory, translateSu
 import { productCategorySchema } from '@/lib/schemas/product.schema';
 import { Separator } from '../ui/separator';
 import { useFirestore, useUser, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, setDoc, deleteField } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Loader2, X, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -86,9 +86,31 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
       }));
     }
     return [];
-  }, []); // Только при монтировании
+  }, [product?.id, product?.premixIngredients, product?.bottleVolumeMl]); // Зависимости от product
   
   const [ingredients, setIngredients] = React.useState<PremixIngredient[]>(initialIngredients);
+  
+  // Синхронизация состояния при изменении product
+  React.useEffect(() => {
+    if (product) {
+      if (product.isPremix !== isPremix) {
+        setIsPremix(product.isPremix || false);
+      }
+      // Обновляем ингредиенты только если они изменились
+      const newIngredients = product.premixIngredients && product.bottleVolumeMl > 0
+        ? product.premixIngredients.map(ing => ({
+            ...ing,
+            ratio: ing.volumeMl / product.bottleVolumeMl,
+          }))
+        : [];
+      if (JSON.stringify(newIngredients) !== JSON.stringify(ingredients)) {
+        setIngredients(newIngredients);
+      }
+      if (product.costCalculationMode && product.costCalculationMode !== costMode) {
+        setCostMode(product.costCalculationMode);
+      }
+    }
+  }, [product?.id, product?.isPremix, product?.premixIngredients, product?.bottleVolumeMl, product?.costCalculationMode]);
   const [costMode, setCostMode] = React.useState<'auto' | 'manual'>(
     product?.costCalculationMode || 'auto'
   );
@@ -345,7 +367,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
       }));
     }
 
-    const productData = {
+    const productData: any = {
         ...data,
         name: baseName, // Save the base name only
         defaultSupplierId: data.defaultSupplierId || null,
@@ -353,15 +375,26 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         reorderQuantity: data.reorderQuantity || null,
         fullBottleWeightG: data.fullBottleWeightG || null,
         emptyBottleWeightG: data.emptyBottleWeightG || null,
-        // Поля для примиксов
-        isPremix: isPremixProduct ? true : undefined,
-        premixIngredients: isPremixProduct ? finalIngredients : undefined,
-        costCalculationMode: isPremixProduct ? costMode : undefined,
-        barId: isPremixProduct ? barId : undefined,
         id: productRef.id,
         updatedAt: serverTimestamp(),
         createdAt: product?.createdAt || serverTimestamp(),
     };
+    
+    // Добавляем поля примикса только если это примикс
+    // Firestore не поддерживает undefined, поэтому не включаем поля если это не примикс
+    // Если редактируем продукт который был примиксом, удаляем поля примикса
+    if (isPremixProduct) {
+      productData.isPremix = true;
+      productData.premixIngredients = finalIngredients;
+      productData.costCalculationMode = costMode;
+      productData.barId = barId;
+    } else if (product && (product.isPremix || product.category === 'Premix')) {
+      // Если продукт был примиксом, но мы сохраняем его как обычный, удаляем поля примикса
+      productData.isPremix = deleteField();
+      productData.premixIngredients = deleteField();
+      productData.costCalculationMode = deleteField();
+      productData.barId = deleteField();
+    }
 
     const pathPrefix = isPremixProduct ? `bars/${barId}/premixes` : 'products';
     setDoc(productRef, productData, { merge: true })

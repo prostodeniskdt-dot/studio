@@ -83,22 +83,12 @@ export function Combobox({
                   <CommandItem
                     key={option.value}
                     value={option.label} // Filtering should happen on the display label
-                    onSelect={(currentValue) => {
-                      // We find the option by label to get its value
-                      // Исправление: используем более надежный поиск с trim
-                      const selectedOption = flatOptions.find(opt => 
-                        opt.label.toLowerCase().trim() === currentValue.toLowerCase().trim()
-                      );
-                      if (selectedOption) {
-                        onSelect(selectedOption.value === value ? "" : selectedOption.value)
-                      } else {
-                        // Fallback: попробуем найти по value, если не нашли по label
-                        const foundByValue = flatOptions.find(opt => opt.value === currentValue);
-                        if (foundByValue) {
-                          onSelect(foundByValue.value === value ? "" : foundByValue.value)
-                        }
-                      }
-                      setOpen(false)
+                    onSelect={() => {
+                      // Используем замыкание для прямого доступа к option.value
+                      // Это более надежно, чем поиск по label
+                      const selectedValue = option.value;
+                      onSelect(selectedValue === value ? "" : selectedValue);
+                      setOpen(false);
                     }}
                   >
                     <Check

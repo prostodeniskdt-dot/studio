@@ -54,8 +54,8 @@ import { formatCurrency, translateCategory, translateSubCategory, productCategor
 import { ProductForm } from './product-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { doc, updateDoc, deleteDoc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 export function ProductsTable({ products }: { products: Product[] }) {
@@ -76,6 +76,8 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const [isDeleting, setIsDeleting] = React.useState(false);
 
   const firestore = useFirestore();
+  const { user } = useUser();
+  const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
 
   const handleOpenSheet = (product?: Product) => {
@@ -89,17 +91,24 @@ export function ProductsTable({ products }: { products: Product[] }) {
   }
 
   const handleArchiveAction = (product: Product) => {
-    if (!firestore) return;
+    if (!firestore || !barId) return;
     setIsArchiving(product.id);
-    const productRef = doc(firestore, 'products', product.id);
+    
+    // Определить правильную коллекцию: примиксы в bars/{barId}/premixes, остальные в products
+    const isPremix = product.isPremix === true || product.category === 'Premix';
+    const collectionPath = isPremix
+      ? collection(firestore, 'bars', barId, 'premixes')
+      : collection(firestore, 'products');
+    const productRef = doc(collectionPath, product.id);
     const updateData = { isActive: !product.isActive };
+    const pathPrefix = isPremix ? `bars/${barId}/premixes` : 'products';
     
     updateDoc(productRef, updateData)
       .then(() => {
         toast({ title: "Статус продукта изменен." });
       })
       .catch((serverError) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `products/${product.id}`, operation: 'update', requestResourceData: updateData }));
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `${pathPrefix}/${product.id}`, operation: 'update', requestResourceData: updateData }));
       })
       .finally(() => {
         setIsArchiving(null);
@@ -111,10 +120,17 @@ export function ProductsTable({ products }: { products: Product[] }) {
   }
 
   const confirmDelete = async () => {
-    if (!productToDelete || !firestore) return;
+    if (!productToDelete || !firestore || !barId) return;
 
     setIsDeleting(true);
-    const productRef = doc(firestore, 'products', productToDelete.id);
+    
+    // Определить правильную коллекцию: примиксы в bars/{barId}/premixes, остальные в products
+    const isPremix = productToDelete.isPremix === true || productToDelete.category === 'Premix';
+    const collectionPath = isPremix
+      ? collection(firestore, 'bars', barId, 'premixes')
+      : collection(firestore, 'products');
+    const productRef = doc(collectionPath, productToDelete.id);
+    const pathPrefix = isPremix ? `bars/${barId}/premixes` : 'products';
 
     try {
         await deleteDoc(productRef);
@@ -122,7 +138,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
         setProductToDelete(null);
     } catch (serverError) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: `products/${productToDelete.id}`,
+            path: `${pathPrefix}/${productToDelete.id}`,
             operation: 'delete',
         }));
     } finally {

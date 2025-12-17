@@ -67,22 +67,32 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const { data: premixes, isLoading: isLoadingPremixes, error: premixesError } = useCollection<Product>(premixesQuery);
   
   // Объединить глобальные продукты и примиксы
+  // Если есть ошибка при загрузке примиксов, показываем хотя бы глобальные продукты
   const products = React.useMemo(() => {
     const global = globalProducts || [];
-    const localPremixes = premixes || [];
+    const localPremixes = (premixesError ? [] : (premixes || [])); // Игнорируем примиксы если ошибка
     return [...global, ...localPremixes];
-  }, [globalProducts, premixes]);
+  }, [globalProducts, premixes, premixesError]);
   
-  const isLoading = isLoadingGlobal || isLoadingPremixes;
-  const error = globalError || premixesError;
+  const isLoading = isLoadingGlobal || (isLoadingPremixes && !premixesError);
+  // Показываем ошибку только если обе коллекции не загрузились
+  const error = globalError || (premixesError && !globalProducts ? premixesError : null);
 
   // Обработка ошибок прав доступа - использовать кэш при ошибке
   useEffect(() => {
-    if (error && cache && cache.barId === barId) {
-      logger.warn('Permission error loading products, using cache:', error);
-      // Не очищаем кэш при ошибке прав доступа, используем его
+    if (error) {
+      if (premixesError) {
+        // Ошибка при загрузке примиксов - это нормально, если коллекция еще не создана
+        logger.warn('Error loading premixes (this is OK if collection does not exist yet):', premixesError);
+      }
+      if (globalError) {
+        logger.warn('Permission error loading global products, using cache:', globalError);
+      }
+      if (cache && cache.barId === barId) {
+        // Не очищаем кэш при ошибке прав доступа, используем его
+      }
     }
-  }, [error, cache, barId]);
+  }, [error, premixesError, globalError, cache, barId]);
 
   // Сохранить в localStorage при загрузке
   useEffect(() => {

@@ -14,7 +14,6 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { MoreHorizontal, ArrowUpDown, ChevronDown, PlusCircle, Loader2, Trash2, Search } from 'lucide-react';
-import { ProductSearch } from './product-search';
 import { Input } from '@/components/ui/input';
 
 import { Button } from '@/components/ui/button';
@@ -47,18 +46,17 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import type { Product, ProductCategory } from '@/lib/types';
-import { formatCurrency, translateCategory, translateSubCategory, productCategories, productSubCategories, dedupeProductsByName, buildProductDisplayName } from '@/lib/utils';
-import { ProductForm } from './product-form';
+import type { Product } from '@/lib/types';
+import { formatCurrency, translateCategory, dedupeProductsByName, buildProductDisplayName } from '@/lib/utils';
+import { PremixForm } from './premix-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, updateDoc, deleteDoc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
-export function ProductsTable({ products }: { products: Product[] }) {
+export function PremixesTable({ premixes }: { premixes: Product[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
@@ -69,10 +67,10 @@ export function ProductsTable({ products }: { products: Product[] }) {
   });
   const [rowSelection, setRowSelection] = React.useState({});
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
-  const [editingProduct, setEditingProduct] = React.useState<Product | undefined>(undefined);
+  const [editingPremix, setEditingPremix] = React.useState<Product | undefined>(undefined);
   const [isArchiving, setIsArchiving] = React.useState<string | null>(null);
   const [globalFilter, setGlobalFilter] = React.useState('');
-  const [productToDelete, setProductToDelete] = React.useState<Product | null>(null);
+  const [premixToDelete, setPremixToDelete] = React.useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
   const firestore = useFirestore();
@@ -80,59 +78,59 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
 
-  const handleOpenSheet = (product?: Product) => {
-    setEditingProduct(product);
+  const handleOpenSheet = (premix?: Product) => {
+    setEditingPremix(premix);
     setIsSheetOpen(true);
   }
 
   const handleCloseSheet = () => {
     setIsSheetOpen(false);
-    setEditingProduct(undefined);
+    setEditingPremix(undefined);
   }
 
-  const handleArchiveAction = (product: Product) => {
+  const handleArchiveAction = (premix: Product) => {
     if (!firestore || !barId) return;
-    setIsArchiving(product.id);
+    setIsArchiving(premix.id);
     
-    // Всегда используем коллекцию products для обычных продуктов
-    const collectionPath = collection(firestore, 'products');
-    const productRef = doc(collectionPath, product.id);
-    const updateData = { isActive: !product.isActive };
-    const pathPrefix = 'products';
+    // Всегда используем коллекцию bars/{barId}/premixes для примиксов
+    const collectionPath = collection(firestore, 'bars', barId, 'premixes');
+    const premixRef = doc(collectionPath, premix.id);
+    const updateData = { isActive: !premix.isActive };
+    const pathPrefix = `bars/${barId}/premixes`;
     
-    updateDoc(productRef, updateData)
+    updateDoc(premixRef, updateData)
       .then(() => {
-        toast({ title: "Статус продукта изменен." });
+        toast({ title: "Статус примикса изменен." });
       })
       .catch((serverError) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `${pathPrefix}/${product.id}`, operation: 'update', requestResourceData: updateData }));
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `${pathPrefix}/${premix.id}`, operation: 'update', requestResourceData: updateData }));
       })
       .finally(() => {
         setIsArchiving(null);
       });
   }
 
-  const handleDeleteProduct = (product: Product) => {
-    setProductToDelete(product);
+  const handleDeletePremix = (premix: Product) => {
+    setPremixToDelete(premix);
   }
 
   const confirmDelete = async () => {
-    if (!productToDelete || !firestore || !barId) return;
+    if (!premixToDelete || !firestore || !barId) return;
 
     setIsDeleting(true);
     
-    // Всегда используем коллекцию products для обычных продуктов
-    const collectionPath = collection(firestore, 'products');
-    const productRef = doc(collectionPath, productToDelete.id);
-    const pathPrefix = 'products';
+    // Всегда используем коллекцию bars/{barId}/premixes для примиксов
+    const collectionPath = collection(firestore, 'bars', barId, 'premixes');
+    const premixRef = doc(collectionPath, premixToDelete.id);
+    const pathPrefix = `bars/${barId}/premixes`;
 
     try {
-        await deleteDoc(productRef);
-        toast({ title: "Продукт удален", description: `Продукт "${buildProductDisplayName(productToDelete.name, productToDelete.bottleVolumeMl)}" был безвозвратно удален.` });
-        setProductToDelete(null);
+        await deleteDoc(premixRef);
+        toast({ title: "Примикс удален", description: `Примикс "${buildProductDisplayName(premixToDelete.name, premixToDelete.bottleVolumeMl)}" был безвозвратно удален.` });
+        setPremixToDelete(null);
     } catch (serverError) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: `${pathPrefix}/${productToDelete.id}`,
+            path: `${pathPrefix}/${premixToDelete.id}`,
             operation: 'delete',
         }));
     } finally {
@@ -140,11 +138,9 @@ export function ProductsTable({ products }: { products: Product[] }) {
     }
 };
 
-
-  const uniqueProducts = React.useMemo(() => {
-    return dedupeProductsByName(products);
-  }, [products]);
-
+  const uniquePremixes = React.useMemo(() => {
+    return dedupeProductsByName(premixes);
+  }, [premixes]);
 
   const columns: ColumnDef<Product>[] = [
     {
@@ -180,10 +176,11 @@ export function ProductsTable({ products }: { products: Product[] }) {
       accessorKey: 'name',
       header: 'Название',
       cell: ({ row }) => {
-        const product = row.original;
+        const premix = row.original;
         return (
           <div className="flex items-center gap-2">
-            <span>{buildProductDisplayName(product.name, product.bottleVolumeMl)}</span>
+            <span>{buildProductDisplayName(premix.name, premix.bottleVolumeMl)}</span>
+            <Badge variant="secondary" className="text-xs">Примикс</Badge>
           </div>
         );
       },
@@ -195,16 +192,14 @@ export function ProductsTable({ products }: { products: Product[] }) {
           const category = row.getValue('category') as Product['category'];
           return <div>{translateCategory(category)}</div>;
       },
-      filterFn: 'equals',
     },
     {
       accessorKey: 'subCategory',
       header: 'Подкатегория',
       cell: ({ row }) => {
           const subCategory = row.original.subCategory;
-          return subCategory ? <div>{translateSubCategory(subCategory)}</div> : null
+          return subCategory ? <div>{subCategory}</div> : null
       },
-       filterFn: 'equals',
     },
     {
       accessorKey: 'costPerBottle',
@@ -242,28 +237,28 @@ export function ProductsTable({ products }: { products: Product[] }) {
       id: 'actions',
       enableHiding: false,
       cell: ({ row }) => {
-        const product = row.original;
+        const premix = row.original;
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0" disabled={isArchiving === product.id}>
-                {isArchiving === product.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+              <Button variant="ghost" className="h-8 w-8 p-0" disabled={isArchiving === premix.id}>
+                {isArchiving === premix.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
                 <span className="sr-only">Открыть меню</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Действия</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handleOpenSheet(product)}>Редактировать продукт</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleOpenSheet(premix)}>Редактировать примикс</DropdownMenuItem>
               <DropdownMenuItem 
-                onClick={() => handleArchiveAction(product)}
-                className={cn(product.isActive && "focus:bg-destructive/10")}
+                onClick={() => handleArchiveAction(premix)}
+                className={cn(premix.isActive && "focus:bg-destructive/10")}
                >
-                {product.isActive ? 'Архивировать' : 'Восстановить'}
+                {premix.isActive ? 'Архивировать' : 'Восстановить'}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
                 className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                onClick={() => handleDeleteProduct(product)}
+                onClick={() => handleDeletePremix(premix)}
                >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Удалить
@@ -276,7 +271,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
   ];
 
   const table = useReactTable({
-    data: uniqueProducts,
+    data: uniquePremixes,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -295,29 +290,6 @@ export function ProductsTable({ products }: { products: Product[] }) {
       globalFilter,
     },
   });
-  
-  const selectedCategory = table.getColumn('category')?.getFilterValue() as ProductCategory | undefined;
-  const selectedSubCategory = table.getColumn('subCategory')?.getFilterValue() as string | undefined;
-  const subCategoryOptions = selectedCategory ? productSubCategories[selectedCategory] : [];
-
-  const handleCategoryChange = (category: ProductCategory | undefined) => {
-    table.getColumn('category')?.setFilterValue(category);
-    if (!category) {
-      table.getColumn('subCategory')?.setFilterValue(undefined);
-    }
-  };
-
-  const handleSubCategoryChange = (subCategory: string | undefined) => {
-    table.getColumn('subCategory')?.setFilterValue(subCategory);
-  };
-
-  React.useEffect(() => {
-      const currentSubCategory = table.getColumn('subCategory')?.getFilterValue();
-      if (selectedCategory && currentSubCategory && !productSubCategories[selectedCategory]?.includes(currentSubCategory as string)) {
-          table.getColumn('subCategory')?.setFilterValue(undefined);
-      }
-  }, [selectedCategory, table]);
-
 
   return (
     <>
@@ -325,8 +297,8 @@ export function ProductsTable({ products }: { products: Product[] }) {
           <>
               <div className="flex items-center justify-between py-4 gap-4 flex-wrap">
                   <div>
-                      <h1 className="text-3xl font-bold tracking-tight">Продукты</h1>
-                      <p className="text-muted-foreground">Управляйте каталогом товаров и их профилями для калькулятора.</p>
+                      <h1 className="text-3xl font-bold tracking-tight">Примиксы</h1>
+                      <p className="text-muted-foreground">Управляйте примиксами и заготовками для калькулятора.</p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                       <div className="relative flex-1 min-w-[200px]">
@@ -339,36 +311,6 @@ export function ProductsTable({ products }: { products: Product[] }) {
                               className="pl-9"
                           />
                       </div>
-                      <Select
-                          value={selectedCategory ? selectedCategory : '__all__'}
-                          onValueChange={(value) => handleCategoryChange(value === '__all__' ? undefined : value as ProductCategory)}
-                      >
-                          <SelectTrigger className="w-[180px] h-9">
-                              <SelectValue placeholder="Все категории" />
-                          </SelectTrigger>
-                          <SelectContent>
-                              <SelectItem value="__all__">Все категории</SelectItem>
-                              {productCategories.map((cat) => (
-                                  <SelectItem key={cat} value={cat}>{translateCategory(cat)}</SelectItem>
-                              ))}
-                          </SelectContent>
-                      </Select>
-                      {selectedCategory && subCategoryOptions.length > 0 && (
-                          <Select
-                              value={selectedSubCategory ? selectedSubCategory : '__all__'}
-                              onValueChange={(value) => handleSubCategoryChange(value === '__all__' ? undefined : value)}
-                          >
-                              <SelectTrigger className="w-[180px] h-9">
-                                  <SelectValue placeholder="Все подкатегории" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                  <SelectItem value="__all__">Все подкатегории</SelectItem>
-                                  {subCategoryOptions.map(subCat => (
-                                      <SelectItem key={subCat} value={subCat}>{translateSubCategory(subCat)}</SelectItem>
-                                  ))}
-                              </SelectContent>
-                          </Select>
-                      )}
                       <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                           <Button variant="outline" className="h-9">
@@ -389,17 +331,15 @@ export function ProductsTable({ products }: { products: Product[] }) {
                                       column.toggleVisibility(!!value)
                                   }
                                   >
-                                  {
-                                      {
-                                          name: 'Название',
-                                          category: 'Категория',
-                                          subCategory: 'Подкатегория',
-                                          costPerBottle: 'Стоимость',
-                                          bottleVolumeMl: 'Объем',
-                                          isActive: 'Статус',
-                                          id: 'ID'
-                                      }[column.id] || column.id
-                                  }
+                                  {{
+                                      name: 'Название',
+                                      category: 'Категория',
+                                      subCategory: 'Подкатегория',
+                                      costPerBottle: 'Стоимость',
+                                      bottleVolumeMl: 'Объем',
+                                      isActive: 'Статус',
+                                      id: 'ID'
+                                  }[column.id] || column.id}
                                   </DropdownMenuCheckboxItem>
                               );
                               })}
@@ -408,14 +348,14 @@ export function ProductsTable({ products }: { products: Product[] }) {
                       <SheetTrigger asChild>
                           <Button onClick={() => handleOpenSheet()} className="h-9">
                               <PlusCircle className="mr-2 h-4 w-4" />
-                              Добавить
+                              Добавить примикс
                           </Button>
                       </SheetTrigger>
                   </div>
               </div>
               {table.getFilteredRowModel().rows.length !== table.getRowModel().rows.length && (
                   <div className="text-sm text-muted-foreground mb-4">
-                      Найдено продуктов: {table.getFilteredRowModel().rows.length}
+                      Найдено примиксов: {table.getFilteredRowModel().rows.length}
                   </div>
               )}
             
@@ -472,7 +412,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
                       colSpan={columns.length}
                       className="h-24 text-center"
                       >
-                      Продукты не найдены.
+                      Примиксы не найдены.
                       </TableCell>
                   </TableRow>
                   )}
@@ -506,17 +446,17 @@ export function ProductsTable({ products }: { products: Product[] }) {
           </>
           <SheetContent className="w-full sm:w-[480px] sm:max-w-none overflow-y-auto">
               <SheetHeader>
-                  <SheetTitle>{editingProduct ? `Редактировать: ${buildProductDisplayName(editingProduct.name, editingProduct.bottleVolumeMl)}` : 'Добавить новый продукт'}</SheetTitle>
+                  <SheetTitle>{editingPremix ? `Редактировать: ${buildProductDisplayName(editingPremix.name, editingPremix.bottleVolumeMl)}` : 'Добавить новый примикс'}</SheetTitle>
               </SheetHeader>
-              <ProductForm product={editingProduct} onFormSubmit={handleCloseSheet} />
+              <PremixForm premix={editingPremix} onFormSubmit={handleCloseSheet} />
           </SheetContent>
       </Sheet>
-      <AlertDialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
+      <AlertDialog open={!!premixToDelete} onOpenChange={(open) => !open && setPremixToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
                 <AlertDialogDescription>
-                Вы собираетесь безвозвратно удалить продукт <span className="font-semibold">"{productToDelete ? buildProductDisplayName(productToDelete.name, productToDelete.bottleVolumeMl) : ''}"</span>. Это действие нельзя отменить.
+                Вы собираетесь безвозвратно удалить примикс <span className="font-semibold">"{premixToDelete ? buildProductDisplayName(premixToDelete.name, premixToDelete.bottleVolumeMl) : ''}"</span>. Это действие нельзя отменить.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -531,3 +471,4 @@ export function ProductsTable({ products }: { products: Product[] }) {
     </>
   );
 }
+

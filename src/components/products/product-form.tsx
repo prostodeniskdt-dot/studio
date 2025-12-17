@@ -25,18 +25,15 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Combobox, type GroupedComboboxOption } from '@/components/ui/combobox';
-import type { Product, Supplier, PremixIngredient } from '@/lib/types';
+import type { Product, Supplier } from '@/lib/types';
 import { productCategories, productSubCategories, translateCategory, translateSubCategory, buildProductDisplayName, extractVolume } from '@/lib/utils';
 import { productCategorySchema } from '@/lib/schemas/product.schema';
 import { Separator } from '../ui/separator';
 import { useFirestore, useUser, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, doc, serverTimestamp, setDoc, deleteField } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Loader2, X, Plus } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useProducts } from '@/contexts/products-context';
-import { calculatePremixCost } from '@/lib/premix-utils';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
@@ -71,53 +68,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const { user } = useUser();
   const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
-  const { products: allProducts } = useProducts(); // Для выбора ингредиентов
   const [isSaving, setIsSaving] = React.useState(false);
-  
-  // Состояния для примиксов
-  const [isPremix, setIsPremix] = React.useState(product?.isPremix || false);
-  
-  // Инициализация ингредиентов с правильным ratio
-  const initialIngredients = React.useMemo(() => {
-    if (product?.premixIngredients && product.bottleVolumeMl > 0) {
-      return product.premixIngredients.map(ing => ({
-        ...ing,
-        ratio: ing.volumeMl / product.bottleVolumeMl,
-      }));
-    }
-    return [];
-  }, [product?.id, product?.premixIngredients, product?.bottleVolumeMl]); // Зависимости от product
-  
-  const [ingredients, setIngredients] = React.useState<PremixIngredient[]>(initialIngredients);
-  
-  // Синхронизация состояния при изменении product
-  React.useEffect(() => {
-    if (product) {
-      if (product.isPremix !== isPremix) {
-        setIsPremix(product.isPremix || false);
-      }
-      // Обновляем ингредиенты только если они изменились
-      const newIngredients = product.premixIngredients && product.bottleVolumeMl > 0
-        ? product.premixIngredients.map(ing => ({
-            ...ing,
-            ratio: ing.volumeMl / product.bottleVolumeMl,
-          }))
-        : [];
-      if (JSON.stringify(newIngredients) !== JSON.stringify(ingredients)) {
-        setIngredients(newIngredients);
-      }
-      if (product.costCalculationMode && product.costCalculationMode !== costMode) {
-        setCostMode(product.costCalculationMode);
-      }
-    }
-  }, [product?.id, product?.isPremix, product?.premixIngredients, product?.bottleVolumeMl, product?.costCalculationMode]);
-  const [costMode, setCostMode] = React.useState<'auto' | 'manual'>(
-    product?.costCalculationMode || 'auto'
-  );
-  
-  // Состояния для добавления нового ингредиента
-  const [newIngredientProductId, setNewIngredientProductId] = React.useState('');
-  const [newIngredientVolume, setNewIngredientVolume] = React.useState<number>(0);
 
   const suppliersQuery = useMemoFirebase(() => 
     firestore && barId ? collection(firestore, 'bars', barId, 'suppliers') : null,
@@ -160,78 +111,6 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const watchedCostPerBottle = form.watch('costPerBottle');
   
   const volumeTouchedRef = React.useRef(false);
-  
-  // Фильтр продуктов для ингредиентов: все продукты, кроме текущего редактируемого (чтобы избежать циклических зависимостей)
-  const ingredientProducts = React.useMemo(() => {
-    return allProducts.filter(p => p.id !== product?.id);
-  }, [allProducts, product?.id]);
-  
-  // Группировка продуктов-ингредиентов по категориям для Combobox (как в калькуляторе)
-  const ingredientProductOptions = React.useMemo<GroupedComboboxOption[]>(() => {
-    if (ingredientProducts.length === 0) return [];
-    const groups: Record<string, { value: string; label: string }[]> = {};
-    
-    ingredientProducts.forEach(p => {
-      const category = translateCategory(p.category);
-      if (!groups[category]) {
-        groups[category] = [];
-      }
-      groups[category].push({ value: p.id, label: buildProductDisplayName(p.name, p.bottleVolumeMl) });
-    });
-
-    return Object.entries(groups)
-      .map(([label, options]) => ({ label, options }))
-      .sort((a,b) => a.label.localeCompare(b.label));
-  }, [ingredientProducts]);
-  
-  // Map для быстрого поиска продуктов по ID
-  const productsMap = React.useMemo(() => {
-    const map = new Map<string, Product>();
-    allProducts.forEach(p => map.set(p.id, p));
-    return map;
-  }, [allProducts]);
-  
-  // При изменении isPremix устанавливать категорию
-  React.useEffect(() => {
-    if (isPremix) {
-      form.setValue('category', 'Premix', { shouldDirty: true });
-    }
-  }, [isPremix, form]);
-  
-  // При изменении объема бутылки пересчитывать ratio для всех ингредиентов
-  const prevVolumeRef = React.useRef(watchedVolume);
-  React.useEffect(() => {
-    if (watchedVolume > 0 && ingredients.length > 0 && prevVolumeRef.current !== watchedVolume) {
-      prevVolumeRef.current = watchedVolume;
-      const updatedIngredients = ingredients.map(ing => ({
-        ...ing,
-        ratio: ing.volumeMl / watchedVolume,
-      }));
-      setIngredients(updatedIngredients);
-    }
-  }, [watchedVolume, ingredients.length]); // Используем только length, чтобы избежать бесконечного цикла
-  
-  // Расчет стоимости при изменении ингредиентов (если auto mode)
-  const prevIngredientsRef = React.useRef<string>(JSON.stringify(ingredients));
-  React.useEffect(() => {
-    if (isPremix && costMode === 'auto' && ingredients.length > 0 && watchedVolume > 0 && productsMap.size > 0) {
-      const ingredientsStr = JSON.stringify(ingredients);
-      if (prevIngredientsRef.current !== ingredientsStr) {
-        prevIngredientsRef.current = ingredientsStr;
-        
-        const premixProduct: Product = {
-          ...form.getValues(),
-          isPremix: true,
-          premixIngredients: ingredients,
-          bottleVolumeMl: watchedVolume,
-          costPerBottle: 0, // Временное значение для расчета
-        } as Product;
-        
-        const calculatedCost = calculatePremixCost(premixProduct, productsMap);
-        form.setValue('costPerBottle', calculatedCost, { shouldDirty: true });
-      }
-    }
-  }, [ingredients, costMode, isPremix, watchedVolume, productsMap.size, form]);
 
   React.useEffect(() => {
     if (form.formState.isDirty) {
@@ -256,57 +135,6 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
       form.setValue("name", baseName, { shouldDirty: true });
     }
   }, [watchedName, form]);
-  
-  // Функции для управления ингредиентами
-  const handleAddIngredient = () => {
-    if (!newIngredientProductId || newIngredientVolume <= 0) {
-      toast({
-        title: 'Ошибка',
-        description: 'Выберите продукт и укажите объем',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    const currentTotalVolume = ingredients.reduce((sum, ing) => sum + ing.volumeMl, 0);
-    if (currentTotalVolume + newIngredientVolume > watchedVolume) {
-      toast({
-        title: 'Ошибка',
-        description: `Сумма объемов ингредиентов (${currentTotalVolume + newIngredientVolume} мл) превышает объем бутылки (${watchedVolume} мл)`,
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    // Проверка на дубликаты
-    if (ingredients.some(ing => ing.productId === newIngredientProductId)) {
-      toast({
-        title: 'Ошибка',
-        description: 'Этот ингредиент уже добавлен',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    const ratio = watchedVolume > 0 ? newIngredientVolume / watchedVolume : 0;
-    const newIngredient: PremixIngredient = {
-      productId: newIngredientProductId,
-      volumeMl: newIngredientVolume,
-      ratio,
-    };
-    
-    setIngredients([...ingredients, newIngredient]);
-    setNewIngredientProductId('');
-    setNewIngredientVolume(0);
-  };
-  
-  const handleRemoveIngredient = (index: number) => {
-    setIngredients(ingredients.filter((_, i) => i !== index));
-  };
-  
-  const totalIngredientsVolume = React.useMemo(() => {
-    return ingredients.reduce((sum, ing) => sum + ing.volumeMl, 0);
-  }, [ingredients]);
 
   function onSubmit(data: ProductFormValues) {
     if (!firestore || !barId) {
@@ -318,37 +146,10 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
       return;
     }
     
-    // Валидация для примиксов
-    if (isPremix || data.category === 'Premix') {
-      if (ingredients.length === 0) {
-        toast({
-          title: 'Ошибка',
-          description: 'Примикс должен содержать хотя бы один ингредиент',
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      if (totalIngredientsVolume > data.bottleVolumeMl) {
-        toast({
-          title: 'Ошибка',
-          description: `Сумма объемов ингредиентов (${totalIngredientsVolume} мл) превышает объем бутылки (${data.bottleVolumeMl} мл)`,
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      // Перед сохранением пересчитать ratio для всех ингредиентов, чтобы гарантировать корректность
-      // Это важно если пользователь изменил volume но ingredients еще не обновились
-    }
-    
     setIsSaving(true);
     
-    // Выбрать коллекцию в зависимости от типа продукта
-    const isPremixProduct = isPremix || data.category === 'Premix';
-    const collectionPath = isPremixProduct
-      ? collection(firestore, 'bars', barId, 'premixes')
-      : collection(firestore, 'products');
+    // Всегда используем коллекцию products для обычных продуктов
+    const collectionPath = collection(firestore, 'products');
     
     const productRef = product 
       ? doc(collectionPath, product.id) 
@@ -356,16 +157,6 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     
     // Use the base name for saving, volume is a separate field.
     const { baseName } = extractVolume(data.name);
-
-    // Перед сохранением пересчитать ratio для всех ингредиентов примикса
-    // Это гарантирует корректность данных даже если пользователь изменил volume
-    let finalIngredients = ingredients;
-    if (isPremixProduct && data.bottleVolumeMl > 0 && ingredients.length > 0) {
-      finalIngredients = ingredients.map(ing => ({
-        ...ing,
-        ratio: ing.volumeMl / data.bottleVolumeMl,
-      }));
-    }
 
     const productData: any = {
         ...data,
@@ -379,24 +170,8 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         updatedAt: serverTimestamp(),
         createdAt: product?.createdAt || serverTimestamp(),
     };
-    
-    // Добавляем поля примикса только если это примикс
-    // Firestore не поддерживает undefined, поэтому не включаем поля если это не примикс
-    // Если редактируем продукт который был примиксом, удаляем поля примикса
-    if (isPremixProduct) {
-      productData.isPremix = true;
-      productData.premixIngredients = finalIngredients;
-      productData.costCalculationMode = costMode;
-      productData.barId = barId;
-    } else if (product && (product.isPremix || product.category === 'Premix')) {
-      // Если продукт был примиксом, но мы сохраняем его как обычный, удаляем поля примикса
-      productData.isPremix = deleteField();
-      productData.premixIngredients = deleteField();
-      productData.costCalculationMode = deleteField();
-      productData.barId = deleteField();
-    }
 
-    const pathPrefix = isPremixProduct ? `bars/${barId}/premixes` : 'products';
+    const pathPrefix = 'products';
     setDoc(productRef, productData, { merge: true })
       .then(() => {
         toast({ title: product ? "Продукт обновлен" : "Продукт создан" });
@@ -435,21 +210,6 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             </FormItem>
           )}
         />
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="isPremix"
-              checked={isPremix}
-              onChange={(e) => setIsPremix(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            <Label htmlFor="isPremix" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Это примикс/заготовка
-            </Label>
-          </div>
-        </div>
-        
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -457,21 +217,18 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Категория</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPremix}>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Выберите категорию" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {productCategories.map(cat => (
+                    {productCategories.filter(cat => cat !== 'Premix').map(cat => (
                       <SelectItem key={cat} value={cat}>{translateCategory(cat)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {isPremix && (
-                  <FormDescription>Категория автоматически установлена как "Примиксы и заготовки"</FormDescription>
-                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -501,81 +258,6 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             />
            )}
         </div>
-        
-        {/* Секция управления ингредиентами для примиксов */}
-        {isPremix && (
-          <>
-            <Separator />
-            <h3 className="text-lg font-medium">Ингредиенты примикса</h3>
-            
-            <div className="space-y-4">
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Combobox
-                    options={ingredientProductOptions}
-                    value={newIngredientProductId}
-                    onSelect={setNewIngredientProductId}
-                    placeholder="Выберите продукт-ингредиент"
-                    searchPlaceholder="Поиск продукта..."
-                    notFoundText="Продукт не найден."
-                  />
-                </div>
-                <Input
-                  type="number"
-                  placeholder="Объем (мл)"
-                  value={newIngredientVolume || ''}
-                  onChange={(e) => setNewIngredientVolume(Number(e.target.value))}
-                  className="w-32"
-                />
-                <Button
-                  type="button"
-                  onClick={handleAddIngredient}
-                  disabled={!newIngredientProductId || !newIngredientVolume || newIngredientVolume <= 0}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Добавить
-                </Button>
-              </div>
-              
-              {ingredients.length > 0 && (
-                <div className="space-y-2">
-                  <div className="text-sm font-medium">Добавленные ингредиенты:</div>
-                  <div className="space-y-2">
-                    {ingredients.map((ingredient, index) => {
-                      const product = productsMap.get(ingredient.productId);
-                      return (
-                        <div key={index} className="flex items-center justify-between p-2 border rounded-md">
-                          <div className="flex-1">
-                            <div className="font-medium">
-                              {product ? buildProductDisplayName(product.name, product.bottleVolumeMl) : ingredient.productId}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {ingredient.volumeMl} мл ({(ingredient.ratio * 100).toFixed(1)}%)
-                            </div>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleRemoveIngredient(index)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Всего объем: {totalIngredientsVolume} мл / {watchedVolume} мл
-                    {totalIngredientsVolume > watchedVolume && (
-                      <span className="text-red-500 ml-2">Превышен объем бутылки!</span>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </>
-        )}
         
         <Separator />
         <h3 className="text-lg font-medium">Экономика</h3>
@@ -609,29 +291,6 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             />
         </div>
         
-        {/* Режим расчета стоимости для примиксов */}
-        {isPremix && (
-          <div className="space-y-4">
-            <div>
-              <Label className="text-base font-medium">Режим расчета стоимости</Label>
-              <RadioGroup value={costMode} onValueChange={(value: 'auto' | 'manual') => setCostMode(value)} className="mt-2">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="auto" id="cost-auto" />
-                  <Label htmlFor="cost-auto" className="font-normal cursor-pointer">
-                    Автоматически (сумма ингредиентов)
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="manual" id="cost-manual" />
-                  <Label htmlFor="cost-manual" className="font-normal cursor-pointer">
-                    Установить вручную
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </div>
-        )}
-        
         <FormField
             control={form.control}
             name="costPerBottle"
@@ -644,13 +303,8 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
                       step="0.01" 
                       {...field} 
                       className="text-left" 
-                      readOnly={isPremix && costMode === 'auto'}
-                      disabled={isPremix && costMode === 'auto'}
                     />
                 </FormControl>
-                {isPremix && costMode === 'auto' && (
-                  <FormDescription>Стоимость рассчитывается автоматически на основе суммы ингредиентов</FormDescription>
-                )}
                 <FormMessage />
                 </FormItem>
             )}

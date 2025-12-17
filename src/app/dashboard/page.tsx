@@ -129,6 +129,13 @@ export default function DashboardPage() {
                         <p className="text-muted-foreground text-xs">Каталог напитков</p>
                     </div>
                 </Link>
+                <Link href="/dashboard/premixes" className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
+                    <FlaskConical className="h-7 w-7 md:h-8 md:w-8 text-primary shrink-0" />
+                    <div className="hidden sm:block">
+                        <h3 className="font-semibold">Примиксы</h3>
+                        <p className="text-muted-foreground text-xs">Заготовки и коктейли</p>
+                    </div>
+                </Link>
                 <Link href="/dashboard/sessions" className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
                     <BarChart3 className="h-7 w-7 md:h-8 md:w-8 text-primary shrink-0" />
                     <div className="hidden sm:block">

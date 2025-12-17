@@ -7,7 +7,9 @@ import type { Product } from '@/lib/types';
 import { logger } from '@/lib/logger';
 
 interface ProductsContextValue {
-  products: Product[];
+  products: Product[]; // Объединенный список (globalProducts + premixes) для обратной совместимости
+  globalProducts: Product[]; // Только глобальные продукты (без примиксов)
+  premixes: Product[]; // Только примиксы пользователя
   isLoading: boolean;
   error: Error | null;
   refresh: () => void;
@@ -66,13 +68,19 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const { data: globalProducts, isLoading: isLoadingGlobal, error: globalError } = useCollection<Product>(globalProductsQuery);
   const { data: premixes, isLoading: isLoadingPremixes, error: premixesError } = useCollection<Product>(premixesQuery);
   
-  // Объединить глобальные продукты и примиксы
-  // Если есть ошибка при загрузке примиксов, показываем хотя бы глобальные продукты
-  const products = React.useMemo(() => {
-    const global = globalProducts || [];
-    const localPremixes = (premixesError ? [] : (premixes || [])); // Игнорируем примиксы если ошибка
-    return [...global, ...localPremixes];
-  }, [globalProducts, premixes, premixesError]);
+  // Глобальные продукты (без примиксов)
+  const loadedGlobalProducts = React.useMemo(() => globalProducts || [], [globalProducts]);
+  
+  // Примиксы пользователя
+  const loadedPremixes = React.useMemo(() => 
+    (premixesError ? [] : (premixes || [])), // Игнорируем примиксы если ошибка
+    [premixes, premixesError]
+  );
+  
+  // Объединить глобальные продукты и примиксы (для обратной совместимости и калькулятора)
+  const allProducts = React.useMemo(() => {
+    return [...loadedGlobalProducts, ...loadedPremixes];
+  }, [loadedGlobalProducts, loadedPremixes]);
   
   const isLoading = isLoadingGlobal || (isLoadingPremixes && !premixesError);
   // Показываем ошибку только если обе коллекции не загрузились
@@ -100,9 +108,9 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   // Сохранить в localStorage при загрузке
   useEffect(() => {
     if (typeof window === 'undefined' || !barId) return;
-    if (products && products.length > 0) {
+    if (allProducts && allProducts.length > 0) {
       const cached: CachedProducts = {
-        products,
+        products: allProducts,
         timestamp: Date.now(),
         barId,
       };
@@ -113,7 +121,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         // Игнорировать ошибки сохранения (например, quota exceeded)
       }
     }
-  }, [products, barId]);
+  }, [allProducts, barId]);
 
   const refresh = useCallback(() => {
     if (typeof window !== 'undefined' && barId) {
@@ -125,17 +133,39 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
 
   // Использовать кэш если данные еще загружаются
   const effectiveProducts = React.useMemo(() => 
-    products || (cache?.barId === barId ? cache.products : []) || [], 
-    [products, cache?.barId, cache?.products, barId]
+    allProducts.length > 0 ? allProducts : (cache?.barId === barId ? cache.products : []) || [], 
+    [allProducts, cache?.barId, cache?.products, barId]
   );
+  
+  // Раздельные списки: сначала из загруженных данных, потом из кэша если данные еще загружаются
+  const effectiveGlobalProducts = React.useMemo(() => {
+    if (loadedGlobalProducts.length > 0) return loadedGlobalProducts;
+    if (cache?.barId === barId && cache.products) {
+      // Фильтруем примиксы из кэша
+      return cache.products.filter(p => !p.isPremix && p.category !== 'Premix');
+    }
+    return [];
+  }, [loadedGlobalProducts, cache?.barId, cache?.products, barId]);
+  
+  const effectivePremixes = React.useMemo(() => {
+    if (loadedPremixes.length > 0) return loadedPremixes;
+    if (cache?.barId === barId && cache.products) {
+      // Фильтруем примиксы из кэша
+      return cache.products.filter(p => p.isPremix === true || p.category === 'Premix');
+    }
+    return [];
+  }, [loadedPremixes, cache?.barId, cache?.products, barId]);
+  
   const effectiveIsLoading = React.useMemo(() => isLoading && !cache, [isLoading, cache]);
 
   const value: ProductsContextValue = React.useMemo(() => ({
-    products: effectiveProducts,
+    products: effectiveProducts, // Объединенный список для обратной совместимости
+    globalProducts: effectiveGlobalProducts,
+    premixes: effectivePremixes,
     isLoading: effectiveIsLoading,
     error: error || null,
     refresh,
-  }), [effectiveProducts, effectiveIsLoading, error, refresh]);
+  }), [effectiveProducts, effectiveGlobalProducts, effectivePremixes, effectiveIsLoading, error, refresh]);
 
   return (
     <ProductsContext.Provider value={value}>

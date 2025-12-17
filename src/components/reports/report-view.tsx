@@ -240,18 +240,23 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
     blobContent.set(BOM, 0);
     blobContent.set(csvBytes, BOM.length);
     
-    // Create blob with proper UTF-8 encoding
-    const blob = new Blob([blobContent], { type: 'text/csv;charset=utf-8;' });
+    // Create blob with proper UTF-8 encoding and CSV MIME type
+    // The BOM will help Excel detect UTF-8 encoding correctly
+    const blob = new Blob([blobContent], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
+    // Keep .csv extension but Excel should recognize semicolon delimiter
     link.setAttribute("download", `barboss_report_${session.name.replace(/[^a-zA-Zа-яА-Я0-9_]/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    toast({ title: "Экспортировано в CSV", description: "Отчет был загружен. Для лучшей совместимости также доступен экспорт в Excel." });
+    toast({ 
+      title: "Экспортировано в CSV", 
+      description: "Отчет был загружен. При открытии в Excel используйте разделитель 'точка с запятой' или используйте экспорт в Excel для лучшей совместимости." 
+    });
   };
 
   const handleExportExcel = () => {

@@ -230,28 +230,18 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
     // Use \r\n for Windows compatibility
     const csvContent = csvLines.join('\r\n');
     
-    // Create UTF-8 BOM byte array for proper encoding detection in Excel
-    const BOM = new Uint8Array([0xEF, 0xBB, 0xBF]);
-    const encoder = new TextEncoder();
-    const csvBytes = encoder.encode(csvContent);
+    // Add UTF-8 BOM at the beginning of the string for Excel compatibility
+    const BOM = '\uFEFF';
+    const csvWithBOM = BOM + csvContent;
     
-    // Combine BOM with CSV content
-    const blobContent = new Uint8Array(BOM.length + csvBytes.length);
-    blobContent.set(BOM, 0);
-    blobContent.set(csvBytes, BOM.length);
-    
-    // Create blob with proper UTF-8 encoding and CSV MIME type
-    // The BOM will help Excel detect UTF-8 encoding correctly
-    const blob = new Blob([blobContent], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
+    // Use data URI with proper encoding - this works better than Blob for CSV
+    const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvWithBOM);
     const link = document.createElement("a");
-    link.setAttribute("href", url);
-    // Keep .csv extension but Excel should recognize semicolon delimiter
+    link.setAttribute("href", dataUri);
     link.setAttribute("download", `barboss_report_${session.name.replace(/[^a-zA-Zа-яА-Я0-9_]/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
 
     toast({ 
       title: "Экспортировано в CSV", 

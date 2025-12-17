@@ -132,29 +132,33 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   }, [barId]);
 
   // Использовать кэш если данные еще загружаются
-  const effectiveProducts = React.useMemo(() => 
-    allProducts.length > 0 ? allProducts : (cache?.barId === barId ? cache.products : []) || [], 
-    [allProducts, cache?.barId, cache?.products, barId]
-  );
+  const cachedProductsLength = cache?.products?.length ?? 0;
+  const effectiveProducts = React.useMemo(() => {
+    if (allProducts.length > 0) return allProducts;
+    if (cache?.barId === barId && cache?.products && cachedProductsLength > 0) {
+      return cache.products;
+    }
+    return [];
+  }, [allProducts.length, cache?.barId, barId, cachedProductsLength]);
   
   // Раздельные списки: сначала из загруженных данных, потом из кэша если данные еще загружаются
   const effectiveGlobalProducts = React.useMemo(() => {
     if (loadedGlobalProducts.length > 0) return loadedGlobalProducts;
-    if (cache?.barId === barId && cache.products) {
+    if (cache?.barId === barId && cache?.products && cachedProductsLength > 0) {
       // Фильтруем примиксы из кэша
       return cache.products.filter(p => !p.isPremix && p.category !== 'Premix');
     }
     return [];
-  }, [loadedGlobalProducts, cache?.barId, cache?.products, barId]);
+  }, [loadedGlobalProducts.length, cache?.barId, barId, cachedProductsLength]);
   
   const effectivePremixes = React.useMemo(() => {
     if (loadedPremixes.length > 0) return loadedPremixes;
-    if (cache?.barId === barId && cache.products) {
+    if (cache?.barId === barId && cache?.products && cachedProductsLength > 0) {
       // Фильтруем примиксы из кэша
       return cache.products.filter(p => p.isPremix === true || p.category === 'Premix');
     }
     return [];
-  }, [loadedPremixes, cache?.barId, cache?.products, barId]);
+  }, [loadedPremixes.length, cache?.barId, barId, cachedProductsLength]);
   
   const effectiveIsLoading = React.useMemo(() => isLoading && !cache, [isLoading, cache]);
 

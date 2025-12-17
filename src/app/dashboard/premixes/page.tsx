@@ -1,5 +1,5 @@
 'use client';
-import { PremixesTable } from "@/components/premixes/premixes-table";
+import { PremixesCardView } from "@/components/premixes/premixes-card-view";
 import { useProducts } from "@/contexts/products-context";
 import { Loader2 } from "lucide-react";
 
@@ -16,7 +16,7 @@ export default function PremixesPage() {
 
     return (
         <div className="w-full">
-            <PremixesTable premixes={premixes || []} />
+            <PremixesCardView premixes={premixes || []} />
         </div>
     );
 }

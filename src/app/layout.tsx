@@ -12,7 +12,6 @@ export const metadata: Metadata = {
   title: 'BarBoss Инвентаризация',
   description: 'Калькулятор инвентаризации для баров',
   manifest: '/manifest.json',
-  themeColor: '#000000',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -26,6 +25,12 @@ export const metadata: Metadata = {
     apple: '/icons/icon-192x192.png',
   },
 };
+
+export function generateViewport() {
+  return {
+    themeColor: '#000000',
+  };
+}
 
 export default function RootLayout({
   children,

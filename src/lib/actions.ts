@@ -8,9 +8,17 @@ import { purchaseOrderSchema, purchaseOrderLineSchema } from './schemas';
 import { z } from 'zod';
 import { logger } from './logger';
 
-// Re-export AI analysis function
-export { analyzeInventoryVariance } from '@/ai/flows/analyze-inventory-variance';
-export type { VarianceAnalysisInput, VarianceAnalysisResult } from '@/ai/flows/analyze-inventory-variance';
+// Импортируем функцию и типы явно
+import { analyzeInventoryVariance as _analyzeInventoryVariance } from '@/ai/flows/analyze-inventory-variance';
+import type { VarianceAnalysisInput, VarianceAnalysisResult } from '@/ai/flows/analyze-inventory-variance';
+
+// Явно экспортируем как async функцию (Next.js требует явный async export в 'use server' файлах)
+export async function analyzeInventoryVariance(input: VarianceAnalysisInput): Promise<VarianceAnalysisResult> {
+  return _analyzeInventoryVariance(input);
+}
+
+// Экспортируем типы
+export type { VarianceAnalysisInput, VarianceAnalysisResult };
 
 type CreatePurchaseOrdersInput = {
     lines: InventoryLine[];

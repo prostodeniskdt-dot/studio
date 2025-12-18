@@ -57,7 +57,7 @@ export function usePagination<T extends DocumentData>(
 
     try {
       const snapshot = await getDocs(paginatedQuery);
-      const newData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
+      const newData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as unknown as T));
       
       if (append) {
         setData(prev => [...prev, ...newData]);

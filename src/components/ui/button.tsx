@@ -45,12 +45,15 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     // Extract aria-label and aria-describedby from props if provided
     const { 'aria-label': ariaLabel, 'aria-describedby': ariaDescribedBy, ...restProps } = props;
     
+    // Ensure aria-label is string | undefined, not ReactNode
+    const safeAriaLabel: string | undefined = typeof ariaLabel === 'string' ? ariaLabel : undefined;
+    
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         role={asChild ? undefined : "button"}
-        aria-label={ariaLabel || (props.children && typeof props.children === 'string' ? undefined : props.children)}
+        aria-label={safeAriaLabel}
         aria-describedby={ariaDescribedBy}
         tabIndex={props.disabled ? -1 : 0}
         {...restProps}

@@ -29,7 +29,7 @@ import type { Product, PremixIngredient } from '@/lib/types';
 import { buildProductDisplayName, extractVolume, translateCategory, productCategories } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { useFirestore, useUser, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError, useAuth } from '@/firebase';
-import { collection, doc, serverTimestamp, setDoc, getDoc, addDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Loader2, X, Plus, Search, Check, ChevronDown } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -479,7 +479,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
     console.log('18a. Current user confirmed:', { uid: currentUserBeforeSave.uid, email: currentUserBeforeSave.email });
     console.log('===========================');
     
-    // Использовать addDoc для создания, setDoc для обновления
+    // Использовать setDoc для создания и обновления (как в suppliers и purchaseOrders)
     if (premix) {
       // Обновление существующего примикса
       const premixRef = doc(collectionPath, premix.id);
@@ -538,7 +538,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
       
       // Проверка аутентификации перед операцией
       const currentUser = auth?.currentUser;
-      console.log('19a. Auth check before addDoc:', {
+      console.log('19a. Auth check before setDoc:', {
         hasAuth: !!auth,
         currentUser: !!currentUser,
         currentUserUid: currentUser?.uid,
@@ -557,13 +557,16 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         return;
       }
       
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/08f2b6be-f645-4ca6-8fd7-946d56c1ef5b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'premix-form.tsx:524',message:'Before addDoc call',data:{collectionPath:collectionPath.path,barId,userUid:user?.uid,currentUserUid:currentUser?.uid,userExists:!!user,currentUserExists:!!currentUser,usersMatch:currentUser?.uid===user?.uid,premixDataKeys:Object.keys(premixData),hasServerTimestamp:!!premixData.updatedAt||!!premixData.createdAt,pathPrefix},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,D'})}).catch(()=>{});
-      // #endregion
+      // Используем setDoc вместо addDoc (как в suppliers и purchaseOrders)
+      const premixRef = doc(collectionPath);
+      const premixDataWithId = {
+        ...premixData,
+        id: premixRef.id,
+      };
       
-      addDoc(collectionPath, premixData)
-        .then((newPremixRef) => {
-          console.log('Premix created successfully:', newPremixRef.id);
+      setDoc(premixRef, premixDataWithId, { merge: true })
+        .then(() => {
+          console.log('Premix created successfully:', premixRef.id);
           toast({ 
             title: "Примикс создан",
             description: `Примикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно создан.`
@@ -574,14 +577,11 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
           }, 100);
         })
         .catch((serverError: any) => {
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/08f2b6be-f645-4ca6-8fd7-946d56c1ef5b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'premix-form.tsx:530',message:'addDoc error caught',data:{errorCode:serverError?.code,errorMessage:serverError?.message,path:pathPrefix,barId,userUid:user?.uid,userExists:!!user,barIdMatches:barId===`bar_${user?.uid}`,premixDataBarId:premixData.barId,collectionPath:collectionPath.path,errorStack:serverError?.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C,D,E,F'})}).catch(()=>{});
-          // #endregion
           console.error('=== PREMIX CREATE ERROR ===');
           console.error('Error code:', serverError?.code);
           console.error('Error message:', serverError?.message);
           console.error('Error details:', {
-            path: pathPrefix,
+            path: premixRef.path,
             barId,
             userUid: user?.uid,
             barIdMatches: barId === `bar_${user?.uid}`,
@@ -594,23 +594,17 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
           const errorMessage = serverError?.message || 'Неизвестная ошибка';
           const errorCode = serverError?.code || 'unknown';
           
-          // Дополнительная информация для пользователя о возможных причинах
-          let description = `Не удалось создать примикс: ${errorMessage} (код: ${errorCode})`;
-          if (errorCode === 'permission-denied') {
-            description += '\n\nВозможные причины:\n1. Правила Firestore не развернуты в Firebase Console\n2. Пользователь не аутентифицирован\n3. Неверный проект Firebase\n\nПроверьте, что правила развернуты: Firebase Console → Firestore Database → Rules → Publish';
-          }
-          
           toast({
             title: 'Ошибка сохранения',
-            description: description,
+            description: `Не удалось создать примикс: ${errorMessage} (код: ${errorCode})`,
             variant: 'destructive',
           });
           
           if (serverError?.code === 'permission-denied') {
             errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-                path: pathPrefix, 
+                path: premixRef.path, 
                 operation: 'create',
-                requestResourceData: premixData
+                requestResourceData: premixDataWithId
             }));
           }
         })

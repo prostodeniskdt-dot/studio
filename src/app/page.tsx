@@ -9,11 +9,19 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth, useUser } from "@/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { LoginAnimation } from "@/components/login-animation";
 import { RunningManLoader } from "@/components/running-man-loader";
 
@@ -22,13 +30,19 @@ const loginSchema = z.object({
   password: z.string().min(6, { message: "Пароль должен содержать не менее 6 символов" }),
 });
 
+const resetPasswordSchema = z.object({
+  email: z.string().email({ message: "Неверный формат электронной почты" }),
+});
+
 type LoginFormInputs = z.infer<typeof loginSchema>;
+type ResetPasswordFormInputs = z.infer<typeof resetPasswordSchema>;
 
 export default function LoginPage() {
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
 
   const {
     register,
@@ -36,6 +50,15 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormInputs>({
     resolver: zodResolver(loginSchema),
+  });
+
+  const {
+    register: registerReset,
+    handleSubmit: handleSubmitReset,
+    formState: { errors: resetErrors, isSubmitting: isResetting },
+    reset: resetResetForm,
+  } = useForm<ResetPasswordFormInputs>({
+    resolver: zodResolver(resetPasswordSchema),
   });
 
   useEffect(() => {
@@ -62,6 +85,41 @@ export default function LoginPage() {
             title: "Ошибка входа",
             description: "Неверный email или пароль.",
         });
+    }
+  };
+
+  const onResetPassword: SubmitHandler<ResetPasswordFormInputs> = async (data) => {
+    if (!auth) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Сервисы Firebase не инициализированы.",
+      });
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, data.email);
+      toast({
+        variant: "default",
+        title: "Письмо отправлено",
+        description: "Проверьте свою почту для сброса пароля.",
+      });
+      setIsResetDialogOpen(false);
+      resetResetForm();
+    } catch (e: any) {
+      let errorMessage = "Произошла ошибка при отправке письма.";
+      if (e.code === 'auth/user-not-found') {
+        errorMessage = "Пользователь с таким email не найден.";
+      } else if (e.code === 'auth/invalid-email') {
+        errorMessage = "Неверный формат email.";
+      } else if (e.code === 'auth/too-many-requests') {
+        errorMessage = "Слишком много запросов. Попробуйте позже.";
+      }
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: errorMessage,
+      });
     }
   };
   
@@ -134,11 +192,13 @@ export default function LoginPage() {
                     <div>
                         <div className="flex items-center justify-between">
                         <Label htmlFor="password">Пароль</Label>
-                        <div className="text-sm">
-                            <a href="#" className="font-medium text-primary hover:underline">
+                        <button
+                            type="button"
+                            onClick={() => setIsResetDialogOpen(true)}
+                            className="text-sm font-medium text-primary hover:underline"
+                        >
                             Забыли пароль?
-                            </a>
-                        </div>
+                        </button>
                         </div>
                         <div className="mt-1">
                         <Input
@@ -186,6 +246,55 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {/* Dialog для восстановления пароля */}
+      <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Восстановление пароля</DialogTitle>
+            <DialogDescription>
+              Введите ваш email, и мы отправим вам ссылку для сброса пароля.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmitReset(onResetPassword)}>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="reset-email">Электронная почта</Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  className="mt-1"
+                  {...registerReset("email")}
+                />
+                {resetErrors.email && (
+                  <p className="text-xs text-destructive mt-1">
+                    {resetErrors.email.message}
+                  </p>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsResetDialogOpen(false);
+                  resetResetForm();
+                }}
+                disabled={isResetting}
+              >
+                Отмена
+              </Button>
+              <Button type="submit" disabled={isResetting}>
+                {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Отправить
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

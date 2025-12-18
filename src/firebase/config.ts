@@ -5,7 +5,7 @@
 
 function getEnvVar(key: string, defaultValue?: string): string {
   const value = process.env[key];
-  if (!value && !defaultValue) {
+  if (!value && typeof defaultValue === 'undefined') {
     throw new Error(`Missing required environment variable: ${key}`);
   }
   return value || defaultValue || '';
@@ -16,7 +16,7 @@ export const firebaseConfig = {
   appId: getEnvVar('NEXT_PUBLIC_FIREBASE_APP_ID', '1:1074195698844:web:8053af5dbb73c80d13c959'),
   apiKey: getEnvVar('NEXT_PUBLIC_FIREBASE_API_KEY', 'AIzaSyBlCZ6QnauA_WA6ec5kjJMRpqW9DO_MUgs'),
   authDomain: getEnvVar('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN', 'studio-7924133843-7f552.firebaseapp.com'),
-  measurementId: getEnvVar('NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID', ''),
+  measurementId: getEnvVar('NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID', ''), // Provide a default empty string
   messagingSenderId: getEnvVar('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID', '1074195698844'),
 };
 

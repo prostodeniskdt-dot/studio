@@ -1,11 +1,13 @@
 import type {NextConfig} from 'next';
 import withPWA from 'next-pwa';
 
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 const pwaConfig = withPWA({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development', // Disable PWA in development
+  disable: isDevelopment, // Disable PWA in development
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/fonts\.(?:gstatic|googleapis)\.com\/.*/i,
@@ -169,7 +171,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Wrap the Next.js config with PWA config
-const configWithPWA = pwaConfig(nextConfig);
+// Conditionally wrap with PWA config
+const config = isDevelopment ? nextConfig : pwaConfig(nextConfig);
 
-export default configWithPWA;
+export default config;

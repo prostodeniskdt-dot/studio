@@ -8,7 +8,6 @@ import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { logger } from '@/lib/logger';
 import { errorMonitor } from '@/lib/error-monitor';
 import { offlineManager } from '@/lib/offline-manager';
-import { offlineManager } from '@/lib/offline-manager';
 
 interface FirebaseProviderProps {
   children: ReactNode;

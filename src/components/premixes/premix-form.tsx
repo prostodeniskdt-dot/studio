@@ -29,7 +29,7 @@ import type { Product, PremixIngredient } from '@/lib/types';
 import { buildProductDisplayName, extractVolume, translateCategory, productCategories } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { useFirestore, useUser, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, doc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, setDoc, getDoc, addDoc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Loader2, X, Plus, Search, Check, ChevronDown } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -396,9 +396,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
     
     // Всегда используем коллекцию bars/{barId}/premixes для примиксов
     const collectionPath = collection(firestore, 'bars', barId, 'premixes');
-    const premixRef = premix 
-      ? doc(collectionPath, premix.id) 
-      : doc(collectionPath);
     
     // Use the base name for saving, volume is a separate field.
     const { baseName } = extractVolume(data.name);
@@ -423,72 +420,157 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         barId: barId, // Всегда устанавливаем barId
         fullBottleWeightG: data.fullBottleWeightG || null,
         emptyBottleWeightG: data.emptyBottleWeightG || null,
-        id: premixRef.id,
         updatedAt: serverTimestamp(),
         createdAt: premix?.createdAt || serverTimestamp(),
     };
+    
+    // Добавить id только для обновления
+    if (premix) {
+      premixData.id = premix.id;
+    }
 
     const pathPrefix = `bars/${barId}/premixes`;
     console.log('13. Collection path:', `bars/${barId}/premixes`);
     console.log('14. Premix data barId field:', premixData.barId);
     console.log('15. barId in data matches path barId:', premixData.barId === barId);
     console.log('16. Premix data keys:', Object.keys(premixData));
-    console.log('17. Saving premix data:', { 
-      premixData, 
-      path: `${pathPrefix}/${premixRef.id}`,
-      premixRefId: premixRef.id
-    });
+    console.log('16a. Premix operation:', premix ? 'update' : 'create');
+    
+    // Финальная проверка barId
+    console.log('17. Final validation before save:');
+    console.log('  - barId:', barId);
+    console.log('  - user.uid:', user?.uid);
+    console.log('  - Expected format: bar_' + (user?.uid || 'undefined'));
+    console.log('  - barId matches:', barId === `bar_${user?.uid}`);
+    
+    if (barId !== `bar_${user.uid}`) {
+      const errorMsg = `Критическая ошибка: barId не совпадает! Ожидалось: bar_${user.uid}, получено: ${barId}`;
+      console.error('18. BARID MISMATCH:', errorMsg);
+      toast({
+        title: 'Ошибка валидации',
+        description: errorMsg,
+        variant: 'destructive',
+      });
+      setIsSaving(false);
+      return;
+    }
+    
+    console.log('18. Validation passed, saving...');
     console.log('===========================');
     
-    setDoc(premixRef, premixData, { merge: true })
-      .then(() => {
-        console.log('Premix saved successfully:', premixRef.id);
-        toast({ 
-          title: premix ? "Примикс обновлен" : "Примикс создан",
-          description: `Примикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно сохранен.`
+    // Использовать addDoc для создания, setDoc для обновления
+    if (premix) {
+      // Обновление существующего примикса
+      const premixRef = doc(collectionPath, premix.id);
+      console.log('19. Updating existing premix:', premixRef.id);
+      
+      setDoc(premixRef, premixData, { merge: true })
+        .then(() => {
+          console.log('Premix updated successfully:', premixRef.id);
+          toast({ 
+            title: "Примикс обновлен",
+            description: `Примикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно обновлен.`
+          });
+          refresh();
+          setTimeout(() => {
+            onFormSubmit();
+          }, 100);
+        })
+        .catch((serverError: any) => {
+          console.error('=== PREMIX UPDATE ERROR ===');
+          console.error('Error code:', serverError?.code);
+          console.error('Error message:', serverError?.message);
+          console.error('Error details:', {
+            path: `${pathPrefix}/${premixRef.id}`,
+            barId,
+            userUid: user?.uid,
+            barIdMatches: barId === `bar_${user?.uid}`,
+            premixDataBarId: premixData.barId,
+            operation: 'update'
+          });
+          console.error('Full error object:', serverError);
+          console.error('========================');
+          
+          const errorMessage = serverError?.message || 'Неизвестная ошибка';
+          const errorCode = serverError?.code || 'unknown';
+          
+          toast({
+            title: 'Ошибка сохранения',
+            description: `Не удалось обновить примикс: ${errorMessage} (код: ${errorCode})`,
+            variant: 'destructive',
+          });
+          
+          if (serverError?.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+                path: `${pathPrefix}/${premixRef.id}`, 
+                operation: 'update',
+                requestResourceData: premixData
+            }));
+          }
+        })
+        .finally(() => {
+          setIsSaving(false);
         });
-        // Обновить контекст продуктов
-        refresh();
-        // Небольшая задержка перед закрытием диалога, чтобы дать время обновиться данным
-        setTimeout(() => {
-          onFormSubmit();
-        }, 100);
-      })
-      .catch((serverError: any) => {
-        console.error('=== PREMIX SAVE ERROR ===');
-        console.error('Error code:', serverError?.code);
-        console.error('Error message:', serverError?.message);
-        console.error('Error details:', {
-          path: `${pathPrefix}/${premixRef.id}`,
-          barId,
-          userUid: user?.uid,
-          barIdMatches: barId === (user ? `bar_${user.uid}` : null),
-          premixDataBarId: premixData.barId,
-          operation: premix ? 'update' : 'create'
+    } else {
+      // Создание нового примикса
+      console.log('19. Creating new premix...');
+      
+      addDoc(collectionPath, premixData)
+        .then((newPremixRef) => {
+          // Обновить документ с правильным id
+          const finalPremixData = {
+            ...premixData,
+            id: newPremixRef.id,
+          };
+          return setDoc(newPremixRef, finalPremixData, { merge: true }).then(() => newPremixRef);
+        })
+        .then((newPremixRef) => {
+          console.log('Premix created successfully:', newPremixRef.id);
+          toast({ 
+            title: "Примикс создан",
+            description: `Примикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно создан.`
+          });
+          refresh();
+          setTimeout(() => {
+            onFormSubmit();
+          }, 100);
+        })
+        .catch((serverError: any) => {
+          console.error('=== PREMIX CREATE ERROR ===');
+          console.error('Error code:', serverError?.code);
+          console.error('Error message:', serverError?.message);
+          console.error('Error details:', {
+            path: pathPrefix,
+            barId,
+            userUid: user?.uid,
+            barIdMatches: barId === `bar_${user?.uid}`,
+            premixDataBarId: premixData.barId,
+            operation: 'create'
+          });
+          console.error('Full error object:', serverError);
+          console.error('========================');
+          
+          const errorMessage = serverError?.message || 'Неизвестная ошибка';
+          const errorCode = serverError?.code || 'unknown';
+          
+          toast({
+            title: 'Ошибка сохранения',
+            description: `Не удалось создать примикс: ${errorMessage} (код: ${errorCode})`,
+            variant: 'destructive',
+          });
+          
+          if (serverError?.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+                path: pathPrefix, 
+                operation: 'create',
+                requestResourceData: premixData
+            }));
+          }
+        })
+        .finally(() => {
+          setIsSaving(false);
         });
-        console.error('Full error object:', serverError);
-        console.error('========================');
-        
-        const errorMessage = serverError?.message || 'Неизвестная ошибка';
-        const errorCode = serverError?.code || 'unknown';
-        
-        toast({
-          title: 'Ошибка сохранения',
-          description: `Не удалось сохранить примикс: ${errorMessage} (код: ${errorCode})`,
-          variant: 'destructive',
-        });
-        
-        if (serverError?.code === 'permission-denied') {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-              path: `${pathPrefix}/${premixRef.id}`, 
-              operation: premix ? 'update' : 'create',
-              requestResourceData: premixData
-          }));
-        }
-      })
-      .finally(() => {
-        setIsSaving(false);
-      });
+    }
   }
   
   const finalDisplayName = React.useMemo(() => {

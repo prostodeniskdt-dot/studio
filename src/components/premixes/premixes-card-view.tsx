@@ -139,10 +139,22 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
     <>
       <div className="space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Примиксы</h1>
-            <p className="text-muted-foreground">Управляйте примиксами и заготовками для калькулятора.</p>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Примиксы</h1>
+          <p className="text-muted-foreground">Управляйте примиксами и заготовками для калькулятора.</p>
+        </div>
+
+        {/* Search with Add Button */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Поиск по названию или ингредиентам..."
+              className="pl-9"
+            />
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -172,18 +184,6 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
           </Dialog>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Поиск по названию или ингредиентам..."
-            className="pl-9"
-          />
-        </div>
-
         {/* Cards Grid */}
         {filteredPremixes.length === 0 ? (
           <div className="text-center py-12">
@@ -192,12 +192,6 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
             <p className="text-muted-foreground mb-4">
               {searchQuery ? 'Попробуйте изменить поисковый запрос.' : 'Создайте свой первый примикс.'}
             </p>
-            {!searchQuery && (
-              <Button onClick={() => handleOpenDialog()}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Добавить примикс
-              </Button>
-            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

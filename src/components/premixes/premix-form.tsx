@@ -31,14 +31,14 @@ import { Separator } from '../ui/separator';
 import { useFirestore, useUser, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Loader2, X, Plus, Search, Check } from 'lucide-react';
+import { Loader2, X, Plus, Search, Check, ChevronDown } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import { useProducts } from '@/contexts/products-context';
 import { calculatePremixCost } from '@/lib/premix-utils';
-import type { Supplier } from '@/lib/types';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
@@ -53,10 +53,6 @@ const formSchema = z.object({
   bottleVolumeMl: z.coerce.number().positive('Должно быть положительным числом.'),
   fullBottleWeightG: z.coerce.number().optional(),
   emptyBottleWeightG: z.coerce.number().optional(),
-
-  reorderPointMl: z.coerce.number().optional(),
-  reorderQuantity: z.coerce.number().optional(),
-  defaultSupplierId: z.string().optional(),
 
   isActive: z.boolean(),
 });
@@ -118,12 +114,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
   const [selectedProductId, setSelectedProductId] = React.useState<string>('');
   const [newIngredientVolume, setNewIngredientVolume] = React.useState<number>(0);
 
-  const suppliersQuery = useMemoFirebase(() => 
-    firestore && barId ? collection(firestore, 'bars', barId, 'suppliers') : null,
-    [firestore, barId]
-  );
-  const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
-
   const form = useForm<PremixFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: premix ? {
@@ -132,11 +122,8 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         category: 'Premix',
         subCategory: premix.subCategory ?? undefined,
         imageUrl: premix.imageUrl ?? undefined,
-        fullBottleWeightG: premix.fullBottleWeightG ?? undefined,
-        emptyBottleWeightG: premix.emptyBottleWeightG ?? undefined,
-        reorderPointMl: premix.reorderPointMl ?? undefined,
-        reorderQuantity: premix.reorderQuantity ?? undefined,
-        defaultSupplierId: premix.defaultSupplierId ?? undefined,
+      fullBottleWeightG: premix.fullBottleWeightG ?? undefined,
+      emptyBottleWeightG: premix.emptyBottleWeightG ?? undefined,
     } : {
       name: '',
       category: 'Premix',
@@ -148,9 +135,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
       imageUrl: PlaceHolderImages.find(p => p.id.toLowerCase() === 'premix')?.imageUrl || PlaceHolderImages.find(p => p.id.toLowerCase() === 'other')?.imageUrl,
       fullBottleWeightG: undefined,
       emptyBottleWeightG: undefined,
-      reorderPointMl: undefined,
-      reorderQuantity: undefined,
-      defaultSupplierId: undefined,
     },
   });
 
@@ -331,6 +315,15 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
   }, [ingredients]);
 
   function onSubmit(data: PremixFormValues) {
+    console.log('onSubmit called', { 
+      data, 
+      ingredients, 
+      totalIngredientsVolume, 
+      watchedVolume,
+      firestore: !!firestore,
+      barId 
+    });
+    
     if (!firestore || !barId) {
       toast({
         title: 'Ошибка',
@@ -359,6 +352,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
       return;
     }
     
+    console.log('Validation passed, saving...');
     setIsSaving(true);
     
     // Всегда используем коллекцию bars/{barId}/premixes для примиксов
@@ -388,9 +382,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         premixIngredients: finalIngredients,
         costCalculationMode: costMode,
         barId: barId, // Всегда устанавливаем barId
-        defaultSupplierId: data.defaultSupplierId || null,
-        reorderPointMl: data.reorderPointMl || null,
-        reorderQuantity: data.reorderQuantity || null,
         fullBottleWeightG: data.fullBottleWeightG || null,
         emptyBottleWeightG: data.emptyBottleWeightG || null,
         id: premixRef.id,
@@ -588,40 +579,45 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
 
           {/* Список добавленных ингредиентов */}
           {ingredients.length > 0 && (
-            <div className="space-y-2">
-              <div className="text-sm font-medium">Добавленные ингредиенты:</div>
-              <div className="space-y-2">
-                {ingredients.map((ingredient, index) => {
-                  const product = productsMap.get(ingredient.productId);
-                  return (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-md bg-card">
-                      <div className="flex-1">
-                        <div className="font-medium">
-                          {product ? buildProductDisplayName(product.name, product.bottleVolumeMl) : ingredient.productId}
+            <Collapsible defaultOpen={false}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-2 hover:bg-muted/50 rounded-md transition-colors">
+                <div className="text-sm font-medium">Добавленные ингредиенты ({ingredients.length})</div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-2 mt-2">
+                <div className="space-y-2">
+                  {ingredients.map((ingredient, index) => {
+                    const product = productsMap.get(ingredient.productId);
+                    return (
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-md bg-card">
+                        <div className="flex-1">
+                          <div className="font-medium">
+                            {product ? buildProductDisplayName(product.name, product.bottleVolumeMl) : ingredient.productId}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {ingredient.volumeMl} мл ({(ingredient.ratio * 100).toFixed(1)}%)
+                          </div>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          {ingredient.volumeMl} мл ({(ingredient.ratio * 100).toFixed(1)}%)
-                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveIngredient(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveIngredient(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Всего объем: {totalIngredientsVolume} мл / {watchedVolume} мл
-                {totalIngredientsVolume > watchedVolume && (
-                  <span className="text-red-500 ml-2">Превышен объем бутылки!</span>
-                )}
-              </div>
-            </div>
+                    );
+                  })}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Всего объем: {totalIngredientsVolume} мл / {watchedVolume} мл
+                  {totalIngredientsVolume > watchedVolume && (
+                    <span className="text-red-500 ml-2">Превышен объем бутылки!</span>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           )}
         </div>
         
@@ -750,63 +746,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
             />
         </div>
         
-        <Separator />
-        <h3 className="text-lg font-medium">Параметры автозаказа</h3>
-        <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-                <FormField
-                    control={form.control}
-                    name="reorderPointMl"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel className="font-medium">Минимальный остаток (мл)</FormLabel>
-                        <FormControl>
-                            <Input type="number" {...field} value={field.value ?? ''} placeholder="Например, 350" className="text-left"/>
-                        </FormControl>
-                        <FormDescription className="text-sm text-muted-foreground">Когда остаток упадет ниже этого значения, товар попадет в автозаказ.</FormDescription>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="reorderQuantity"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel className="font-medium">Количество для заказа (бут.)</FormLabel>
-                        <FormControl>
-                            <Input type="number" {...field} value={field.value ?? ''} placeholder="Например, 6" className="text-left"/>
-                        </FormControl>
-                        <FormDescription className="text-sm text-muted-foreground">Сколько бутылок заказывать, когда остаток низкий.</FormDescription>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
-            <FormField
-                control={form.control}
-                name="defaultSupplierId"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Поставщик по умолчанию</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                    <FormControl>
-                        <SelectTrigger disabled={isLoadingSuppliers}>
-                        <SelectValue placeholder={isLoadingSuppliers ? "Загрузка..." : "Выберите поставщика"} />
-                        </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                        {suppliers ? suppliers.map(s => (
-                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                        )) : <SelectItem value="loading" disabled>Загрузка...</SelectItem>}
-                    </SelectContent>
-                    </Select>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
-        </div>
-       
         <Separator />
 
         <FormField

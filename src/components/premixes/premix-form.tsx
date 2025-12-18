@@ -69,7 +69,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
   const { user } = useUser();
   const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
-  const { globalProducts, isLoading: isLoadingProducts } = useProducts(); // Используем globalProducts для выбора ингредиентов
+  const { globalProducts, isLoading: isLoadingProducts, refresh } = useProducts(); // Используем globalProducts для выбора ингредиентов
   const [isSaving, setIsSaving] = React.useState(false);
   
   // Инициализация ингредиентов с правильным ratio
@@ -390,12 +390,30 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
     };
 
     const pathPrefix = `bars/${barId}/premixes`;
+    console.log('Saving premix data:', { premixData, path: `${pathPrefix}/${premixRef.id}` });
+    
     setDoc(premixRef, premixData, { merge: true })
       .then(() => {
-        toast({ title: premix ? "Примикс обновлен" : "Примикс создан" });
-        onFormSubmit();
+        console.log('Premix saved successfully:', premixRef.id);
+        toast({ 
+          title: premix ? "Примикс обновлен" : "Примикс создан",
+          description: `Примикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно сохранен.`
+        });
+        // Обновить контекст продуктов
+        refresh();
+        // Небольшая задержка перед закрытием диалога, чтобы дать время обновиться данным
+        setTimeout(() => {
+          onFormSubmit();
+        }, 100);
       })
-      .catch((serverError) => {
+      .catch((serverError: any) => {
+        console.error('Error saving premix:', serverError);
+        const errorMessage = serverError?.message || 'Неизвестная ошибка';
+        toast({
+          title: 'Ошибка сохранения',
+          description: `Не удалось сохранить примикс: ${errorMessage}`,
+          variant: 'destructive',
+        });
         errorEmitter.emit('permission-error', new FirestorePermissionError({ 
             path: `${pathPrefix}/${premixRef.id}`, 
             operation: premix ? 'update' : 'create',

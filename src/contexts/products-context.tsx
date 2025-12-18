@@ -5,6 +5,7 @@ import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebas
 import { collection, query, where } from 'firebase/firestore';
 import type { Product } from '@/lib/types';
 import { logger } from '@/lib/logger';
+import { dedupeProductsByName } from '@/lib/utils';
 
 interface ProductsContextValue {
   products: Product[]; // Объединенный список (globalProducts + premixes) для обратной совместимости
@@ -68,18 +69,23 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const { data: globalProducts, isLoading: isLoadingGlobal, error: globalError } = useCollection<Product>(globalProductsQuery);
   const { data: premixes, isLoading: isLoadingPremixes, error: premixesError } = useCollection<Product>(premixesQuery);
   
-  // Глобальные продукты (без примиксов)
-  const loadedGlobalProducts = React.useMemo(() => globalProducts || [], [globalProducts]);
+  // Глобальные продукты (без примиксов) с дедупликацией
+  const loadedGlobalProducts = React.useMemo(() => {
+    if (!globalProducts || globalProducts.length === 0) return [];
+    return dedupeProductsByName(globalProducts);
+  }, [globalProducts]);
   
-  // Примиксы пользователя
-  const loadedPremixes = React.useMemo(() => 
-    (premixesError ? [] : (premixes || [])), // Игнорируем примиксы если ошибка
-    [premixes, premixesError]
-  );
+  // Примиксы пользователя с дедупликацией
+  const loadedPremixes = React.useMemo(() => {
+    if (premixesError) return [];
+    if (!premixes || premixes.length === 0) return [];
+    return dedupeProductsByName(premixes);
+  }, [premixes, premixesError]);
   
-  // Объединить глобальные продукты и примиксы (для обратной совместимости и калькулятора)
+  // Объединить глобальные продукты и примиксы (для обратной совместимости и калькулятора) с дедупликацией
   const allProducts = React.useMemo(() => {
-    return [...loadedGlobalProducts, ...loadedPremixes];
+    const combined = [...loadedGlobalProducts, ...loadedPremixes];
+    return dedupeProductsByName(combined);
   }, [loadedGlobalProducts, loadedPremixes]);
   
   const isLoading = isLoadingGlobal || (isLoadingPremixes && !premixesError);
@@ -105,12 +111,13 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [error, premixesError, globalError, cache, barId]);
 
-  // Сохранить в localStorage при загрузке
+  // Сохранить в localStorage при загрузке с дедупликацией
   useEffect(() => {
     if (typeof window === 'undefined' || !barId) return;
     if (allProducts && allProducts.length > 0) {
+      const deduplicated = dedupeProductsByName(allProducts);
       const cached: CachedProducts = {
-        products: allProducts,
+        products: deduplicated,
         timestamp: Date.now(),
         barId,
       };
@@ -131,22 +138,23 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     setForceRefresh(prev => prev + 1);
   }, [barId]);
 
-  // Использовать кэш если данные еще загружаются
+  // Использовать кэш если данные еще загружаются с дедупликацией
   const cachedProductsLength = cache?.products?.length ?? 0;
   const effectiveProducts = React.useMemo(() => {
     if (allProducts.length > 0) return allProducts;
     if (cache?.barId === barId && cache?.products && cachedProductsLength > 0) {
-      return cache.products;
+      return dedupeProductsByName(cache.products);
     }
     return [];
   }, [allProducts.length, cache?.barId, barId, cachedProductsLength]);
   
-  // Раздельные списки: сначала из загруженных данных, потом из кэша если данные еще загружаются
+  // Раздельные списки: сначала из загруженных данных, потом из кэша если данные еще загружаются с дедупликацией
   const effectiveGlobalProducts = React.useMemo(() => {
     if (loadedGlobalProducts.length > 0) return loadedGlobalProducts;
     if (cache?.barId === barId && cache?.products && cachedProductsLength > 0) {
-      // Фильтруем примиксы из кэша
-      return cache.products.filter(p => !p.isPremix && p.category !== 'Premix');
+      // Фильтруем примиксы из кэша и применяем дедупликацию
+      const filtered = cache.products.filter(p => !p.isPremix && p.category !== 'Premix');
+      return dedupeProductsByName(filtered);
     }
     return [];
   }, [loadedGlobalProducts.length, cache?.barId, barId, cachedProductsLength]);
@@ -154,8 +162,9 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const effectivePremixes = React.useMemo(() => {
     if (loadedPremixes.length > 0) return loadedPremixes;
     if (cache?.barId === barId && cache?.products && cachedProductsLength > 0) {
-      // Фильтруем примиксы из кэша
-      return cache.products.filter(p => p.isPremix === true || p.category === 'Premix');
+      // Фильтруем примиксы из кэша и применяем дедупликацию
+      const filtered = cache.products.filter(p => p.isPremix === true || p.category === 'Premix');
+      return dedupeProductsByName(filtered);
     }
     return [];
   }, [loadedPremixes.length, cache?.barId, barId, cachedProductsLength]);

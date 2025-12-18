@@ -37,6 +37,7 @@ interface ComboboxProps {
     searchPlaceholder?: string;
     notFoundText?: string;
     triggerClassName?: string;
+    allowClear?: boolean; // Разрешить очистку при повторном клике на выбранный элемент
 }
 
 export function Combobox({ 
@@ -46,7 +47,8 @@ export function Combobox({
     placeholder = "Выберите...",
     searchPlaceholder = "Поиск...",
     notFoundText = "Не найдено.",
-    triggerClassName
+    triggerClassName,
+    allowClear = false // По умолчанию не очищаем при повторном клике
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -56,6 +58,19 @@ export function Combobox({
     return flatOptions.find(option => option.value === value)?.label || placeholder;
   }, [value, flatOptions, placeholder]);
 
+  const handleSelect = React.useCallback((selectedValue: string) => {
+    // Если allowClear=false, всегда устанавливаем значение, даже если оно уже выбрано
+    // Если allowClear=true, то при повторном клике очищаем
+    const newValue = (allowClear && selectedValue === value) ? "" : selectedValue;
+    
+    // Вызываем callback с новым значением
+    onSelect(newValue);
+    
+    // Закрываем popover после небольшой задержки
+    setTimeout(() => {
+      setOpen(false);
+    }, 0);
+  }, [value, onSelect, allowClear]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -83,20 +98,7 @@ export function Combobox({
                   <CommandItem
                     key={option.value}
                     value={option.label} // Filtering should happen on the display label
-                    onSelect={(currentValue) => {
-                      // Используем замыкание для прямого доступа к option.value
-                      // currentValue из cmdk будет option.label, но мы используем option.value
-                      const selectedValue = option.value;
-                      const newValue = selectedValue === value ? "" : selectedValue;
-                      
-                      // Вызываем callback с новым значением
-                      onSelect(newValue);
-                      
-                      // Закрываем popover с небольшой задержкой, чтобы дать время состоянию обновиться
-                      setTimeout(() => {
-                        setOpen(false);
-                      }, 0);
-                    }}
+                    onSelect={() => handleSelect(option.value)}
                   >
                     <Check
                       className={cn(

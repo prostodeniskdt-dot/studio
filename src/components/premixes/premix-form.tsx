@@ -241,6 +241,24 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
     }
   }, [watchedName, form]);
   
+  // Обработчик выбора ингредиента из Combobox
+  const handleIngredientSelect = React.useCallback((productId: string) => {
+    // Игнорируем пустые значения
+    if (!productId || productId.trim() === '') {
+      return;
+    }
+    
+    // Проверяем, что продукт существует в списке доступных
+    const product = productsMap.get(productId);
+    if (!product) {
+      console.warn('Selected product not found in productsMap:', productId);
+      return;
+    }
+    
+    // Устанавливаем выбранный продукт
+    setNewIngredientProductId(productId);
+  }, [productsMap]);
+  
   // Функции для управления ингредиентами
   const handleAddIngredient = () => {
     if (!newIngredientProductId || newIngredientVolume <= 0) {
@@ -411,14 +429,19 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
                 <div className="flex items-center justify-center h-10 px-3 py-2 text-sm text-muted-foreground border rounded-md">
                   Загрузка продуктов...
                 </div>
+              ) : ingredientProductOptions.length === 0 ? (
+                <div className="flex items-center justify-center h-10 px-3 py-2 text-sm text-muted-foreground border rounded-md">
+                  Нет доступных продуктов для выбора
+                </div>
               ) : (
                 <Combobox
                   options={ingredientProductOptions}
                   value={newIngredientProductId}
-                  onSelect={setNewIngredientProductId}
+                  onSelect={handleIngredientSelect}
                   placeholder="Выберите продукт-ингредиент"
                   searchPlaceholder="Поиск продукта..."
                   notFoundText="Продукт не найден."
+                  allowClear={false}
                 />
               )}
             </div>

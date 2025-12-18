@@ -11,6 +11,7 @@ import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, query, where, getDocs, doc, setDoc, serverTimestamp, writeBatch, limit } from 'firebase/firestore';
+import { metricsTracker } from '@/lib/metrics';
 
 
 export default function DashboardPage() {
@@ -77,6 +78,9 @@ export default function DashboardPage() {
         await setDoc(newSessionRef, newSessionData);
 
         const sessionId = newSessionRef.id;
+        
+        // Track metric
+        metricsTracker.track('session_created', { sessionId, barId });
         
         // Сохранить данные в sessionStorage для немедленного доступа (исправление race condition)
         if (typeof window !== 'undefined') {

@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase';
 import { ClientOnly } from '@/components/client-only';
+import { OfflineIndicator } from '@/components/offline-indicator';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -24,6 +25,7 @@ export default function RootLayout({
           {children}
           <ClientOnly>
             <Toaster />
+            <OfflineIndicator />
           </ClientOnly>
         </FirebaseClientProvider>
       </body>

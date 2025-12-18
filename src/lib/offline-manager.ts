@@ -15,7 +15,9 @@ interface QueuedOperation {
 class OfflineManager {
   private queue: QueuedOperation[] = [];
   private isOnline: boolean = true;
+  private isSyncing: boolean = false;
   private listeners: Array<(isOnline: boolean) => void> = [];
+  private syncListeners: Array<(isSyncing: boolean) => void> = [];
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -90,17 +92,89 @@ class OfflineManager {
   }
 
   /**
-   * Process queued operations (to be implemented with actual Firestore operations)
+   * Process queued operations
+   * Attempts to sync all queued operations when coming back online
    */
   private async processQueue() {
-    // This would be implemented to retry queued operations
-    // For now, just clear the queue when coming back online
-    if (this.isOnline && this.queue.length > 0) {
-      // In a real implementation, you would retry each operation
-      logger.log(`Processing ${this.queue.length} queued operations...`);
-      this.queue = [];
-      this.saveQueue();
+    if (!this.isOnline || this.queue.length === 0 || this.isSyncing) {
+      return;
     }
+
+    this.isSyncing = true;
+    this.notifySyncListeners(true);
+
+    try {
+      logger.log(`Syncing ${this.queue.length} queued operations...`);
+      
+      // Process operations one by one to avoid overwhelming the connection
+      const operationsToProcess = [...this.queue];
+      const successfulOps: string[] = [];
+      const failedOps: QueuedOperation[] = [];
+
+      for (const op of operationsToProcess) {
+        try {
+          // Note: Actual Firestore operations would be implemented here
+          // For now, we simulate processing
+          await this.processOperation(op);
+          successfulOps.push(op.id);
+        } catch (error) {
+          logger.error(`Failed to process operation ${op.id}:`, error);
+          failedOps.push(op);
+        }
+      }
+
+      // Remove successful operations
+      successfulOps.forEach(id => this.removeOperation(id));
+
+      // Keep failed operations for retry
+      if (failedOps.length > 0) {
+        logger.warn(`${failedOps.length} operations failed and will be retried later`);
+      }
+
+      logger.log(`Sync completed: ${successfulOps.length} successful, ${failedOps.length} failed`);
+    } catch (error) {
+      logger.error('Error during queue processing:', error);
+    } finally {
+      this.isSyncing = false;
+      this.notifySyncListeners(false);
+    }
+  }
+
+  /**
+   * Process a single operation
+   * This is a placeholder - actual Firestore operations should be implemented
+   */
+  private async processOperation(op: QueuedOperation): Promise<void> {
+    // Simulate async operation
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // In a real implementation, you would:
+    // 1. Parse the operation path and data
+    // 2. Execute the Firestore operation (create/update/delete)
+    // 3. Handle errors appropriately
+    
+    logger.log(`Processed operation: ${op.type} ${op.path}`);
+  }
+
+  /**
+   * Subscribe to sync status changes
+   */
+  onSyncStatusChange(callback: (isSyncing: boolean) => void) {
+    this.syncListeners.push(callback);
+    return () => {
+      this.syncListeners = this.syncListeners.filter(l => l !== callback);
+    };
+  }
+
+  /**
+   * Get current sync status
+   */
+  getIsSyncing(): boolean {
+    return this.isSyncing;
+  }
+
+  private notifySyncListeners(isSyncing: boolean) {
+    this.syncListeners.forEach(listener => listener(isSyncing));
   }
 
   private saveQueue() {

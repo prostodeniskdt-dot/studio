@@ -2,11 +2,29 @@ import type { Product, PremixIngredient } from '@/lib/types';
 
 /**
  * Рассчитывает стоимость примикса на основе суммы ингредиентов.
- * Для каждого ингредиента: (стоимость за бутылку / объем бутылки) * объем ингредиента
  * 
- * @param premix - Примикс для расчета стоимости
+ * Для каждого ингредиента: стоимость = (стоимость за бутылку / объем бутылки) * объем ингредиента
+ * Общая стоимость = сумма стоимостей всех ингредиентов
+ * 
+ * @param premix - Примикс для расчета стоимости (должен иметь isPremix: true и premixIngredients)
  * @param ingredientProducts - Map продуктов-ингредиентов (key: productId, value: Product)
- * @returns Рассчитанная стоимость примикса за бутылку
+ * @returns Рассчитанная стоимость примикса за бутылку в рублях. 
+ *          Если premix не является примиксом, возвращает costPerBottle.
+ *          Если ингредиент не найден, его стоимость не учитывается.
+ * 
+ * @example
+ * ```ts
+ * const premix = { isPremix: true, premixIngredients: [
+ *   { productId: 'ing1', volumeMl: 600 },
+ *   { productId: 'ing2', volumeMl: 400 }
+ * ], ... };
+ * const ingredients = new Map([
+ *   ['ing1', { costPerBottle: 1000, bottleVolumeMl: 700, ... }],
+ *   ['ing2', { costPerBottle: 500, bottleVolumeMl: 500, ... }]
+ * ]);
+ * const cost = calculatePremixCost(premix, ingredients);
+ * // Result: 1257.14 (857.14 + 400)
+ * ```
  */
 export function calculatePremixCost(
   premix: Product,
@@ -35,12 +53,25 @@ export function calculatePremixCost(
 }
 
 /**
- * Рассчитывает объем каждого ингредиента на основе объема примикса.
+ * Рассчитывает объем каждого ингредиента на основе фактического объема примикса.
  * Пропорционально разлагает объем примикса на ингредиенты.
  * 
- * @param premix - Примикс для разложения
- * @param premixVolumeMl - Фактический объем примикса в мл
- * @returns Массив с productId и volumeMl для каждого ингредиента
+ * Formula: ingredientVolume = (premixVolumeMl / premix.bottleVolumeMl) * ingredient.volumeMl
+ * 
+ * @param premix - Примикс для разложения (должен иметь isPremix: true и premixIngredients)
+ * @param premixVolumeMl - Фактический объем примикса в миллилитрах
+ * @returns Массив объектов с productId и volumeMl для каждого ингредиента
+ * @throws Error если premix не является примиксом или имеет невалидный bottleVolumeMl
+ * 
+ * @example
+ * ```ts
+ * const premix = { isPremix: true, bottleVolumeMl: 1000, premixIngredients: [
+ *   { productId: 'ing1', volumeMl: 600 },
+ *   { productId: 'ing2', volumeMl: 400 }
+ * ], ... };
+ * const ingredients = expandPremixToIngredients(premix, 500); // Half bottle
+ * // Result: [{ productId: 'ing1', volumeMl: 300 }, { productId: 'ing2', volumeMl: 200 }]
+ * ```
  */
 export function expandPremixToIngredients(
   premix: Product,

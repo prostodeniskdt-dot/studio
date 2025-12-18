@@ -78,8 +78,28 @@ const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, p
     );
   }, [calculatedLines]);
 
-  if (!lines || !products) {
-    return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin" /></div>
+  // Handle edge cases: missing or empty data
+  if (!lines || lines.length === 0) {
+    return (
+      <div className="flex flex-col justify-center items-center h-48 text-center p-4">
+        <p className="text-muted-foreground mb-2">Нет данных для отображения</p>
+        <p className="text-sm text-muted-foreground">
+          Добавьте продукты в инвентаризацию, чтобы увидеть таблицу.
+        </p>
+      </div>
+    );
+  }
+
+  if (!products || products.length === 0) {
+    return (
+      <div className="flex flex-col justify-center items-center h-48 text-center p-4">
+        <p className="text-muted-foreground mb-2">Продукты не загружены</p>
+        <p className="text-sm text-muted-foreground">
+          Загрузка списка продуктов...
+        </p>
+        <Loader2 className="h-6 w-6 animate-spin mt-4" />
+      </div>
+    );
   }
 
   return (

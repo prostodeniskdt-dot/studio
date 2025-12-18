@@ -196,6 +196,77 @@ describe('calculations', () => {
       expect(result.differenceMoney).toBe(0);
       expect(result.differencePercent).toBe(0);
     });
+
+    it('should handle very large numbers', () => {
+      const line: Partial<InventoryLine> = {
+        startStock: 1000000,
+        purchases: 500000,
+        sales: 10000,
+        endStock: 1100000,
+      };
+
+      const result = calculateLineFields(line, mockProduct);
+      expect(result.theoreticalEndStock).toBe(1100000);
+      expect(result.differenceVolume).toBe(0);
+    });
+
+    it('should handle negative start stock (edge case)', () => {
+      const line: Partial<InventoryLine> = {
+        startStock: -100,
+        purchases: 500,
+        sales: 10,
+        endStock: 0,
+      };
+
+      const result = calculateLineFields(line, mockProduct);
+      expect(result.theoreticalEndStock).toBe(0); // -100 + 500 - 400 = 0
+      expect(result.differenceVolume).toBe(0);
+    });
+
+    it('should handle missing portionVolumeMl in product', () => {
+      const productWithoutPortion: Product = {
+        ...mockProduct,
+        portionVolumeMl: 0,
+      };
+      const line: Partial<InventoryLine> = {
+        startStock: 1000,
+        purchases: 500,
+        sales: 10,
+        endStock: 1500,
+      };
+
+      const result = calculateLineFields(line, productWithoutPortion);
+      expect(result.theoreticalEndStock).toBe(1500); // No sales volume calculated
+      expect(result.differencePercent).toBe(0); // Should return 0 when portionVolumeMl is 0
+    });
+
+    it('should handle missing costPerBottle in product', () => {
+      const productWithoutCost: Product = {
+        ...mockProduct,
+        costPerBottle: 0,
+      };
+      const line: Partial<InventoryLine> = {
+        startStock: 1000,
+        purchases: 500,
+        sales: 10,
+        endStock: 1000,
+      };
+
+      const result = calculateLineFields(line, productWithoutCost);
+      expect(result.differenceMoney).toBe(0); // Should return 0 when costPerBottle is 0
+    });
+
+    it('should handle very small differences (precision)', () => {
+      const line: Partial<InventoryLine> = {
+        startStock: 1000.001,
+        purchases: 500.002,
+        sales: 10,
+        endStock: 1100.003,
+      };
+
+      const result = calculateLineFields(line, mockProduct);
+      expect(result.theoreticalEndStock).toBeCloseTo(1100.003, 2);
+    });
   });
 });
 

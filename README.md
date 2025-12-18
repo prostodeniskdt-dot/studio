@@ -74,21 +74,42 @@ src/
 
 ## Настройка переменных окружения
 
-Создайте файл `.env.local` в корне проекта со следующими переменными:
+### Первоначальная настройка
+
+1. Скопируйте файл `.env.local.example` в `.env.local`:
+   ```bash
+   cp .env.local.example .env.local
+   ```
+
+2. Заполните переменные окружения в `.env.local`:
 
 ```env
-# Firebase Configuration (уже настроено в firebase/config.ts)
-# Если нужно переопределить, используйте:
-# NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-# NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_domain
-# NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+# Firebase Configuration (обязательно)
+# Получите конфигурацию из Firebase Console: https://console.firebase.google.com/
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 
-# Google Generative AI (для AI-анализа отклонений)
+# Google Generative AI (опционально, для AI-анализа отклонений)
 # Получите API ключ: https://makersuite.google.com/app/apikey
 GOOGLE_GENAI_API_KEY=your_google_genai_api_key_here
+
+# Sentry (опционально, для мониторинга ошибок)
+# Для включения Sentry:
+# 1. Установите @sentry/nextjs: npm install @sentry/nextjs
+# 2. Инициализируйте Sentry в вашем приложении (см. документацию @sentry/nextjs)
+# 3. Установите DSN ниже
+# NEXT_PUBLIC_SENTRY_DSN=your_sentry_dsn_here
 ```
 
-**Важно:** AI-анализ будет работать без API ключа, но использует упрощенный fallback-анализ.
+**Важно:**
+- В production режиме все Firebase переменные обязательны
+- В development режиме используются значения по умолчанию (для быстрого старта)
+- AI-анализ будет работать без API ключа, но использует упрощенный fallback-анализ
+- Файл `.env.local` не должен попадать в git (уже в `.gitignore`)
 
 ## Настройка Firestore индексов
 

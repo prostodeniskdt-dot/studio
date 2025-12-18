@@ -57,8 +57,12 @@ export function AppSidebar() {
                 isActive={isActive(item.href)}
                 tooltip={{ children: item.label }}
               >
-                <Link href={item.href}>
-                  <item.icon />
+                <Link 
+                  href={item.href}
+                  aria-label={item.label}
+                  aria-current={isActive(item.href) ? 'page' : undefined}
+                >
+                  <item.icon aria-hidden="true" />
                   <span>{item.label}</span>
                 </Link>
               </SidebarMenuButton>
@@ -72,8 +76,12 @@ export function AppSidebar() {
                 isActive={isActive(adminMenuItem.href)}
                 tooltip={{ children: adminMenuItem.label }}
               >
-                <Link href={adminMenuItem.href}>
-                  <adminMenuItem.icon />
+                <Link 
+                  href={adminMenuItem.href}
+                  aria-label={adminMenuItem.label}
+                  aria-current={isActive(adminMenuItem.href) ? 'page' : undefined}
+                >
+                  <adminMenuItem.icon aria-hidden="true" />
                   <span>{adminMenuItem.label}</span>
                 </Link>
               </SidebarMenuButton>
@@ -85,8 +93,12 @@ export function AppSidebar() {
                 tooltip={{ children: debugMenuItem.label }}
                 className="text-yellow-400 hover:text-yellow-300 hover:bg-sidebar-accent"
               >
-                <Link href={debugMenuItem.href}>
-                  <debugMenuItem.icon />
+                <Link 
+                  href={debugMenuItem.href}
+                  aria-label={debugMenuItem.label}
+                  aria-current={isActive(debugMenuItem.href) ? 'page' : undefined}
+                >
+                  <debugMenuItem.icon aria-hidden="true" />
                   <span>{debugMenuItem.label}</span>
                 </Link>
               </SidebarMenuButton>

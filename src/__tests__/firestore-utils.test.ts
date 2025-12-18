@@ -1,90 +1,157 @@
 import { deleteSessionWithLinesClient } from '@/lib/firestore-utils';
-import { collection, doc, getDocs, query, orderBy, writeBatch, setDoc, deleteDoc } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, deleteDoc } from 'firebase/firestore';
 
 // Mock Firestore
-jest.mock('firebase/firestore', () => ({
-  collection: jest.fn(),
-  doc: jest.fn(),
-  getDocs: jest.fn(),
-  query: jest.fn(),
-  orderBy: jest.fn(),
-  writeBatch: jest.fn(),
-  setDoc: jest.fn(),
-  deleteDoc: jest.fn(),
-  limit: jest.fn(),
-  startAfter: jest.fn(),
-}));
+jest.mock('firebase/firestore', () => {
+  const mockDocs: any[] = [];
+  let mockDocCounter = 0;
 
-describe('deleteSessionWithLinesClient', () => {
-  let mockFirestore: jest.Mocked<Firestore>;
-  let mockBatch: any;
-  let mockOnProgress: jest.Mock;
+  return {
+    collection: jest.fn((ref: any, ...path: string[]) => ({
+      id: path[path.length - 1] || 'collection',
+      parent: ref,
+      path: ref ? `${ref.path}/${path.join('/')}` : path.join('/'),
+    })),
+    doc: jest.fn((ref: any, ...path: string[]) => ({
+      id: path[path.length - 1] || `doc_${mockDocCounter++}`,
+      parent: ref,
+      path: ref ? `${ref.path}/${path.join('/')}` : path.join('/'),
+    })),
+    getDocs: jest.fn(async (query: any) => ({
+      docs: mockDocs,
+      empty: mockDocs.length === 0,
+    })),
+    query: jest.fn((ref: any, ...constraints: any[]) => ref),
+    orderBy: jest.fn((field: string) => ({ type: 'orderBy', field })),
+    startAfter: jest.fn((doc: any) => ({ type: 'startAfter', doc })),
+    limit: jest.fn((count: number) => ({ type: 'limit', count })),
+    writeBatch: jest.fn(() => ({
+      delete: jest.fn(),
+      commit: jest.fn(async () => {
+        // Simulate batch commit
+        mockDocs.length = 0;
+      }),
+    })),
+    deleteDoc: jest.fn(async () => {}),
+  };
+});
+
+describe('firestore-utils', () => {
+  let mockFirestore: Firestore;
+  const mockBarId = 'bar_test123';
+  const mockSessionId = 'session_test123';
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
-    mockOnProgress = jest.fn();
-    mockBatch = {
-      delete: jest.fn(),
-      commit: jest.fn().mockResolvedValue(undefined),
-    };
-
-    (writeBatch as jest.Mock).mockReturnValue(mockBatch);
-    (doc as jest.Mock).mockImplementation((...pathSegments) => ({
-      id: pathSegments[pathSegments.length - 1],
-      path: pathSegments.join('/'),
-    }));
-    (collection as jest.Mock).mockImplementation((parentRef, ...pathSegments) => ({
-      id: pathSegments[pathSegments.length - 1],
-      path: `${parentRef.path}/${pathSegments.join('/')}`,
-    }));
+    mockFirestore = {} as Firestore;
   });
 
-  it('should delete session and all lines', async () => {
-    const mockLines = [
-      { id: 'line1', ref: { id: 'line1' } },
-      { id: 'line2', ref: { id: 'line2' } },
-    ];
+  describe('deleteSessionWithLinesClient', () => {
+    it('should delete session when no lines exist', async () => {
+      const { getDocs } = require('firebase/firestore');
+      getDocs.mockResolvedValueOnce({ docs: [], empty: true });
 
-    (getDocs as jest.Mock).mockResolvedValueOnce({
-      docs: mockLines,
-    }).mockResolvedValueOnce({
-      docs: [],
+      const onProgress = jest.fn();
+      await deleteSessionWithLinesClient(mockFirestore, mockBarId, mockSessionId, onProgress);
+
+      const { deleteDoc } = require('firebase/firestore');
+      expect(deleteDoc).toHaveBeenCalled();
+      expect(onProgress).toHaveBeenCalledWith(100);
     });
 
-    await deleteSessionWithLinesClient(mockFirestore, 'bar1', 'session1', mockOnProgress);
+    it('should delete session and lines in batches', async () => {
+      const { getDocs, writeBatch } = require('firebase/firestore');
+      
+      // Mock 500 documents (one batch)
+      const mockDocs = Array.from({ length: 500 }, (_, i) => ({
+        id: `line_${i}`,
+        ref: { id: `line_${i}` },
+      }));
 
-    expect(mockBatch.delete).toHaveBeenCalled();
-    expect(mockBatch.commit).toHaveBeenCalled();
-    expect(mockOnProgress).toHaveBeenCalled();
-  });
+      // First call for counting
+      getDocs.mockResolvedValueOnce({ docs: mockDocs, empty: false });
+      // Second call for deletion (empty after deletion)
+      getDocs.mockResolvedValueOnce({ docs: [], empty: true });
 
-  it('should handle empty lines collection', async () => {
-    (getDocs as jest.Mock).mockResolvedValueOnce({
-      docs: [],
+      const onProgress = jest.fn();
+      await deleteSessionWithLinesClient(mockFirestore, mockBarId, mockSessionId, onProgress);
+
+      expect(writeBatch).toHaveBeenCalled();
+      expect(onProgress).toHaveBeenCalledWith(100);
     });
 
-    await deleteSessionWithLinesClient(mockFirestore, 'bar1', 'session1', mockOnProgress);
+    it('should handle large number of lines (multiple batches)', async () => {
+      const { getDocs, writeBatch } = require('firebase/firestore');
+      
+      // Mock 1000 documents (requires multiple batches)
+      const firstBatch = Array.from({ length: 450 }, (_, i) => ({
+        id: `line_${i}`,
+        ref: { id: `line_${i}` },
+      }));
+      const secondBatch = Array.from({ length: 450 }, (_, i) => ({
+        id: `line_${i + 450}`,
+        ref: { id: `line_${i + 450}` },
+      }));
+      const thirdBatch = Array.from({ length: 100 }, (_, i) => ({
+        id: `line_${i + 900}`,
+        ref: { id: `line_${i + 900}` },
+      }));
 
-    expect(mockBatch.delete).toHaveBeenCalled();
-    expect(mockBatch.commit).toHaveBeenCalled();
-  });
+      // First call for counting
+      getDocs.mockResolvedValueOnce({ 
+        docs: [...firstBatch, ...secondBatch, ...thirdBatch], 
+        empty: false 
+      });
+      // Subsequent calls for pagination
+      getDocs
+        .mockResolvedValueOnce({ docs: firstBatch, empty: false })
+        .mockResolvedValueOnce({ docs: secondBatch, empty: false })
+        .mockResolvedValueOnce({ docs: thirdBatch, empty: false })
+        .mockResolvedValueOnce({ docs: [], empty: true });
 
-  it('should call onProgress callback', async () => {
-    const mockLines = Array.from({ length: 10 }, (_, i) => ({ id: `line${i}`, ref: { id: `line${i}` } }));
+      const onProgress = jest.fn();
+      await deleteSessionWithLinesClient(mockFirestore, mockBarId, mockSessionId, onProgress);
 
-    (getDocs as jest.Mock).mockResolvedValueOnce({
-      docs: mockLines,
-    }).mockResolvedValueOnce({
-      docs: [],
+      expect(writeBatch).toHaveBeenCalledTimes(3);
+      expect(onProgress).toHaveBeenCalledWith(100);
     });
 
-    await deleteSessionWithLinesClient(mockFirestore, 'bar1', 'session1', mockOnProgress);
+    it('should call onProgress with correct values', async () => {
+      const { getDocs } = require('firebase/firestore');
+      
+      const mockDocs = Array.from({ length: 200 }, (_, i) => ({
+        id: `line_${i}`,
+        ref: { id: `line_${i}` },
+      }));
 
-    expect(mockOnProgress).toHaveBeenCalled();
-    const progressValues = mockOnProgress.mock.calls.map(call => call[0]);
-    expect(progressValues.some(val => val === 100)).toBe(true);
+      getDocs
+        .mockResolvedValueOnce({ docs: mockDocs, empty: false })
+        .mockResolvedValueOnce({ docs: mockDocs.slice(0, 200), empty: false })
+        .mockResolvedValueOnce({ docs: [], empty: true });
+
+      const onProgress = jest.fn();
+      await deleteSessionWithLinesClient(mockFirestore, mockBarId, mockSessionId, onProgress);
+
+      // Should be called multiple times with increasing progress
+      expect(onProgress).toHaveBeenCalled();
+      const progressCalls = onProgress.mock.calls.map(call => call[0]);
+      expect(progressCalls[progressCalls.length - 1]).toBe(100);
+    });
+
+    it('should handle errors in onProgress callback gracefully', async () => {
+      const { getDocs } = require('firebase/firestore');
+      
+      getDocs.mockResolvedValueOnce({ docs: [], empty: true });
+
+      const onProgress = jest.fn(() => {
+        throw new Error('Progress callback error');
+      });
+
+      // Should not throw
+      await expect(
+        deleteSessionWithLinesClient(mockFirestore, mockBarId, mockSessionId, onProgress)
+      ).resolves.not.toThrow();
+    });
   });
 });
-

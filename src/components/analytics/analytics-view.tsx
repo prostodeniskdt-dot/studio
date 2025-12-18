@@ -1,9 +1,23 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import type { SessionWithLines } from '@/app/dashboard/analytics/page';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { VarianceTrendChart } from '@/components/analytics/variance-trend-chart';
+import { Loader2 } from 'lucide-react';
+
+// Dynamic import for heavy chart component
+const VarianceTrendChart = dynamic(
+  () => import('@/components/analytics/variance-trend-chart').then(mod => ({ default: mod.VarianceTrendChart })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex justify-center items-center h-[300px]">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    ),
+  }
+);
 
 export function AnalyticsView({ data }: { data: SessionWithLines[] }) {
     // Filter out sessions without lines (they won't have meaningful data)

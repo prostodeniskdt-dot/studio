@@ -6,6 +6,7 @@ import { Firestore } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { logger } from '@/lib/logger';
+import { errorMonitor } from '@/lib/error-monitor';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -89,13 +90,21 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             // Augment user object with firestore instance
             const userWithFirestore: UserWithFirestore = Object.assign(firebaseUser, { firestore });
             setUserAuthState({ user: userWithFirestore, isUserLoading: false, userError: null });
+            // Set user context in error monitor for Sentry
+            errorMonitor.setUser(firebaseUser.uid, firebaseUser.email || undefined, firebaseUser.displayName || undefined);
         } else {
             setUserAuthState({ user: null, isUserLoading: false, userError: null });
+            // Clear user context when user logs out
+            errorMonitor.clearUser();
         }
       },
       (error) => { // Auth listener error
         logger.error("FirebaseProvider: onAuthStateChanged error:", error);
         setUserAuthState({ user: null, isUserLoading: false, userError: error });
+        // Capture auth errors in error monitor
+        errorMonitor.captureException(error instanceof Error ? error : new Error(String(error)), {
+          path: typeof window !== 'undefined' ? window.location.pathname : undefined,
+        });
       }
     );
     return () => unsubscribe(); // Cleanup

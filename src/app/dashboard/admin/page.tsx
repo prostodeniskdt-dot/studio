@@ -1,16 +1,29 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
-import { AdminUsersTable } from '@/components/admin/admin-users-table';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ShieldAlert, Info } from 'lucide-react';
 import Link from 'next/link';
+
+// Dynamic import for heavy admin table component
+const AdminUsersTable = dynamic(
+  () => import('@/components/admin/admin-users-table').then(mod => ({ default: mod.AdminUsersTable })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex justify-center items-center h-48">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    ),
+  }
+);
 
 
 export default function AdminPage() {

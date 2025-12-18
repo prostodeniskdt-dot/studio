@@ -192,42 +192,42 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
             {filteredPremixes.map((premix) => (
-              <Card key={premix.id} className={premix.isActive ? '' : 'opacity-60'}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">
+              <Card key={premix.id} className={`flex flex-col ${premix.isActive ? '' : 'opacity-60'}`}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg font-semibold truncate">
                         {buildProductDisplayName(premix.name, premix.bottleVolumeMl)}
                       </CardTitle>
-                      <CardDescription className="mt-1">
-                        <Badge variant="secondary" className="mr-2">Примикс</Badge>
-                        <Badge variant={premix.isActive ? 'default' : 'outline'}>
+                      <CardDescription className="mt-2 flex flex-wrap gap-2">
+                        <Badge variant="secondary" className="text-xs">Примикс</Badge>
+                        <Badge variant={premix.isActive ? 'default' : 'outline'} className="text-xs">
                           {premix.isActive ? 'Активен' : 'Архивирован'}
                         </Badge>
                       </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="flex-1 space-y-4 pb-4">
                   {/* Ингредиенты */}
                   {premix.premixIngredients && premix.premixIngredients.length > 0 ? (
                     <div className="space-y-2">
-                      <h4 className="text-sm font-semibold">Состав:</h4>
-                      <div className="space-y-1">
+                      <h4 className="text-sm font-semibold text-foreground">Состав:</h4>
+                      <div className="space-y-1.5">
                         {premix.premixIngredients.map((ingredient, index) => {
                           const product = productsMap.get(ingredient.productId);
                           return (
                             <div 
                               key={index} 
-                              className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded"
+                              className="flex items-center justify-between gap-2 text-sm bg-muted/50 p-2.5 rounded-md"
                             >
-                              <span className="font-medium">
+                              <span className="font-medium truncate flex-1 min-w-0">
                                 {product ? buildProductDisplayName(product.name, product.bottleVolumeMl) : ingredient.productId}
                               </span>
-                              <span className="text-muted-foreground">
-                                {ingredient.volumeMl} мл ({(ingredient.ratio * 100).toFixed(1)}%)
+                              <span className="text-muted-foreground whitespace-nowrap ml-2">
+                                {ingredient.volumeMl} мл <span className="text-xs">({(ingredient.ratio * 100).toFixed(1)}%)</span>
                               </span>
                             </div>
                           );
@@ -235,22 +235,24 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">Ингредиенты не добавлены</p>
+                    <div className="py-4">
+                      <p className="text-sm text-muted-foreground text-center">Ингредиенты не добавлены</p>
+                    </div>
                   )}
 
                   {/* Информация */}
-                  <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="grid grid-cols-2 gap-4 pt-2 border-t">
                     <div>
-                      <span className="text-muted-foreground">Объем:</span>
-                      <div className="font-medium">{premix.bottleVolumeMl} мл</div>
+                      <div className="text-xs text-muted-foreground mb-1">Объем</div>
+                      <div className="font-semibold text-base">{premix.bottleVolumeMl} мл</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Стоимость:</span>
-                      <div className="font-medium">{formatCurrency(premix.costPerBottle)}</div>
+                      <div className="text-xs text-muted-foreground mb-1">Стоимость</div>
+                      <div className="font-semibold text-base">{formatCurrency(premix.costPerBottle)}</div>
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="flex gap-2">
+                <CardFooter className="flex gap-2 pt-4 border-t">
                   <Button
                     variant="outline"
                     size="sm"
@@ -265,6 +267,7 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
                     size="sm"
                     onClick={() => handleArchiveAction(premix)}
                     disabled={isArchiving === premix.id}
+                    className="px-3"
                   >
                     {isArchiving === premix.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -278,7 +281,7 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
                     variant="outline"
                     size="sm"
                     onClick={() => handleDeletePremix(premix)}
-                    className="text-destructive hover:text-destructive"
+                    className="text-destructive hover:text-destructive px-3"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

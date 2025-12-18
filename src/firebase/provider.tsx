@@ -7,6 +7,8 @@ import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { logger } from '@/lib/logger';
 import { errorMonitor } from '@/lib/error-monitor';
+import { offlineManager } from '@/lib/offline-manager';
+import { offlineManager } from '@/lib/offline-manager';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -81,6 +83,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       return;
     }
 
+    // Set Firestore instance in offline manager for sync operations
+    offlineManager.setFirestore(firestore);
+
     setUserAuthState({ user: null, isUserLoading: true, userError: null }); // Reset on auth instance change
 
     const unsubscribe = onAuthStateChanged(
@@ -92,10 +97,37 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             setUserAuthState({ user: userWithFirestore, isUserLoading: false, userError: null });
             // Set user context in error monitor for Sentry
             errorMonitor.setUser(firebaseUser.uid, firebaseUser.email || undefined, firebaseUser.displayName || undefined);
+            // Set Sentry user context if available
+            if (typeof window !== 'undefined' && (window as any).Sentry) {
+              try {
+                (window as any).Sentry.setUser({
+                  id: firebaseUser.uid,
+                  email: firebaseUser.email || undefined,
+                  username: firebaseUser.displayName || undefined,
+                });
+                // Store for beforeSend hook
+                (window as any).__SENTRY_USER__ = {
+                  id: firebaseUser.uid,
+                  email: firebaseUser.email || undefined,
+                  username: firebaseUser.displayName || undefined,
+                };
+              } catch (error) {
+                // Ignore Sentry errors
+              }
+            }
         } else {
             setUserAuthState({ user: null, isUserLoading: false, userError: null });
             // Clear user context when user logs out
             errorMonitor.clearUser();
+            // Clear Sentry user context
+            if (typeof window !== 'undefined' && (window as any).Sentry) {
+              try {
+                (window as any).Sentry.setUser(null);
+                delete (window as any).__SENTRY_USER__;
+              } catch (error) {
+                // Ignore Sentry errors
+              }
+            }
         }
       },
       (error) => { // Auth listener error

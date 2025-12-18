@@ -3,20 +3,20 @@
 import * as React from 'react';
 import { useOffline } from '@/hooks/use-offline';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { WifiOff, Wifi, CloudOff, CloudCheck } from 'lucide-react';
+import { WifiOff, CloudOff, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
  * Component that displays offline/online status and sync status
  */
 export function OfflineIndicator() {
-  const { isOnline, isOffline, queuedOperations } = useOffline();
+  const { isOnline, isOffline, queuedOperations, isSyncing } = useOffline();
   const [isVisible, setIsVisible] = React.useState(false);
 
   React.useEffect(() => {
-    // Show indicator when offline or when there are queued operations
-    setIsVisible(isOffline || queuedOperations.length > 0);
-  }, [isOffline, queuedOperations.length]);
+    // Show indicator when offline, when there are queued operations, or when syncing
+    setIsVisible(isOffline || queuedOperations.length > 0 || isSyncing);
+  }, [isOffline, queuedOperations.length, isSyncing]);
 
   if (!isVisible) {
     return null;
@@ -29,7 +29,8 @@ export function OfflineIndicator() {
         className={cn(
           'shadow-lg border-2',
           isOffline && 'bg-destructive/10 border-destructive',
-          !isOffline && queuedOperations.length > 0 && 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500'
+          !isOffline && (queuedOperations.length > 0 || isSyncing) && 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500',
+          !isOffline && queuedOperations.length === 0 && !isSyncing && 'bg-green-50 dark:bg-green-900/20 border-green-500'
         )}
       >
         {isOffline ? (
@@ -45,7 +46,7 @@ export function OfflineIndicator() {
               )}
             </AlertDescription>
           </>
-        ) : queuedOperations.length > 0 ? (
+        ) : (queuedOperations.length > 0 || isSyncing) ? (
           <>
             <CloudOff className="h-4 w-4" />
             <AlertTitle>Синхронизация</AlertTitle>
@@ -58,7 +59,7 @@ export function OfflineIndicator() {
           </>
         ) : (
           <>
-            <CloudCheck className="h-4 w-4" />
+            <CheckCircle2 className="h-4 w-4" />
             <AlertTitle>Онлайн</AlertTitle>
             <AlertDescription>
               Подключение восстановлено. Все данные синхронизированы.

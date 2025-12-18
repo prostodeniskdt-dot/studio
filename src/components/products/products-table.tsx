@@ -57,6 +57,7 @@ import { cn } from '@/lib/utils';
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, updateDoc, deleteDoc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 export function ProductsTable({ products }: { products: Product[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -295,6 +296,18 @@ export function ProductsTable({ products }: { products: Product[] }) {
       globalFilter,
     },
   });
+
+  // Virtualization for large tables (>100 rows)
+  const { rows } = table.getRowModel();
+  const shouldVirtualize = rows.length > 100;
+  const parentRef = React.useRef<HTMLDivElement>(null);
+  
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 50, // Estimated row height
+    overscan: 10,
+  });
   
   const selectedCategory = table.getColumn('category')?.getFilterValue() as ProductCategory | undefined;
   const selectedSubCategory = table.getColumn('subCategory')?.getFilterValue() as string | undefined;
@@ -445,27 +458,77 @@ export function ProductsTable({ products }: { products: Product[] }) {
                   ))}
               </TableHeader>
               <TableBody>
-                  {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                      <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && 'selected'}
+                  {rows?.length ? (
+                  shouldVirtualize ? (
+                    <div
+                      ref={parentRef}
+                      className="h-[600px] overflow-auto"
+                      style={{ contain: 'strict' }}
+                    >
+                      <div
+                        style={{
+                          height: `${virtualizer.getTotalSize()}px`,
+                          width: '100%',
+                          position: 'relative',
+                        }}
                       >
-                      {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id}
-                          className={cn({
+                        {virtualizer.getVirtualItems().map((virtualRow) => {
+                          const row = rows[virtualRow.index];
+                          return (
+                            <TableRow
+                              key={row.id}
+                              data-state={row.getIsSelected() && 'selected'}
+                              style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: `${virtualRow.size}px`,
+                                transform: `translateY(${virtualRow.start}px)`,
+                              }}
+                            >
+                              {row.getVisibleCells().map((cell) => (
+                                <TableCell
+                                  key={cell.id}
+                                  className={cn({
+                                    'hidden sm:table-cell': ['costPerBottle', 'bottleVolumeMl'].includes(cell.column.id),
+                                    'hidden lg:table-cell': ['category', 'subCategory'].includes(cell.column.id)
+                                  })}
+                                >
+                                  {flexRender(
+                                    cell.column.columnDef.cell,
+                                    cell.getContext()
+                                  )}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    rows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && 'selected'}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell
+                            key={cell.id}
+                            className={cn({
                               'hidden sm:table-cell': ['costPerBottle', 'bottleVolumeMl'].includes(cell.column.id),
                               'hidden lg:table-cell': ['category', 'subCategory'].includes(cell.column.id)
-                          })}
+                            })}
                           >
-                          {flexRender(
+                            {flexRender(
                               cell.column.columnDef.cell,
                               cell.getContext()
-                          )}
+                            )}
                           </TableCell>
-                      ))}
+                        ))}
                       </TableRow>
-                  ))
+                    ))
+                  )
                   ) : (
                   <TableRow>
                       <TableCell

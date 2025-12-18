@@ -99,9 +99,11 @@ GOOGLE_GENAI_API_KEY=your_google_genai_api_key_here
 
 # Sentry (опционально, для мониторинга ошибок)
 # Для включения Sentry:
-# 1. Установите @sentry/nextjs: npm install @sentry/nextjs
-# 2. Инициализируйте Sentry в вашем приложении (см. документацию @sentry/nextjs)
-# 3. Установите DSN ниже
+# 1. Получите DSN из Sentry проекта: https://sentry.io/settings/projects/
+# 2. Установите переменные ниже (опционально, для source maps):
+# SENTRY_ORG=your_sentry_org
+# SENTRY_PROJECT=your_sentry_project
+# SENTRY_AUTH_TOKEN=your_sentry_auth_token
 # NEXT_PUBLIC_SENTRY_DSN=your_sentry_dsn_here
 ```
 

@@ -3,14 +3,8 @@
  */
 
 import { logger } from './logger';
-
-interface QueuedOperation {
-  id: string;
-  type: 'create' | 'update' | 'delete';
-  path: string;
-  data?: unknown;
-  timestamp: number;
-}
+import type { Firestore } from 'firebase/firestore';
+import { executeOperation, validateOperation, type QueuedOperation } from './offline-operations';
 
 class OfflineManager {
   private queue: QueuedOperation[] = [];
@@ -18,6 +12,8 @@ class OfflineManager {
   private isSyncing: boolean = false;
   private listeners: Array<(isOnline: boolean) => void> = [];
   private syncListeners: Array<(isSyncing: boolean) => void> = [];
+  private firestore: Firestore | null = null;
+  private maxRetries: number = 3;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -26,6 +22,13 @@ class OfflineManager {
       window.addEventListener('offline', () => this.handleOffline());
       this.loadQueue();
     }
+  }
+
+  /**
+   * Set Firestore instance for executing operations
+   */
+  setFirestore(firestore: Firestore) {
+    this.firestore = firestore;
   }
 
   private handleOnline() {
@@ -96,7 +99,7 @@ class OfflineManager {
    * Attempts to sync all queued operations when coming back online
    */
   private async processQueue() {
-    if (!this.isOnline || this.queue.length === 0 || this.isSyncing) {
+    if (!this.isOnline || this.queue.length === 0 || this.isSyncing || !this.firestore) {
       return;
     }
 
@@ -113,18 +116,49 @@ class OfflineManager {
 
       for (const op of operationsToProcess) {
         try {
-          // Note: Actual Firestore operations would be implemented here
-          // For now, we simulate processing
+          // Validate operation before processing
+          const validation = validateOperation(op);
+          if (!validation.valid) {
+            logger.error(`Invalid operation ${op.id}: ${validation.error}`);
+            failedOps.push(op);
+            continue;
+          }
+
+          // Execute the operation
           await this.processOperation(op);
           successfulOps.push(op.id);
+          
+          // Small delay between operations to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 50));
         } catch (error) {
           logger.error(`Failed to process operation ${op.id}:`, error);
-          failedOps.push(op);
+          
+          // Increment retry count
+          const retryCount = (op.retryCount || 0) + 1;
+          
+          // Remove operation if max retries exceeded
+          if (retryCount >= this.maxRetries) {
+            logger.error(`Operation ${op.id} exceeded max retries, removing from queue`);
+            // Don't add to failedOps, will be removed
+          } else {
+            // Update retry count and keep for retry
+            op.retryCount = retryCount;
+            failedOps.push(op);
+          }
         }
       }
 
       // Remove successful operations
       successfulOps.forEach(id => this.removeOperation(id));
+
+      // Update failed operations with retry count
+      failedOps.forEach(op => {
+        const index = this.queue.findIndex(q => q.id === op.id);
+        if (index >= 0) {
+          this.queue[index] = op;
+        }
+      });
+      this.saveQueue();
 
       // Keep failed operations for retry
       if (failedOps.length > 0) {
@@ -141,19 +175,15 @@ class OfflineManager {
   }
 
   /**
-   * Process a single operation
-   * This is a placeholder - actual Firestore operations should be implemented
+   * Process a single operation with real Firestore operations
    */
   private async processOperation(op: QueuedOperation): Promise<void> {
-    // Simulate async operation
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // In a real implementation, you would:
-    // 1. Parse the operation path and data
-    // 2. Execute the Firestore operation (create/update/delete)
-    // 3. Handle errors appropriately
-    
-    logger.log(`Processed operation: ${op.type} ${op.path}`);
+    if (!this.firestore) {
+      throw new Error('Firestore instance not set');
+    }
+
+    await executeOperation(this.firestore, op);
+    logger.log(`Successfully processed operation: ${op.type} ${op.path}`);
   }
 
   /**

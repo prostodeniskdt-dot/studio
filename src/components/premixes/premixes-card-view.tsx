@@ -27,7 +27,7 @@ import {
 import type { Product } from '@/lib/types';
 import { formatCurrency, buildProductDisplayName } from '@/lib/utils';
 import { PremixForm } from './premix-form';
-import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, updateDoc, deleteDoc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
@@ -42,8 +42,6 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
   const [isArchiving, setIsArchiving] = React.useState<string | null>(null);
 
   const firestore = useFirestore();
-  const { user } = useUser();
-  const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
   const { products: allProducts } = useProducts();
 
@@ -83,13 +81,13 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
   };
 
   const handleArchiveAction = async (premix: Product) => {
-    if (!firestore || !barId) return;
+    if (!firestore) return;
     setIsArchiving(premix.id);
     
-    const collectionPath = collection(firestore, 'bars', barId, 'premixes');
+    const collectionPath = collection(firestore, 'products');
     const premixRef = doc(collectionPath, premix.id);
     const updateData = { isActive: !premix.isActive };
-    const pathPrefix = `bars/${barId}/premixes`;
+    const pathPrefix = 'products';
     
     try {
       await updateDoc(premixRef, updateData);
@@ -110,13 +108,13 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
   };
 
   const confirmDelete = async () => {
-    if (!premixToDelete || !firestore || !barId) return;
+    if (!premixToDelete || !firestore) return;
 
     setIsDeleting(true);
     
-    const collectionPath = collection(firestore, 'bars', barId, 'premixes');
+    const collectionPath = collection(firestore, 'products');
     const premixRef = doc(collectionPath, premixToDelete.id);
-    const pathPrefix = `bars/${barId}/premixes`;
+    const pathPrefix = 'products';
 
     try {
       await deleteDoc(premixRef);

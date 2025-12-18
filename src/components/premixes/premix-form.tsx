@@ -28,8 +28,8 @@ import { Label } from '@/components/ui/label';
 import type { Product, PremixIngredient } from '@/lib/types';
 import { buildProductDisplayName, extractVolume, translateCategory, productCategories } from '@/lib/utils';
 import { Separator } from '../ui/separator';
-import { useFirestore, useUser, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError, useAuth } from '@/firebase';
-import { collection, doc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
+import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Loader2, X, Plus, Search, Check, ChevronDown } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -39,6 +39,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useToast } from '@/hooks/use-toast';
 import { useProducts } from '@/contexts/products-context';
 import { calculatePremixCost } from '@/lib/premix-utils';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
@@ -66,9 +68,7 @@ interface PremixFormProps {
 
 export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
   const firestore = useFirestore();
-  const auth = useAuth();
   const { user } = useUser();
-  const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
   const { globalProducts, isLoading: isLoadingProducts, refresh } = useProducts(); // Используем globalProducts для выбора ингредиентов
   const [isSaving, setIsSaving] = React.useState(false);
@@ -316,64 +316,13 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
   }, [ingredients]);
 
   async function onSubmit(data: PremixFormValues) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/08f2b6be-f645-4ca6-8fd7-946d56c1ef5b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'premix-form.tsx:317',message:'onSubmit called',data:{userId:user?.uid,userEmail:user?.email,userExists:!!user,barId,expectedBarId:user?`bar_${user.uid}`:null,firestoreExists:!!firestore,firestoreApp:firestore?.app?.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
-    // Детальное логирование для диагностики
-    console.log('=== PREMIX CREATION DEBUG ===');
-    console.log('1. User:', {
-      uid: user?.uid,
-      email: user?.email,
-      exists: !!user
-    });
-    console.log('2. barId:', barId);
-    console.log('3. Expected barId format:', user ? `bar_${user.uid}` : 'N/A');
-    console.log('4. barId matches expected:', barId === (user ? `bar_${user.uid}` : null));
-    console.log('5. Firestore instance:', {
-      exists: !!firestore,
-      app: firestore?.app?.name
-    });
-    
-    if (!firestore || !barId || !user) {
-      console.error('Missing required data:', { firestore: !!firestore, barId, user: !!user });
+    if (!firestore || !user) {
       toast({
         title: 'Ошибка',
         description: 'Не удалось определить пользователя',
         variant: 'destructive',
       });
       return;
-    }
-    
-    // Проверка существования документа бара
-    try {
-      const barDocRef = doc(firestore, 'bars', barId);
-      const barDocSnap = await getDoc(barDocRef);
-      console.log('6. Bar document exists:', barDocSnap.exists());
-      console.log('7. Bar document data:', barDocSnap.data());
-      
-      if (!barDocSnap.exists()) {
-        console.warn('8. Bar document does not exist! Creating...');
-        try {
-          await setDoc(barDocRef, {
-            id: barId,
-            ownerUserId: user.uid,
-            createdAt: serverTimestamp(),
-          });
-          console.log('9. Bar document created successfully');
-        } catch (barCreateError: any) {
-          console.error('10. Error creating bar document:', barCreateError);
-          toast({
-            title: 'Ошибка',
-            description: `Не удалось создать документ бара: ${barCreateError?.message || 'Неизвестная ошибка'}`,
-            variant: 'destructive',
-          });
-          return;
-        }
-      }
-    } catch (barCheckError: any) {
-      console.error('11. Error checking bar document:', barCheckError);
-      // Продолжаем выполнение, так как это может быть ошибка прав доступа
-      // которая будет обработана при попытке создания примикса
     }
     
     // Валидация для примиксов - обязательны ингредиенты
@@ -395,11 +344,10 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
       return;
     }
     
-    console.log('12. Validation passed, preparing to save...');
     setIsSaving(true);
     
-    // Всегда используем коллекцию bars/{barId}/premixes для примиксов
-    const collectionPath = collection(firestore, 'bars', barId, 'premixes');
+    // Используем глобальную коллекцию products для примиксов
+    const collectionPath = collection(firestore, 'products');
     
     // Use the base name for saving, volume is a separate field.
     const { baseName } = extractVolume(data.name);
@@ -421,7 +369,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         isPremix: true, // Всегда true
         premixIngredients: finalIngredients,
         costCalculationMode: costMode,
-        barId: barId, // Всегда устанавливаем barId
         fullBottleWeightG: data.fullBottleWeightG || null,
         emptyBottleWeightG: data.emptyBottleWeightG || null,
         updatedAt: serverTimestamp(),
@@ -433,61 +380,15 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
       premixData.id = premix.id;
     }
 
-    const pathPrefix = `bars/${barId}/premixes`;
-    console.log('13. Collection path:', `bars/${barId}/premixes`);
-    console.log('14. Premix data barId field:', premixData.barId);
-    console.log('15. barId in data matches path barId:', premixData.barId === barId);
-    console.log('16. Premix data keys:', Object.keys(premixData));
-    console.log('16a. Premix operation:', premix ? 'update' : 'create');
+    const pathPrefix = 'products';
     
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/08f2b6be-f645-4ca6-8fd7-946d56c1ef5b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'premix-form.tsx:439',message:'Before barId validation',data:{barId,userUid:user?.uid,expectedFormat:`bar_${user?.uid}`,barIdMatches:barId===`bar_${user?.uid}`},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
-    // Финальная проверка barId
-    console.log('17. Final validation before save:');
-    console.log('  - barId:', barId);
-    console.log('  - user.uid:', user?.uid);
-    console.log('  - Expected format: bar_' + (user?.uid || 'undefined'));
-    console.log('  - barId matches:', barId === `bar_${user?.uid}`);
-    
-    if (barId !== `bar_${user.uid}`) {
-      const errorMsg = `Критическая ошибка: barId не совпадает! Ожидалось: bar_${user.uid}, получено: ${barId}`;
-      console.error('18. BARID MISMATCH:', errorMsg);
-      toast({
-        title: 'Ошибка валидации',
-        description: errorMsg,
-        variant: 'destructive',
-      });
-      setIsSaving(false);
-      return;
-    }
-    
-    // Дополнительная проверка: убедиться что auth.currentUser существует
-    const currentUserBeforeSave = auth?.currentUser;
-    if (!currentUserBeforeSave) {
-      console.error('18a. CRITICAL: auth.currentUser is null before save!');
-      toast({
-        title: 'Ошибка аутентификации',
-        description: 'Токен аутентификации отсутствует. Пожалуйста, перезагрузите страницу и войдите снова.',
-        variant: 'destructive',
-      });
-      setIsSaving(false);
-      return;
-    }
-    
-    console.log('18. Validation passed, saving...');
-    console.log('18a. Current user confirmed:', { uid: currentUserBeforeSave.uid, email: currentUserBeforeSave.email });
-    console.log('===========================');
-    
-    // Использовать setDoc для создания и обновления (как в suppliers и purchaseOrders)
+    // Использовать setDoc для создания и обновления
     if (premix) {
       // Обновление существующего примикса
       const premixRef = doc(collectionPath, premix.id);
-      console.log('19. Updating existing premix:', premixRef.id);
       
       setDoc(premixRef, premixData, { merge: true })
         .then(() => {
-          console.log('Premix updated successfully:', premixRef.id);
           toast({ 
             title: "Примикс обновлен",
             description: `Примикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно обновлен.`
@@ -498,20 +399,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
           }, 100);
         })
         .catch((serverError: any) => {
-          console.error('=== PREMIX UPDATE ERROR ===');
-          console.error('Error code:', serverError?.code);
-          console.error('Error message:', serverError?.message);
-          console.error('Error details:', {
-            path: `${pathPrefix}/${premixRef.id}`,
-            barId,
-            userUid: user?.uid,
-            barIdMatches: barId === `bar_${user?.uid}`,
-            premixDataBarId: premixData.barId,
-            operation: 'update'
-          });
-          console.error('Full error object:', serverError);
-          console.error('========================');
-          
           const errorMessage = serverError?.message || 'Неизвестная ошибка';
           const errorCode = serverError?.code || 'unknown';
           
@@ -534,30 +421,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         });
     } else {
       // Создание нового примикса
-      console.log('19. Creating new premix...');
-      
-      // Проверка аутентификации перед операцией
-      const currentUser = auth?.currentUser;
-      console.log('19a. Auth check before setDoc:', {
-        hasAuth: !!auth,
-        currentUser: !!currentUser,
-        currentUserUid: currentUser?.uid,
-        contextUser: user?.uid,
-        usersMatch: currentUser?.uid === user?.uid
-      });
-      
-      if (!currentUser) {
-        console.error('19b. CRITICAL: auth.currentUser is null!');
-        toast({
-          title: 'Ошибка аутентификации',
-          description: 'Пользователь не аутентифицирован. Пожалуйста, перезагрузите страницу и войдите снова.',
-          variant: 'destructive',
-        });
-        setIsSaving(false);
-        return;
-      }
-      
-      // Используем setDoc вместо addDoc (как в suppliers и purchaseOrders)
       const premixRef = doc(collectionPath);
       const premixDataWithId = {
         ...premixData,
@@ -566,7 +429,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
       
       setDoc(premixRef, premixDataWithId, { merge: true })
         .then(() => {
-          console.log('Premix created successfully:', premixRef.id);
           toast({ 
             title: "Примикс создан",
             description: `Примикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно создан.`
@@ -577,20 +439,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
           }, 100);
         })
         .catch((serverError: any) => {
-          console.error('=== PREMIX CREATE ERROR ===');
-          console.error('Error code:', serverError?.code);
-          console.error('Error message:', serverError?.message);
-          console.error('Error details:', {
-            path: premixRef.path,
-            barId,
-            userUid: user?.uid,
-            barIdMatches: barId === `bar_${user?.uid}`,
-            premixDataBarId: premixData.barId,
-            operation: 'create'
-          });
-          console.error('Full error object:', serverError);
-          console.error('========================');
-          
           const errorMessage = serverError?.message || 'Неизвестная ошибка';
           const errorCode = serverError?.code || 'unknown';
           
@@ -621,6 +469,13 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 mt-6">
+        <Alert className="mb-4">
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Примикс будет сохранен в глобальную базу данных и будет доступен всем пользователям системы.
+          </AlertDescription>
+        </Alert>
+        
         <FormField
           control={form.control}
           name="name"

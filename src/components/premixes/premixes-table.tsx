@@ -52,7 +52,7 @@ import { formatCurrency, translateCategory, dedupeProductsByName, buildProductDi
 import { PremixForm } from './premix-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, updateDoc, deleteDoc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -74,8 +74,6 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
   const [isDeleting, setIsDeleting] = React.useState(false);
 
   const firestore = useFirestore();
-  const { user } = useUser();
-  const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
 
   const handleOpenSheet = (premix?: Product) => {
@@ -89,14 +87,14 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
   }
 
   const handleArchiveAction = (premix: Product) => {
-    if (!firestore || !barId) return;
+    if (!firestore) return;
     setIsArchiving(premix.id);
     
-    // Всегда используем коллекцию bars/{barId}/premixes для примиксов
-    const collectionPath = collection(firestore, 'bars', barId, 'premixes');
+    // Используем глобальную коллекцию products для примиксов
+    const collectionPath = collection(firestore, 'products');
     const premixRef = doc(collectionPath, premix.id);
     const updateData = { isActive: !premix.isActive };
-    const pathPrefix = `bars/${barId}/premixes`;
+    const pathPrefix = 'products';
     
     updateDoc(premixRef, updateData)
       .then(() => {
@@ -115,14 +113,14 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
   }
 
   const confirmDelete = async () => {
-    if (!premixToDelete || !firestore || !barId) return;
+    if (!premixToDelete || !firestore) return;
 
     setIsDeleting(true);
     
-    // Всегда используем коллекцию bars/{barId}/premixes для примиксов
-    const collectionPath = collection(firestore, 'bars', barId, 'premixes');
+    // Используем глобальную коллекцию products для примиксов
+    const collectionPath = collection(firestore, 'products');
     const premixRef = doc(collectionPath, premixToDelete.id);
-    const pathPrefix = `bars/${barId}/premixes`;
+    const pathPrefix = 'products';
 
     try {
         await deleteDoc(premixRef);

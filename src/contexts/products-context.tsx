@@ -54,33 +54,29 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [barId]);
 
-  // Запрос для глобальных продуктов (алкоголь)
+  // Запрос для глобальных продуктов (алкоголь и примиксы)
   const globalProductsQuery = useMemoFirebase(() =>
     firestore ? query(collection(firestore, 'products'), where('isActive', '==', true)) : null,
     [firestore, forceRefresh]
   );
   
-  // Запрос для примиксов текущего пользователя
-  const premixesQuery = useMemoFirebase(() =>
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'premixes'), where('isActive', '==', true)) : null,
-    [firestore, barId, forceRefresh]
-  );
-  
   const { data: globalProducts, isLoading: isLoadingGlobal, error: globalError } = useCollection<Product>(globalProductsQuery);
-  const { data: premixes, isLoading: isLoadingPremixes, error: premixesError } = useCollection<Product>(premixesQuery);
   
   // Глобальные продукты (без примиксов) с дедупликацией
   const loadedGlobalProducts = React.useMemo(() => {
     if (!globalProducts || globalProducts.length === 0) return [];
-    return dedupeProductsByName(globalProducts);
+    // Фильтруем примиксы из глобальных продуктов
+    const nonPremixes = globalProducts.filter(p => !p.isPremix && p.category !== 'Premix');
+    return dedupeProductsByName(nonPremixes);
   }, [globalProducts]);
   
-  // Примиксы пользователя с дедупликацией
+  // Примиксы из глобальной коллекции products с дедупликацией
   const loadedPremixes = React.useMemo(() => {
-    if (premixesError) return [];
-    if (!premixes || premixes.length === 0) return [];
+    if (!globalProducts || globalProducts.length === 0) return [];
+    // Фильтруем примиксы из глобальных продуктов
+    const premixes = globalProducts.filter(p => p.isPremix === true || p.category === 'Premix');
     return dedupeProductsByName(premixes);
-  }, [premixes, premixesError]);
+  }, [globalProducts]);
   
   // Объединить глобальные продукты и примиксы (для обратной совместимости и калькулятора) с дедупликацией
   const allProducts = React.useMemo(() => {
@@ -88,28 +84,18 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     return dedupeProductsByName(combined);
   }, [loadedGlobalProducts, loadedPremixes]);
   
-  const isLoading = isLoadingGlobal || (isLoadingPremixes && !premixesError);
-  // Показываем ошибку только если обе коллекции не загрузились
-  const error = globalError || (premixesError && !globalProducts ? premixesError : null);
+  const isLoading = isLoadingGlobal;
+  const error = globalError;
 
   // Обработка ошибок прав доступа - использовать кэш при ошибке
   useEffect(() => {
-    if (premixesError) {
-      // Ошибка при загрузке примиксов - это нормально, если коллекция еще не создана или нет прав
-      // Не логируем как критическую ошибку, так как это ожидаемое поведение для новых пользователей
-      if (premixesError instanceof Error && premixesError.message.includes('permission')) {
-        logger.info('Premixes collection not accessible (this is OK for new users or if collection does not exist)');
-      } else {
-        logger.warn('Error loading premixes:', premixesError);
-      }
-    }
     if (globalError) {
       logger.warn('Permission error loading global products, using cache:', globalError);
     }
     if (error && cache && cache.barId === barId) {
       // Не очищаем кэш при ошибке прав доступа, используем его
     }
-  }, [error, premixesError, globalError, cache, barId]);
+  }, [error, globalError, cache, barId]);
 
   // Сохранить в localStorage при загрузке с дедупликацией
   useEffect(() => {

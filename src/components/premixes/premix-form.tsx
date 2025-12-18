@@ -29,7 +29,7 @@ import type { Product, PremixIngredient } from '@/lib/types';
 import { buildProductDisplayName, extractVolume, translateCategory, productCategories } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { useFirestore, useUser, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Loader2, X, Plus, Search, Check, ChevronDown } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -314,23 +314,62 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
     return ingredients.reduce((sum, ing) => sum + ing.volumeMl, 0);
   }, [ingredients]);
 
-  function onSubmit(data: PremixFormValues) {
-    console.log('onSubmit called', { 
-      data, 
-      ingredients, 
-      totalIngredientsVolume, 
-      watchedVolume,
-      firestore: !!firestore,
-      barId 
+  async function onSubmit(data: PremixFormValues) {
+    // Детальное логирование для диагностики
+    console.log('=== PREMIX CREATION DEBUG ===');
+    console.log('1. User:', {
+      uid: user?.uid,
+      email: user?.email,
+      exists: !!user
+    });
+    console.log('2. barId:', barId);
+    console.log('3. Expected barId format:', user ? `bar_${user.uid}` : 'N/A');
+    console.log('4. barId matches expected:', barId === (user ? `bar_${user.uid}` : null));
+    console.log('5. Firestore instance:', {
+      exists: !!firestore,
+      app: firestore?.app?.name
     });
     
-    if (!firestore || !barId) {
+    if (!firestore || !barId || !user) {
+      console.error('Missing required data:', { firestore: !!firestore, barId, user: !!user });
       toast({
         title: 'Ошибка',
         description: 'Не удалось определить пользователя',
         variant: 'destructive',
       });
       return;
+    }
+    
+    // Проверка существования документа бара
+    try {
+      const barDocRef = doc(firestore, 'bars', barId);
+      const barDocSnap = await getDoc(barDocRef);
+      console.log('6. Bar document exists:', barDocSnap.exists());
+      console.log('7. Bar document data:', barDocSnap.data());
+      
+      if (!barDocSnap.exists()) {
+        console.warn('8. Bar document does not exist! Creating...');
+        try {
+          await setDoc(barDocRef, {
+            id: barId,
+            ownerUserId: user.uid,
+            createdAt: serverTimestamp(),
+          });
+          console.log('9. Bar document created successfully');
+        } catch (barCreateError: any) {
+          console.error('10. Error creating bar document:', barCreateError);
+          toast({
+            title: 'Ошибка',
+            description: `Не удалось создать документ бара: ${barCreateError?.message || 'Неизвестная ошибка'}`,
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
+    } catch (barCheckError: any) {
+      console.error('11. Error checking bar document:', barCheckError);
+      // Продолжаем выполнение, так как это может быть ошибка прав доступа
+      // которая будет обработана при попытке создания примикса
     }
     
     // Валидация для примиксов - обязательны ингредиенты
@@ -352,7 +391,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
       return;
     }
     
-    console.log('Validation passed, saving...');
+    console.log('12. Validation passed, preparing to save...');
     setIsSaving(true);
     
     // Всегда используем коллекцию bars/{barId}/premixes для примиксов
@@ -390,7 +429,16 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
     };
 
     const pathPrefix = `bars/${barId}/premixes`;
-    console.log('Saving premix data:', { premixData, path: `${pathPrefix}/${premixRef.id}` });
+    console.log('13. Collection path:', `bars/${barId}/premixes`);
+    console.log('14. Premix data barId field:', premixData.barId);
+    console.log('15. barId in data matches path barId:', premixData.barId === barId);
+    console.log('16. Premix data keys:', Object.keys(premixData));
+    console.log('17. Saving premix data:', { 
+      premixData, 
+      path: `${pathPrefix}/${premixRef.id}`,
+      premixRefId: premixRef.id
+    });
+    console.log('===========================');
     
     setDoc(premixRef, premixData, { merge: true })
       .then(() => {
@@ -407,18 +455,36 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         }, 100);
       })
       .catch((serverError: any) => {
-        console.error('Error saving premix:', serverError);
+        console.error('=== PREMIX SAVE ERROR ===');
+        console.error('Error code:', serverError?.code);
+        console.error('Error message:', serverError?.message);
+        console.error('Error details:', {
+          path: `${pathPrefix}/${premixRef.id}`,
+          barId,
+          userUid: user?.uid,
+          barIdMatches: barId === (user ? `bar_${user.uid}` : null),
+          premixDataBarId: premixData.barId,
+          operation: premix ? 'update' : 'create'
+        });
+        console.error('Full error object:', serverError);
+        console.error('========================');
+        
         const errorMessage = serverError?.message || 'Неизвестная ошибка';
+        const errorCode = serverError?.code || 'unknown';
+        
         toast({
           title: 'Ошибка сохранения',
-          description: `Не удалось сохранить примикс: ${errorMessage}`,
+          description: `Не удалось сохранить примикс: ${errorMessage} (код: ${errorCode})`,
           variant: 'destructive',
         });
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-            path: `${pathPrefix}/${premixRef.id}`, 
-            operation: premix ? 'update' : 'create',
-            requestResourceData: premixData
-        }));
+        
+        if (serverError?.code === 'permission-denied') {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+              path: `${pathPrefix}/${premixRef.id}`, 
+              operation: premix ? 'update' : 'create',
+              requestResourceData: premixData
+          }));
+        }
       })
       .finally(() => {
         setIsSaving(false);

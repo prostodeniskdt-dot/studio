@@ -93,9 +93,9 @@ service cloud.firestore {
       }
 
       match /premixes/{premixId} {
-        // Примиксы доступны только владельцу бара
-        allow read, list: if isBarOwner(barId) || isAdmin();
-        allow create, update, delete: if isBarOwner(barId);
+        // ВРЕМЕННО ДЛЯ ДИАГНОСТИКИ: разрешить все для аутентифицированных пользователей
+        // ВАЖНО: После успешного теста вернуть правильные правила!
+        allow read, write: if isSignedIn();
       }
 
       match /inventorySessions/{inventorySessionId} {

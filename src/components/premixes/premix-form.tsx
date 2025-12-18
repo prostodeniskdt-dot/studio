@@ -517,14 +517,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
       
       addDoc(collectionPath, premixData)
         .then((newPremixRef) => {
-          // Обновить документ с правильным id
-          const finalPremixData = {
-            ...premixData,
-            id: newPremixRef.id,
-          };
-          return setDoc(newPremixRef, finalPremixData, { merge: true }).then(() => newPremixRef);
-        })
-        .then((newPremixRef) => {
           console.log('Premix created successfully:', newPremixRef.id);
           toast({ 
             title: "Примикс создан",

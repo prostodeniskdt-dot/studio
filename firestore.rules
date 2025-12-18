@@ -114,6 +114,5 @@ service cloud.firestore {
         allow create, update, delete: if isBarOwner(barId);
       }
     }
-    }
   }
 }

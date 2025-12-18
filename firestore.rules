@@ -98,8 +98,27 @@ service cloud.firestore {
       }
 
       match /premixes/{premixId} {
+        // Чтение: использовать isBarOwner (быстро)
         allow read, list: if isBarOwner(barId) || isAdmin();
-        allow create, update, delete: if isBarOwner(barId);
+        
+        // Создание: проверяем формат barId И ownerUserId из документа бара (если существует)
+        allow create: if isSignedIn() 
+                      && barId == 'bar_' + request.auth.uid
+                      && (
+                        // Если документа бара нет - разрешаем (он создастся при необходимости)
+                        !exists(/databases/$(database)/documents/bars/$(barId))
+                        // Или если документ есть - проверяем ownerUserId
+                        || get(/databases/$(database)/documents/bars/$(barId)).data.ownerUserId == request.auth.uid
+                      )
+                      && request.resource.data.barId == barId; // Проверяем, что barId в данных совпадает с путем
+        
+        // Обновление и удаление: через ownerUserId
+        allow update, delete: if isSignedIn()
+                              && barId == 'bar_' + request.auth.uid
+                              && (
+                                !exists(/databases/$(database)/documents/bars/$(barId))
+                                || get(/databases/$(database)/documents/bars/$(barId)).data.ownerUserId == request.auth.uid
+                              );
       }
 
       match /inventorySessions/{inventorySessionId} {

@@ -25,14 +25,16 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Combobox, type GroupedComboboxOption } from '@/components/ui/combobox';
 import type { Product, PremixIngredient } from '@/lib/types';
-import { buildProductDisplayName, extractVolume, translateCategory } from '@/lib/utils';
+import { buildProductDisplayName, extractVolume, translateCategory, productCategories } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { useFirestore, useUser, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Loader2, X, Plus } from 'lucide-react';
+import { Loader2, X, Plus, Search, Check } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useProducts } from '@/contexts/products-context';
 import { calculatePremixCost } from '@/lib/premix-utils';
@@ -110,8 +112,10 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
     premix?.costCalculationMode || 'auto'
   );
   
-  // Состояния для добавления нового ингредиента
-  const [newIngredientProductId, setNewIngredientProductId] = React.useState('');
+  // Состояния для выбора продукта из таблицы
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [selectedCategory, setSelectedCategory] = React.useState<string>('all');
+  const [selectedProductId, setSelectedProductId] = React.useState<string>('');
   const [newIngredientVolume, setNewIngredientVolume] = React.useState<number>(0);
 
   const suppliersQuery = useMemoFirebase(() => 
@@ -155,41 +159,43 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
   
   const volumeTouchedRef = React.useRef(false);
   
-  // Фильтр продуктов для ингредиентов: все глобальные продукты, исключая текущий редактируемый примикс
-  // Используем globalProducts для выбора ингредиентов (только глобальные продукты, не примиксы)
-  // Используем length для стабильности зависимостей, но также включаем сам массив для корректной работы фильтрации
-  const globalProductsLength = globalProducts?.length ?? 0;
-  const ingredientProducts = React.useMemo(() => {
-    if (!globalProducts || globalProducts.length === 0) return [];
-    return globalProducts.filter(p => p.id !== premix?.id);
-  }, [globalProducts, globalProductsLength, premix?.id]);
-  
-  // Группировка продуктов-ингредиентов по категориям для Combobox (как в калькуляторе)
-  const ingredientProductsLength = ingredientProducts.length;
-  const ingredientProductOptions = React.useMemo<GroupedComboboxOption[]>(() => {
-    if (!ingredientProducts || ingredientProducts.length === 0) return [];
-    const groups: Record<string, { value: string; label: string }[]> = {};
-    
-    ingredientProducts.forEach(p => {
-      const category = translateCategory(p.category);
-      if (!groups[category]) {
-        groups[category] = [];
-      }
-      groups[category].push({ value: p.id, label: buildProductDisplayName(p.name, p.bottleVolumeMl) });
-    });
-
-    return Object.entries(groups)
-      .map(([label, options]) => ({ label, options }))
-      .sort((a,b) => a.label.localeCompare(b.label));
-  }, [ingredientProducts, ingredientProductsLength]);
-  
   // Map для быстрого поиска продуктов по ID
+  const globalProductsLength = globalProducts?.length ?? 0;
   const productsMap = React.useMemo(() => {
     const map = new Map<string, Product>();
     if (!globalProducts || globalProducts.length === 0) return map;
     globalProducts.forEach(p => map.set(p.id, p));
     return map;
   }, [globalProducts, globalProductsLength]);
+  
+  // Фильтрация продуктов для выбора в таблице
+  const availableProducts = React.useMemo(() => {
+    if (!globalProducts || globalProducts.length === 0) return [];
+    
+    // Исключаем текущий редактируемый примикс
+    let filtered = globalProducts.filter(p => p.id !== premix?.id);
+    
+    // Фильтр по категории
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(p => p.category === selectedCategory);
+    }
+    
+    // Фильтр по поиску
+    if (searchTerm.trim()) {
+      const query = searchTerm.toLowerCase();
+      filtered = filtered.filter(p => 
+        buildProductDisplayName(p.name, p.bottleVolumeMl).toLowerCase().includes(query) ||
+        p.name.toLowerCase().includes(query)
+      );
+    }
+    
+    // Сортировка по названию
+    return filtered.sort((a, b) => 
+      buildProductDisplayName(a.name, a.bottleVolumeMl).localeCompare(
+        buildProductDisplayName(b.name, b.bottleVolumeMl)
+      )
+    );
+  }, [globalProducts, selectedCategory, searchTerm, premix?.id]);
   
   // При изменении объема бутылки пересчитывать ratio для всех ингредиентов
   const prevVolumeRef = React.useRef(watchedVolume);
@@ -241,30 +247,36 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
     }
   }, [watchedName, form]);
   
-  // Обработчик выбора ингредиента из Combobox
-  const handleIngredientSelect = React.useCallback((productId: string) => {
-    // Игнорируем пустые значения
-    if (!productId || productId.trim() === '') {
+  // Обработка выбора продукта из таблицы
+  const handleProductClick = React.useCallback((productId: string) => {
+    // Проверяем, что продукт не добавлен уже
+    if (ingredients.some(ing => ing.productId === productId)) {
+      toast({
+        title: 'Внимание',
+        description: 'Этот продукт уже добавлен в состав примикса',
+        variant: 'default',
+      });
       return;
     }
     
-    // Проверяем, что продукт существует в списке доступных
-    const product = productsMap.get(productId);
-    if (!product) {
-      console.warn('Selected product not found in productsMap:', productId);
-      return;
-    }
-    
-    // Устанавливаем выбранный продукт
-    setNewIngredientProductId(productId);
-  }, [productsMap]);
+    setSelectedProductId(productId);
+  }, [ingredients, toast]);
   
   // Функции для управления ингредиентами
   const handleAddIngredient = () => {
-    if (!newIngredientProductId || newIngredientVolume <= 0) {
+    if (!selectedProductId) {
       toast({
         title: 'Ошибка',
-        description: 'Выберите продукт и укажите объем',
+        description: 'Выберите продукт из таблицы',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (newIngredientVolume <= 0) {
+      toast({
+        title: 'Ошибка',
+        description: 'Укажите объем больше нуля',
         variant: 'destructive',
       });
       return;
@@ -281,7 +293,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
     }
     
     // Проверка на дубликаты
-    if (ingredients.some(ing => ing.productId === newIngredientProductId)) {
+    if (ingredients.some(ing => ing.productId === selectedProductId)) {
       toast({
         title: 'Ошибка',
         description: 'Этот ингредиент уже добавлен',
@@ -292,14 +304,22 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
     
     const ratio = watchedVolume > 0 ? newIngredientVolume / watchedVolume : 0;
     const newIngredient: PremixIngredient = {
-      productId: newIngredientProductId,
+      productId: selectedProductId,
       volumeMl: newIngredientVolume,
       ratio,
     };
     
     setIngredients([...ingredients, newIngredient]);
-    setNewIngredientProductId('');
+    
+    // Сброс выбора и полей
+    setSelectedProductId('');
     setNewIngredientVolume(0);
+    setSearchTerm(''); // Очищаем поиск для удобства
+    
+    toast({
+      title: 'Ингредиент добавлен',
+      description: `Добавлен ${buildProductDisplayName(productsMap.get(selectedProductId)?.name || '', productsMap.get(selectedProductId)?.bottleVolumeMl || 0)}`,
+    });
   };
   
   const handleRemoveIngredient = (index: number) => {
@@ -423,45 +443,150 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         <h3 className="text-lg font-medium">Ингредиенты примикса</h3>
         
         <div className="space-y-4">
+          {/* Панель поиска и фильтров */}
           <div className="flex gap-2">
-            <div className="flex-1">
-              {isLoadingProducts ? (
-                <div className="flex items-center justify-center h-10 px-3 py-2 text-sm text-muted-foreground border rounded-md">
-                  Загрузка продуктов...
-                </div>
-              ) : ingredientProductOptions.length === 0 ? (
-                <div className="flex items-center justify-center h-10 px-3 py-2 text-sm text-muted-foreground border rounded-md">
-                  Нет доступных продуктов для выбора
-                </div>
-              ) : (
-                <Combobox
-                  options={ingredientProductOptions}
-                  value={newIngredientProductId}
-                  onSelect={handleIngredientSelect}
-                  placeholder="Выберите продукт-ингредиент"
-                  searchPlaceholder="Поиск продукта..."
-                  notFoundText="Продукт не найден."
-                  allowClear={false}
-                />
-              )}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Поиск продукта..."
+                className="pl-9"
+              />
             </div>
-            <Input
-              type="number"
-              placeholder="Объем (мл)"
-              value={newIngredientVolume || ''}
-              onChange={(e) => setNewIngredientVolume(Number(e.target.value))}
-              className="w-32"
-            />
-            <Button
-              type="button"
-              onClick={handleAddIngredient}
-              disabled={!newIngredientProductId || !newIngredientVolume || newIngredientVolume <= 0}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Добавить
-            </Button>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Категория" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все категории</SelectItem>
+                {productCategories.map(cat => (
+                  <SelectItem key={cat} value={cat}>
+                    {translateCategory(cat)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          
+
+          {/* Таблица продуктов */}
+          {isLoadingProducts ? (
+            <div className="flex items-center justify-center h-48 border rounded-md">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : availableProducts.length === 0 ? (
+            <div className="text-center py-8 border rounded-md">
+              <p className="text-muted-foreground">
+                {searchTerm || selectedCategory !== 'all' 
+                  ? 'Продукты не найдены. Попробуйте изменить фильтры.' 
+                  : 'Нет доступных продуктов для выбора'}
+              </p>
+            </div>
+          ) : (
+            <div className="border rounded-md">
+              <ScrollArea className="h-[300px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]"></TableHead>
+                      <TableHead>Название</TableHead>
+                      <TableHead>Категория</TableHead>
+                      <TableHead className="text-right">Объем</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {availableProducts.map((product) => {
+                      const isSelected = selectedProductId === product.id;
+                      const isAlreadyAdded = ingredients.some(ing => ing.productId === product.id);
+                      
+                      return (
+                        <TableRow
+                          key={product.id}
+                          onClick={() => !isAlreadyAdded && handleProductClick(product.id)}
+                          className={`cursor-pointer transition-colors ${
+                            isSelected 
+                              ? 'bg-primary/10 hover:bg-primary/15' 
+                              : isAlreadyAdded
+                              ? 'opacity-50 cursor-not-allowed'
+                              : 'hover:bg-muted/50'
+                          }`}
+                        >
+                          <TableCell>
+                            {isSelected && (
+                              <Check className="h-4 w-4 text-primary" />
+                            )}
+                            {isAlreadyAdded && !isSelected && (
+                              <Badge variant="secondary" className="text-xs">Добавлен</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {buildProductDisplayName(product.name, product.bottleVolumeMl)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {translateCategory(product.category)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {product.bottleVolumeMl} мл
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </div>
+          )}
+
+          {/* Форма добавления ингредиента (показывается при выборе продукта) */}
+          {selectedProductId && (
+            <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Выбранный продукт:</p>
+                  <p className="text-sm text-muted-foreground">
+                    {buildProductDisplayName(
+                      productsMap.get(selectedProductId)?.name || '',
+                      productsMap.get(selectedProductId)?.bottleVolumeMl || 0
+                    )}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedProductId('')}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  placeholder="Объем ингредиента (мл)"
+                  value={newIngredientVolume || ''}
+                  onChange={(e) => setNewIngredientVolume(Number(e.target.value))}
+                  className="flex-1"
+                  min="0"
+                  step="1"
+                  autoFocus
+                />
+                <Button
+                  type="button"
+                  onClick={handleAddIngredient}
+                  disabled={!newIngredientVolume || newIngredientVolume <= 0}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Добавить
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Список добавленных ингредиентов */}
           {ingredients.length > 0 && (
             <div className="space-y-2">
               <div className="text-sm font-medium">Добавленные ингредиенты:</div>
@@ -469,7 +594,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
                 {ingredients.map((ingredient, index) => {
                   const product = productsMap.get(ingredient.productId);
                   return (
-                    <div key={index} className="flex items-center justify-between p-2 border rounded-md">
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-md bg-card">
                       <div className="flex-1">
                         <div className="font-medium">
                           {product ? buildProductDisplayName(product.name, product.bottleVolumeMl) : ingredient.productId}

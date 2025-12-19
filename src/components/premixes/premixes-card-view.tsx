@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { Product } from '@/lib/types';
-import { formatCurrency, buildProductDisplayName } from '@/lib/utils';
+import { formatCurrency, buildProductDisplayName, cn } from '@/lib/utils';
 import { PremixForm } from './premix-form';
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, updateDoc, deleteDoc, collection } from 'firebase/firestore';

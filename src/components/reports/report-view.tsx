@@ -288,7 +288,7 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
         <SectionHeader
           title="Отчет по инвентаризации"
           description={`${session.name} - ${session.closedAt ? `Закрыто ${formatDate(session.closedAt)}` : 'Не закрыто'}`}
-          actions={
+          action={
             <div className="flex gap-2">
               <Button 
                 onClick={handleAnalyzeVariance} 

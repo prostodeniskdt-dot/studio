@@ -141,7 +141,7 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
         <SectionHeader
           title="Примиксы"
           description="Управляйте примиксами и заготовками для калькулятора."
-          actions={
+          action={
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={() => handleOpenDialog()}>

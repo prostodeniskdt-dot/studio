@@ -9,7 +9,8 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { MoreHorizontal, PlusCircle, Trash2, ArrowRight } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, ArrowRight, ShoppingCart } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -230,8 +231,16 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
                         ))
                     ) : (
                         <TableRow>
-                        <TableCell colSpan={columns.length} className="h-24 text-center">
-                            Заказов пока нет.
+                        <TableCell colSpan={columns.length} className="h-24 p-0">
+                            <EmptyState
+                              icon={ShoppingCart}
+                              title="Заказов пока нет"
+                              description="Создайте первый заказ на закупку у ваших поставщиков"
+                              action={{
+                                label: "Создать заказ",
+                                onClick: () => handleOpenSheet()
+                              }}
+                            />
                         </TableCell>
                         </TableRow>
                     )}

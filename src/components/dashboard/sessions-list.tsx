@@ -6,8 +6,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/comp
 import { Badge } from "@/components/ui/badge";
 import { cn, translateStatus } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MoreVertical, Trash2, Loader2 } from "lucide-react";
+import { ArrowRight, MoreVertical, Trash2, Loader2, Calendar, Circle } from "lucide-react";
 import { Timestamp } from "firebase/firestore";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +30,7 @@ import { useFirestore } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { deleteSessionWithLinesClient } from "@/lib/firestore-utils";
 import { Progress } from "@/components/ui/progress";
+import { BarChart3 } from "lucide-react";
 
 type SessionsListProps = {
   sessions: InventorySession[];
@@ -110,7 +112,13 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
   }
   
   if (sessions.length === 0) {
-    return <div className="text-center text-muted-foreground py-10">Инвентаризаций пока нет. Начните первую!</div>;
+    return (
+      <EmptyState
+        icon={BarChart3}
+        title="Инвентаризаций пока нет"
+        description="Начните первую инвентаризацию, чтобы отслеживать остатки продуктов в вашем баре."
+      />
+    );
   }
 
   const totalPages = Math.ceil(sessions.length / itemsPerPage);
@@ -122,12 +130,20 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     <>
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {paginatedSessions.map((session) => (
-        <Card key={session.id} className="flex flex-col">
-          <CardHeader>
+        <Card key={session.id} className="group relative overflow-hidden flex flex-col animate-fade-in">
+          {/* Gradient accent bar */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary/80 to-transparent" />
+          
+          <CardHeader className="pb-3">
             <div className="flex justify-between items-start">
-              <CardTitle className="text-lg pr-2">{session.name}</CardTitle>
+              <CardTitle className="text-lg pr-2 group-hover:text-primary transition-colors font-semibold">
+                {session.name}
+              </CardTitle>
               <div className="flex items-center gap-2">
-                <Badge variant={getStatusVariant(session.status)} className="capitalize whitespace-nowrap">
+                <Badge variant={getStatusVariant(session.status)} className="capitalize whitespace-nowrap flex items-center gap-1.5">
+                    {session.status === 'in_progress' && (
+                      <Circle className="h-2 w-2 fill-current animate-pulse" />
+                    )}
                     {translateStatus(session.status)}
                 </Badge>
                 <DropdownMenu>
@@ -146,16 +162,33 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
                 </DropdownMenu>
               </div>
             </div>
-            <CardDescription>
+            <CardDescription className="flex items-center gap-2 mt-2">
+              <Calendar className="h-3 w-3" />
               Создано {formatDate(session.createdAt)}
             </CardDescription>
           </CardHeader>
+          
+          {/* Progress bar for active sessions */}
+          {session.status === 'in_progress' && (
+            <div className="px-6 pb-4">
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                <span>Прогресс</span>
+                <span>—</span>
+              </div>
+              <Progress value={0} className="h-2" />
+            </div>
+          )}
+          
           <div className="flex-grow" />
-          <CardFooter>
-            <Button asChild variant="ghost" className="w-full justify-start">
+          <CardFooter className="pt-4">
+            <Button 
+              asChild 
+              variant="ghost" 
+              className="w-full group-hover:bg-primary/5 transition-colors"
+            >
               <Link href={`/dashboard/sessions/${session.id}`}>
                 {session.status === 'in_progress' ? 'Продолжить' : 'Смотреть'} инвентаризацию
-                <ArrowRight className="ml-auto" />
+                <ArrowRight className="ml-auto h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
           </CardFooter>

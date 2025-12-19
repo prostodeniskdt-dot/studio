@@ -4,7 +4,8 @@ import * as React from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import type { PurchaseOrder, PurchaseOrderLine, Supplier } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { PurchaseOrdersTable } from '@/components/purchase-orders/purchase-orders-table';
 import { useRelatedCollection } from '@/hooks/use-related-collection';
 import { useSuppliers } from '@/contexts/suppliers-context';
@@ -62,8 +63,22 @@ export default function PurchaseOrdersPage() {
   
   if (isLoading || !barId) {
     return (
-      <div className="flex justify-center items-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="w-full space-y-4">
+        <Card>
+          <CardHeader>
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-96" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

@@ -13,9 +13,10 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { MoreHorizontal, ArrowUpDown, ChevronDown, PlusCircle, Loader2, Trash2, Search } from 'lucide-react';
+import { MoreHorizontal, ArrowUpDown, ChevronDown, PlusCircle, Loader2, Trash2, Search, Package } from 'lucide-react';
 import { ProductSearch } from './product-search';
 import { Input } from '@/components/ui/input';
+import { EmptyState } from '@/components/ui/empty-state';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -533,9 +534,15 @@ export function ProductsTable({ products }: { products: Product[] }) {
                   <TableRow>
                       <TableCell
                       colSpan={columns.length}
-                      className="h-24 text-center"
+                      className="h-24 p-0"
                       >
-                      Продукты не найдены.
+                      <EmptyState
+                        icon={Package}
+                        title="Продукты не найдены"
+                        description={table.getFilteredRowModel().rows.length === 0 && table.getRowModel().rows.length === 0 
+                          ? "Начните добавлять продукты в ваш каталог"
+                          : "Попробуйте изменить фильтры поиска"}
+                      />
                       </TableCell>
                   </TableRow>
                   )}

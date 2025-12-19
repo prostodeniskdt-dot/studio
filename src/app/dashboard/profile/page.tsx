@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -105,33 +106,53 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="displayName">Отображаемое имя</Label>
-              <Input id="displayName" {...register('displayName')} />
-              {errors.displayName && <p className="text-xs text-destructive mt-1">{errors.displayName.message}</p>}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="city">Город</Label>
-                    <Input id="city" placeholder="Москва" {...register('city')} />
-                    {errors.city && <p className="text-xs text-destructive mt-1">{errors.city.message}</p>}
+            <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
+                  Личная информация
+                </h3>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="displayName">Отображаемое имя</Label>
+                    <Input id="displayName" {...register('displayName')} />
+                    {errors.displayName && <p className="text-xs text-destructive mt-1">{errors.displayName.message}</p>}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="city">Город</Label>
+                        <Input id="city" placeholder="Москва" {...register('city')} />
+                        {errors.city && <p className="text-xs text-destructive mt-1">{errors.city.message}</p>}
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="establishment">Заведение</Label>
+                        <Input id="establishment" placeholder="Бар 'Мечта'" {...register('establishment')} />
+                        {errors.establishment && <p className="text-xs text-destructive mt-1">{errors.establishment.message}</p>}
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="establishment">Заведение</Label>
-                    <Input id="establishment" placeholder="Бар 'Мечта'" {...register('establishment')} />
-                    {errors.establishment && <p className="text-xs text-destructive mt-1">{errors.establishment.message}</p>}
+              </div>
+            </div>
+            
+            <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
+                  Контакты
+                </h3>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Номер телефона</Label>
+                    <Input id="phone" type="tel" placeholder="+7 (999) 123-45-67" {...register('phone')} />
+                    {errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="socialLink">Ссылка на Telegram / WhatsApp</Label>
+                    <Input id="socialLink" placeholder="@username" {...register('socialLink')} />
+                    {errors.socialLink && <p className="text-xs text-destructive mt-1">{errors.socialLink.message}</p>}
+                  </div>
                 </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Номер телефона</Label>
-              <Input id="phone" type="tel" placeholder="+7 (999) 123-45-67" {...register('phone')} />
-              {errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone.message}</p>}
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="socialLink">Ссылка на Telegram / WhatsApp</Label>
-              <Input id="socialLink" placeholder="@username" {...register('socialLink')} />
-              {errors.socialLink && <p className="text-xs text-destructive mt-1">{errors.socialLink.message}</p>}
-            </div>
+            
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Сохранить изменения

@@ -3,6 +3,8 @@
 import * as React from 'react';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { SessionsList } from "@/components/dashboard/sessions-list";
 import { useRouter } from 'next/navigation';
 import type { InventorySession } from '@/lib/types';
@@ -110,8 +112,19 @@ export default function SessionsPage() {
         </Button>
       </div>
       {isLoading ? (
-         <div className="flex justify-center items-center h-48">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i} className="flex flex-col">
+                <CardHeader>
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <div className="flex-grow" />
+                <CardContent>
+                  <Skeleton className="h-9 w-full" />
+                </CardContent>
+              </Card>
+            ))}
          </div>
       ) : hasDataLoadingError ? (
          <div className="text-center text-destructive bg-destructive/10 p-4 rounded-md">

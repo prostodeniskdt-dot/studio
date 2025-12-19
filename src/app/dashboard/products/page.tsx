@@ -1,15 +1,31 @@
 'use client';
 import { ProductsTable } from "@/components/products/products-table";
 import { useProducts } from "@/contexts/products-context";
-import { Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 export default function ProductsPage() {
     const { globalProducts, isLoading } = useProducts();
 
     if (isLoading || !globalProducts) {
         return (
-            <div className="flex justify-center items-center h-full">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <div className="w-full space-y-4">
+                <div className="space-y-2">
+                    <Skeleton className="h-10 w-64" />
+                    <Skeleton className="h-4 w-96" />
+                </div>
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-6 w-48" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-3">
+                            {[...Array(5)].map((_, i) => (
+                                <Skeleton key={i} className="h-12 w-full" />
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         )
     }

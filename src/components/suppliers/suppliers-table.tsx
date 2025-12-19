@@ -8,7 +8,8 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { MoreHorizontal, PlusCircle, Trash2 } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, Truck } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -183,8 +184,16 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
-                    Вы еще не добавили ни одного поставщика.
+                  <TableCell colSpan={columns.length} className="h-24 p-0">
+                    <EmptyState
+                      icon={Truck}
+                      title="Поставщиков пока нет"
+                      description="Начните добавлять поставщиков для управления закупками"
+                      action={{
+                        label: "Добавить поставщика",
+                        onClick: () => handleOpenSheet()
+                      }}
+                    />
                   </TableCell>
                 </TableRow>
               )}

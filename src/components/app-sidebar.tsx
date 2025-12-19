@@ -51,18 +51,23 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarMenu>
           {menuItems.map((item) => (
-            <SidebarMenuItem key={item.label}>
+            <SidebarMenuItem key={item.label} className="relative">
+              {/* Active indicator */}
+              {isActive(item.href) && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-sidebar-primary rounded-r-full transition-all duration-200" />
+              )}
               <SidebarMenuButton
                 asChild
                 isActive={isActive(item.href)}
                 tooltip={{ children: item.label }}
+                className="group relative transition-all duration-200"
               >
                 <Link 
                   href={item.href}
                   aria-label={item.label}
                   aria-current={isActive(item.href) ? 'page' : undefined}
                 >
-                  <item.icon aria-hidden="true" />
+                  <item.icon aria-hidden="true" className="transition-transform duration-200 group-hover:scale-110" />
                   <span>{item.label}</span>
                 </Link>
               </SidebarMenuButton>
@@ -70,35 +75,42 @@ export function AppSidebar() {
           ))}
           {isAdmin && (
             <>
-             <SidebarMenuItem>
+             <SidebarMenuItem className="relative">
+              {isActive(adminMenuItem.href) && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-sidebar-primary rounded-r-full transition-all duration-200" />
+              )}
               <SidebarMenuButton
                 asChild
                 isActive={isActive(adminMenuItem.href)}
                 tooltip={{ children: adminMenuItem.label }}
+                className="group relative transition-all duration-200"
               >
                 <Link 
                   href={adminMenuItem.href}
                   aria-label={adminMenuItem.label}
                   aria-current={isActive(adminMenuItem.href) ? 'page' : undefined}
                 >
-                  <adminMenuItem.icon aria-hidden="true" />
+                  <adminMenuItem.icon aria-hidden="true" className="transition-transform duration-200 group-hover:scale-110" />
                   <span>{adminMenuItem.label}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-             <SidebarMenuItem>
+             <SidebarMenuItem className="relative">
+              {isActive(debugMenuItem.href) && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-yellow-400 rounded-r-full transition-all duration-200" />
+              )}
               <SidebarMenuButton
                 asChild
                 isActive={isActive(debugMenuItem.href)}
                 tooltip={{ children: debugMenuItem.label }}
-                className="text-yellow-400 hover:text-yellow-300 hover:bg-sidebar-accent"
+                className="group relative text-yellow-400 hover:text-yellow-300 hover:bg-sidebar-accent transition-all duration-200"
               >
                 <Link 
                   href={debugMenuItem.href}
                   aria-label={debugMenuItem.label}
                   aria-current={isActive(debugMenuItem.href) ? 'page' : undefined}
                 >
-                  <debugMenuItem.icon aria-hidden="true" />
+                  <debugMenuItem.icon aria-hidden="true" className="transition-transform duration-200 group-hover:scale-110" />
                   <span>{debugMenuItem.label}</span>
                 </Link>
               </SidebarMenuButton>

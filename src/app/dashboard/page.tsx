@@ -3,7 +3,9 @@
 import * as React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, BarChart3, Package, Loader2, LineChart, Truck, ShoppingCart, FlaskConical } from "lucide-react";
+import { PlusCircle, BarChart3, Package, Loader2, LineChart, Truck, ShoppingCart, FlaskConical, ArrowRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { SessionsList } from "@/components/dashboard/sessions-list";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -117,49 +119,69 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Card className="mb-6 bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
+      <Card className="mb-6 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 border-primary/20 animate-fade-in">
         <CardHeader>
-          <CardTitle className="text-2xl md:text-3xl">Добро пожаловать в BarBoss!</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl md:text-3xl gradient-text">Добро пожаловать в BarBoss!</CardTitle>
+          <CardDescription className="text-base">
             Это ваша панель управления для инвентаризации. Отслеживайте остатки, анализируйте расхождения и оптимизируйте работу вашего бара.
           </CardDescription>
         </CardHeader>
         <CardContent>
-             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 text-sm">
-                <Link href="/dashboard/products" className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
-                    <Package className="h-7 w-7 md:h-8 md:w-8 text-primary shrink-0" />
-                    <div className="hidden sm:block">
-                        <h3 className="font-semibold">Продукты</h3>
+             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 text-sm">
+                <Link href="/dashboard/products" className="group relative flex flex-col items-center gap-4 p-4 md:p-6 rounded-xl border-2 border-border hover:border-primary/50 bg-card hover:bg-card/80 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 min-h-[120px] md:min-h-[140px]">
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
+                        <Package className="relative h-10 w-10 text-primary group-hover:scale-110 transition-transform duration-200" />
+                    </div>
+                    <div className="text-center">
+                        <h3 className="font-semibold text-base mb-1">Продукты</h3>
                         <p className="text-muted-foreground text-xs">Каталог напитков</p>
                     </div>
+                    <ArrowRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
-                <Link href="/dashboard/premixes" className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
-                    <FlaskConical className="h-7 w-7 md:h-8 md:w-8 text-primary shrink-0" />
-                    <div className="hidden sm:block">
-                        <h3 className="font-semibold">Примиксы</h3>
+                <Link href="/dashboard/premixes" className="group relative flex flex-col items-center gap-4 p-4 md:p-6 rounded-xl border-2 border-border hover:border-primary/50 bg-card hover:bg-card/80 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 min-h-[120px] md:min-h-[140px]">
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
+                        <FlaskConical className="relative h-10 w-10 text-primary group-hover:scale-110 transition-transform duration-200" />
+                    </div>
+                    <div className="text-center">
+                        <h3 className="font-semibold text-base mb-1">Примиксы</h3>
                         <p className="text-muted-foreground text-xs">Заготовки и коктейли</p>
                     </div>
+                    <ArrowRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
-                <Link href="/dashboard/sessions" className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
-                    <BarChart3 className="h-7 w-7 md:h-8 md:w-8 text-primary shrink-0" />
-                    <div className="hidden sm:block">
-                        <h3 className="font-semibold">Инвентаризации</h3>
+                <Link href="/dashboard/sessions" className="group relative flex flex-col items-center gap-4 p-4 md:p-6 rounded-xl border-2 border-border hover:border-primary/50 bg-card hover:bg-card/80 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 min-h-[120px] md:min-h-[140px]">
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
+                        <BarChart3 className="relative h-10 w-10 text-primary group-hover:scale-110 transition-transform duration-200" />
+                    </div>
+                    <div className="text-center">
+                        <h3 className="font-semibold text-base mb-1">Инвентаризации</h3>
                         <p className="text-muted-foreground text-xs">Подсчет остатков</p>
                     </div>
+                    <ArrowRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
-                <Link href="/dashboard/analytics" className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
-                    <LineChart className="h-7 w-7 md:h-8 md:w-8 text-primary shrink-0" />
-                    <div className="hidden sm:block">
-                        <h3 className="font-semibold">Аналитика</h3>
+                <Link href="/dashboard/analytics" className="group relative flex flex-col items-center gap-4 p-4 md:p-6 rounded-xl border-2 border-border hover:border-primary/50 bg-card hover:bg-card/80 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 min-h-[120px] md:min-h-[140px]">
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
+                        <LineChart className="relative h-10 w-10 text-primary group-hover:scale-110 transition-transform duration-200" />
+                    </div>
+                    <div className="text-center">
+                        <h3 className="font-semibold text-base mb-1">Аналитика</h3>
                         <p className="text-muted-foreground text-xs">Отчеты и данные</p>
                     </div>
+                    <ArrowRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
-                 <Link href="/dashboard/suppliers" className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary/5 cursor-pointer">
-                    <Truck className="h-7 w-7 md:h-8 md:w-8 text-primary shrink-0" />
-                    <div className="hidden sm:block">
-                        <h3 className="font-semibold">Поставщики</h3>
+                 <Link href="/dashboard/suppliers" className="group relative flex flex-col items-center gap-4 p-4 md:p-6 rounded-xl border-2 border-border hover:border-primary/50 bg-card hover:bg-card/80 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 min-h-[120px] md:min-h-[140px]">
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
+                        <Truck className="relative h-10 w-10 text-primary group-hover:scale-110 transition-transform duration-200" />
+                    </div>
+                    <div className="text-center">
+                        <h3 className="font-semibold text-base mb-1">Поставщики</h3>
                         <p className="text-muted-foreground text-xs">Контакты поставщиков</p>
                     </div>
+                    <ArrowRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
             </div>
         </CardContent>
@@ -173,14 +195,35 @@ export default function DashboardPage() {
         </Button>
       </div>
       {isLoading ? (
-         <div className="flex justify-center items-center h-48">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i} className="flex flex-col">
+                <CardHeader>
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <div className="flex-grow" />
+                <CardFooter>
+                  <Skeleton className="h-9 w-full" />
+                </CardFooter>
+              </Card>
+            ))}
          </div>
       ) : hasDataLoadingError ? (
          <div className="text-center text-destructive bg-destructive/10 p-4 rounded-md">
             <p>Не удалось загрузить данные.</p>
             <p className="text-xs">{sessionsError?.message || 'Возможно, у вас нет прав на просмотр или данные еще не созданы.'}</p>
          </div>
+      ) : activeSessions.length === 0 ? (
+        <EmptyState
+          icon={BarChart3}
+          title="Нет активных инвентаризаций"
+          description="Начните новую инвентаризацию, чтобы отслеживать остатки продуктов в вашем баре."
+          action={{
+            label: "Начать инвентаризацию",
+            onClick: handleCreateSession
+          }}
+        />
       ) : (
         <SessionsList sessions={activeSessions} barId={barId!} />
       )}

@@ -259,8 +259,8 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
            )}
         </div>
         
-        <Separator />
-        <h3 className="text-lg font-medium">Экономика</h3>
+        <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Экономика</h3>
 
         <div className="grid grid-cols-2 gap-4">
             <FormField
@@ -308,10 +308,10 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
                 <FormMessage />
                 </FormItem>
             )}
-            />
+        </div>
 
-        <Separator />
-        <h3 className="text-lg font-medium">Профиль бутылки для калькулятора</h3>
+        <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Профиль бутылки для калькулятора</h3>
         
         <FormField
         control={form.control}
@@ -357,9 +357,10 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             )}
             />
         </div>
+        </div>
         
-        <Separator />
-        <h3 className="text-lg font-medium">Параметры автозаказа</h3>
+        <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Параметры автозаказа</h3>
         <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
                 <FormField
@@ -414,10 +415,10 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
                 )}
             />
         </div>
+        </div>
        
-        <Separator />
-
-        <FormField
+        <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">
+          <FormField
           control={form.control}
           name="isActive"
           render={({ field }) => (
@@ -439,6 +440,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             </FormItem>
           )}
         />
+        </div>
         <Button type="submit" disabled={isSaving}>
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Сохранить продукт

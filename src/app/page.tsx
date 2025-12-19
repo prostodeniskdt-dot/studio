@@ -173,47 +173,45 @@ export default function LoginPage() {
             </div>
             <Card>
                 <CardContent className="pt-6">
-                    <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-                    <div>
+                    <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+                    <div className="space-y-2">
                         <Label htmlFor="email">Электронная почта</Label>
-                        <div className="mt-1">
                         <Input
                             id="email"
                             type="email"
                             autoComplete="email"
                             required
                             placeholder="you@example.com"
+                            className="transition-all duration-200"
                             {...register("email")}
                         />
-                        {errors.email && <p className="text-xs text-destructive mt-1">{errors.email.message}</p>}
-                        </div>
+                        {errors.email && <p className="text-xs text-destructive mt-1 animate-slide-in">{errors.email.message}</p>}
                     </div>
 
-                    <div>
+                    <div className="space-y-2">
                         <div className="flex items-center justify-between">
                         <Label htmlFor="password">Пароль</Label>
                         <button
                             type="button"
                             onClick={() => setIsResetDialogOpen(true)}
-                            className="text-sm font-medium text-primary hover:underline"
+                            className="text-sm font-medium text-primary hover:underline transition-colors"
                         >
                             Забыли пароль?
                         </button>
                         </div>
-                        <div className="mt-1">
                         <Input
                             id="password"
                             type="password"
                             autoComplete="current-password"
                             required
+                            className="transition-all duration-200"
                              {...register("password")}
                         />
-                         {errors.password && <p className="text-xs text-destructive mt-1">{errors.password.message}</p>}
-                        </div>
+                         {errors.password && <p className="text-xs text-destructive mt-1 animate-slide-in">{errors.password.message}</p>}
                     </div>
 
                     <div>
-                        <Button type="submit" className="w-full" disabled={isSubmitting}>
+                        <Button type="submit" className="w-full transition-all duration-200" disabled={isSubmitting}>
                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                           Войти
                         </Button>

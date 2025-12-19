@@ -63,23 +63,23 @@ export function SessionActions({
 
   return (
     <>
-      <div className="flex items-center gap-2">
-        <Button variant="outline" onClick={onAddProduct}>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="outline" onClick={onAddProduct} className="transition-all duration-200">
           <PlusCircle className="mr-2 h-4 w-4"/>
           Добавить продукт
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline">
+            <Button variant="outline" className="transition-all duration-200">
               Импорт/Экспорт
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onSelect={onImportClick}>
+            <DropdownMenuItem onSelect={onImportClick} className="transition-colors">
               <Upload className="mr-2 h-4 w-4" />
               <span>Импорт из CSV</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={onExportCSV}>
+            <DropdownMenuItem onSelect={onExportCSV} className="transition-colors">
               <Download className="mr-2 h-4 w-4" />
               <span>Экспорт в CSV</span>
             </DropdownMenuItem>
@@ -90,13 +90,14 @@ export function SessionActions({
           onClick={onSave} 
           variant="outline" 
           disabled={!hasUnsavedChanges || isSaving}
+          className="transition-all duration-200"
         >
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           {isSaving ? 'Сохранение...' : 'Сохранить'}
         </Button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button disabled={isCompleting}>
+            <Button disabled={isCompleting} className="transition-all duration-200">
               {isCompleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Завершить
             </Button>

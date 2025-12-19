@@ -308,6 +308,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
                 <FormMessage />
                 </FormItem>
             )}
+        />
         </div>
 
         <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">

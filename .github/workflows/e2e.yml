@@ -22,9 +22,25 @@ jobs:
       run: npx playwright install --with-deps chromium
     - name: Build Next.js app
       run: npm run build
+    - name: Start Next.js server
+      run: |
+        npm start &
+        sleep 5
+        timeout=60
+        counter=0
+        until curl -f http://localhost:3000 || [ $counter -eq $timeout ]; do
+          sleep 1
+          counter=$((counter + 1))
+        done
+        if [ $counter -eq $timeout ]; then
+          echo "Server failed to start"
+          exit 1
+        fi
+        echo "Server is ready"
     - name: Run Playwright tests
       run: npm run test:e2e
       env:
+        CI: true
         PLAYWRIGHT_TEST_BASE_URL: ${{ secrets.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3000' }}
         TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
         TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}

@@ -3,17 +3,19 @@ import { test, expect } from '@playwright/test';
 test.describe('Inventory Management', () => {
   test.beforeEach(async ({ page }) => {
     // Login before each test
-    const testEmail = process.env.TEST_USER_EMAIL || 'test@example.com';
-    const testPassword = process.env.TEST_USER_PASSWORD || 'testpassword';
+    const testEmail = process.env.TEST_USER_EMAIL;
+    const testPassword = process.env.TEST_USER_PASSWORD;
+    
+    // Skip all tests if credentials are not provided
+    test.skip(!testEmail || !testPassword, 'Test credentials not provided');
     
     await page.goto('/');
     await page.fill('input[type="email"]', testEmail);
     await page.fill('input[type="password"]', testPassword);
     await page.click('button[type="submit"]');
     
-    // Wait for dashboard to load with longer timeout
-    // Also wait for network to be idle to ensure Firebase auth is complete
-    await page.waitForURL('/dashboard', { timeout: 30000, waitUntil: 'networkidle' });
+    // Use 'load' instead of 'networkidle'
+    await page.waitForURL('/dashboard', { timeout: 30000, waitUntil: 'load' });
   });
 
   test('should display dashboard with inventory sessions', async ({ page }) => {

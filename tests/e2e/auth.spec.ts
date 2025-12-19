@@ -31,10 +31,11 @@ test.describe('Authentication', () => {
   });
 
   test('should navigate to dashboard after successful login', async ({ page }) => {
-    // This test requires valid test credentials
-    // You may need to set up test users in Firebase
-    const testEmail = process.env.TEST_USER_EMAIL || 'test@example.com';
-    const testPassword = process.env.TEST_USER_PASSWORD || 'testpassword';
+    const testEmail = process.env.TEST_USER_EMAIL;
+    const testPassword = process.env.TEST_USER_PASSWORD;
+    
+    // Skip test if credentials are not provided
+    test.skip(!testEmail || !testPassword, 'Test credentials not provided');
     
     // Fill in credentials
     await page.fill('input[type="email"]', testEmail);
@@ -43,9 +44,11 @@ test.describe('Authentication', () => {
     // Submit form
     await page.click('button[type="submit"]');
     
-    // Wait for navigation to dashboard with longer timeout
-    // Also wait for network to be idle to ensure Firebase auth is complete
-    await page.waitForURL('/dashboard', { timeout: 30000, waitUntil: 'networkidle' });
+    // Use 'load' instead of 'networkidle' - less strict, works better with Firebase
+    await page.waitForURL('/dashboard', { timeout: 30000, waitUntil: 'load' });
+    
+    // Additional check: wait for dashboard content
+    await page.waitForSelector('text=/инвентаризация|сессии|dashboard/i', { timeout: 10000 });
     
     // Check if dashboard is loaded
     await expect(page).toHaveURL(/\/dashboard/);

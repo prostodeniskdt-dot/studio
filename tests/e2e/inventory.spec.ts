@@ -11,8 +11,9 @@ test.describe('Inventory Management', () => {
     await page.fill('input[type="password"]', testPassword);
     await page.click('button[type="submit"]');
     
-    // Wait for dashboard to load
-    await page.waitForURL('/dashboard', { timeout: 10000 });
+    // Wait for dashboard to load with longer timeout
+    // Also wait for network to be idle to ensure Firebase auth is complete
+    await page.waitForURL('/dashboard', { timeout: 30000, waitUntil: 'networkidle' });
   });
 
   test('should display dashboard with inventory sessions', async ({ page }) => {

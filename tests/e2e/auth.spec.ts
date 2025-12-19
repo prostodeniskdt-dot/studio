@@ -43,8 +43,9 @@ test.describe('Authentication', () => {
     // Submit form
     await page.click('button[type="submit"]');
     
-    // Wait for navigation to dashboard
-    await page.waitForURL('/dashboard', { timeout: 10000 });
+    // Wait for navigation to dashboard with longer timeout
+    // Also wait for network to be idle to ensure Firebase auth is complete
+    await page.waitForURL('/dashboard', { timeout: 30000, waitUntil: 'networkidle' });
     
     // Check if dashboard is loaded
     await expect(page).toHaveURL(/\/dashboard/);

@@ -5,13 +5,33 @@ import dynamic from 'next/dynamic';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, Timestamp, getDocs } from 'firebase/firestore';
 import type { InventorySession, InventoryLine } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle, LineChart } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useRelatedCollection } from '@/hooks/use-related-collection';
 import { logger } from '@/lib/logger';
 
 const AnalyticsView = dynamic(() => import('@/components/analytics/analytics-view').then(mod => mod.AnalyticsView), {
   ssr: false,
-  loading: () => <div className="flex justify-center items-center h-full pt-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+  loading: () => (
+    <div className="w-full space-y-6">
+      <div className="space-y-2">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-4 w-96" />
+      </div>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-48 mb-2" />
+          <Skeleton className="h-4 w-96" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-[300px] w-full" />
+        </CardContent>
+      </Card>
+    </div>
+  )
 });
 
 export type SessionWithLines = InventorySession & { lines: InventoryLine[] };
@@ -118,8 +138,20 @@ export default function AnalyticsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-full pt-20">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="w-full space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-[300px] w-full" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -127,16 +159,29 @@ export default function AnalyticsPage() {
   // Show error if both queries failed
   if (queryError && !effectiveSessions.length) {
     return (
-      <div className="w-full p-4">
-        <div className="rounded-md border border-destructive bg-destructive/10 p-4">
-          <h2 className="text-lg font-semibold text-destructive mb-2">Ошибка загрузки данных</h2>
-          <p className="text-sm text-muted-foreground">
-            Не удалось загрузить данные аналитики. Возможно, требуется создать составной индекс в Firestore.
-          </p>
-          <p className="text-xs text-muted-foreground mt-2">
-            Детали: {queryError.message}
-          </p>
-        </div>
+      <div className="w-full space-y-4">
+        <EmptyState
+          icon={AlertCircle}
+          title="Ошибка загрузки данных"
+          description="Не удалось загрузить данные аналитики. Возможно, требуется создать составной индекс в Firestore."
+        />
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Детали ошибки</AlertTitle>
+          <AlertDescription className="text-xs">{queryError.message}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+  
+  if (!effectiveSessions || effectiveSessions.length === 0) {
+    return (
+      <div className="w-full">
+        <EmptyState
+          icon={LineChart}
+          title="Нет данных для анализа"
+          description="Завершите хотя бы одну инвентаризацию, чтобы увидеть аналитику и графики по отклонениям."
+        />
       </div>
     );
   }

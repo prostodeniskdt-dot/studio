@@ -1,7 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { PlusCircle, Search, Edit2, Trash2, Archive, ArchiveRestore, FlaskConical } from 'lucide-react';
+import { PlusCircle, Search, Edit2, Trash2, Archive, ArchiveRestore, FlaskConical, Package } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
+import { SectionHeader } from '@/components/ui/section-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -135,75 +137,94 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
 
   return (
     <>
-      <div className="space-y-4">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Примиксы</h1>
-          <p className="text-muted-foreground">Управляйте примиксами и заготовками для калькулятора.</p>
-        </div>
+      <div className="space-y-6">
+        <SectionHeader
+          title="Примиксы"
+          description="Управляйте примиксами и заготовками для калькулятора."
+          actions={
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => handleOpenDialog()}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Добавить примикс
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingPremix 
+                      ? `Редактировать: ${buildProductDisplayName(editingPremix.name, editingPremix.bottleVolumeMl)}` 
+                      : 'Добавить новый примикс'}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {editingPremix 
+                      ? 'Измените информацию о примиксе и его составе.'
+                      : 'Создайте новый примикс, указав его состав из продуктов и заготовок.'}
+                  </DialogDescription>
+                </DialogHeader>
+                <PremixForm 
+                  premix={editingPremix} 
+                  onFormSubmit={handleCloseDialog} 
+                />
+              </DialogContent>
+            </Dialog>
+          }
+        />
 
-        {/* Search with Add Button */}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Поиск по названию или ингредиентам..."
-              className="pl-9"
-            />
-          </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => handleOpenDialog()} className="h-9">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Добавить примикс
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingPremix 
-                    ? `Редактировать: ${buildProductDisplayName(editingPremix.name, editingPremix.bottleVolumeMl)}` 
-                    : 'Добавить новый примикс'}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingPremix 
-                    ? 'Измените информацию о примиксе и его составе.'
-                    : 'Создайте новый примикс, указав его состав из продуктов и заготовок.'}
-                </DialogDescription>
-              </DialogHeader>
-              <PremixForm 
-                premix={editingPremix} 
-                onFormSubmit={handleCloseDialog} 
-              />
-            </DialogContent>
-          </Dialog>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Поиск по названию или ингредиентам..."
+            className="pl-9"
+          />
         </div>
 
         {/* Cards Grid */}
         {filteredPremixes.length === 0 ? (
-          <div className="text-center py-12">
-            <FlaskConical className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Примиксы не найдены</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchQuery ? 'Попробуйте изменить поисковый запрос.' : 'Создайте свой первый примикс.'}
-            </p>
-          </div>
+          <EmptyState
+            icon={FlaskConical}
+            title={searchQuery ? "Примиксы не найдены" : "Нет примиксов"}
+            description={searchQuery ? 'Попробуйте изменить поисковый запрос.' : 'Создайте свой первый примикс для использования в калькуляторе.'}
+            action={!searchQuery ? {
+              label: "Добавить примикс",
+              onClick: () => handleOpenDialog()
+            } : undefined}
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
-            {filteredPremixes.map((premix) => (
-              <Card key={premix.id} className={`flex flex-col ${premix.isActive ? '' : 'opacity-60'}`}>
+            {filteredPremixes.map((premix, index) => (
+              <Card 
+                key={premix.id} 
+                className={cn(
+                  "flex flex-col transition-all duration-300 hover:shadow-lg hover:scale-[1.02]",
+                  premix.isActive 
+                    ? "border-primary/20 hover:border-primary/40 bg-gradient-to-br from-primary/5 to-background" 
+                    : "opacity-60"
+                )}
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg font-semibold truncate">
+                      <CardTitle className="text-lg font-semibold truncate flex items-center gap-2">
+                        {premix.isActive && (
+                          <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                        )}
                         {buildProductDisplayName(premix.name, premix.bottleVolumeMl)}
                       </CardTitle>
                       <CardDescription className="mt-2 flex flex-wrap gap-2">
-                        <Badge variant="secondary" className="text-xs">Примикс</Badge>
-                        <Badge variant={premix.isActive ? 'default' : 'outline'} className="text-xs">
+                        <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                          <FlaskConical className="h-3 w-3" />
+                          Примикс
+                        </Badge>
+                        <Badge 
+                          variant={premix.isActive ? 'success' : 'outline'} 
+                          className="text-xs"
+                        >
                           {premix.isActive ? 'Активен' : 'Архивирован'}
                         </Badge>
                       </CardDescription>
@@ -214,20 +235,24 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
                   {/* Ингредиенты */}
                   {premix.premixIngredients && premix.premixIngredients.length > 0 ? (
                     <div className="space-y-2">
-                      <h4 className="text-sm font-semibold text-foreground">Состав:</h4>
+                      <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                        Состав:
+                      </h4>
                       <div className="space-y-1.5">
                         {premix.premixIngredients.map((ingredient, index) => {
                           const product = productsMap.get(ingredient.productId);
                           return (
                             <div 
                               key={index} 
-                              className="flex items-center justify-between gap-2 text-sm bg-muted/50 p-2.5 rounded-md"
+                              className="flex items-center justify-between gap-2 text-sm bg-muted/50 hover:bg-muted/70 p-2.5 rounded-md transition-colors border border-border/50"
                             >
-                              <span className="font-medium truncate flex-1 min-w-0">
+                              <span className="font-medium truncate flex-1 min-w-0 flex items-center gap-2">
+                                <div className="h-1.5 w-1.5 rounded-full bg-primary/60" />
                                 {product ? buildProductDisplayName(product.name, product.bottleVolumeMl) : ingredient.productId}
                               </span>
-                              <span className="text-muted-foreground whitespace-nowrap ml-2">
-                                {ingredient.volumeMl} мл <span className="text-xs">({(ingredient.ratio * 100).toFixed(1)}%)</span>
+                              <span className="text-muted-foreground whitespace-nowrap ml-2 font-semibold">
+                                {ingredient.volumeMl} мл <span className="text-xs font-normal">({(ingredient.ratio * 100).toFixed(1)}%)</span>
                               </span>
                             </div>
                           );

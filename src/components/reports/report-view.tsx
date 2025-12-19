@@ -7,7 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn, formatCurrency, translateCategory, translateSubCategory, translateProductName } from '@/lib/utils';
-import { Download, FileType, FileJson, Loader2, ShoppingCart, BarChart, PieChart as PieChartIcon, Sparkles, AlertCircle, CheckCircle2, FileSpreadsheet } from 'lucide-react';
+import { Download, FileType, FileJson, Loader2, ShoppingCart, BarChart, PieChart as PieChartIcon, Sparkles, AlertCircle, CheckCircle2, FileSpreadsheet, TrendingDown, TrendingUp, DollarSign, Percent } from 'lucide-react';
+import { MetricCard } from '@/components/ui/metric-card';
+import { SectionHeader } from '@/components/ui/section-header';
 import { exportToExcel } from '@/lib/export-utils';
 import { useToast } from '@/hooks/use-toast';
 import { Timestamp } from 'firebase/firestore';
@@ -279,126 +281,198 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
   }
 
 
+  const pourCostPercent = totals.totalRevenue > 0 ? ((totals.totalCost / totals.totalRevenue) * 100) : 0;
+
   return (
-    <div>
-        <div className="flex items-start justify-between mb-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Отчет по инвентаризации</h1>
-                <p className="text-muted-foreground">{session.name} - {session.closedAt && <>Закрыто {formatDate(session.closedAt)}</>}</p>
-            </div>
+    <div className="space-y-6">
+        <SectionHeader
+          title="Отчет по инвентаризации"
+          description={`${session.name} - ${session.closedAt ? `Закрыто ${formatDate(session.closedAt)}` : 'Не закрыто'}`}
+          actions={
             <div className="flex gap-2">
-                <Button 
-                  onClick={handleAnalyzeVariance} 
-                  disabled={isAnalyzing}
-                  variant="outline"
-                >
-                  {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  {isAnalyzing ? 'Анализ...' : 'Проанализировать отклонения'}
-                </Button>
-                <Button onClick={onCreatePurchaseOrder} disabled={isCreatingOrder || !needsReorder}>
-                  {isCreatingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
-                  {isCreatingOrder ? 'Создание...' : 'Создать заказ на закупку'}
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline">
-                      <Download className="mr-2 h-4 w-4" />
-                      Экспорт
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuLabel>Формат экспорта</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleExportCSV}>
-                      <FileType className="mr-2 h-4 w-4" />
-                      <span>CSV</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleExportExcel}>
-                      <FileSpreadsheet className="mr-2 h-4 w-4" />
-                      <span>Excel (.xlsx)</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem disabled>
-                       <FileJson className="mr-2 h-4 w-4" />
-                      <span>PDF (скоро)</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+              <Button 
+                onClick={handleAnalyzeVariance} 
+                disabled={isAnalyzing}
+                variant="outline"
+              >
+                {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                {isAnalyzing ? 'Анализ...' : 'Проанализировать отклонения'}
+              </Button>
+              <Button onClick={onCreatePurchaseOrder} disabled={isCreatingOrder || !needsReorder}>
+                {isCreatingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
+                {isCreatingOrder ? 'Создание...' : 'Создать заказ на закупку'}
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <Download className="mr-2 h-4 w-4" />
+                    Экспорт
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>Формат экспорта</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleExportCSV}>
+                    <FileType className="mr-2 h-4 w-4" />
+                    <span>CSV</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportExcel}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    <span>Excel (.xlsx)</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled>
+                     <FileJson className="mr-2 h-4 w-4" />
+                    <span>PDF (скоро)</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
+          }
+        />
+
+        {/* KPI Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <MetricCard
+              title="Общее отклонение"
+              value={formatCurrency(totals.totalVariance)}
+              icon={BarChart}
+              variant={totals.totalVariance >= 0 ? 'success' : 'destructive'}
+              description={totals.totalVariance >= 0 ? 'Положительное отклонение' : 'Отрицательное отклонение'}
+            />
+            <MetricCard
+              title="Общие потери"
+              value={formatCurrency(Math.abs(totals.totalLoss))}
+              icon={TrendingDown}
+              variant="destructive"
+              description="Сумма всех потерь"
+            />
+            <MetricCard
+              title="Общие излишки"
+              value={formatCurrency(totals.totalSurplus)}
+              icon={TrendingUp}
+              variant="success"
+              description="Сумма всех излишков"
+            />
+            <MetricCard
+              title="Общая выручка"
+              value={formatCurrency(totals.totalRevenue)}
+              icon={DollarSign}
+              description="Выручка от продаж"
+            />
+            <MetricCard
+              title="Общая себестоимость"
+              value={formatCurrency(totals.totalCost)}
+              icon={DollarSign}
+              description="Себестоимость проданного"
+            />
+            <MetricCard
+              title="Pour Cost %"
+              value={`${pourCostPercent.toFixed(2)}%`}
+              icon={Percent}
+              variant={pourCostPercent > 25 ? 'warning' : pourCostPercent > 20 ? 'default' : 'success'}
+              description="Процент себестоимости от выручки"
+            />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-            <Card>
-                <CardHeader><CardTitle>Общее отклонение</CardTitle></CardHeader>
-                <CardContent>
-                    <p className={cn("text-3xl font-bold", totals.totalVariance >= 0 ? 'text-green-600' : 'text-destructive')}>
-                        {formatCurrency(totals.totalVariance)}
-                    </p>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader><CardTitle>Общая выручка</CardTitle></CardHeader>
-                <CardContent>
-                    <p className="text-3xl font-bold">{formatCurrency(totals.totalRevenue)}</p>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader><CardTitle>Общая себестоимость</CardTitle></CardHeader>
-                <CardContent>
-                    <p className="text-3xl font-bold">{formatCurrency(totals.totalCost)}</p>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader><CardTitle>Pour Cost %</CardTitle></CardHeader>
-                <CardContent>
-                    <p className="text-3xl font-bold">
-                        {totals.totalRevenue > 0 ? ((totals.totalCost / totals.totalRevenue) * 100).toFixed(2) : '0.00'}%
-                    </p>
-                </CardContent>
-            </Card>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6 mb-6">
-            <Card>
+        <div className="grid md:grid-cols-2 gap-6">
+            <Card className="animate-fade-in">
                 <CardHeader className='flex-row items-center justify-between'>
-                    <CardTitle>Топ 5 потерь</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5 text-destructive" />
+                        Топ 5 потерь
+                    </CardTitle>
                     <BarChart className='h-5 w-5 text-muted-foreground'/>
                 </CardHeader>
                 <CardContent>
                     {topLosses.length > 0 ? (
                         <ResponsiveContainer width="100%" height={250}>
                             <RechartsBarChart data={topLosses.map(l => ({ ...l, loss: -l.differenceMoney, name: l.product ? translateProductName(l.product.name, l.product.bottleVolumeMl) : '' }))} layout="vertical" margin={{ left: 20, right: 20 }}>
+                                <defs>
+                                  <linearGradient id="lossBarGradient" x1="0" y1="0" x2="1" y2="0">
+                                    <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.9} />
+                                    <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={0.5} />
+                                  </linearGradient>
+                                </defs>
                                 <XAxis type="number" hide />
                                 <YAxis dataKey="name" type="category" interval={0} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} width={120} axisLine={false} tickLine={false}/>
-                                <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} formatter={(value: number) => [formatCurrency(value), 'Потеря']} />
-                                <Bar dataKey="loss" fill="hsl(var(--destructive))" radius={[0, 4, 4, 0]} />
+                                <Tooltip 
+                                  cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
+                                  content={({ active, payload }) => {
+                                    if (!active || !payload || payload.length === 0) return null;
+                                    return (
+                                      <div className="rounded-lg border bg-background/95 backdrop-blur-sm p-3 shadow-lg">
+                                        <p className="font-semibold text-destructive">{formatCurrency(payload[0].value as number)}</p>
+                                        <p className="text-xs text-muted-foreground">Потеря</p>
+                                      </div>
+                                    );
+                                  }}
+                                />
+                                <Bar dataKey="loss" fill="url(#lossBarGradient)" radius={[0, 4, 4, 0]} animationDuration={1000} />
                             </RechartsBarChart>
                         </ResponsiveContainer>
                     ) : <p className="text-muted-foreground text-center py-10">Значительных потерь не зафиксировано.</p>}
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="animate-fade-in">
                 <CardHeader  className='flex-row items-center justify-between'>
-                    <CardTitle>Состав отклонений</CardTitle>
-                    <PieChartIcon className='h-5 w-5 text-muted-foreground'/>
+                    <CardTitle className="flex items-center gap-2">
+                        <PieChartIcon className='h-5 w-5 text-primary'/>
+                        Состав отклонений
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                     {varianceCompositionData.length > 0 ? (
                         <ResponsiveContainer width="100%" height={250}>
                              <RechartsPieChart>
-                                <Pie data={varianceCompositionData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, value, index }) => {
+                                <defs>
+                                  <linearGradient id="surplusPieGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="hsl(var(--chart-2))" stopOpacity={0.9} />
+                                    <stop offset="100%" stopColor="hsl(var(--chart-2))" stopOpacity={0.5} />
+                                  </linearGradient>
+                                  <linearGradient id="lossPieGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.9} />
+                                    <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={0.5} />
+                                  </linearGradient>
+                                </defs>
+                                <Pie 
+                                  data={varianceCompositionData} 
+                                  dataKey="value" 
+                                  nameKey="name" 
+                                  cx="50%" 
+                                  cy="50%" 
+                                  outerRadius={100} 
+                                  labelLine={false} 
+                                  label={({ cx, cy, midAngle, innerRadius, outerRadius, value, index }) => {
                                     const RADIAN = Math.PI / 180;
                                     const radius = innerRadius + (outerRadius - innerRadius) * 1.3;
                                     const x = cx + radius * Math.cos(-midAngle * RADIAN);
                                     const y = cy + radius * Math.sin(-midAngle * RADIAN);
                                     return (
-                                        <text x={x} y={y} fill="hsl(var(--foreground))" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={12}>
+                                        <text x={x} y={y} fill="hsl(var(--foreground))" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={12} fontWeight="semibold">
                                             {`${varianceCompositionData[index].name}: ${formatCurrency(Number(value))}`}
                                         </text>
                                     );
-                                }}>
-                                    {varianceCompositionData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
+                                }}
+                                animationDuration={1000}
+                                >
+                                    {varianceCompositionData.map((entry, index) => (
+                                      <Cell 
+                                        key={`cell-${index}`} 
+                                        fill={entry.name === 'Потери' ? 'url(#lossPieGradient)' : 'url(#surplusPieGradient)'} 
+                                      />
+                                    ))}
                                 </Pie>
-                                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                                <Tooltip 
+                                  content={({ active, payload }) => {
+                                    if (!active || !payload || payload.length === 0) return null;
+                                    return (
+                                      <div className="rounded-lg border bg-background/95 backdrop-blur-sm p-3 shadow-lg">
+                                        <p className="font-semibold">{payload[0].name}</p>
+                                        <p className="text-sm text-muted-foreground">{formatCurrency(payload[0].value as number)}</p>
+                                      </div>
+                                    );
+                                  }}
+                                />
                             </RechartsPieChart>
                         </ResponsiveContainer>
                     ) : <p className="text-muted-foreground text-center py-10">Отклонений нет.</p>}
@@ -491,36 +565,50 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
             <TableBody>
                 {Object.entries(groupedAndSortedLines).map(([category, subCategories]) => (
                     <React.Fragment key={category}>
-                        <TableRow className="bg-muted/20 hover:bg-muted/20">
-                            <TableCell colSpan={6} className="font-bold text-base">
+                        <TableRow className="bg-primary/10 hover:bg-primary/15 border-b-2 border-primary/20">
+                            <TableCell colSpan={6} className="font-bold text-base py-3">
+                              <div className="flex items-center gap-2">
+                                <div className="h-1 w-1 rounded-full bg-primary" />
                                 {translateCategory(category as ProductCategory)}
+                              </div>
                             </TableCell>
                         </TableRow>
                         {Object.entries(subCategories).map(([subCategory, lines]) => (
                             <React.Fragment key={subCategory}>
                                 {subCategory !== 'uncategorized' && (
-                                     <TableRow className="bg-muted/10 hover:bg-muted/10">
+                                     <TableRow className="bg-muted/30 hover:bg-muted/40">
                                         <TableCell colSpan={6} className="py-2 pl-8 font-semibold text-sm">
+                                          <div className="flex items-center gap-2">
+                                            <div className="h-0.5 w-4 bg-muted-foreground/30" />
                                             {translateSubCategory(subCategory as ProductSubCategory)}
+                                          </div>
                                         </TableCell>
                                     </TableRow>
                                 )}
-                                {lines.sort((a,b) => (a.product ? translateProductName(a.product.name, a.product.bottleVolumeMl) : '').localeCompare(b.product ? translateProductName(b.product.name, b.product.bottleVolumeMl) : '')).map(line => (
-                                    <TableRow key={line.id}>
-                                        <TableCell className="font-medium pl-12">{line.product ? translateProductName(line.product.name, line.product.bottleVolumeMl) : ''}</TableCell>
+                                {lines.sort((a,b) => (a.product ? translateProductName(a.product.name, a.product.bottleVolumeMl) : '').localeCompare(b.product ? translateProductName(b.product.name, b.product.bottleVolumeMl) : '')).map(line => {
+                                  const isCritical = Math.abs(line.differencePercent) > 20 || Math.abs(line.differenceMoney) > 1000;
+                                  const rowBgColor = isCritical 
+                                    ? (line.differenceMoney < 0 ? 'bg-destructive/5 hover:bg-destructive/10' : 'bg-success/5 hover:bg-success/10')
+                                    : '';
+                                  return (
+                                    <TableRow key={line.id} className={cn("transition-colors", rowBgColor)}>
+                                        <TableCell className="font-medium pl-12">
+                                          {line.product ? translateProductName(line.product.name, line.product.bottleVolumeMl) : ''}
+                                        </TableCell>
                                         <TableCell className="text-right font-mono">{Math.round(line.theoreticalEndStock)}</TableCell>
                                         <TableCell className="text-right font-mono">{line.endStock}</TableCell>
-                                        <TableCell className={cn("text-right font-mono", line.differenceVolume >= 0 ? 'text-green-600' : 'text-destructive')}>
-                                            {Math.round(line.differenceVolume)}
+                                        <TableCell className={cn("text-right font-mono font-semibold", line.differenceVolume >= 0 ? 'text-success' : 'text-destructive')}>
+                                            {line.differenceVolume >= 0 ? '+' : ''}{Math.round(line.differenceVolume)}
                                         </TableCell>
-                                        <TableCell className={cn("text-right font-mono", line.differencePercent >= 0 ? 'text-green-600' : 'text-destructive')}>
-                                            {line.differencePercent.toFixed(2)}%
+                                        <TableCell className={cn("text-right font-mono font-semibold", line.differencePercent >= 0 ? 'text-success' : 'text-destructive')}>
+                                            {line.differencePercent >= 0 ? '+' : ''}{line.differencePercent.toFixed(2)}%
                                         </TableCell>
-                                        <TableCell className={cn("text-right font-mono", line.differenceMoney >= 0 ? 'text-green-600' : 'text-destructive')}>
-                                            {formatCurrency(line.differenceMoney)}
+                                        <TableCell className={cn("text-right font-mono font-semibold", line.differenceMoney >= 0 ? 'text-success' : 'text-destructive')}>
+                                            {line.differenceMoney >= 0 ? '+' : ''}{formatCurrency(line.differenceMoney)}
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                  );
+                                })}
                             </React.Fragment>
                         ))}
                     </React.Fragment>

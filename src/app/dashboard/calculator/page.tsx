@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Combobox, type GroupedComboboxOption } from '@/components/ui/combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Weight, Send, Loader2, Search } from 'lucide-react';
+import { Weight, Send, Loader2, Search, Package, Ruler, Calculator, CheckCircle2, Sparkles } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { SectionHeader } from '@/components/ui/section-header';
 import type { InventorySession, Product, ProductCategory, InventoryLine } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
@@ -298,6 +299,16 @@ export default function UnifiedCalculatorPage() {
     }
   };
 
+  const [isCalculating, setIsCalculating] = React.useState(false);
+
+  const handleCalculateWithFeedback = () => {
+    setIsCalculating(true);
+    setTimeout(() => {
+      handleCalculate();
+      setIsCalculating(false);
+    }, 300);
+  };
+
   if (isLoadingProducts) {
       return (
           <div className="flex justify-center items-center h-full">
@@ -307,135 +318,255 @@ export default function UnifiedCalculatorPage() {
   }
 
   return (
-    <div className="w-full">
-      <div className="py-4">
-          <h1 className="text-3xl font-bold tracking-tight">Универсальный калькулятор</h1>
-          <p className="text-muted-foreground">Рассчитайте остатки в бутылке и отправьте данные в текущую инвентаризацию.</p>
-      </div>
+    <div className="w-full space-y-6">
+      <SectionHeader
+        title="Универсальный калькулятор"
+        description="Рассчитайте остатки в бутылке и отправьте данные в текущую инвентаризацию."
+      />
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Расчет объема жидкости</CardTitle>
-          <CardDescription>Выберите продукт для автозаполнения, введите замеры и отправьте результат в активную инвентаризацию.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <ProductSearch
-              value={searchTerm}
-              onChange={setSearchTerm}
-              onCategoryChange={handleCategoryChange}
-              onSubCategoryChange={handleSubCategoryChange}
-              selectedCategory={selectedCategory}
-              selectedSubCategory={selectedSubCategory}
-              showFilters={true}
-              placeholder="Поиск продуктов..."
-              resultsCount={filteredProducts.length}
-              isLoading={isLoadingProducts}
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
-                <Combobox 
-                  options={productOptions}
-                  value={selectedProductId}
-                  onSelect={handleProductSelect}
-                  placeholder="Выберите продукт"
-                  searchPlaceholder='Поиск продукта...'
-                  notFoundText='Продукт не найден.'
-                  triggerClassName='lg:col-span-1'
-                />
-            </div>
-          </div>
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Левая колонка: Выбор продукта и параметры */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Секция выбора продукта */}
+          <Card className="animate-fade-in">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                <CardTitle>Выбор продукта</CardTitle>
+              </div>
+              <CardDescription>Выберите продукт для автозаполнения параметров бутылки</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ProductSearch
+                value={searchTerm}
+                onChange={setSearchTerm}
+                onCategoryChange={handleCategoryChange}
+                onSubCategoryChange={handleSubCategoryChange}
+                selectedCategory={selectedCategory}
+                selectedSubCategory={selectedSubCategory}
+                showFilters={true}
+                placeholder="Поиск продуктов..."
+                resultsCount={filteredProducts.length}
+                isLoading={isLoadingProducts}
+              />
+              <Combobox 
+                options={productOptions}
+                value={selectedProductId}
+                onSelect={handleProductSelect}
+                placeholder="Выберите продукт"
+                searchPlaceholder='Поиск продукта...'
+                notFoundText='Продукт не найден.'
+              />
+            </CardContent>
+          </Card>
 
-
-          <Separator />
-
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-                {/* Расчет по весу */}
-                <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Расчет по весу</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="fullWeight">Вес полной (г)</Label>
-                            <Input id="fullWeight" type="number" value={fullWeight} onChange={e => setFullWeight(e.target.value)} placeholder="1150" disabled={!selectedProductId} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="emptyWeight">Вес пустой (г)</Label>
-                            <Input id="emptyWeight" type="number" value={emptyWeight} onChange={e => setEmptyWeight(e.target.value)} placeholder="450" disabled={!selectedProductId} />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="currentWeight">Текущий вес (г)</Label>
-                        <Input id="currentWeight" type="number" value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} placeholder="Замер с весов" disabled={!selectedProductId} />
-                    </div>
+          {/* Секция параметров бутылки */}
+          <Card className="animate-fade-in">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Ruler className="h-5 w-5 text-primary" />
+                <CardTitle>Параметры бутылки</CardTitle>
+              </div>
+              <CardDescription>Введите замеры для расчета объема жидкости</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Расчет по весу */}
+              <div className="space-y-4 p-4 rounded-lg border border-border bg-card/50">
+                <div className="flex items-center gap-2">
+                  <Weight className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-base font-semibold">Расчет по весу</h3>
                 </div>
-
-                 <Separator />
-                
-                {/* Расчет по высоте */}
-                 <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Расчет по высоте</h3>
-                    <div className="space-y-2">
-                        <Label htmlFor="liquidLevel">Уровень жидкости (см)</Label>
-                        <Input id="liquidLevel" type="number" value={liquidLevel} onChange={e => setLiquidLevel(e.target.value)} placeholder="Замер линейкой" disabled={!selectedProductId} />
-                    </div>
-                 </div>
-
-                <Separator />
-                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullWeight" className="flex items-center gap-2">
+                      <Weight className="h-3 w-3" />
+                      Вес полной (г)
+                    </Label>
+                    <Input 
+                      id="fullWeight" 
+                      type="number" 
+                      value={fullWeight} 
+                      onChange={e => setFullWeight(e.target.value)} 
+                      placeholder="1150" 
+                      disabled={!selectedProductId}
+                      className="transition-all duration-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="emptyWeight" className="flex items-center gap-2">
+                      <Weight className="h-3 w-3" />
+                      Вес пустой (г)
+                    </Label>
+                    <Input 
+                      id="emptyWeight" 
+                      type="number" 
+                      value={emptyWeight} 
+                      onChange={e => setEmptyWeight(e.target.value)} 
+                      placeholder="450" 
+                      disabled={!selectedProductId}
+                      className="transition-all duration-200"
+                    />
+                  </div>
+                </div>
                 <div className="space-y-2">
-                    <Label htmlFor="bottleVolume">Номинальный объем (мл)</Label>
-                    <Input id="bottleVolume" type="number" value={bottleVolume} onChange={(e) => setBottleVolume(e.target.value)} placeholder="700" disabled={!selectedProductId} />
+                  <Label htmlFor="currentWeight" className="flex items-center gap-2">
+                    <Weight className="h-3 w-3" />
+                    Текущий вес (г)
+                  </Label>
+                  <Input 
+                    id="currentWeight" 
+                    type="number" 
+                    value={currentWeight} 
+                    onChange={e => setCurrentWeight(e.target.value)} 
+                    placeholder="Замер с весов" 
+                    disabled={!selectedProductId}
+                    className="transition-all duration-200"
+                  />
                 </div>
-            </div>
+              </div>
 
-            <div className="space-y-6">
-               <Button onClick={handleCalculate} className="w-full h-12 text-lg" disabled={!selectedProductId}>
-                Рассчитать
-              </Button>
+              <Separator />
               
-              { calculatedVolume !== null && (
-                <Card className='bg-muted/50'>
-                  <CardHeader>
-                    <CardTitle>Результат расчета</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="text-center p-4 rounded-lg bg-background">
-                        <p className="text-base text-muted-foreground flex items-center justify-center gap-2"><Weight className='h-4 w-4'/> Рассчитанный объем:</p>
-                        <p className="text-4xl font-bold text-primary">{calculatedVolume} мл</p>
-                        
-                        {/* Чекбокс для разложения примиксов */}
-                        {isPremix && (
-                          <div className="flex items-center justify-center space-x-2 mt-4 mb-2">
-                            <Checkbox
-                              id="expandPremix"
-                              checked={shouldExpandPremix}
-                              onCheckedChange={(checked) => setShouldExpandPremix(checked === true)}
-                            />
-                            <Label htmlFor="expandPremix" className="text-sm font-normal cursor-pointer">
-                              Разложить на ингредиенты при отправке
-                            </Label>
-                          </div>
-                        )}
-                        {isPremix && (
-                          <p className="text-xs text-muted-foreground mb-2">
-                            {shouldExpandPremix 
-                              ? 'Примикс будет разложен на ингредиенты, объемы суммируются с существующими остатками'
-                              : 'Примикс будет добавлен как единое целое в инвентаризацию'}
-                          </p>
-                        )}
-                        
-                         <Button onClick={() => handleSendToInventory(calculatedVolume)} className="w-full mt-2" disabled={calculatedVolume === null || isSending || !barId}>
-                            {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                            {isSending ? 'Отправка...' : 'Отправить в инвентаризацию'}
-                        </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+              {/* Расчет по высоте */}
+              <div className="space-y-4 p-4 rounded-lg border border-border bg-card/50">
+                <div className="flex items-center gap-2">
+                  <Ruler className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-base font-semibold">Расчет по высоте</h3>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="liquidLevel" className="flex items-center gap-2">
+                    <Ruler className="h-3 w-3" />
+                    Уровень жидкости (см)
+                  </Label>
+                  <Input 
+                    id="liquidLevel" 
+                    type="number" 
+                    value={liquidLevel} 
+                    onChange={e => setLiquidLevel(e.target.value)} 
+                    placeholder="Замер линейкой" 
+                    disabled={!selectedProductId}
+                    className="transition-all duration-200"
+                  />
+                </div>
+              </div>
+
+              <Separator />
+              
+              <div className="space-y-2">
+                <Label htmlFor="bottleVolume" className="flex items-center gap-2">
+                  <Package className="h-3 w-3" />
+                  Номинальный объем (мл)
+                </Label>
+                <Input 
+                  id="bottleVolume" 
+                  type="number" 
+                  value={bottleVolume} 
+                  onChange={(e) => setBottleVolume(e.target.value)} 
+                  placeholder="700" 
+                  disabled={!selectedProductId}
+                  className="transition-all duration-200"
+                />
+              </div>
+
+              <Button 
+                onClick={handleCalculateWithFeedback} 
+                className="w-full h-12 text-lg font-semibold" 
+                disabled={!selectedProductId || isCalculating}
+              >
+                {isCalculating ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Расчет...
+                  </>
+                ) : (
+                  <>
+                    <Calculator className="mr-2 h-5 w-5" />
+                    Рассчитать
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Правая колонка: Результаты */}
+        <div className="lg:col-span-1">
+          {calculatedVolume !== null ? (
+            <Card className='bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20 animate-scale-up sticky top-6'>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-success" />
+                  <CardTitle>Результат расчета</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-center p-6 rounded-lg bg-background/80 backdrop-blur-sm border border-primary/20">
+                  <p className="text-sm text-muted-foreground flex items-center justify-center gap-2 mb-2">
+                    <Weight className='h-4 w-4'/> 
+                    Рассчитанный объем:
+                  </p>
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <p className="text-5xl font-bold gradient-text">{calculatedVolume}</p>
+                    <span className="text-2xl font-semibold text-muted-foreground">мл</span>
+                  </div>
+                  
+                  {/* Чекбокс для разложения примиксов */}
+                  {isPremix && (
+                    <>
+                      <div className="flex items-center justify-center space-x-2 mt-4 mb-2">
+                        <Checkbox
+                          id="expandPremix"
+                          checked={shouldExpandPremix}
+                          onCheckedChange={(checked) => setShouldExpandPremix(checked === true)}
+                        />
+                        <Label htmlFor="expandPremix" className="text-sm font-normal cursor-pointer">
+                          Разложить на ингредиенты
+                        </Label>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        {shouldExpandPremix 
+                          ? 'Примикс будет разложен на ингредиенты, объемы суммируются с существующими остатками'
+                          : 'Примикс будет добавлен как единое целое в инвентаризацию'}
+                      </p>
+                    </>
+                  )}
+                  
+                  <Button 
+                    onClick={() => handleSendToInventory(calculatedVolume)} 
+                    className="w-full mt-2 font-semibold" 
+                    disabled={calculatedVolume === null || isSending || !barId}
+                    size="lg"
+                  >
+                    {isSending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Отправка...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-4 w-4" />
+                        Отправить в инвентаризацию
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="rounded-full bg-muted p-4 mb-4">
+                  <Calculator className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Результаты расчета</h3>
+                <p className="text-sm text-muted-foreground">
+                  Введите параметры и нажмите "Рассчитать" для получения результата
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

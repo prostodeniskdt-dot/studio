@@ -76,8 +76,25 @@ export default function SessionReportPage() {
 
 
   const handleCreatePurchaseOrder = () => {
-    if (!user || !lines || !products || !barId) return;
-    createOrders({ lines, products, barId, userId: user.uid });
+    if (!user || !lines || !products || !barId) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Не все данные загружены. Пожалуйста, подождите.',
+      });
+      return;
+    }
+    
+    try {
+      createOrders({ lines, products, barId, userId: user.uid });
+    } catch (error) {
+      console.error('Error creating purchase order:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка при создании заказа',
+        description: error instanceof Error ? error.message : 'Неизвестная ошибка',
+      });
+    }
   };
 
 

@@ -186,7 +186,14 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
               variant="ghost" 
               className="w-full group-hover:bg-primary/5 transition-colors"
             >
-              <Link href={`/dashboard/sessions/${session.id}`}>
+              <Link 
+                href={`/dashboard/sessions/${session.id}`} 
+                prefetch={true}
+                onClick={(e) => {
+                  // Логирование для отладки
+                  console.log('Navigating to session:', session.id, 'Status:', session.status);
+                }}
+              >
                 {session.status === 'in_progress' ? 'Продолжить' : 'Смотреть'} инвентаризацию
                 <ArrowRight className="ml-auto h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>

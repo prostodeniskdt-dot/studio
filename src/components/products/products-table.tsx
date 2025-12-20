@@ -101,7 +101,8 @@ export function ProductsTable({ products }: { products: Product[] }) {
     // Всегда используем коллекцию products для обычных продуктов
     const collectionPath = collection(firestore, 'products');
     const productRef = doc(collectionPath, product.id);
-    const updateData = { isActive: !(product.isActive ?? true) };
+    const currentIsActive = product.isActive ?? true;
+    const updateData = { isActive: !currentIsActive };
     const pathPrefix = 'products';
     
     updateDoc(productRef, updateData)
@@ -118,6 +119,10 @@ export function ProductsTable({ products }: { products: Product[] }) {
         toast({ title: "Статус продукта изменен." });
         // Обновить контекст продуктов для отображения изменений
         refreshProducts();
+        // Принудительно обновить данные через небольшую задержку для надежности
+        setTimeout(() => {
+          refreshProducts();
+        }, 100);
       })
       .catch((serverError) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `${pathPrefix}/${product.id}`, operation: 'update', requestResourceData: updateData }));
@@ -256,11 +261,14 @@ export function ProductsTable({ products }: { products: Product[] }) {
     {
       accessorKey: 'isActive',
       header: 'Статус',
-      cell: ({ row }) => (
-        <Badge variant={row.getValue('isActive') ? 'default' : 'outline'}>
-          {row.getValue('isActive') ? 'Активен' : 'Архивирован'}
-        </Badge>
-      ),
+      cell: ({ row }) => {
+        const isActive = row.getValue('isActive') ?? true;
+        return (
+          <Badge variant={isActive ? 'default' : 'outline'}>
+            {isActive ? 'Активен' : 'Архивирован'}
+          </Badge>
+        );
+      },
     },
     {
       id: 'actions',

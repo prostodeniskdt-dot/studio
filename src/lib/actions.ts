@@ -102,6 +102,16 @@ export async function createPurchaseOrdersFromSession(input: unknown): Promise<C
         ordersBySupplier[supplierId].push(item);
     });
 
+    if (Object.keys(ordersBySupplier).length === 0) {
+        logger.warn("No suppliers found for products to order");
+        return {
+            orderIds: [],
+            createdCount: 0,
+            holidayBonus: !!upcomingHoliday,
+            holidayName: upcomingHoliday || undefined,
+        };
+    }
+
     logger.info('Orders grouped by supplier', {
         suppliersCount: Object.keys(ordersBySupplier).length,
         suppliers: Object.keys(ordersBySupplier).map(supplierId => ({
@@ -154,7 +164,15 @@ export async function createPurchaseOrdersFromSession(input: unknown): Promise<C
             };
         }
         
-        await batch.commit();
+        // Проверить, что batch не пустой перед коммитом
+        if (createdOrderIds.length > 0) {
+            await batch.commit();
+            logger.info('Purchase orders batch committed successfully', {
+                ordersCount: createdOrderIds.length
+            });
+        } else {
+            logger.warn('Attempted to commit empty batch - skipping');
+        }
 
         return {
             orderIds: createdOrderIds,

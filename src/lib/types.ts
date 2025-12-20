@@ -42,10 +42,10 @@ export interface Product {
   subCategory?: ProductSubCategory;
   imageUrl?: string;
   
-  // Экономика
-  costPerBottle: number;
-  sellingPricePerPortion: number;
-  portionVolumeMl: number;
+  // Экономика (опциональные поля для обратной совместимости)
+  costPerBottle?: number;
+  sellingPricePerPortion?: number;
+  portionVolumeMl?: number;
   
   // Профиль бутылки
   bottleVolumeMl: number;

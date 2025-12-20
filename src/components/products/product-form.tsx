@@ -32,18 +32,15 @@ import { Separator } from '../ui/separator';
 import { useFirestore, useUser, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
   category: productCategorySchema,
   subCategory: z.string().optional(),
   imageUrl: z.string().optional(),
-  
-  costPerBottle: z.coerce.number().positive('Должно быть положительным числом.'),
-  sellingPricePerPortion: z.coerce.number().positive('Должно быть положительным числом.'),
-  portionVolumeMl: z.coerce.number().positive('Должно быть положительным числом.'),
 
   bottleVolumeMl: z.coerce.number().positive('Должно быть положительным числом.'),
   fullBottleWeightG: z.coerce.number().optional(),
@@ -92,9 +89,6 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
       name: '',
       category: 'Other',
       bottleVolumeMl: 700,
-      costPerBottle: 0,
-      sellingPricePerPortion: 0,
-      portionVolumeMl: 40,
       isActive: true,
       imageUrl: PlaceHolderImages.find(p => p.id.toLowerCase() === 'other')?.imageUrl,
       fullBottleWeightG: undefined,
@@ -108,7 +102,6 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const watchedCategory = form.watch('category');
   const watchedName = form.watch('name');
   const watchedVolume = form.watch('bottleVolumeMl');
-  const watchedCostPerBottle = form.watch('costPerBottle');
   
   const volumeTouchedRef = React.useRef(false);
 
@@ -259,57 +252,13 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
            )}
         </div>
         
-        <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Экономика</h3>
-
-        <div className="grid grid-cols-2 gap-4">
-            <FormField
-            control={form.control}
-            name="portionVolumeMl"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel className="font-medium">Объем порции (мл)</FormLabel>
-                <FormControl>
-                    <Input type="number" {...field} className="text-left" />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
-            />
-            <FormField
-            control={form.control}
-            name="sellingPricePerPortion"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel className="font-medium">Цена за порцию (₽)</FormLabel>
-                <FormControl>
-                    <Input type="number" step="0.01" {...field} className="text-left" />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
-            />
-        </div>
-        
-        <FormField
-            control={form.control}
-            name="costPerBottle"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel className="font-medium">Стоимость закупки (₽)</FormLabel>
-                <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01" 
-                      {...field} 
-                      className="text-left" 
-                    />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
-        />
-        </div>
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Внимание!</AlertTitle>
+          <AlertDescription>
+            ВАЖНО: Обязательно заполните вес полной и пустой бутылки, иначе расчеты будут некорректными!
+          </AlertDescription>
+        </Alert>
 
         <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Профиль бутылки для калькулятора</h3>

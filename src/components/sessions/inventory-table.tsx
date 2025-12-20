@@ -5,10 +5,9 @@ import type { InventoryLine, Product, CalculatedInventoryLine } from '@/lib/type
 import { calculateLineFields } from '@/lib/calculations';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { cn, formatCurrency, translateCategory, translateSubCategory, buildProductDisplayName } from '@/lib/utils';
-import { Loader2, AlertTriangle, Package } from 'lucide-react';
+import { translateCategory, translateSubCategory, buildProductDisplayName } from '@/lib/utils';
+import { Loader2, Package } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 
 type LocalCalculatedLine = CalculatedInventoryLine & { product: Product };
@@ -71,15 +70,7 @@ const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, p
     });
   };
 
-  const totals = React.useMemo(() => {
-    return calculatedLines.reduce(
-      (acc, line) => {
-        acc.differenceMoney += line.differenceMoney;
-        return acc;
-      },
-      { differenceMoney: 0 }
-    );
-  }, [calculatedLines]);
+  // Убрали totals, так как больше не показываем отклонения
 
   // Calculate completion percentage for progress indicator
   const completionPercentage = React.useMemo(() => {
@@ -111,27 +102,6 @@ const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, p
     );
   }
 
-  // Helper function to determine row background color based on deviation
-  const getRowBackgroundColor = (line: LocalCalculatedLine) => {
-    const absDeviation = Math.abs(line.differenceMoney);
-    const absPercent = Math.abs(line.differencePercent);
-    
-    // Critical deviation: > 20% or > 1000 rub
-    if (absPercent > 20 || absDeviation > 1000) {
-      return line.differenceMoney < 0 
-        ? 'bg-destructive/5 hover:bg-destructive/10 border-l-4 border-l-destructive' 
-        : 'bg-success/5 hover:bg-success/10 border-l-4 border-l-success';
-    }
-    
-    // Moderate deviation: 10-20% or 500-1000 rub
-    if (absPercent > 10 || absDeviation > 500) {
-      return line.differenceMoney < 0 
-        ? 'bg-destructive/3 hover:bg-destructive/5' 
-        : 'bg-success/3 hover:bg-success/5';
-    }
-    
-    return '';
-  };
 
   return (
     <>
@@ -150,21 +120,15 @@ const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, p
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-full md:w-auto">Продукт</TableHead>
-              <TableHead className="text-right hidden md:table-cell">Начало (мл)</TableHead>
-              <TableHead className="text-right hidden lg:table-cell">Покупки (мл)</TableHead>
-              <TableHead className="text-right hidden lg:table-cell">Продажи (порции)</TableHead>
-              <TableHead className="text-right hidden md:table-cell">Теор. (мл)</TableHead>
+              <TableHead className="w-full">Продукт</TableHead>
               <TableHead className="text-right">Факт. (мл)</TableHead>
-              <TableHead className="text-right hidden sm:table-cell">Разн. (мл)</TableHead>
-              <TableHead className="text-right hidden sm:table-cell">Разн. (руб.)</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {Object.entries(groupedAndSortedLines).sort((a,b) => a[0].localeCompare(b[0])).map(([category, subCategories]) => (
               <React.Fragment key={category}>
                 <TableRow className="bg-primary/10 hover:bg-primary/15 border-b-2 border-primary/20">
-                  <TableCell colSpan={8} className="font-bold text-base py-3">
+                  <TableCell colSpan={2} className="font-bold text-base py-3">
                     <div className="flex items-center gap-2">
                       <div className="h-1 w-1 rounded-full bg-primary" />
                       {translateCategory(category as any)}
@@ -175,7 +139,7 @@ const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, p
                   <React.Fragment key={subCategory}>
                     {subCategory !== 'uncategorized' && (
                       <TableRow className="bg-muted/30 hover:bg-muted/40">
-                        <TableCell colSpan={8} className="py-2 pl-8 font-semibold text-sm">
+                        <TableCell colSpan={2} className="py-2 pl-8 font-semibold text-sm">
                           <div className="flex items-center gap-2">
                             <div className="h-0.5 w-4 bg-muted-foreground/30" />
                             {translateSubCategory(subCategory as any)}
@@ -184,57 +148,14 @@ const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, p
                       </TableRow>
                     )}
                     {subCategoryLines.sort((a,b) => buildProductDisplayName(a.product.name, a.product.bottleVolumeMl).localeCompare(buildProductDisplayName(b.product.name, b.product.bottleVolumeMl))).map(line => {
-                      const isCritical = Math.abs(line.differencePercent) > 20 || Math.abs(line.differenceMoney) > 1000;
                       return (
                         <TableRow 
                           key={line.id} 
-                          className={cn(
-                            "transition-colors",
-                            getRowBackgroundColor(line)
-                          )}
+                          className="transition-colors"
                         >
                           <TableCell className="font-medium pl-4 md:pl-10">
-                            <div className="flex items-center gap-2">
-                              {buildProductDisplayName(line.product.name, line.product.bottleVolumeMl)}
-                              {isCritical && (
-                                <Badge variant={line.differenceMoney < 0 ? "destructive" : "success"} className="h-5 text-xs">
-                                  <AlertTriangle className="h-3 w-3 mr-1" />
-                                  Критично
-                                </Badge>
-                              )}
-                            </div>
+                            {buildProductDisplayName(line.product.name, line.product.bottleVolumeMl)}
                           </TableCell>
-                          <TableCell className="text-right hidden md:table-cell">
-                            {isEditable ? (
-                              <Input 
-                                type="number" 
-                                value={line.startStock} 
-                                onChange={e => handleInputChange(line.id!, 'startStock', e.target.value)} 
-                                className="w-24 text-right ml-auto transition-all duration-200 focus:ring-2 focus:ring-primary/20" 
-                              />
-                            ) : line.startStock}
-                          </TableCell>
-                          <TableCell className="text-right hidden lg:table-cell">
-                            {isEditable ? (
-                              <Input 
-                                type="number" 
-                                value={line.purchases} 
-                                onChange={e => handleInputChange(line.id!, 'purchases', e.target.value)} 
-                                className="w-24 text-right ml-auto transition-all duration-200 focus:ring-2 focus:ring-primary/20" 
-                              />
-                            ) : line.purchases}
-                          </TableCell>
-                          <TableCell className="text-right hidden lg:table-cell">
-                            {isEditable ? (
-                              <Input 
-                                type="number" 
-                                value={line.sales} 
-                                onChange={e => handleInputChange(line.id!, 'sales', e.target.value)} 
-                                className="w-24 text-right ml-auto transition-all duration-200 focus:ring-2 focus:ring-primary/20" 
-                              />
-                            ) : line.sales}
-                          </TableCell>
-                          <TableCell className="text-right font-mono hidden md:table-cell">{Math.round(line.theoreticalEndStock)}</TableCell>
                           <TableCell className="text-right">
                             {isEditable ? (
                               <Input 
@@ -245,18 +166,6 @@ const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, p
                               />
                             ) : line.endStock}
                           </TableCell>
-                          <TableCell className={cn(
-                            "text-right font-mono hidden sm:table-cell font-semibold",
-                            line.differenceVolume > 0 ? 'text-success' : line.differenceVolume < 0 ? 'text-destructive' : 'text-muted-foreground'
-                          )}>
-                            {line.differenceVolume > 0 ? '+' : ''}{Math.round(line.differenceVolume)}
-                          </TableCell>
-                          <TableCell className={cn(
-                            "text-right font-mono hidden sm:table-cell font-semibold",
-                            line.differenceMoney > 0 ? 'text-success' : line.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground'
-                          )}>
-                            {line.differenceMoney > 0 ? '+' : ''}{formatCurrency(line.differenceMoney)}
-                          </TableCell>
                         </TableRow>
                       )
                     })}
@@ -265,19 +174,6 @@ const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, p
               </React.Fragment>
             ))}
           </TableBody>
-          <TableFooter>
-            <TableRow className="bg-muted/30">
-              <TableCell colSpan={7} className="font-bold text-lg hidden sm:table-cell">Общее отклонение</TableCell>
-              <TableCell colSpan={1} className="font-bold text-lg sm:hidden">Итого</TableCell>
-
-              <TableCell className={cn(
-                "text-right font-bold text-lg",
-                totals.differenceMoney > 0 ? 'text-success' : totals.differenceMoney < 0 ? 'text-destructive' : 'text-muted-foreground'
-              )}>
-                {totals.differenceMoney > 0 ? '+' : ''}{formatCurrency(totals.differenceMoney)}
-              </TableCell>
-            </TableRow>
-          </TableFooter>
         </Table>
       </div>
     </>

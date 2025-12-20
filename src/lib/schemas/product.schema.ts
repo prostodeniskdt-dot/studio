@@ -31,10 +31,10 @@ export const productSchema = z.object({
   subCategory: z.string().optional(),
   imageUrl: z.string().url().optional().or(z.literal('')),
   
-  // Экономика
-  costPerBottle: z.number().min(0, 'Стоимость не может быть отрицательной'),
-  sellingPricePerPortion: z.number().min(0, 'Цена продажи не может быть отрицательной'),
-  portionVolumeMl: z.number().positive('Объем порции должен быть положительным'),
+  // Экономика (опциональные поля для обратной совместимости)
+  costPerBottle: z.number().min(0, 'Стоимость не может быть отрицательной').optional(),
+  sellingPricePerPortion: z.number().min(0, 'Цена продажи не может быть отрицательной').optional(),
+  portionVolumeMl: z.number().positive('Объем порции должен быть положительным').optional(),
   
   // Профиль бутылки
   bottleVolumeMl: z.number().positive('Объем бутылки должен быть положительным'),

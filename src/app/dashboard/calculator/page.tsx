@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Combobox, type GroupedComboboxOption } from '@/components/ui/combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Weight, Send, Loader2, Search, Package, Ruler, Calculator, CheckCircle2, Sparkles } from 'lucide-react';
+import { Weight, Send, Loader2, Search, Package, Ruler, Calculator, CheckCircle2, Sparkles, AlertTriangle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { SectionHeader } from '@/components/ui/section-header';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { InventorySession, Product, ProductCategory, InventoryLine } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
@@ -121,15 +122,27 @@ export default function UnifiedCalculatorPage() {
 
   const handleCalculate = () => {
     setCalculatedVolume(null);
-    let volumeByWeight: number | null = null;
-    let volumeByHeight: number | null = null;
-
-    // Weight calculation
+    
     const bv = parseFloat(bottleVolume);
     const fw = parseFloat(fullWeight);
     const ew = parseFloat(emptyWeight);
     const cw = parseFloat(currentWeight);
+    const ll = parseFloat(liquidLevel);
 
+    // Проверка обязательных полей
+    if (!liquidLevel || ll <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Обязательно заполните уровень жидкости (1 резка = 1 см). Без этого параметра расчет невозможен.",
+      });
+      return;
+    }
+
+    let volumeByWeight: number | null = null;
+    let volumeByHeight: number | null = null;
+
+    // Weight calculation
     if (fw > ew && cw >= ew && bv > 0) {
         const liquidNetWeight = fw - ew;
         const currentLiquidWeight = cw - ew;
@@ -142,7 +155,6 @@ export default function UnifiedCalculatorPage() {
     }
     
     // Height calculation - assuming a simple cylindrical bottle shape
-    const ll = parseFloat(liquidLevel);
     if (ll > 0 && bv > 0) {
         // This is a rough approximation. A better approach would require bottle dimensions.
         // Assuming height of liquid part of bottle is ~25-30cm
@@ -152,11 +164,19 @@ export default function UnifiedCalculatorPage() {
         volumeByHeight = Math.round(volume > bv ? bv : volume);
     }
 
-    // Prioritize weight calculation as it's more accurate
-    if (volumeByWeight !== null) {
-        setCalculatedVolume(volumeByWeight);
+    // Объединенный расчет: усредняем результаты веса и высоты
+    if (volumeByWeight !== null && volumeByHeight !== null) {
+        const averageVolume = Math.round((volumeByWeight + volumeByHeight) / 2);
+        setCalculatedVolume(averageVolume);
     } else if (volumeByHeight !== null) {
+        // Если нет веса, используем только высоту (но это не должно происходить при правильной валидации)
         setCalculatedVolume(volumeByHeight);
+    } else {
+        toast({
+          variant: "destructive",
+          title: "Ошибка расчета",
+          description: "Не удалось рассчитать объем. Проверьте все поля.",
+        });
     }
   };
 
@@ -323,6 +343,22 @@ export default function UnifiedCalculatorPage() {
         title="Универсальный калькулятор"
         description="Рассчитайте остатки в бутылке и отправьте данные в текущую инвентаризацию."
       />
+      
+      <Alert variant="default" className="mb-4">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Как пользоваться</AlertTitle>
+        <AlertDescription>
+          Выберите продукт, введите вес полной бутылки, вес пустой бутылки, текущий вес и уровень жидкости (1 резка = 1 см на мерной ложке). Нажмите 'Рассчитать', затем 'Отправить в инвентаризацию'.
+        </AlertDescription>
+      </Alert>
+
+      <Alert variant="destructive" className="mb-4">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>ВАЖНО</AlertTitle>
+        <AlertDescription>
+          Обязательно заполните вес полной бутылки, вес пустой бутылки, текущий вес И уровень жидкости (1 резка = 1 см). Без всех данных расчет невозможен!
+        </AlertDescription>
+      </Alert>
       
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Левая колонка: Выбор продукта и параметры */}

@@ -3,6 +3,7 @@ import { ProductsTable } from "@/components/products/products-table";
 import { useProducts } from "@/contexts/products-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function ProductsPage() {
     const { globalProducts, isLoading } = useProducts();
@@ -31,7 +32,13 @@ export default function ProductsPage() {
     }
 
     return (
-        <div className="w-full">
+        <div className="w-full space-y-4">
+            <Alert variant="default">
+                <AlertTitle>Как пользоваться</AlertTitle>
+                <AlertDescription>
+                    Добавьте продукты с указанием веса полной и пустой бутылки. Это необходимо для корректной работы калькулятора.
+                </AlertDescription>
+            </Alert>
             <ProductsTable products={globalProducts || []} />
         </div>
     );

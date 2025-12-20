@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { PlusCircle, BarChart3, Package, Loader2, LineChart, Truck, ShoppingCart, FlaskConical, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { SessionsList } from "@/components/dashboard/sessions-list";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -119,6 +120,13 @@ export default function DashboardPage() {
 
   return (
     <>
+      <Alert variant="default" className="mb-4">
+        <AlertTitle>Как пользоваться</AlertTitle>
+        <AlertDescription>
+          Создайте новую инвентаризацию, затем используйте калькулятор для расчета остатков бутылок и отправки их в инвентаризацию.
+        </AlertDescription>
+      </Alert>
+
       <Card className="mb-6 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 border-primary/20 animate-fade-in">
         <CardHeader>
           <CardTitle className="text-2xl md:text-3xl gradient-text">Добро пожаловать в BarBoss!</CardTitle>

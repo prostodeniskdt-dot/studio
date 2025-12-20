@@ -273,7 +273,7 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground mb-1">Стоимость</div>
-                      <div className="font-semibold text-base">{formatCurrency(premix.costPerBottle)}</div>
+                      <div className="font-semibold text-base">{formatCurrency(premix.costPerBottle ?? 0)}</div>
                     </div>
                   </div>
                 </CardContent>

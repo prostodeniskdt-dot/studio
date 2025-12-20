@@ -31,7 +31,7 @@ export function calculatePremixCost(
   ingredientProducts: Map<string, Product>
 ): number {
   if (!premix.isPremix || !premix.premixIngredients) {
-    return premix.costPerBottle; // Вернуть текущую стоимость если не примикс
+    return premix.costPerBottle ?? 0; // Вернуть текущую стоимость если не примикс
   }
 
   return premix.premixIngredients.reduce((total, ingredient) => {
@@ -47,7 +47,7 @@ export function calculatePremixCost(
       return total;
     }
     
-    const costPerMl = product.costPerBottle / product.bottleVolumeMl;
+    const costPerMl = (product.costPerBottle ?? 0) / product.bottleVolumeMl;
     return total + (costPerMl * ingredient.volumeMl);
   }, 0);
 }

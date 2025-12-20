@@ -45,7 +45,7 @@ import { deleteSessionWithLinesClient } from '@/lib/firestore-utils';
 import { SessionHeader } from '@/components/sessions/session-header';
 import { SessionActions } from '@/components/sessions/session-actions';
 import { useOffline } from '@/hooks/use-offline';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { WifiOff } from 'lucide-react';
 
@@ -326,18 +326,14 @@ export default function SessionPage() {
 
     // Use semicolon as separator for Russian locale Excel compatibility
     const SEPARATOR = ';';
-    const headers = ["productId", "productName", "startStock", "purchases", "sales", "endStock"];
+    const headers = ["Наименование продукта", "Фактический остаток (мл)"];
     const headerRow = headers.map(escapeCSV).join(SEPARATOR);
     
-    // Data rows
+    // Data rows - только название продукта и фактический остаток
     const rows = localLines.map(line => {
       const product = allProducts.find(p => p.id === line.productId);
       return [
-        line.productId,
         product ? buildProductDisplayName(product.name, product.bottleVolumeMl) : '',
-        line.startStock,
-        line.purchases,
-        line.sales,
         line.endStock
       ].map(escapeCSV).join(SEPARATOR);
     });
@@ -455,6 +451,14 @@ export default function SessionPage() {
         accept=".csv"
       />
       <SessionHeader session={effectiveSession} isEditable={isEditable} />
+      {isEditable && (
+        <Alert variant="default" className="mb-4">
+          <AlertTitle>Как пользоваться</AlertTitle>
+          <AlertDescription>
+            Используйте калькулятор для расчета остатков. Результаты автоматически появятся в таблице. Проверьте фактические остатки и завершите инвентаризацию.
+          </AlertDescription>
+        </Alert>
+      )}
       <SessionActions
         isEditable={isEditable}
         isSaving={isSaving}

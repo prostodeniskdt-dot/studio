@@ -215,7 +215,7 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
           </div>
         );
       },
-      cell: ({ row }) => <div className="text-right">{formatCurrency(row.getValue('costPerBottle'))}</div>,
+      cell: ({ row }) => <div className="text-right">{formatCurrency(row.getValue('costPerBottle') as number ?? 0)}</div>,
     },
     {
       accessorKey: 'bottleVolumeMl',

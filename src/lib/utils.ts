@@ -70,6 +70,7 @@ const productNameTranslations = new Map<string, string>([
     ["absolut", "Абсолют"],
     ["finlandia", "Финляндия"],
     ["grey goose", "Грей Гус"],
+    ["beefeater", "Бифитер"],
     ["beefeater london dry", "Бифитер Лондон Драй"],
     ["hendrick's", "Хендрикс"],
     ["bombay sapphire", "Бомбей Сапфир"],
@@ -211,7 +212,7 @@ export function buildProductDisplayName(originalName: string, bottleVolumeMl?: n
 
   const volumeMl = bottleVolumeMl ?? fromName;
   
-  return volumeMl ? `${translatedName} ${volumeMl}мл` : translatedName;
+  return volumeMl ? `${translatedName} ${volumeMl} мл` : translatedName;
 }
 
 export const translateProductName = buildProductDisplayName;

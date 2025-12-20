@@ -51,6 +51,7 @@ export interface Product {
   bottleVolumeMl: number;
   fullBottleWeightG?: number;
   emptyBottleWeightG?: number;
+  fullLiquidHeightCm?: number; // Реальная высота жидкости в полной бутылке (для калибровки калькулятора)
 
   // Закупки
   reorderPointMl?: number;

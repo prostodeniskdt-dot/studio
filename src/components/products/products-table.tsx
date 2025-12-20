@@ -13,7 +13,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { MoreHorizontal, ArrowUpDown, ChevronDown, PlusCircle, Loader2, Trash2, Search, Package, Download } from 'lucide-react';
+import { MoreHorizontal, ArrowUpDown, ChevronDown, PlusCircle, Loader2, Trash2, Search, Package } from 'lucide-react';
 import { ProductSearch } from './product-search';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -56,16 +56,15 @@ import { ProductForm } from './product-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, updateDoc, deleteDoc, collection, query, where, limit, getDocs } from 'firebase/firestore';
+import { useProducts } from '@/contexts/products-context';
+import { doc, updateDoc, deleteDoc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import type { InventorySession, InventoryLine } from '@/lib/types';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 export function ProductsTable({ products }: { products: Product[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
-    costPerBottle: false,
     id: false, 
     subCategory: false,
     bottleVolumeMl: false,
@@ -82,6 +81,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const { user } = useUser();
   const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
+  const { refresh: refreshProducts } = useProducts();
 
   const handleOpenSheet = (product?: Product) => {
     setEditingProduct(product);
@@ -106,6 +106,8 @@ export function ProductsTable({ products }: { products: Product[] }) {
     updateDoc(productRef, updateData)
       .then(() => {
         toast({ title: "Статус продукта изменен." });
+        // Обновить контекст продуктов для отображения изменений
+        refreshProducts();
       })
       .catch((serverError) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `${pathPrefix}/${product.id}`, operation: 'update', requestResourceData: updateData }));
@@ -114,89 +116,6 @@ export function ProductsTable({ products }: { products: Product[] }) {
         setIsArchiving(null);
       });
   }
-
-  const handleExportProductsCSV = async () => {
-    if (!firestore || !barId || !products) {
-      toast({
-        variant: "destructive",
-        title: "Ошибка",
-        description: "Не удалось загрузить данные.",
-      });
-      return;
-    }
-
-    try {
-      // Найти активную инвентаризацию
-      const sessionsCollection = collection(firestore, 'bars', barId, 'inventorySessions');
-      const activeSessionQuery = query(sessionsCollection, where('status', '==', 'in_progress'), limit(1));
-      const activeSessionSnapshot = await getDocs(activeSessionQuery);
-
-      if (activeSessionSnapshot.empty) {
-        toast({
-          variant: "destructive",
-          title: "Нет активной инвентаризации",
-          description: "Создайте новую инвентаризацию перед экспортом остатков.",
-        });
-        return;
-      }
-
-      const activeSessionDoc = activeSessionSnapshot.docs[0];
-      const activeSessionId = activeSessionDoc.id;
-
-      // Загрузить линии из активной инвентаризации
-      const linesCollection = collection(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines');
-      const linesSnapshot = await getDocs(linesCollection);
-      const lines = linesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as InventoryLine));
-
-      // Создать Map: productId -> endStock
-      const stockMap = new Map<string, number>();
-      lines.forEach(line => {
-        stockMap.set(line.productId, line.endStock);
-      });
-
-      // Helper function to escape CSV values
-      const escapeCSV = (value: string | number): string => {
-        const stringValue = String(value);
-        return `"${stringValue.replace(/"/g, '""')}"`;
-      };
-
-      const SEPARATOR = ';';
-      const headers = ["Наименование продукта", "Итоговый объем бутылки (мл)"];
-      const headerRow = headers.map(escapeCSV).join(SEPARATOR);
-
-      // Для каждого продукта: название + остаток (или 0 если нет в инвентаризации)
-      const rows = products.map(product => {
-        const stock = stockMap.get(product.id) ?? 0;
-        return [
-          buildProductDisplayName(product.name, product.bottleVolumeMl),
-          stock
-        ].map(escapeCSV).join(SEPARATOR);
-      });
-
-      const csvContent = [headerRow, ...rows].join('\r\n');
-      const BOM = '\uFEFF';
-      const csvWithBOM = BOM + csvContent;
-
-      const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvWithBOM);
-      const link = document.createElement("a");
-      link.setAttribute("href", dataUri);
-      link.setAttribute("download", `products_export_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      toast({ 
-        title: "Экспорт завершен", 
-        description: "Данные продуктов выгружены в CSV файл." 
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Ошибка экспорта",
-        description: error instanceof Error ? error.message : "Не удалось экспортировать данные.",
-      });
-    }
-  };
 
   const handleDeleteProduct = (product: Product) => {
     setProductToDelete(product);
@@ -291,24 +210,6 @@ export function ProductsTable({ products }: { products: Product[] }) {
           return subCategory ? <div>{translateSubCategory(subCategory)}</div> : null
       },
        filterFn: 'equals',
-    },
-    {
-      accessorKey: 'costPerBottle',
-      header: ({ column }) => {
-        return (
-          <div className="text-right">
-            <Button
-              variant="ghost"
-              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-              className="h-auto p-0 font-medium"
-            >
-              Стоимость
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        );
-      },
-      cell: ({ row }) => <div className="text-right">{formatCurrency(row.getValue('costPerBottle') as number ?? 0)}</div>,
     },
     {
       accessorKey: 'bottleVolumeMl',
@@ -492,7 +393,6 @@ export function ProductsTable({ products }: { products: Product[] }) {
                                           name: 'Название',
                                           category: 'Категория',
                                           subCategory: 'Подкатегория',
-                                          costPerBottle: 'Стоимость',
                                           bottleVolumeMl: 'Объем',
                                           isActive: 'Статус',
                                           id: 'ID'
@@ -503,10 +403,6 @@ export function ProductsTable({ products }: { products: Product[] }) {
                               })}
                           </DropdownMenuContent>
                       </DropdownMenu>
-                      <Button onClick={handleExportProductsCSV} variant="outline" className="h-9">
-                          <Download className="mr-2 h-4 w-4" />
-                          Экспорт в CSV
-                      </Button>
                       <SheetTrigger asChild>
                           <Button onClick={() => handleOpenSheet()} className="h-9">
                               <PlusCircle className="mr-2 h-4 w-4" />
@@ -530,7 +426,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
                       return (
                           <TableHead key={header.id} 
                           className={cn({
-                              'hidden sm:table-cell': ['costPerBottle', 'bottleVolumeMl'].includes(header.column.id),
+                              'hidden sm:table-cell': ['bottleVolumeMl'].includes(header.column.id),
                               'hidden lg:table-cell': ['category', 'subCategory'].includes(header.column.id)
                           })}
                           >
@@ -580,7 +476,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
                                 <TableCell
                                   key={cell.id}
                                   className={cn({
-                                    'hidden sm:table-cell': ['costPerBottle', 'bottleVolumeMl'].includes(cell.column.id),
+                                    'hidden sm:table-cell': ['bottleVolumeMl'].includes(cell.column.id),
                                     'hidden lg:table-cell': ['category', 'subCategory'].includes(cell.column.id)
                                   })}
                                 >

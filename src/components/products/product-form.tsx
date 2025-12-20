@@ -45,6 +45,7 @@ const formSchema = z.object({
   bottleVolumeMl: z.coerce.number().positive('Должно быть положительным числом.'),
   fullBottleWeightG: z.coerce.number().optional(),
   emptyBottleWeightG: z.coerce.number().optional(),
+  fullLiquidHeightCm: z.coerce.number().positive().optional(), // Реальная высота жидкости в полной бутылке (для калибровки)
 
   reorderPointMl: z.coerce.number().optional(),
   reorderQuantity: z.coerce.number().optional(),
@@ -93,6 +94,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
       imageUrl: PlaceHolderImages.find(p => p.id.toLowerCase() === 'other')?.imageUrl,
       fullBottleWeightG: undefined,
       emptyBottleWeightG: undefined,
+      fullLiquidHeightCm: undefined,
       reorderPointMl: undefined,
       reorderQuantity: undefined,
       defaultSupplierId: undefined,
@@ -159,6 +161,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         reorderQuantity: data.reorderQuantity || null,
         fullBottleWeightG: data.fullBottleWeightG || null,
         emptyBottleWeightG: data.emptyBottleWeightG || null,
+        fullLiquidHeightCm: data.fullLiquidHeightCm || null,
         id: productRef.id,
         updatedAt: serverTimestamp(),
         createdAt: product?.createdAt || serverTimestamp(),
@@ -302,6 +305,20 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
                 <FormControl>
                     <Input type="number" {...field} value={field.value ?? ''} placeholder="450" className="text-left"/>
                 </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="fullLiquidHeightCm"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel className="font-medium">Высота жидкости полной (см)</FormLabel>
+                <FormControl>
+                    <Input type="number" {...field} value={field.value ?? ''} placeholder="15" className="text-left"/>
+                </FormControl>
+                <FormDescription className="text-sm text-muted-foreground">Реальная высота жидкости в полной бутылке для точного расчета калькулятора.</FormDescription>
                 <FormMessage />
                 </FormItem>
             )}

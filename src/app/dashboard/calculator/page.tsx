@@ -139,43 +139,68 @@ export default function UnifiedCalculatorPage() {
       return;
     }
 
+    // Получить реальную высоту жидкости из продукта или использовать значение по умолчанию 15см
+    const fullLiquidHeightCm = selectedProduct?.fullLiquidHeightCm ?? 15;
+
     let volumeByWeight: number | null = null;
     let volumeByHeight: number | null = null;
 
-    // Weight calculation
+    // Weight calculation - более точный метод
     if (fw > ew && cw >= ew && bv > 0) {
         const liquidNetWeight = fw - ew;
         const currentLiquidWeight = cw - ew;
         if (currentLiquidWeight <= 0) {
             volumeByWeight = 0;
         } else {
+            // Точный расчет по весу
             const volume = (currentLiquidWeight / liquidNetWeight) * bv;
-            volumeByWeight = Math.round(volume);
+            volumeByWeight = volume; // Не округляем пока, округлим в конце
         }
     }
     
-    // Height calculation - assuming a simple cylindrical bottle shape
-    if (ll > 0 && bv > 0) {
-        // This is a rough approximation. A better approach would require bottle dimensions.
-        // Assuming height of liquid part of bottle is ~25-30cm
-        const bottleLiquidHeightCm = 25; 
-        const percentage = Math.min(ll / bottleLiquidHeightCm, 1);
+    // Height calculation с калибровкой по реальной высоте
+    if (ll > 0 && bv > 0 && fullLiquidHeightCm > 0) {
+        // Используем реальную высоту жидкости в полной бутылке
+        const percentage = Math.min(ll / fullLiquidHeightCm, 1);
         const volume = bv * percentage;
-        volumeByHeight = Math.round(volume > bv ? bv : volume);
+        volumeByHeight = volume; // Не округляем пока
     }
 
-    // Объединенный расчет: усредняем результаты веса и высоты
+    // Комбинированная формула с весами для максимальной точности
     if (volumeByWeight !== null && volumeByHeight !== null) {
-        const averageVolume = Math.round((volumeByWeight + volumeByHeight) / 2);
-        setCalculatedVolume(averageVolume);
+        // Разница между двумя методами
+        const difference = Math.abs(volumeByWeight - volumeByHeight);
+        const percentageDifference = (difference / bv) * 100;
+        
+        let finalVolume: number;
+        
+        // Если разница меньше 5%, используем взвешенное среднее (70% вес, 30% высота)
+        // Вес считается более точным, но высота помогает учесть форму бутылки
+        if (percentageDifference < 5) {
+            finalVolume = volumeByWeight * 0.7 + volumeByHeight * 0.3;
+        }
+        // Если разница 5-15%, используем среднее (50/50)
+        else if (percentageDifference < 15) {
+            finalVolume = (volumeByWeight + volumeByHeight) / 2;
+        }
+        // Если разница большая (>15%), приоритет весу (90% вес, 10% высота)
+        else {
+            finalVolume = volumeByWeight * 0.9 + volumeByHeight * 0.1;
+        }
+        
+        // Округляем до целого числа
+        setCalculatedVolume(Math.round(finalVolume));
+    } else if (volumeByWeight !== null) {
+        // Если нет высоты, используем только вес
+        setCalculatedVolume(Math.round(volumeByWeight));
     } else if (volumeByHeight !== null) {
-        // Если нет веса, используем только высоту (но это не должно происходить при правильной валидации)
-        setCalculatedVolume(volumeByHeight);
+        // Если нет веса, используем только высоту (не должно происходить при правильной валидации)
+        setCalculatedVolume(Math.round(volumeByHeight));
     } else {
         toast({
           variant: "destructive",
           title: "Ошибка расчета",
-          description: "Не удалось рассчитать объем. Проверьте все поля.",
+          description: "Не удалось рассчитать объем. Проверьте все поля (вес полной, пустой, текущий вес и уровень жидкости).",
         });
     }
   };

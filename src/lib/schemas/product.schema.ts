@@ -40,6 +40,7 @@ export const productSchema = z.object({
   bottleVolumeMl: z.number().positive('Объем бутылки должен быть положительным'),
   fullBottleWeightG: z.number().positive().optional(),
   emptyBottleWeightG: z.number().positive().optional(),
+  fullLiquidHeightCm: z.number().positive().optional(), // Реальная высота жидкости в полной бутылке (для калибровки)
 
   // Закупки
   reorderPointMl: z.number().min(0).optional(),

@@ -13,7 +13,8 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Trash2, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Download } from 'lucide-react';
+import { buildProductDisplayName } from '@/lib/utils';
 import { formatCurrency, translateCategory, translateProductName } from '@/lib/utils';
 import { Combobox, GroupedComboboxOption } from '../ui/combobox';
 import Image from 'next/image';
@@ -83,6 +84,60 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
       .finally(() => {
         setIsSaving(false);
       });
+  };
+
+  const handleExportCSV = () => {
+    if (!lines || !products) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Не удалось загрузить данные для экспорта.',
+      });
+      return;
+    }
+
+    const escapeCSV = (value: string | number): string => {
+      const stringValue = String(value);
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    };
+
+    const SEPARATOR = ';';
+    const headers = ['Наименование продукта', 'Количество', 'Цена за единицу', 'Сумма'];
+    const headerRow = headers.map(escapeCSV).join(SEPARATOR);
+
+    const rows = localLines.map(line => {
+      const product = productsMap.get(line.productId);
+      const productName = product 
+        ? buildProductDisplayName(product.name, product.bottleVolumeMl)
+        : 'Неизвестный продукт';
+      const quantity = line.quantity || 0;
+      const costPerItem = line.costPerItem || 0;
+      const total = quantity * costPerItem;
+
+      return [
+        productName,
+        quantity,
+        costPerItem.toFixed(2),
+        total.toFixed(2),
+      ].map(escapeCSV).join(SEPARATOR);
+    });
+
+    const csvContent = [headerRow, ...rows].join('\r\n');
+    const BOM = '\uFEFF';
+    const csvWithBOM = BOM + csvContent;
+
+    const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvWithBOM);
+    const link = document.createElement('a');
+    link.setAttribute('href', dataUri);
+    link.setAttribute('download', `purchase_order_${orderId.substring(0, 6)}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: 'Экспорт завершен',
+      description: 'Данные заказа выгружены в CSV файл.',
+    });
   };
 
   const handleRemoveLine = (lineId: string) => {

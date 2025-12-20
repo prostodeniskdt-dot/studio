@@ -3,7 +3,7 @@ import { ProductsTable } from "@/components/products/products-table";
 import { useProducts } from "@/contexts/products-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { HelpIcon } from '@/components/ui/help-icon';
 
 export default function ProductsPage() {
     const { globalProducts, isLoading } = useProducts();
@@ -33,12 +33,12 @@ export default function ProductsPage() {
 
     return (
         <div className="w-full space-y-4">
-            <Alert variant="default">
-                <AlertTitle>Как пользоваться</AlertTitle>
-                <AlertDescription>
-                    Добавьте продукты с указанием веса полной и пустой бутылки. Это необходимо для корректной работы калькулятора.
-                </AlertDescription>
-            </Alert>
+            <div className="flex items-center gap-2">
+                <HelpIcon 
+                    description="Добавьте продукты с указанием веса полной и пустой бутылки. Это необходимо для корректной работы калькулятора."
+                />
+                <span className="text-sm text-muted-foreground">Подсказка: наведите на иконку лампочки</span>
+            </div>
             <ProductsTable products={globalProducts || []} />
         </div>
     );

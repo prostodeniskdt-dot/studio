@@ -6,9 +6,11 @@ import { calculateLineFields } from '@/lib/calculations';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { translateCategory, translateSubCategory, buildProductDisplayName } from '@/lib/utils';
-import { Loader2, Package } from 'lucide-react';
+import { Loader2, Package, ShoppingCart } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 type LocalCalculatedLine = CalculatedInventoryLine & { product: Product };
 
@@ -17,12 +19,13 @@ type InventoryTableProps = {
   setLines: React.Dispatch<React.SetStateAction<InventoryLine[] | null>>;
   products: Product[];
   isEditable: boolean;
+  onAddToOrder?: (line: LocalCalculatedLine) => void;
 };
 
 type GroupedLines = Record<string, Record<string, LocalCalculatedLine[]>>;
 
 
-const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, products, isEditable }) => {
+const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, products, isEditable, onAddToOrder }) => {
   const productsById = React.useMemo(() => {
     const map = new Map<string, Product>();
     for (const p of products) {
@@ -154,17 +157,41 @@ const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, p
                           className="transition-colors"
                         >
                           <TableCell className="font-medium pl-4 md:pl-10">
-                            {buildProductDisplayName(line.product.name, line.product.bottleVolumeMl)}
+                            <div className="flex items-center gap-2">
+                              {buildProductDisplayName(line.product.name, line.product.bottleVolumeMl)}
+                              {line.product.reorderPointMl && line.endStock < line.product.reorderPointMl && (
+                                <Badge variant="destructive" className="text-xs">
+                                  Минимальный остаток
+                                </Badge>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-right">
-                            {isEditable ? (
-                              <Input 
-                                type="number" 
-                                value={line.endStock} 
-                                onChange={e => handleInputChange(line.id!, 'endStock', e.target.value)} 
-                                className="w-24 text-right ml-auto bg-primary/10 border-primary/30 transition-all duration-200 focus:ring-2 focus:ring-primary/40 focus:bg-primary/15" 
-                              />
-                            ) : line.endStock}
+                            <div className="flex items-center justify-end gap-2">
+                              {isEditable ? (
+                                <Input 
+                                  type="number" 
+                                  value={line.endStock} 
+                                  onChange={e => handleInputChange(line.id!, 'endStock', e.target.value)} 
+                                  className="w-24 text-right ml-auto bg-primary/10 border-primary/30 transition-all duration-200 focus:ring-2 focus:ring-primary/40 focus:bg-primary/15" 
+                                />
+                              ) : (
+                                <span>{line.endStock}</span>
+                              )}
+                              {line.product.reorderPointMl && 
+                               line.endStock < line.product.reorderPointMl && 
+                               line.product.defaultSupplierId && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8"
+                                  onClick={() => onAddToOrder?.(line)}
+                                >
+                                  <ShoppingCart className="h-3 w-3 mr-1" />
+                                  Добавить в заказ
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       )

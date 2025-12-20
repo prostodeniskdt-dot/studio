@@ -18,6 +18,8 @@ type ComparisonRow = {
   productName: string;
   category: string;
   sessions: Record<string, number>; // sessionId -> endStock
+  difference?: number; // Разница между сессиями
+  [key: `session_${string}`]: number; // Динамические ключи для сессий
 };
 
 export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }) {

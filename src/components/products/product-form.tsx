@@ -27,6 +27,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import type { Product, Supplier } from '@/lib/types';
 import { productCategories, productSubCategories, translateCategory, translateSubCategory, buildProductDisplayName, extractVolume } from '@/lib/utils';
+import { checkProductDuplicate } from '@/lib/product-duplicate-check';
+import { useProducts } from '@/contexts/products-context';
 import { productCategorySchema } from '@/lib/schemas/product.schema';
 import { Separator } from '../ui/separator';
 import { useFirestore, useUser, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
@@ -67,6 +69,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
   const [isSaving, setIsSaving] = React.useState(false);
+  const { globalProducts } = useProducts();
 
   const suppliersQuery = useMemoFirebase(() => 
     firestore && barId ? collection(firestore, 'bars', barId, 'suppliers') : null,
@@ -139,6 +142,26 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         variant: 'destructive',
       });
       return;
+    }
+    
+    // Проверка на дубликаты (только для новых продуктов)
+    if (!product && globalProducts) {
+      const { baseName } = extractVolume(data.name);
+      const duplicate = checkProductDuplicate(
+        baseName,
+        globalProducts, // Для новых продуктов проверяем все
+        85
+      );
+      
+      if (duplicate) {
+        const duplicateDisplayName = buildProductDisplayName(duplicate.name, duplicate.bottleVolumeMl);
+        toast({
+          title: 'Продукт уже существует',
+          description: `Продукт "${duplicateDisplayName}" уже существует в базе. Проверьте правильность названия.`,
+          variant: 'destructive',
+        });
+        return;
+      }
     }
     
     setIsSaving(true);

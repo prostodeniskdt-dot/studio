@@ -4,7 +4,7 @@ import * as React from 'react';
 import dynamic from 'next/dynamic';
 import type { SessionWithLines } from '@/app/dashboard/analytics/page';
 import { SectionHeader } from '@/components/ui/section-header';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { HelpIcon } from '@/components/ui/help-icon';
 import { SessionComparison } from './session-comparison';
 
 export function AnalyticsView({ data }: { data: SessionWithLines[] }) {
@@ -15,12 +15,12 @@ export function AnalyticsView({ data }: { data: SessionWithLines[] }) {
                 description="Сравните данные по инвентаризациям для анализа динамики остатков."
             />
 
-            <Alert variant="default" className="mb-4">
-                <AlertTitle>Как пользоваться</AlertTitle>
-                <AlertDescription>
-                    Выберите несколько завершенных инвентаризаций для сравнения и анализа динамики остатков.
-                </AlertDescription>
-            </Alert>
+            <div className="mb-4 flex items-center gap-2">
+                <HelpIcon 
+                    description="Выберите несколько завершенных инвентаризаций для сравнения и анализа динамики остатков."
+                />
+                <span className="text-sm text-muted-foreground">Подсказка: наведите на иконку лампочки</span>
+            </div>
 
             <SessionComparison sessions={data} />
         </>

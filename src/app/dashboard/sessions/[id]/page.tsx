@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, Loader2, Save, MoreVertical, Trash2, Download, Upload, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { translateStatus, buildProductDisplayName } from "@/lib/utils";
-import type { InventorySession, Product, InventoryLine } from '@/lib/types';
+import type { InventorySession, Product, InventoryLine, CalculatedInventoryLine } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, collection, query, setDoc, writeBatch, serverTimestamp, updateDoc, getDoc, where } from 'firebase/firestore';
 import { useProducts } from '@/contexts/products-context';
@@ -45,9 +45,11 @@ import { deleteSessionWithLinesClient } from '@/lib/firestore-utils';
 import { SessionHeader } from '@/components/sessions/session-header';
 import { SessionActions } from '@/components/sessions/session-actions';
 import { useOffline } from '@/hooks/use-offline';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { HelpIcon } from '@/components/ui/help-icon';
 import { Progress } from '@/components/ui/progress';
 import { WifiOff } from 'lucide-react';
+import { useServerAction } from '@/hooks/use-server-action';
+import { createPurchaseOrdersFromSession } from '@/lib/actions';
 
 export default function SessionPage() {
   const params = useParams();
@@ -216,6 +218,63 @@ export default function SessionPage() {
     }
   };
   
+  const { execute: addToOrder, isLoading: isAddingToOrder } = useServerAction(async (input: { line: any; products: any[]; barId: string; userId: string }) => {
+    // Создаем временный массив lines с одним продуктом для создания заказа
+    const tempLines = [{ productId: input.line.product.id, endStock: input.line.endStock }];
+    return createPurchaseOrdersFromSession({
+      lines: tempLines,
+      products: input.products,
+      barId: input.barId,
+      userId: input.userId,
+    });
+  }, {
+    onSuccess: (result) => {
+      toast({
+        title: 'Продукт добавлен в заказ',
+        description: `Создан новый заказ. Продукт будет добавлен с рекомендуемым количеством.`,
+      });
+      if (result.orderIds.length > 0) {
+        router.push(`/dashboard/purchase-orders/${result.orderIds[0]}`);
+      }
+    },
+    onError: (error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка при добавлении в заказ',
+        description: error,
+      });
+    },
+  });
+
+  const handleAddToOrder = async (line: CalculatedInventoryLine & { product: Product }) => {
+    if (!user || !barId || !allProducts || !line.product.defaultSupplierId) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: !line.product.defaultSupplierId 
+          ? 'У продукта не указан поставщик по умолчанию. Укажите поставщика в настройках продукта.'
+          : 'Не удалось определить пользователя',
+      });
+      return;
+    }
+
+    if (!line.product.reorderQuantity) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'У продукта не указано рекомендуемое количество заказа. Укажите его в настройках продукта.',
+      });
+      return;
+    }
+
+    addToOrder({
+      line,
+      products: allProducts || [],
+      barId,
+      userId: user.uid,
+    });
+  };
+
   const handleAddProductToSession = async (productId: string) => {
     if (!productId || !barId || !firestore) return;
     setIsAddingProduct(true);
@@ -452,12 +511,12 @@ export default function SessionPage() {
       />
       <SessionHeader session={effectiveSession} isEditable={isEditable} />
       {isEditable && (
-        <Alert variant="default" className="mb-4">
-          <AlertTitle>Как пользоваться</AlertTitle>
-          <AlertDescription>
-            Используйте калькулятор для расчета остатков. Результаты автоматически появятся в таблице. Проверьте фактические остатки и завершите инвентаризацию.
-          </AlertDescription>
-        </Alert>
+        <div className="mb-4 flex items-center gap-2">
+          <HelpIcon 
+            description="Используйте калькулятор для расчета остатков. Результаты автоматически появятся в таблице. Проверьте фактические остатки и завершите инвентаризацию."
+          />
+          <span className="text-sm text-muted-foreground">Подсказка: наведите на иконку лампочки</span>
+        </div>
       )}
       <SessionActions
         isEditable={isEditable}
@@ -482,7 +541,8 @@ export default function SessionPage() {
             lines={localLines} 
             setLines={setLocalLines} 
             products={allProducts}
-            isEditable={isEditable} 
+            isEditable={isEditable}
+            onAddToOrder={handleAddToOrder}
         />
       ))}
       </div>

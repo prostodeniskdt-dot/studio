@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Weight, Send, Loader2, Search, Package, Ruler, Calculator, CheckCircle2, Sparkles, AlertTriangle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { SectionHeader } from '@/components/ui/section-header';
+import { HelpIcon } from '@/components/ui/help-icon';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { InventorySession, Product, ProductCategory, InventoryLine } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -369,13 +370,12 @@ export default function UnifiedCalculatorPage() {
         description="Рассчитайте остатки в бутылке и отправьте данные в текущую инвентаризацию."
       />
       
-      <Alert variant="default" className="mb-4">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Как пользоваться</AlertTitle>
-        <AlertDescription>
-          Выберите продукт, введите вес полной бутылки, вес пустой бутылки, текущий вес и уровень жидкости (1 резка = 1 см на мерной ложке). Нажмите 'Рассчитать', затем 'Отправить в инвентаризацию'.
-        </AlertDescription>
-      </Alert>
+      <div className="mb-4 flex items-center gap-2">
+        <HelpIcon 
+          description="Выберите продукт, введите вес полной бутылки, вес пустой бутылки, текущий вес и уровень жидкости (1 резка = 1 см на мерной ложке). Нажмите 'Рассчитать', затем 'Отправить в инвентаризацию'."
+        />
+        <span className="text-sm text-muted-foreground">Подсказка: наведите на иконку лампочки</span>
+      </div>
 
       <Alert variant="destructive" className="mb-4">
         <AlertTriangle className="h-4 w-4" />

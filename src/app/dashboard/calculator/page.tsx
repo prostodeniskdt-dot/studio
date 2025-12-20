@@ -140,8 +140,8 @@ export default function UnifiedCalculatorPage() {
       return;
     }
 
-    // Получить реальную высоту жидкости из продукта или использовать значение по умолчанию 15см
-    const fullLiquidHeightCm = selectedProduct?.fullLiquidHeightCm ?? 15;
+    // Получить реальную высоту жидкости из продукта или использовать значение по умолчанию 25см
+    const fullLiquidHeightCm = selectedProduct?.fullLiquidHeightCm ?? 25;
 
     let volumeByWeight: number | null = null;
     let volumeByHeight: number | null = null;
@@ -288,7 +288,7 @@ export default function UnifiedCalculatorPage() {
           
           await batch.commit();
           toast({
-            title: "Примикс разложен на ингредиенты",
+            title: "Премикс разложен на ингредиенты",
             description: `Создано/обновлено ${ingredients.length} ингредиентов в инвентаризации. Объемы суммированы с существующими остатками.`,
           });
         } else {
@@ -586,8 +586,8 @@ export default function UnifiedCalculatorPage() {
                       </div>
                       <p className="text-xs text-muted-foreground mb-4">
                         {shouldExpandPremix 
-                          ? 'Примикс будет разложен на ингредиенты, объемы суммируются с существующими остатками'
-                          : 'Примикс будет добавлен как единое целое в инвентаризацию'}
+                          ? 'Премикс будет разложен на ингредиенты, объемы суммируются с существующими остатками'
+                          : 'Премикс будет добавлен как единое целое в инвентаризацию'}
                       </p>
                     </>
                   )}

@@ -98,7 +98,7 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
     
     updateDoc(premixRef, updateData)
       .then(() => {
-        toast({ title: "Статус примикса изменен." });
+        toast({ title: "Статус премикса изменен." });
       })
       .catch((serverError) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `${pathPrefix}/${premix.id}`, operation: 'update', requestResourceData: updateData }));
@@ -124,7 +124,7 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
 
     try {
         await deleteDoc(premixRef);
-        toast({ title: "Примикс удален", description: `Примикс "${buildProductDisplayName(premixToDelete.name, premixToDelete.bottleVolumeMl)}" был безвозвратно удален.` });
+        toast({ title: "Премикс удален", description: `Премикс "${buildProductDisplayName(premixToDelete.name, premixToDelete.bottleVolumeMl)}" был безвозвратно удален.` });
         setPremixToDelete(null);
     } catch (serverError) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -178,7 +178,7 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
         return (
           <div className="flex items-center gap-2">
             <span>{buildProductDisplayName(premix.name, premix.bottleVolumeMl)}</span>
-            <Badge variant="secondary" className="text-xs">Примикс</Badge>
+            <Badge variant="secondary" className="text-xs">Премикс</Badge>
           </div>
         );
       },
@@ -246,7 +246,7 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Действия</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handleOpenSheet(premix)}>Редактировать примикс</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleOpenSheet(premix)}>Редактировать премикс</DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => handleArchiveAction(premix)}
                 className={cn(premix.isActive && "focus:bg-destructive/10")}
@@ -295,8 +295,8 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
           <>
               <div className="flex items-center justify-between py-4 gap-4 flex-wrap">
                   <div>
-                      <h1 className="text-3xl font-bold tracking-tight">Примиксы</h1>
-                      <p className="text-muted-foreground">Управляйте примиксами и заготовками для калькулятора.</p>
+                      <h1 className="text-3xl font-bold tracking-tight">Премиксы</h1>
+                      <p className="text-muted-foreground">Управляйте премиксами и заготовками для калькулятора.</p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                       <div className="relative flex-1 min-w-[200px]">
@@ -346,14 +346,14 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
                       <SheetTrigger asChild>
                           <Button onClick={() => handleOpenSheet()} className="h-9">
                               <PlusCircle className="mr-2 h-4 w-4" />
-                              Добавить примикс
+                              Добавить премикс
                           </Button>
                       </SheetTrigger>
                   </div>
               </div>
               {table.getFilteredRowModel().rows.length !== table.getRowModel().rows.length && (
                   <div className="text-sm text-muted-foreground mb-4">
-                      Найдено примиксов: {table.getFilteredRowModel().rows.length}
+                      Найдено премиксов: {table.getFilteredRowModel().rows.length}
                   </div>
               )}
             
@@ -410,7 +410,7 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
                       colSpan={columns.length}
                       className="h-24 text-center"
                       >
-                      Примиксы не найдены.
+                      Премиксы не найдены.
                       </TableCell>
                   </TableRow>
                   )}
@@ -444,7 +444,7 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
           </>
           <SheetContent className="w-full sm:w-[480px] sm:max-w-none overflow-y-auto">
               <SheetHeader>
-                  <SheetTitle>{editingPremix ? `Редактировать: ${buildProductDisplayName(editingPremix.name, editingPremix.bottleVolumeMl)}` : 'Добавить новый примикс'}</SheetTitle>
+                  <SheetTitle>{editingPremix ? `Редактировать: ${buildProductDisplayName(editingPremix.name, editingPremix.bottleVolumeMl)}` : 'Добавить новый премикс'}</SheetTitle>
               </SheetHeader>
               <PremixForm premix={editingPremix} onFormSubmit={handleCloseSheet} />
           </SheetContent>
@@ -454,7 +454,7 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
             <AlertDialogHeader>
                 <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
                 <AlertDialogDescription>
-                Вы собираетесь безвозвратно удалить примикс <span className="font-semibold">"{premixToDelete ? buildProductDisplayName(premixToDelete.name, premixToDelete.bottleVolumeMl) : ''}"</span>. Это действие нельзя отменить.
+                Вы собираетесь безвозвратно удалить премикс <span className="font-semibold">"{premixToDelete ? buildProductDisplayName(premixToDelete.name, premixToDelete.bottleVolumeMl) : ''}"</span>. Это действие нельзя отменить.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

@@ -254,7 +254,7 @@ export function translateCategory(category: ProductCategory): string {
         case 'Vermouth': return 'Вермут';
         case 'Absinthe': return 'Абсент';
         case 'Bitters': return 'Биттер';
-        case 'Premix': return 'Примиксы и заготовки';
+        case 'Premix': return 'Премиксы и заготовки';
         case 'Other': return 'Другое';
         default: return category;
     }

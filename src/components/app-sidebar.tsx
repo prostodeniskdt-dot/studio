@@ -18,7 +18,7 @@ import { useUser } from '@/firebase';
 const menuItems = [
   { href: '/dashboard', label: 'Панель', icon: Home },
   { href: '/dashboard/products', label: 'Продукты', icon: Package },
-  { href: '/dashboard/premixes', label: 'Примиксы', icon: FlaskConical },
+  { href: '/dashboard/premixes', label: 'Премиксы', icon: FlaskConical },
   { href: '/dashboard/sessions', label: 'Инвентаризации', icon: BarChart3 },
   { href: '/dashboard/analytics', label: 'Аналитика', icon: LineChart },
   { href: '/dashboard/suppliers', label: 'Поставщики', icon: Truck },

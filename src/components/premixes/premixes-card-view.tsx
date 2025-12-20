@@ -93,7 +93,7 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
     
     try {
       await updateDoc(premixRef, updateData);
-      toast({ title: "Статус примикса изменен." });
+      toast({ title: "Статус премикса изменен." });
     } catch (serverError) {
       errorEmitter.emit('permission-error', new FirestorePermissionError({ 
         path: `${pathPrefix}/${premix.id}`, 
@@ -121,8 +121,8 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
     try {
       await deleteDoc(premixRef);
       toast({ 
-        title: "Примикс удален", 
-        description: `Примикс "${buildProductDisplayName(premixToDelete.name, premixToDelete.bottleVolumeMl)}" был безвозвратно удален.` 
+        title: "Премикс удален", 
+        description: `Премикс "${buildProductDisplayName(premixToDelete.name, premixToDelete.bottleVolumeMl)}" был безвозвратно удален.` 
       });
       setPremixToDelete(null);
     } catch (serverError) {
@@ -139,14 +139,14 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
     <>
       <div className="space-y-6">
         <SectionHeader
-          title="Примиксы"
-          description="Управляйте примиксами и заготовками для калькулятора."
+          title="Премиксы"
+          description="Управляйте премиксами и заготовками для калькулятора."
           action={
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={() => handleOpenDialog()}>
                   <PlusCircle className="mr-2 h-4 w-4" />
-                  Добавить примикс
+                  Добавить премикс
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -154,12 +154,12 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
                   <DialogTitle>
                     {editingPremix 
                       ? `Редактировать: ${buildProductDisplayName(editingPremix.name, editingPremix.bottleVolumeMl)}` 
-                      : 'Добавить новый примикс'}
+                      : 'Добавить новый премикс'}
                   </DialogTitle>
                   <DialogDescription>
                     {editingPremix 
-                      ? 'Измените информацию о примиксе и его составе.'
-                      : 'Создайте новый примикс, указав его состав из продуктов и заготовок.'}
+                      ? 'Измените информацию о премиксе и его составе.'
+                      : 'Создайте новый премикс, указав его состав из продуктов и заготовок.'}
                   </DialogDescription>
                 </DialogHeader>
                 <PremixForm 
@@ -187,10 +187,10 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
         {filteredPremixes.length === 0 ? (
           <EmptyState
             icon={FlaskConical}
-            title={searchQuery ? "Примиксы не найдены" : "Нет примиксов"}
-            description={searchQuery ? 'Попробуйте изменить поисковый запрос.' : 'Создайте свой первый примикс для использования в калькуляторе.'}
+            title={searchQuery ? "Премиксы не найдены" : "Нет премиксов"}
+            description={searchQuery ? 'Попробуйте изменить поисковый запрос.' : 'Создайте свой первый премикс для использования в калькуляторе.'}
             action={!searchQuery ? {
-              label: "Добавить примикс",
+              label: "Добавить премикс",
               onClick: () => handleOpenDialog()
             } : undefined}
           />
@@ -219,7 +219,7 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
                       <CardDescription className="mt-2 flex flex-wrap gap-2">
                         <Badge variant="secondary" className="text-xs flex items-center gap-1">
                           <FlaskConical className="h-3 w-3" />
-                          Примикс
+                          Премикс
                         </Badge>
                         <Badge 
                           variant={premix.isActive ? 'success' : 'outline'} 
@@ -319,7 +319,7 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
         {/* Info */}
         {filteredPremixes.length > 0 && (
           <div className="text-sm text-muted-foreground text-center">
-            Найдено примиксов: {filteredPremixes.length}
+            Найдено премиксов: {filteredPremixes.length}
           </div>
         )}
       </div>
@@ -330,7 +330,7 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
             <AlertDialogDescription>
-              Вы собираетесь безвозвратно удалить примикс{' '}
+              Вы собираетесь безвозвратно удалить премикс{' '}
               <span className="font-semibold">
                 "{premixToDelete ? buildProductDisplayName(premixToDelete.name, premixToDelete.bottleVolumeMl) : ''}"
               </span>. Это действие нельзя отменить.

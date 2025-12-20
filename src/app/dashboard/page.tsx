@@ -153,7 +153,7 @@ export default function DashboardPage() {
                         <FlaskConical className="relative h-10 w-10 text-primary group-hover:scale-110 transition-transform duration-200" />
                     </div>
                     <div className="text-center">
-                        <h3 className="font-semibold text-base mb-1">Примиксы</h3>
+                        <h3 className="font-semibold text-base mb-1">Премиксы</h3>
                         <p className="text-muted-foreground text-xs">Заготовки и коктейли</p>
                     </div>
                     <ArrowRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />

@@ -76,6 +76,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const [globalFilter, setGlobalFilter] = React.useState('');
   const [productToDelete, setProductToDelete] = React.useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [showArchived, setShowArchived] = React.useState(false);
 
   const firestore = useFirestore();
   const { user } = useUser();
@@ -133,13 +134,34 @@ export function ProductsTable({ products }: { products: Product[] }) {
 
     try {
         await deleteDoc(productRef);
-        toast({ title: "Продукт удален", description: `Продукт "${buildProductDisplayName(productToDelete.name, productToDelete.bottleVolumeMl)}" был безвозвратно удален.` });
+        
+        // Очистить кэш localStorage
+        if (typeof window !== 'undefined' && barId) {
+          try {
+            localStorage.removeItem(`barboss_products_cache_${barId}`);
+          } catch (e) {
+            // Игнорировать ошибки очистки кэша
+          }
+        }
+        
+        // Принудительно обновить список
+        refreshProducts();
+        
+        toast({ 
+          title: "Продукт удален", 
+          description: `Продукт "${buildProductDisplayName(productToDelete.name, productToDelete.bottleVolumeMl)}" был безвозвратно удален.` 
+        });
         setProductToDelete(null);
     } catch (serverError) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: `${pathPrefix}/${productToDelete.id}`,
             operation: 'delete',
         }));
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка удаления',
+          description: 'Не удалось удалить продукт. Попробуйте еще раз.',
+        });
     } finally {
         setIsDeleting(false);
     }
@@ -149,6 +171,12 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const uniqueProducts = React.useMemo(() => {
     return dedupeProductsByName(products);
   }, [products]);
+
+  const filteredProducts = React.useMemo(() => {
+    if (!uniqueProducts) return [];
+    if (showArchived) return uniqueProducts;
+    return uniqueProducts.filter(p => p.isActive !== false);
+  }, [uniqueProducts, showArchived]);
 
 
   const columns: ColumnDef<Product>[] = [
@@ -263,7 +291,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
   ];
 
   const table = useReactTable({
-    data: uniqueProducts,
+    data: filteredProducts,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -337,6 +365,19 @@ export function ProductsTable({ products }: { products: Product[] }) {
                               placeholder="Поиск по названию..."
                               className="pl-9"
                           />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                          <Checkbox
+                              id="showArchived"
+                              checked={showArchived}
+                              onCheckedChange={(checked) => setShowArchived(checked === true)}
+                          />
+                          <label
+                              htmlFor="showArchived"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                          >
+                              Показать архивированные
+                          </label>
                       </div>
                       <Select
                           value={selectedCategory ? selectedCategory : '__all__'}

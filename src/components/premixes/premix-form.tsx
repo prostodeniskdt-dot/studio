@@ -238,7 +238,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
     if (ingredients.some(ing => ing.productId === productId)) {
       toast({
         title: 'Внимание',
-        description: 'Этот продукт уже добавлен в состав примикса',
+        description: 'Этот продукт уже добавлен в состав премикса',
         variant: 'default',
       });
       return;
@@ -329,7 +329,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
     if (ingredients.length === 0) {
       toast({
         title: 'Ошибка',
-        description: 'Примикс должен содержать хотя бы один ингредиент',
+        description: 'Премикс должен содержать хотя бы один ингредиент',
         variant: 'destructive',
       });
       return;
@@ -390,8 +390,8 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
       setDoc(premixRef, premixData, { merge: true })
         .then(() => {
           toast({ 
-            title: "Примикс обновлен",
-            description: `Примикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно обновлен.`
+            title: "Премикс обновлен",
+            description: `Премикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно обновлен.`
           });
           refresh();
           setTimeout(() => {
@@ -404,7 +404,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
           
           toast({
             title: 'Ошибка сохранения',
-            description: `Не удалось обновить примикс: ${errorMessage} (код: ${errorCode})`,
+            description: `Не удалось обновить премикс: ${errorMessage} (код: ${errorCode})`,
             variant: 'destructive',
           });
           
@@ -430,8 +430,8 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
       setDoc(premixRef, premixDataWithId, { merge: true })
         .then(() => {
           toast({ 
-            title: "Примикс создан",
-            description: `Примикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно создан.`
+            title: "Премикс создан",
+            description: `Премикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно создан.`
           });
           refresh();
           setTimeout(() => {
@@ -444,7 +444,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
           
           toast({
             title: 'Ошибка сохранения',
-            description: `Не удалось создать примикс: ${errorMessage} (код: ${errorCode})`,
+            description: `Не удалось создать премикс: ${errorMessage} (код: ${errorCode})`,
             variant: 'destructive',
           });
           
@@ -472,7 +472,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         <Alert className="mb-4">
           <Info className="h-4 w-4" />
           <AlertDescription>
-            Примикс будет сохранен в глобальную базу данных и будет доступен всем пользователям системы.
+            Премикс будет сохранен в глобальную базу данных и будет доступен всем пользователям системы.
           </AlertDescription>
         </Alert>
         
@@ -481,7 +481,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Название примикса (оригинал)</FormLabel>
+              <FormLabel>Название премикса (оригинал)</FormLabel>
               <FormControl>
                 <Input placeholder="Коктейль Манхэттен" {...field} />
               </FormControl>
@@ -493,7 +493,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         
         {/* Секция управления ингредиентами (обязательна) */}
         <Separator />
-        <h3 className="text-lg font-medium">Ингредиенты примикса</h3>
+        <h3 className="text-lg font-medium">Ингредиенты премикса</h3>
         
         <div className="space-y-4">
           {/* Панель поиска и фильтров */}
@@ -820,7 +820,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
                   Активен
                 </FormLabel>
                 <FormDescription>
-                  Активные примиксы доступны для инвентаризаций и калькулятора.
+                  Активные премиксы доступны для инвентаризаций и калькулятора.
                 </FormDescription>
               </div>
               <FormControl>
@@ -834,7 +834,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         />
         <Button type="submit" disabled={isSaving}>
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {premix ? 'Сохранить изменения' : 'Создать примикс'}
+          {premix ? 'Сохранить изменения' : 'Создать премикс'}
         </Button>
       </form>
     </Form>

@@ -54,9 +54,9 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [barId]);
 
-  // Запрос для глобальных продуктов (алкоголь и примиксы)
+  // Запрос для глобальных продуктов (алкоголь и примиксы) - без фильтра isActive для поддержки архивированных
   const globalProductsQuery = useMemoFirebase(() =>
-    firestore ? query(collection(firestore, 'products'), where('isActive', '==', true)) : null,
+    firestore ? query(collection(firestore, 'products')) : null,
     [firestore, forceRefresh]
   );
   

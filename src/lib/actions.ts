@@ -76,7 +76,7 @@ export async function createPurchaseOrdersFromSession(input: unknown): Promise<C
 
     const ordersBySupplier: Record<string, { product: Product, quantity: number }[]> = {};
     productsToOrder.forEach(item => {
-        const supplierId = item.product.defaultSupplierId || 'unknown';
+        const supplierId = item.product.defaultSupplierId || '';
         if (!ordersBySupplier[supplierId]) {
             ordersBySupplier[supplierId] = [];
         }
@@ -88,18 +88,13 @@ export async function createPurchaseOrdersFromSession(input: unknown): Promise<C
         const createdOrderIds: string[] = [];
 
         for (const supplierId in ordersBySupplier) {
-            if (supplierId === 'unknown') {
-                // In a real app, you might want to handle this more gracefully
-                logger.warn("Skipping order for products with unknown supplier.");
-                continue;
-            }
             const orderRef = doc(collection(firestore, 'bars', barId, 'purchaseOrders'));
             createdOrderIds.push(orderRef.id);
 
             const orderData = {
                 id: orderRef.id,
                 barId,
-                supplierId,
+                supplierId: supplierId || '', // Пустая строка для продуктов без поставщика
                 status: 'draft' as const,
                 orderDate: serverTimestamp(),
                 createdAt: serverTimestamp(),

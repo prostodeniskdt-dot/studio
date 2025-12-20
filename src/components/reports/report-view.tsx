@@ -7,14 +7,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn, formatCurrency, translateCategory, translateSubCategory, translateProductName } from '@/lib/utils';
-import { Download, FileType, FileJson, Loader2, ShoppingCart, BarChart, PieChart as PieChartIcon, Sparkles, AlertCircle, CheckCircle2, FileSpreadsheet, TrendingDown, TrendingUp, DollarSign, Percent } from 'lucide-react';
+import { Download, FileType, FileJson, Loader2, ShoppingCart, BarChart, PieChart as PieChartIcon, AlertCircle, CheckCircle2, FileSpreadsheet, TrendingDown, TrendingUp, DollarSign, Percent } from 'lucide-react';
 import { MetricCard } from '@/components/ui/metric-card';
 import { SectionHeader } from '@/components/ui/section-header';
 import { exportToExcel } from '@/lib/export-utils';
 import { useToast } from '@/hooks/use-toast';
 import { Timestamp } from 'firebase/firestore';
-import { useServerAction } from '@/hooks/use-server-action';
-import { analyzeInventoryVariance, type VarianceAnalysisInput, type VarianceAnalysisResult } from '@/lib/actions';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Pie, PieChart as RechartsPieChart, Cell } from 'recharts';
 import {
   DropdownMenu,
@@ -37,7 +35,6 @@ type GroupedLines = Record<string, Record<string, CalculatedInventoryLine[]>>;
 
 export function ReportView({ session, products, onCreatePurchaseOrder, isCreatingOrder }: ReportViewProps) {
   const { toast } = useToast();
-  const [aiAnalysis, setAiAnalysis] = React.useState<VarianceAnalysisResult | null>(null);
 
   // Create products map for O(1) lookup instead of O(n) find
   const productsMap = React.useMemo(() => {
@@ -105,60 +102,6 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
     [allCalculatedLines]
   );
 
-  // Prepare data for AI analysis
-  const analysisInput = React.useMemo<VarianceAnalysisInput>(() => ({
-    session: {
-      id: session.id,
-      name: session.name,
-      createdAt: session.createdAt,
-      closedAt: session.closedAt,
-    },
-    lines: allCalculatedLines.map(line => ({
-      productId: line.productId,
-      productName: line.product?.name,
-      productCategory: line.product?.category,
-      startStock: line.startStock,
-      purchases: line.purchases,
-      sales: line.sales,
-      endStock: line.endStock,
-      theoreticalEndStock: line.theoreticalEndStock,
-      differenceVolume: line.differenceVolume,
-      differenceMoney: line.differenceMoney,
-      differencePercent: line.differencePercent,
-      portionVolumeMl: line.product?.portionVolumeMl,
-    })),
-    topLosses: topLosses.map(loss => ({
-      productName: loss.product?.name || 'Неизвестный продукт',
-      differenceMoney: loss.differenceMoney,
-      differencePercent: loss.differencePercent,
-    })),
-    totals: {
-      totalLoss: totals.totalLoss,
-      totalSurplus: totals.totalSurplus,
-      totalVariance: totals.totalVariance,
-    },
-  }), [session, allCalculatedLines, topLosses, totals]);
-
-  const { execute: runAnalysis, isLoading: isAnalyzing } = useServerAction(analyzeInventoryVariance, {
-    onSuccess: (result) => {
-      setAiAnalysis(result);
-      toast({
-        title: 'Анализ завершен',
-        description: 'ИИ завершил анализ отклонений инвентаризации.',
-      });
-    },
-    onError: (error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка анализа',
-        description: error || 'Не удалось выполнить анализ. Попробуйте еще раз.',
-      });
-    },
-  });
-
-  const handleAnalyzeVariance = () => {
-    runAnalysis(analysisInput);
-  };
   
   const handleExportCSV = () => {
     // Helper function to escape CSV values - always wrap in quotes for consistency
@@ -290,14 +233,6 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
           description={`${session.name} - ${session.closedAt ? `Закрыто ${formatDate(session.closedAt)}` : 'Не закрыто'}`}
           action={
             <div className="flex gap-2">
-              <Button 
-                onClick={handleAnalyzeVariance} 
-                disabled={isAnalyzing}
-                variant="outline"
-              >
-                {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                {isAnalyzing ? 'Анализ...' : 'Проанализировать отклонения'}
-              </Button>
               <Button onClick={onCreatePurchaseOrder} disabled={isCreatingOrder || !needsReorder}>
                 {isCreatingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
                 {isCreatingOrder ? 'Создание...' : 'Создать заказ на закупку'}
@@ -479,76 +414,6 @@ export function ReportView({ session, products, onCreatePurchaseOrder, isCreatin
                 </CardContent>
             </Card>
         </div>
-
-        {/* AI Analysis Section */}
-        {aiAnalysis && (
-          <Card className="mb-6 border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                AI-анализ отклонений
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h3 className="font-semibold mb-2">Резюме</h3>
-                <p className="text-muted-foreground">{aiAnalysis.summary}</p>
-              </div>
-
-              {aiAnalysis.possibleCauses && aiAnalysis.possibleCauses.length > 0 && (
-                <div>
-                  <h3 className="font-semibold mb-3">Возможные причины</h3>
-                  <div className="space-y-4">
-                    {aiAnalysis.possibleCauses.map((cause, idx) => (
-                      <div key={idx} className="border rounded-lg p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium">{cause.cause}</h4>
-                          <span className={cn(
-                            "text-xs px-2 py-1 rounded",
-                            cause.likelihood === 'high' && "bg-destructive/10 text-destructive",
-                            cause.likelihood === 'medium' && "bg-yellow-500/10 text-yellow-700 dark:text-yellow-500",
-                            cause.likelihood === 'low' && "bg-muted text-muted-foreground"
-                          )}>
-                            {cause.likelihood === 'high' && 'Высокая вероятность'}
-                            {cause.likelihood === 'medium' && 'Средняя вероятность'}
-                            {cause.likelihood === 'low' && 'Низкая вероятность'}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-3">{cause.description}</p>
-                        {cause.recommendations && cause.recommendations.length > 0 && (
-                          <div>
-                            <p className="text-sm font-medium mb-2">Рекомендации:</p>
-                            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                              {cause.recommendations.map((rec, recIdx) => (
-                                <li key={recIdx}>{rec}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {aiAnalysis.insights && aiAnalysis.insights.length > 0 && (
-                <div>
-                  <h3 className="font-semibold mb-2">Инсайты</h3>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    {aiAnalysis.insights.map((insight, idx) => (
-                      <li key={idx}>{insight}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <div>
-                <h3 className="font-semibold mb-2">Общая оценка</h3>
-                <p className="text-muted-foreground">{aiAnalysis.overallAssessment}</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         <div className="rounded-md border">
             <Table>

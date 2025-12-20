@@ -60,6 +60,15 @@ export async function createPurchaseOrdersFromSession(input: unknown): Promise<C
     const upcomingHoliday = getUpcomingHoliday(today, russianHolidays2024, PRE_HOLIDAY_DAYS);
     const multiplier = upcomingHoliday ? HOLIDAY_MULTIPLIER : 1;
 
+    logger.info('Creating purchase orders from session', {
+        linesCount: lines.length,
+        productsCount: products.length,
+        barId,
+        userId,
+        multiplier,
+        upcomingHoliday: upcomingHoliday || 'none'
+    });
+
     const productsToOrder = lines.map(line => {
         const product = products.find(p => p.id === line.productId);
         if (!product || !product.reorderPointMl || !product.reorderQuantity) return null;
@@ -69,6 +78,16 @@ export async function createPurchaseOrdersFromSession(input: unknown): Promise<C
         }
         return null;
     }).filter((p): p is NonNullable<typeof p> => p !== null);
+
+    logger.info('Products to order', {
+        count: productsToOrder.length,
+        products: productsToOrder.map(p => ({
+            id: p.product.id,
+            name: p.product.name,
+            supplierId: p.product.defaultSupplierId || 'none',
+            quantity: p.quantity
+        }))
+    });
 
     if (productsToOrder.length === 0) {
         throw new Error('Заказ не требуется: остатки всех продуктов выше минимального уровня.');
@@ -81,6 +100,14 @@ export async function createPurchaseOrdersFromSession(input: unknown): Promise<C
             ordersBySupplier[supplierId] = [];
         }
         ordersBySupplier[supplierId].push(item);
+    });
+
+    logger.info('Orders grouped by supplier', {
+        suppliersCount: Object.keys(ordersBySupplier).length,
+        suppliers: Object.keys(ordersBySupplier).map(supplierId => ({
+            supplierId: supplierId || 'empty',
+            productsCount: ordersBySupplier[supplierId].length
+        }))
     });
 
     try {
@@ -116,9 +143,18 @@ export async function createPurchaseOrdersFromSession(input: unknown): Promise<C
             });
         }
         
-        if(createdOrderIds.length > 0) {
-            await batch.commit();
+        if (createdOrderIds.length === 0) {
+            logger.warn("No orders created - all products may be without suppliers or no products need reordering");
+            // Возвращаем пустой результат вместо ошибки, чтобы пользователь видел сообщение
+            return {
+                orderIds: [],
+                createdCount: 0,
+                holidayBonus: !!upcomingHoliday,
+                holidayName: upcomingHoliday || undefined,
+            };
         }
+        
+        await batch.commit();
 
         return {
             orderIds: createdOrderIds,

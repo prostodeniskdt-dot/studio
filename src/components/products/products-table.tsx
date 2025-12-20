@@ -101,11 +101,20 @@ export function ProductsTable({ products }: { products: Product[] }) {
     // Всегда используем коллекцию products для обычных продуктов
     const collectionPath = collection(firestore, 'products');
     const productRef = doc(collectionPath, product.id);
-    const updateData = { isActive: !product.isActive };
+    const updateData = { isActive: !(product.isActive ?? true) };
     const pathPrefix = 'products';
     
     updateDoc(productRef, updateData)
       .then(() => {
+        // Очистить кэш localStorage
+        if (typeof window !== 'undefined' && barId) {
+          try {
+            localStorage.removeItem(`barboss_products_cache_${barId}`);
+          } catch (e) {
+            // Игнорировать ошибки очистки кэша
+          }
+        }
+        
         toast({ title: "Статус продукта изменен." });
         // Обновить контекст продуктов для отображения изменений
         refreshProducts();

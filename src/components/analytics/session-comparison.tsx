@@ -173,7 +173,8 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
           </CardHeader>
           <CardContent>
             <div className="rounded-md border overflow-hidden">
-              <Table>
+              <div className="overflow-x-auto">
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Продукт</TableHead>
@@ -192,7 +193,7 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
                         }
                       }
                       return (
-                        <TableHead key={session.id} className="text-right">
+                        <TableHead key={session.id} className="text-right min-w-[120px]">
                           {session.name}
                           {sessionDate && (
                             <>
@@ -236,7 +237,7 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
                             <TableRow key={row.productId}>
                               <TableCell className="font-medium">{row.productName}</TableCell>
                               {selectedSessions.map(session => (
-                                <TableCell key={session.id} className="text-right font-mono">
+                                <TableCell key={session.id} className="text-right font-mono min-w-[120px]">
                                   {row.sessions[session.id] ?? 0}
                                 </TableCell>
                               ))}
@@ -257,6 +258,7 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
                     ))}
                 </TableBody>
               </Table>
+              </div>
             </div>
           </CardContent>
         </Card>

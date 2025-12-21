@@ -92,6 +92,10 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const handleCloseSheet = () => {
     setIsSheetOpen(false);
     setEditingProduct(undefined);
+    // Принудительно обновить список продуктов после закрытия формы
+    setTimeout(() => {
+      refreshProducts();
+    }, 200);
   }
 
   const handleArchiveAction = (product: Product) => {

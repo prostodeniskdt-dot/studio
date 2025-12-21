@@ -172,12 +172,12 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table>
+            <div className="rounded-md border overflow-hidden w-full">
+              <div className="overflow-x-auto max-w-full">
+                <Table className="min-w-full">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Продукт</TableHead>
+                    <TableHead className="min-w-[200px] sticky left-0 bg-background z-10">Продукт</TableHead>
                     {selectedSessions.map(session => {
                       let sessionDate = '';
                       if (session.closedAt) {
@@ -218,7 +218,7 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
                     .map(([category, rows]) => (
                       <React.Fragment key={category}>
                         <TableRow className="bg-primary/10 hover:bg-primary/15 border-b-2 border-primary/20">
-                          <TableCell colSpan={selectedSessions.length + (selectedSessions.length === 2 ? 3 : 1)} className="font-bold text-base py-3">
+                          <TableCell colSpan={selectedSessions.length + (selectedSessions.length === 2 ? 3 : 1)} className="font-bold text-base py-3 sticky left-0 bg-primary/10 z-10">
                             <div className="flex items-center gap-2">
                               <div className="h-1 w-1 rounded-full bg-primary" />
                               {translateCategory(category as any)}
@@ -235,7 +235,7 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
 
                           return (
                             <TableRow key={row.productId}>
-                              <TableCell className="font-medium">{row.productName}</TableCell>
+                              <TableCell className="font-medium min-w-[200px] sticky left-0 bg-background z-10">{row.productName}</TableCell>
                               {selectedSessions.map(session => (
                                 <TableCell key={session.id} className="text-right font-mono min-w-[120px]">
                                   {row.sessions[session.id] ?? 0}

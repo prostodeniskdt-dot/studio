@@ -69,7 +69,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
   const [isSaving, setIsSaving] = React.useState(false);
-  const { globalProducts } = useProducts();
+  const { globalProducts, refresh: refreshProducts } = useProducts();
 
   const suppliersQuery = useMemoFirebase(() => 
     firestore && barId ? collection(firestore, 'bars', barId, 'suppliers') : null,
@@ -193,15 +193,44 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     const pathPrefix = 'products';
     setDoc(productRef, productData, { merge: true })
       .then(() => {
-        toast({ title: product ? "Продукт обновлен" : "Продукт создан" });
-        onFormSubmit();
+        // Очистить кэш localStorage
+        if (typeof window !== 'undefined' && barId) {
+          try {
+            localStorage.removeItem(`barboss_products_cache_${barId}`);
+          } catch (e) {
+            // Игнорировать ошибки очистки кэша
+          }
+        }
+        
+        // Обновить контекст продуктов
+        refreshProducts();
+        
+        toast({ 
+          title: product ? "Продукт обновлен" : "Продукт создан",
+          description: product ? "Изменения сохранены успешно" : "Новый продукт добавлен в базу"
+        });
+        
+        // Закрыть форму после небольшой задержки для обновления UI
+        setTimeout(() => {
+          onFormSubmit();
+        }, 100);
       })
       .catch((serverError) => {
+        console.error('Error saving product:', serverError);
         errorEmitter.emit('permission-error', new FirestorePermissionError({ 
             path: `${pathPrefix}/${productRef.id}`, 
             operation: product ? 'update' : 'create',
             requestResourceData: productData
         }));
+        
+        // Показать понятное сообщение об ошибке
+        toast({
+          title: 'Ошибка сохранения',
+          description: serverError instanceof Error 
+            ? serverError.message 
+            : 'Не удалось сохранить продукт. Проверьте права доступа и подключение к интернету.',
+          variant: 'destructive',
+        });
       })
       .finally(() => {
         setIsSaving(false);

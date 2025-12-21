@@ -243,15 +243,6 @@ export default function SessionPage() {
       return;
     }
 
-    if (!line.product.defaultSupplierId) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'У продукта не указан поставщик по умолчанию. Укажите поставщика в настройках продукта.',
-      });
-      return;
-    }
-
     if (!line.product.reorderQuantity) {
       toast({
         variant: 'destructive',
@@ -262,11 +253,14 @@ export default function SessionPage() {
     }
 
     try {
-      // Найти существующий заказ для этого поставщика со статусом draft
+      // Получить supplierId (может быть пустой строкой если поставщик не указан)
+      const supplierId = line.product.defaultSupplierId || '';
+      
+      // Найти существующий заказ для этого поставщика (или без поставщика) со статусом draft
       const ordersRef = collection(firestore, 'bars', barId, 'purchaseOrders');
       const ordersQuery = query(
         ordersRef,
-        where('supplierId', '==', line.product.defaultSupplierId),
+        where('supplierId', '==', supplierId),
         where('status', '==', 'draft')
       );
       const ordersSnapshot = await getDocs(ordersQuery);
@@ -281,7 +275,7 @@ export default function SessionPage() {
         const orderData = {
           id: orderRef.id,
           barId,
-          supplierId: line.product.defaultSupplierId,
+          supplierId: supplierId, // Может быть пустой строкой
           status: 'draft' as const,
           orderDate: serverTimestamp(),
           createdAt: serverTimestamp(),
@@ -320,7 +314,7 @@ export default function SessionPage() {
 
       toast({
         title: 'Продукт добавлен в заказ',
-        description: `${buildProductDisplayName(line.product.name, line.product.bottleVolumeMl)} добавлен в заказ.`,
+        description: `${buildProductDisplayName(line.product.name, line.product.bottleVolumeMl)} добавлен в заказ${line.product.defaultSupplierId ? '' : ' (без указания поставщика)'}.`,
       });
     } catch (error) {
       console.error('Error adding to order:', error);

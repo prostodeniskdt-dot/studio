@@ -86,8 +86,19 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
 
       selectedSessionsForCalculation.forEach(session => {
         const line = session.lines?.find(l => l.productId === productId);
-        // Использовать undefined для отсутствующих данных вместо 0
-        sessionsData[session.id] = line?.endStock;
+        // Сохраняем значение напрямую, даже если оно 0
+        const stockValue = line?.endStock;
+        sessionsData[session.id] = stockValue !== undefined ? stockValue : undefined;
+        
+        // Отладочное логирование (можно убрать после исправления)
+        if (productId && !line) {
+          console.log('No line found for product:', {
+            productId,
+            sessionId: session.id,
+            sessionName: session.name,
+            linesCount: session.lines?.length || 0
+          });
+        }
       });
 
       return {
@@ -253,22 +264,47 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
                         {rows.map(row => {
                           const firstSession = selectedSessions[0];
                           const lastSession = selectedSessions[selectedSessions.length - 1];
-                          const firstStock = firstSession ? (row.sessions[firstSession.id] ?? null) : null;
-                          const lastStock = lastSession ? (row.sessions[lastSession.id] ?? null) : null;
+
+                          // Получаем значения напрямую из sessionsData
+                          const firstStockRaw = firstSession ? row.sessions[firstSession.id] : undefined;
+                          const lastStockRaw = lastSession ? row.sessions[lastSession.id] : undefined;
+
+                          // Проверяем что значения существуют и являются числами (включая 0)
+                          const firstStockValue = (firstStockRaw !== undefined && firstStockRaw !== null && typeof firstStockRaw === 'number') 
+                            ? firstStockRaw 
+                            : null;
+                          const lastStockValue = (lastStockRaw !== undefined && lastStockRaw !== null && typeof lastStockRaw === 'number') 
+                            ? lastStockRaw 
+                            : null;
 
                           // Разница между последней и первой сессией
-                          // Проверяем что оба значения не null и не undefined, и являются числами
-                          const firstStockValue = firstStock !== null && firstStock !== undefined && typeof firstStock === 'number' ? firstStock : null;
-                          const lastStockValue = lastStock !== null && lastStock !== undefined && typeof lastStock === 'number' ? lastStock : null;
-                          
                           const difference = (firstStockValue !== null && lastStockValue !== null && selectedSessions.length >= 2) 
                             ? lastStockValue - firstStockValue 
                             : null;
 
-                          // Процент изменения от первой сессии
-                          const percentage = (difference !== null && firstStockValue !== null && firstStockValue > 0)
+                          // Процент изменения от первой сессии (избегаем деления на ноль)
+                          const percentage = (difference !== null && firstStockValue !== null && firstStockValue !== 0)
                             ? ((difference / firstStockValue) * 100).toFixed(1)
+                            : (difference !== null && firstStockValue === 0 && lastStockValue !== 0)
+                            ? '∞' // Бесконечность если было 0, стало не 0
                             : null;
+
+                          // Отладочное логирование для первых продуктов (можно убрать после исправления)
+                          if (selectedSessions.length >= 2 && row.productId && Math.random() < 0.1) {
+                            console.log('Analytics calculation debug:', {
+                              productId: row.productId,
+                              productName: row.productName,
+                              firstSessionId: firstSession?.id,
+                              lastSessionId: lastSession?.id,
+                              firstStockRaw,
+                              lastStockRaw,
+                              firstStockValue,
+                              lastStockValue,
+                              difference,
+                              percentage,
+                              allSessionsData: row.sessions
+                            });
+                          }
 
                           return (
                             <TableRow key={row.productId}>

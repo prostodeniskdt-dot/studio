@@ -10,7 +10,7 @@ import Link from "next/link";
 import { translateStatus, buildProductDisplayName } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine, CalculatedInventoryLine } from '@/lib/types';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, collection, query, setDoc, writeBatch, serverTimestamp, updateDoc, getDoc, where } from 'firebase/firestore';
+import { doc, collection, query, setDoc, writeBatch, serverTimestamp, updateDoc, getDoc, where, getDocs } from 'firebase/firestore';
 import { useProducts } from '@/contexts/products-context';
 import {
   DropdownMenu,
@@ -49,8 +49,6 @@ import { useOffline } from '@/hooks/use-offline';
 import { HelpIcon } from '@/components/ui/help-icon';
 import { Progress } from '@/components/ui/progress';
 import { WifiOff, AlertTriangle } from 'lucide-react';
-import { useServerAction } from '@/hooks/use-server-action';
-import { createPurchaseOrdersFromSession } from '@/lib/actions';
 
 export default function SessionPage() {
   const params = useParams();
@@ -235,42 +233,21 @@ export default function SessionPage() {
     }
   };
   
-  const { execute: addToOrder, isLoading: isAddingToOrder } = useServerAction(async (input: { line: any; products: any[]; barId: string; userId: string }) => {
-    // Создаем временный массив lines с одним продуктом для создания заказа
-    const tempLines = [{ productId: input.line.product.id, endStock: input.line.endStock }];
-    return createPurchaseOrdersFromSession({
-      lines: tempLines,
-      products: input.products,
-      barId: input.barId,
-      userId: input.userId,
-    });
-  }, {
-    onSuccess: (result) => {
-      toast({
-        title: 'Продукт добавлен в заказ',
-        description: `Создан новый заказ. Продукт будет добавлен с рекомендуемым количеством.`,
-      });
-      if (result.orderIds.length > 0) {
-        router.push(`/dashboard/purchase-orders/${result.orderIds[0]}`);
-      }
-    },
-    onError: (error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка при добавлении в заказ',
-        description: error,
-      });
-    },
-  });
-
   const handleAddToOrder = async (line: CalculatedInventoryLine & { product: Product }) => {
-    if (!user || !barId || !allProducts || !line.product.defaultSupplierId) {
+    if (!user || !barId || !allProducts || !firestore) {
       toast({
         variant: 'destructive',
         title: 'Ошибка',
-        description: !line.product.defaultSupplierId 
-          ? 'У продукта не указан поставщик по умолчанию. Укажите поставщика в настройках продукта.'
-          : 'Не удалось определить пользователя',
+        description: 'Не удалось определить пользователя или подключение к базе данных',
+      });
+      return;
+    }
+
+    if (!line.product.defaultSupplierId) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'У продукта не указан поставщик по умолчанию. Укажите поставщика в настройках продукта.',
       });
       return;
     }
@@ -284,12 +261,75 @@ export default function SessionPage() {
       return;
     }
 
-    addToOrder({
-      line,
-      products: allProducts || [],
-      barId,
-      userId: user.uid,
-    });
+    try {
+      // Найти существующий заказ для этого поставщика со статусом draft
+      const ordersRef = collection(firestore, 'bars', barId, 'purchaseOrders');
+      const ordersQuery = query(
+        ordersRef,
+        where('supplierId', '==', line.product.defaultSupplierId),
+        where('status', '==', 'draft')
+      );
+      const ordersSnapshot = await getDocs(ordersQuery);
+      
+      let orderRef;
+      if (!ordersSnapshot.empty) {
+        // Использовать существующий заказ
+        orderRef = doc(firestore, 'bars', barId, 'purchaseOrders', ordersSnapshot.docs[0].id);
+      } else {
+        // Создать новый заказ
+        orderRef = doc(collection(firestore, 'bars', barId, 'purchaseOrders'));
+        const orderData = {
+          id: orderRef.id,
+          barId,
+          supplierId: line.product.defaultSupplierId,
+          status: 'draft' as const,
+          orderDate: serverTimestamp(),
+          createdAt: serverTimestamp(),
+          createdByUserId: user.uid,
+        };
+        await setDoc(orderRef, orderData);
+      }
+
+      // Проверить, нет ли уже этого продукта в заказе
+      const linesRef = collection(orderRef, 'lines');
+      const linesQuery = query(linesRef, where('productId', '==', line.product.id));
+      const linesSnapshot = await getDocs(linesQuery);
+
+      if (!linesSnapshot.empty) {
+        // Обновить существующую строку
+        const existingLine = linesSnapshot.docs[0];
+        const currentQuantity = existingLine.data().quantity || 0;
+        const newQuantity = currentQuantity + (line.product.reorderQuantity || 1);
+        await updateDoc(existingLine.ref, {
+          quantity: newQuantity,
+          costPerItem: line.product.costPerBottle || 0,
+        });
+      } else {
+        // Создать новую строку
+        const lineRef = doc(collection(orderRef, 'lines'));
+        const lineData = {
+          id: lineRef.id,
+          purchaseOrderId: orderRef.id,
+          productId: line.product.id,
+          quantity: line.product.reorderQuantity || 1,
+          costPerItem: line.product.costPerBottle || 0,
+          receivedQuantity: 0,
+        };
+        await setDoc(lineRef, lineData);
+      }
+
+      toast({
+        title: 'Продукт добавлен в заказ',
+        description: `${buildProductDisplayName(line.product.name, line.product.bottleVolumeMl)} добавлен в заказ.`,
+      });
+    } catch (error) {
+      console.error('Error adding to order:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка при добавлении в заказ',
+        description: error instanceof Error ? error.message : 'Неизвестная ошибка',
+      });
+    }
   };
 
   const handleAddProductToSession = async (productId: string) => {

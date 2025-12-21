@@ -179,13 +179,14 @@ const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, p
                                 <span>{line.endStock}</span>
                               )}
                               {line.product.reorderPointMl && 
-                               line.endStock < line.product.reorderPointMl && 
-                               line.product.defaultSupplierId && (
+                               line.endStock < line.product.reorderPointMl && (
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="h-8"
+                                  className={`h-8 ${!line.product.defaultSupplierId ? 'opacity-50' : ''}`}
                                   onClick={() => onAddToOrder?.(line)}
+                                  disabled={!line.product.defaultSupplierId}
+                                  title={!line.product.defaultSupplierId ? 'У продукта не указан поставщик по умолчанию. Укажите поставщика в настройках продукта.' : 'Добавить продукт в заказ'}
                                 >
                                   <ShoppingCart className="h-3 w-3 mr-1" />
                                   Добавить в заказ

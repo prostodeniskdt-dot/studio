@@ -4,9 +4,9 @@ import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { translateStatus } from '@/lib/utils';
 import type { InventorySession } from '@/lib/types';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { FileText, Circle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface SessionHeaderProps {
   session: InventorySession;
@@ -14,6 +14,8 @@ interface SessionHeaderProps {
 }
 
 export function SessionHeader({ session, isEditable }: SessionHeaderProps) {
+  const router = useRouter();
+  
   const getStatusVariant = (status: InventorySession['status']) => {
     switch (status) {
       case 'completed':
@@ -25,6 +27,11 @@ export function SessionHeader({ session, isEditable }: SessionHeaderProps) {
       default:
         return 'default';
     }
+  };
+
+  const handleViewReport = () => {
+    console.log('Opening report for session:', session.id);
+    router.push(`/dashboard/sessions/${session.id}/report`);
   };
 
   return (
@@ -44,11 +51,12 @@ export function SessionHeader({ session, isEditable }: SessionHeaderProps) {
         </Badge>
       </div>
       {session.status === 'completed' && (
-        <Button asChild className="transition-all duration-200">
-          <Link href={`/dashboard/sessions/${session.id}/report`}>
-            <FileText className="mr-2 h-4 w-4" />
-            Смотреть отчет
-          </Link>
+        <Button 
+          onClick={handleViewReport}
+          className="transition-all duration-200"
+        >
+          <FileText className="mr-2 h-4 w-4" />
+          Смотреть отчет
         </Button>
       )}
     </div>

@@ -135,6 +135,12 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   }, [watchedName, form]);
 
   function onSubmit(data: ProductFormValues) {
+    console.log('onSubmit called', { 
+      isEditing: !!product, 
+      productId: product?.id, 
+      data: { name: data.name, bottleVolumeMl: data.bottleVolumeMl } 
+    });
+    
     if (!firestore || !barId) {
       toast({
         title: 'Ошибка',
@@ -150,7 +156,8 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
       const duplicate = checkProductDuplicate(
         baseName,
         globalProducts, // Для новых продуктов проверяем все
-        85
+        85,
+        data.bottleVolumeMl // Передаем объем для сравнения только с продуктами того же объема
       );
       
       if (duplicate) {
@@ -193,17 +200,25 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     const pathPrefix = 'products';
     setDoc(productRef, productData, { merge: true })
       .then(() => {
+        console.log('Product saved successfully:', productRef.id, product ? 'updated' : 'created');
+        
         // Очистить кэш localStorage
         if (typeof window !== 'undefined' && barId) {
           try {
             localStorage.removeItem(`barboss_products_cache_${barId}`);
+            console.log('Cache cleared for barId:', barId);
           } catch (e) {
-            // Игнорировать ошибки очистки кэша
+            console.warn('Failed to clear cache:', e);
           }
         }
         
         // Обновить контекст продуктов
-        refreshProducts();
+        try {
+          refreshProducts();
+          console.log('Products context refreshed');
+        } catch (e) {
+          console.error('Failed to refresh products context:', e);
+        }
         
         toast({ 
           title: product ? "Продукт обновлен" : "Продукт создан",
@@ -212,11 +227,14 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         
         // Закрыть форму после небольшой задержки для обновления UI
         setTimeout(() => {
+          console.log('Closing form via onFormSubmit');
           onFormSubmit();
         }, 100);
       })
       .catch((serverError) => {
         console.error('Error saving product:', serverError);
+        setIsSaving(false); // Убедиться, что состояние сброшено при ошибке
+        
         errorEmitter.emit('permission-error', new FirestorePermissionError({ 
             path: `${pathPrefix}/${productRef.id}`, 
             operation: product ? 'update' : 'create',

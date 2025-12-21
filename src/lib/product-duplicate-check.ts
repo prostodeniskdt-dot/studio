@@ -67,12 +67,14 @@ function calculateSimilarity(str1: string, str2: string): number {
  * @param newProductName - Название нового продукта (может содержать объем)
  * @param existingProducts - Массив существующих продуктов
  * @param threshold - Порог похожести в процентах (по умолчанию 85%)
+ * @param newProductVolume - Объем нового продукта в мл (опционально, для сравнения только с продуктами того же объема)
  * @returns Найденный дубликат или null
  */
 export function checkProductDuplicate(
   newProductName: string,
   existingProducts: Product[],
-  threshold: number = 85
+  threshold: number = 85,
+  newProductVolume?: number // Новый параметр для объема
 ): Product | null {
   const normalizedNewName = normalizeName(newProductName);
   
@@ -82,6 +84,11 @@ export function checkProductDuplicate(
   }
   
   for (const product of existingProducts) {
+    // Если указан объем нового продукта, сравниваем только с продуктами с таким же объемом
+    if (newProductVolume !== undefined && product.bottleVolumeMl !== newProductVolume) {
+      continue;
+    }
+    
     const normalizedExistingName = normalizeName(product.name);
     
     // Если название пустое, пропускаем

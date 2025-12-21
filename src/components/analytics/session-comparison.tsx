@@ -204,10 +204,10 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
                         </TableHead>
                       );
                     })}
-                    {selectedSessions.length === 2 && (
+                    {selectedSessions.length >= 2 && (
                       <>
-                        <TableHead className="text-right">Разница (мл)</TableHead>
-                        <TableHead className="text-right">Динамика (%)</TableHead>
+                        <TableHead className="text-right min-w-[120px]">Разница (мл)</TableHead>
+                        <TableHead className="text-right min-w-[120px]">Динамика (%)</TableHead>
                       </>
                     )}
                   </TableRow>
@@ -218,7 +218,7 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
                     .map(([category, rows]) => (
                       <React.Fragment key={category}>
                         <TableRow className="bg-primary/10 hover:bg-primary/15 border-b-2 border-primary/20">
-                          <TableCell colSpan={selectedSessions.length + (selectedSessions.length === 2 ? 3 : 1)} className="font-bold text-base py-3 sticky left-0 bg-primary/10 z-10">
+                          <TableCell colSpan={selectedSessions.length + (selectedSessions.length >= 2 ? 3 : 1)} className="font-bold text-base py-3 sticky left-0 bg-primary/10 z-10">
                             <div className="flex items-center gap-2">
                               <div className="h-1 w-1 rounded-full bg-primary" />
                               {translateCategory(category as any)}
@@ -228,8 +228,8 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
                         {rows.map(row => {
                           const session1Stock = selectedSessions[0] ? row.sessions[selectedSessions[0].id] ?? 0 : 0;
                           const session2Stock = selectedSessions[1] ? row.sessions[selectedSessions[1].id] ?? 0 : 0;
-                          const difference = selectedSessions.length === 2 ? session2Stock - session1Stock : 0;
-                          const percentage = selectedSessions.length === 2 && session1Stock > 0 
+                          const difference = selectedSessions.length >= 2 ? session2Stock - session1Stock : 0;
+                          const percentage = selectedSessions.length >= 2 && session1Stock > 0 
                             ? ((difference / session1Stock) * 100).toFixed(1) 
                             : null;
 
@@ -241,12 +241,12 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
                                   {row.sessions[session.id] ?? 0}
                                 </TableCell>
                               ))}
-                              {selectedSessions.length === 2 && (
+                              {selectedSessions.length >= 2 && (
                                 <>
-                                  <TableCell className={difference > 0 ? 'text-success text-right font-mono font-semibold' : difference < 0 ? 'text-destructive text-right font-mono font-semibold' : 'text-right font-mono'}>
+                                  <TableCell className={`${difference > 0 ? 'text-success' : difference < 0 ? 'text-destructive' : ''} text-right font-mono font-semibold min-w-[120px]`}>
                                     {difference > 0 ? '+' : ''}{difference}
                                   </TableCell>
-                                  <TableCell className={percentage && parseFloat(percentage) > 0 ? 'text-success text-right font-mono font-semibold' : percentage && parseFloat(percentage) < 0 ? 'text-destructive text-right font-mono font-semibold' : 'text-right font-mono'}>
+                                  <TableCell className={`${percentage && parseFloat(percentage) > 0 ? 'text-success' : percentage && parseFloat(percentage) < 0 ? 'text-destructive' : ''} text-right font-mono font-semibold min-w-[120px]`}>
                                     {percentage ? (parseFloat(percentage) > 0 ? '+' : '') + percentage + '%' : '-'}
                                   </TableCell>
                                 </>

@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -47,7 +48,7 @@ import { SessionActions } from '@/components/sessions/session-actions';
 import { useOffline } from '@/hooks/use-offline';
 import { HelpIcon } from '@/components/ui/help-icon';
 import { Progress } from '@/components/ui/progress';
-import { WifiOff } from 'lucide-react';
+import { WifiOff, AlertTriangle } from 'lucide-react';
 import { useServerAction } from '@/hooks/use-server-action';
 import { createPurchaseOrdersFromSession } from '@/lib/actions';
 
@@ -152,6 +153,22 @@ export default function SessionPage() {
       return () => clearTimeout(timer);
     }
   }, [isLoadingSession, session, cachedSession, sessionError, router, toast]);
+
+  // Обработка ошибок загрузки сессии
+  React.useEffect(() => {
+    if (sessionError) {
+      console.error('Error loading session:', sessionError);
+      hasNavigatedRef.current = true;
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка загрузки инвентаризации',
+        description: sessionError instanceof Error 
+          ? sessionError.message 
+          : 'Не удалось загрузить данные инвентаризации. Проверьте подключение к интернету.',
+      });
+      // Не перенаправлять автоматически, дать пользователю возможность повторить
+    }
+  }, [sessionError, toast]);
 
   React.useEffect(() => {
     if (lines) {
@@ -483,10 +500,6 @@ export default function SessionPage() {
     );
   }
 
-  if (sessionError && !cachedSession) {
-    return <div className="text-center text-destructive p-4">Ошибка загрузки сессии: {sessionError.message}</div>;
-  }
-  
   // Использовать effectiveSession для проверки существования
   if (!effectiveSession) {
     // Проверка уже обработана в useEffect с таймаутом
@@ -496,9 +509,45 @@ export default function SessionPage() {
       </div>
     );
   }
+
+  // Явное отображение ошибки загрузки
+  if (sessionError && !isLoadingSession) {
+    return (
+      <div className="flex items-center justify-center h-full pt-20">
+        <Alert className="max-w-md" variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Ошибка загрузки</AlertTitle>
+          <AlertDescription>
+            {sessionError instanceof Error 
+              ? sessionError.message 
+              : 'Не удалось загрузить инвентаризацию. Попробуйте обновить страницу.'}
+            <Button 
+              variant="link" 
+              className="p-0 h-auto ml-1"
+              onClick={() => window.location.reload()}
+            >
+              Обновить страницу
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
   
-  const isLoading = isLoadingLines || isLoadingProducts;
+  const isLoading = (isLoadingSession || isLoadingLines || isLoadingProducts) && !sessionError;
   const isEditable = effectiveSession.status === 'in_progress';
+  
+  // Логирование для отладки
+  React.useEffect(() => {
+    console.log('SessionPage - Loading state:', {
+      id,
+      isLoadingSession,
+      hasSession: !!session,
+      hasCachedSession: !!cachedSession,
+      hasError: !!sessionError,
+      barId
+    });
+  }, [id, isLoadingSession, session, cachedSession, sessionError, barId]);
 
   return (
     <>

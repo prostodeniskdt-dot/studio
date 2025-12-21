@@ -17,7 +17,7 @@ type ComparisonRow = {
   productId: string;
   productName: string;
   category: string;
-  sessions: Record<string, number>; // sessionId -> endStock
+  sessions: Record<string, number | undefined>; // sessionId -> endStock (может быть undefined)
   difference?: number; // Разница между сессиями
   [key: `session_${string}`]: number; // Динамические ключи для сессий
 };
@@ -52,16 +52,28 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
     });
   };
 
+  // Получить отсортированные сессии для расчетов
+  const selectedSessionsForCalculation = React.useMemo(() => {
+    const filtered = sessions.filter(s => selectedSessionIds.has(s.id));
+    return [...filtered].sort((a, b) => {
+      const dateA = a.closedAt 
+        ? (a.closedAt instanceof Timestamp ? a.closedAt.toMillis() : (a.closedAt as any)?.toMillis?.() || 0)
+        : (a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : (a.createdAt as any)?.toMillis?.() || 0);
+      const dateB = b.closedAt 
+        ? (b.closedAt instanceof Timestamp ? b.closedAt.toMillis() : (b.closedAt as any)?.toMillis?.() || 0)
+        : (b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : (b.createdAt as any)?.toMillis?.() || 0);
+      return dateA - dateB; // Сортировка по возрастанию (старые сначала)
+    });
+  }, [sessions, selectedSessionIds]);
+
   // Создать данные для сравнения
   const comparisonData = React.useMemo(() => {
     if (selectedSessionIds.size === 0) return [];
-
-    const selectedSessions = sessions.filter(s => selectedSessionIds.has(s.id));
-    if (selectedSessions.length === 0) return [];
+    if (selectedSessionsForCalculation.length === 0) return [];
 
     // Собрать все уникальные продукты из выбранных сессий
     const allProductIds = new Set<string>();
-    selectedSessions.forEach(session => {
+    selectedSessionsForCalculation.forEach(session => {
       session.lines?.forEach(line => {
         allProductIds.add(line.productId);
       });
@@ -70,11 +82,12 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
     // Создать строки сравнения
     const rows: ComparisonRow[] = Array.from(allProductIds).map(productId => {
       const product = productsMap.get(productId);
-      const sessionsData: Record<string, number> = {};
+      const sessionsData: Record<string, number | undefined> = {};
 
-      selectedSessions.forEach(session => {
+      selectedSessionsForCalculation.forEach(session => {
         const line = session.lines?.find(l => l.productId === productId);
-        sessionsData[session.id] = line?.endStock ?? 0;
+        // Использовать undefined для отсутствующих данных вместо 0
+        sessionsData[session.id] = line?.endStock;
       });
 
       return {
@@ -100,9 +113,21 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
     });
 
     return grouped;
-  }, [selectedSessionIds, sessions, productsMap]);
+  }, [selectedSessionIds, selectedSessionsForCalculation, productsMap]);
 
-  const selectedSessions = sessions.filter(s => selectedSessionIds.has(s.id));
+  // Получить отсортированные сессии для отображения
+  const selectedSessions = React.useMemo(() => {
+    const filtered = sessions.filter(s => selectedSessionIds.has(s.id));
+    return [...filtered].sort((a, b) => {
+      const dateA = a.closedAt 
+        ? (a.closedAt instanceof Timestamp ? a.closedAt.toMillis() : (a.closedAt as any)?.toMillis?.() || 0)
+        : (a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : (a.createdAt as any)?.toMillis?.() || 0);
+      const dateB = b.closedAt 
+        ? (b.closedAt instanceof Timestamp ? b.closedAt.toMillis() : (b.closedAt as any)?.toMillis?.() || 0)
+        : (b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : (b.createdAt as any)?.toMillis?.() || 0);
+      return dateA - dateB;
+    });
+  }, [sessions, selectedSessionIds]);
 
   if (sessions.length === 0) {
     return (
@@ -226,28 +251,39 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
                           </TableCell>
                         </TableRow>
                         {rows.map(row => {
-                          const session1Stock = selectedSessions[0] ? row.sessions[selectedSessions[0].id] ?? 0 : 0;
-                          const session2Stock = selectedSessions[1] ? row.sessions[selectedSessions[1].id] ?? 0 : 0;
-                          const difference = selectedSessions.length >= 2 ? session2Stock - session1Stock : 0;
-                          const percentage = selectedSessions.length >= 2 && session1Stock > 0 
-                            ? ((difference / session1Stock) * 100).toFixed(1) 
+                          const firstSession = selectedSessions[0];
+                          const lastSession = selectedSessions[selectedSessions.length - 1];
+                          const firstStock = firstSession ? (row.sessions[firstSession.id] ?? null) : null;
+                          const lastStock = lastSession ? (row.sessions[lastSession.id] ?? null) : null;
+
+                          // Разница между последней и первой сессией
+                          const difference = (firstStock !== null && lastStock !== null && selectedSessions.length >= 2) 
+                            ? lastStock - firstStock 
+                            : null;
+
+                          // Процент изменения от первой сессии
+                          const percentage = (difference !== null && firstStock !== null && firstStock > 0)
+                            ? ((difference / firstStock) * 100).toFixed(1)
                             : null;
 
                           return (
                             <TableRow key={row.productId}>
                               <TableCell className="font-medium min-w-[200px] sticky left-0 bg-background z-10">{row.productName}</TableCell>
-                              {selectedSessions.map(session => (
-                                <TableCell key={session.id} className="text-right font-mono min-w-[120px]">
-                                  {row.sessions[session.id] ?? 0}
-                                </TableCell>
-                              ))}
+                              {selectedSessions.map(session => {
+                                const stock = row.sessions[session.id];
+                                return (
+                                  <TableCell key={session.id} className="text-right font-mono min-w-[120px]">
+                                    {stock !== null && stock !== undefined ? stock : '-'}
+                                  </TableCell>
+                                );
+                              })}
                               {selectedSessions.length >= 2 && (
                                 <>
-                                  <TableCell className={`${difference > 0 ? 'text-success' : difference < 0 ? 'text-destructive' : ''} text-right font-mono font-semibold min-w-[120px]`}>
-                                    {difference > 0 ? '+' : ''}{difference}
+                                  <TableCell className={`${difference !== null ? (difference > 0 ? 'text-success' : difference < 0 ? 'text-destructive' : '') : ''} text-right font-mono font-semibold min-w-[120px]`}>
+                                    {difference !== null ? (difference > 0 ? '+' : '') + difference : '-'}
                                   </TableCell>
-                                  <TableCell className={`${percentage && parseFloat(percentage) > 0 ? 'text-success' : percentage && parseFloat(percentage) < 0 ? 'text-destructive' : ''} text-right font-mono font-semibold min-w-[120px]`}>
-                                    {percentage ? (parseFloat(percentage) > 0 ? '+' : '') + percentage + '%' : '-'}
+                                  <TableCell className={`${percentage !== null ? (parseFloat(percentage) > 0 ? 'text-success' : parseFloat(percentage) < 0 ? 'text-destructive' : '') : ''} text-right font-mono font-semibold min-w-[120px]`}>
+                                    {percentage !== null ? (parseFloat(percentage) > 0 ? '+' : '') + percentage + '%' : '-'}
                                   </TableCell>
                                 </>
                               )}

@@ -257,13 +257,17 @@ export function SessionComparison({ sessions }: { sessions: SessionWithLines[] }
                           const lastStock = lastSession ? (row.sessions[lastSession.id] ?? null) : null;
 
                           // Разница между последней и первой сессией
-                          const difference = (firstStock !== null && lastStock !== null && selectedSessions.length >= 2) 
-                            ? lastStock - firstStock 
+                          // Проверяем что оба значения не null и не undefined, и являются числами
+                          const firstStockValue = firstStock !== null && firstStock !== undefined && typeof firstStock === 'number' ? firstStock : null;
+                          const lastStockValue = lastStock !== null && lastStock !== undefined && typeof lastStock === 'number' ? lastStock : null;
+                          
+                          const difference = (firstStockValue !== null && lastStockValue !== null && selectedSessions.length >= 2) 
+                            ? lastStockValue - firstStockValue 
                             : null;
 
                           // Процент изменения от первой сессии
-                          const percentage = (difference !== null && firstStock !== null && firstStock > 0)
-                            ? ((difference / firstStock) * 100).toFixed(1)
+                          const percentage = (difference !== null && firstStockValue !== null && firstStockValue > 0)
+                            ? ((difference / firstStockValue) * 100).toFixed(1)
                             : null;
 
                           return (

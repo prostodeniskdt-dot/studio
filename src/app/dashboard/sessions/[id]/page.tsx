@@ -536,18 +536,6 @@ export default function SessionPage() {
   
   const isLoading = (isLoadingSession || isLoadingLines || isLoadingProducts) && !sessionError;
   const isEditable = effectiveSession.status === 'in_progress';
-  
-  // Логирование для отладки
-  React.useEffect(() => {
-    console.log('SessionPage - Loading state:', {
-      id,
-      isLoadingSession,
-      hasSession: !!session,
-      hasCachedSession: !!cachedSession,
-      hasError: !!sessionError,
-      barId
-    });
-  }, [id, isLoadingSession, session, cachedSession, sessionError, barId]);
 
   return (
     <>

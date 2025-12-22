@@ -374,7 +374,7 @@ export default function UnifiedCalculatorPage() {
         <HelpIcon 
           description="Выберите продукт, введите вес полной бутылки, вес пустой бутылки, текущий вес и уровень жидкости (1 резка = 1 см на мерной ложке). Нажмите 'Рассчитать', затем 'Отправить в инвентаризацию'."
         />
-        <span className="text-sm text-muted-foreground">Подсказка: наведите на иконку лампочки</span>
+        <span className="text-sm text-muted-foreground">Подсказка работы раздела</span>
       </div>
 
       <Alert variant="destructive" className="mb-4">

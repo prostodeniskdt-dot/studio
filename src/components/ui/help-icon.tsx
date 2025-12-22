@@ -24,7 +24,7 @@ export function HelpIcon({ title = 'Как пользоваться', descriptio
             className
           )}
         >
-          <Lightbulb className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+          <Lightbulb className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors animate-pulse" />
           <span className="sr-only">{title}</span>
         </Button>
       </PopoverTrigger>

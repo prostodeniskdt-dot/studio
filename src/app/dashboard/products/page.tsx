@@ -37,7 +37,7 @@ export default function ProductsPage() {
                 <HelpIcon 
                     description="Добавьте продукты с указанием веса полной и пустой бутылки. Это необходимо для корректной работы калькулятора."
                 />
-                <span className="text-sm text-muted-foreground">Подсказка: наведите на иконку лампочки</span>
+                <span className="text-sm text-muted-foreground">Подсказка работы раздела</span>
             </div>
             <ProductsTable products={globalProducts || []} />
         </div>

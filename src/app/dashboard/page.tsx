@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { PlusCircle, BarChart3, Package, Loader2, LineChart, Truck, ShoppingCart, FlaskConical, ArrowRight } from "lucide-react";
+import { PlusCircle, BarChart3, Package, Loader2, Truck, ShoppingCart, FlaskConical, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { HelpIcon } from '@/components/ui/help-icon';
@@ -124,7 +124,7 @@ export default function DashboardPage() {
         <HelpIcon 
           description="Создайте новую инвентаризацию, затем используйте калькулятор для расчета остатков бутылок и отправки их в инвентаризацию."
         />
-        <span className="text-sm text-muted-foreground">Подсказка: наведите на иконку лампочки</span>
+        <span className="text-sm text-muted-foreground">Подсказка работы раздела</span>
       </div>
 
       <Card className="mb-6 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 border-primary/20 animate-fade-in">
@@ -169,17 +169,6 @@ export default function DashboardPage() {
                     </div>
                     <ArrowRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
-                <Link href="/dashboard/analytics" className="group relative flex flex-col items-center gap-4 p-4 md:p-6 rounded-xl border-2 border-border hover:border-primary/50 bg-card hover:bg-card/80 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 min-h-[120px] md:min-h-[140px]">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
-                        <LineChart className="relative h-10 w-10 text-primary group-hover:scale-110 transition-transform duration-200" />
-                    </div>
-                    <div className="text-center">
-                        <h3 className="font-semibold text-base mb-1">Аналитика</h3>
-                        <p className="text-muted-foreground text-xs">Отчеты и данные</p>
-                    </div>
-                    <ArrowRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                </Link>
                  <Link href="/dashboard/suppliers" className="group relative flex flex-col items-center gap-4 p-4 md:p-6 rounded-xl border-2 border-border hover:border-primary/50 bg-card hover:bg-card/80 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 min-h-[120px] md:min-h-[140px]">
                     <div className="relative">
                         <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
@@ -199,7 +188,7 @@ export default function DashboardPage() {
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Текущие инвентаризации</h1>
         <Button onClick={handleCreateSession} disabled={!barId || isLoading || isCreating || !!hasDataLoadingError}>
           {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-          Начать
+          Начать инвентаризацию
         </Button>
       </div>
       {isLoading ? (

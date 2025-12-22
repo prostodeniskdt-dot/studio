@@ -408,9 +408,9 @@ export default function SessionPage() {
       });
       toast({
           title: "Инвентаризация завершена",
-          description: "Инвентаризация завершена и отчет готов.",
+          description: "Инвентаризация завершена.",
       });
-      router.push(`/dashboard/sessions/${id}/report`);
+      router.push('/dashboard/sessions');
     } catch(serverError: unknown) {
         const errorMessage = serverError instanceof Error ? serverError.message : 'Не удалось завершить инвентаризацию';
         toast({
@@ -586,7 +586,7 @@ export default function SessionPage() {
           <HelpIcon 
             description="Используйте калькулятор для расчета остатков. Результаты автоматически появятся в таблице. Проверьте фактические остатки и завершите инвентаризацию."
           />
-          <span className="text-sm text-muted-foreground">Подсказка: наведите на иконку лампочки</span>
+          <span className="text-sm text-muted-foreground">Подсказка работы раздела</span>
         </div>
       )}
       <SessionActions

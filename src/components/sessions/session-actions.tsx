@@ -68,6 +68,10 @@ export function SessionActions({
           <PlusCircle className="mr-2 h-4 w-4"/>
           Добавить продукт
         </Button>
+        <Button variant="outline" onClick={onExportCSV} className="transition-all duration-200">
+          <Download className="mr-2 h-4 w-4" />
+          Экспорт в CSV
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="transition-all duration-200">

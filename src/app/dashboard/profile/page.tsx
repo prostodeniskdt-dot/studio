@@ -145,12 +145,6 @@ export default function ProfilePage() {
                     </p>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">Аналитика</h3>
-                    <p className="text-sm text-muted-foreground">
-                      В разделе "Аналитика" вы можете сравнивать данные по нескольким завершенным инвентаризациям, анализировать динамику остатков и выявлять тенденции.
-                    </p>
-                  </div>
-                  <div>
                     <h3 className="font-semibold text-lg mb-2">Профиль</h3>
                     <p className="text-sm text-muted-foreground">
                       В профиле вы можете обновить свою личную информацию: имя, город, название заведения, контактные данные. Эта информация видна администраторам системы.

@@ -4,7 +4,6 @@ import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { translateStatus } from '@/lib/utils';
 import type { InventorySession } from '@/lib/types';
-import { Button } from '@/components/ui/button';
 import { Circle } from 'lucide-react';
 
 interface SessionHeaderProps {
@@ -24,11 +23,6 @@ export function SessionHeader({ session, isEditable }: SessionHeaderProps) {
       default:
         return 'default';
     }
-  };
-
-  const handleViewReport = () => {
-    console.log('Opening report for session:', session.id);
-    router.push(`/dashboard/sessions/${session.id}/report`);
   };
 
   return (

@@ -69,7 +69,18 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
   const [isSaving, setIsSaving] = React.useState(false);
+  const [showAutoOrderWarning, setShowAutoOrderWarning] = React.useState(true);
   const { globalProducts, refresh: refreshProducts } = useProducts();
+
+  // Автозакрытие плашки предупреждения через 5 секунд
+  React.useEffect(() => {
+    if (showAutoOrderWarning) {
+      const timer = setTimeout(() => {
+        setShowAutoOrderWarning(false);
+      }, 5000); // 5 секунд
+      return () => clearTimeout(timer);
+    }
+  }, [showAutoOrderWarning]);
 
   const suppliersQuery = useMemoFirebase(() => 
     firestore && barId ? collection(firestore, 'bars', barId, 'suppliers') : null,
@@ -397,6 +408,23 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         </div>
         
         <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">
+          {showAutoOrderWarning && (
+            <Alert variant="destructive" className="mb-4 relative">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Внимание</AlertTitle>
+              <AlertDescription>
+                Раздел автозаказ находится на стадии тестирования, для инвентаризации его заполнять не нужно
+              </AlertDescription>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute top-2 right-2 h-6 w-6 p-0"
+                onClick={() => setShowAutoOrderWarning(false)}
+              >
+                ×
+              </Button>
+            </Alert>
+          )}
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Параметры автозаказа</h3>
         <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">

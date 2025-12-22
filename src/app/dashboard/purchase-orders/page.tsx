@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import type { PurchaseOrder, PurchaseOrderLine, Supplier, Product } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,15 +11,28 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useRelatedCollection } from '@/hooks/use-related-collection';
 import { useSuppliers } from '@/contexts/suppliers-context';
 import { useProducts } from '@/contexts/products-context';
-import { Download, ShoppingCart } from 'lucide-react';
+import { Download, ShoppingCart, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { buildProductDisplayName } from '@/lib/utils';
+import { HelpIcon } from '@/components/ui/help-icon';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export default function PurchaseOrdersPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
+  const [isDeleting, setIsDeleting] = React.useState<string | null>(null);
   
   // Загружаем заказы
   const ordersQuery = useMemoFirebase(() =>
@@ -116,6 +129,38 @@ export default function PurchaseOrdersPage() {
     });
   };
 
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!firestore || !barId) return;
+
+    setIsDeleting(orderId);
+    try {
+      const orderRef = doc(firestore, 'bars', barId, 'purchaseOrders', orderId);
+      const linesRef = collection(orderRef, 'lines');
+      
+      // Удалить все строки заказа
+      const linesSnapshot = await getDocs(linesRef);
+      const deletePromises = linesSnapshot.docs.map(lineDoc => deleteDoc(lineDoc.ref));
+      await Promise.all(deletePromises);
+      
+      // Удалить сам заказ
+      await deleteDoc(orderRef);
+
+      toast({
+        title: 'Заказ удален',
+        description: 'Заказ и все его позиции были успешно удалены.',
+      });
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Не удалось удалить заказ. Попробуйте еще раз.',
+      });
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
   const isLoading = isLoadingOrders || isLoadingSuppliers || isLoadingProducts || isLoadingLines;
 
   if (isLoading || !barId) {
@@ -167,6 +212,12 @@ export default function PurchaseOrdersPage() {
         <CardHeader>
           <CardTitle>Закупки</CardTitle>
           <CardDescription>Позиции с минимальными остатками, сгруппированные по поставщикам</CardDescription>
+          <div className="mt-4 flex items-center gap-2">
+            <HelpIcon 
+              description="В этом разделе отображаются позиции с минимальными остатками, сгруппированные по поставщикам. Вы можете экспортировать заказы в CSV и удалять текущие заказы."
+            />
+            <span className="text-sm text-muted-foreground">Подсказка работы раздела</span>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-8">
@@ -180,10 +231,52 @@ export default function PurchaseOrdersPage() {
                         {group.lines.length} позиций в {group.orders.length} заказ(ах)
                       </CardDescription>
                     </div>
-                    <Button onClick={() => handleExportCSV(group.supplier.id)} variant="outline">
-                      <Download className="mr-2 h-4 w-4" />
-                      Экспорт CSV
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {group.orders.some(order => order.status === 'draft') && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              disabled={isDeleting !== null}
+                            >
+                              {isDeleting ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="mr-2 h-4 w-4" />
+                              )}
+                              Удалить заказ
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Удалить заказ?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Это действие нельзя отменить. Заказ и все его позиции будут удалены.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Отмена</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => {
+                                  const draftOrder = group.orders.find(order => order.status === 'draft');
+                                  if (draftOrder) {
+                                    handleDeleteOrder(draftOrder.id);
+                                  }
+                                }}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                Удалить
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                      <Button onClick={() => handleExportCSV(group.supplier.id)} variant="outline">
+                        <Download className="mr-2 h-4 w-4" />
+                        Экспорт CSV
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>

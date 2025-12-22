@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { SuppliersTable } from '@/components/suppliers/suppliers-table';
 import { useSuppliers } from '@/contexts/suppliers-context';
+import { HelpIcon } from '@/components/ui/help-icon';
 
 export default function SuppliersPage() {
   const { user } = useUser();
@@ -47,6 +48,12 @@ export default function SuppliersPage() {
 
   return (
     <div className="w-full">
+        <div className="mb-4 flex items-center gap-2">
+          <HelpIcon 
+            description="Управляйте списком поставщиков. Добавляйте новых поставщиков, редактируйте информацию о существующих. Поставщики используются при создании заказов на закупку."
+          />
+          <span className="text-sm text-muted-foreground">Подсказка работы раздела</span>
+        </div>
         <SuppliersTable suppliers={suppliers || []} barId={barId} />
     </div>
   );

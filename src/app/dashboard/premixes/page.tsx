@@ -3,6 +3,7 @@ import { PremixesCardView } from "@/components/premixes/premixes-card-view";
 import { useProducts } from "@/contexts/products-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { HelpIcon } from '@/components/ui/help-icon';
 
 export default function PremixesPage() {
     const { premixes, isLoading } = useProducts();
@@ -38,6 +39,12 @@ export default function PremixesPage() {
 
     return (
         <div className="w-full">
+            <div className="mb-4 flex items-center gap-2">
+              <HelpIcon 
+                description="Управляйте премиксами - заготовками и коктейлями. Создавайте новые премиксы, редактируйте существующие. Премиксы используются для расчета себестоимости коктейлей."
+              />
+              <span className="text-sm text-muted-foreground">Подсказка работы раздела</span>
+            </div>
             <PremixesCardView premixes={premixes || []} />
         </div>
     );

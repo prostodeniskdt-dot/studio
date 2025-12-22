@@ -6,6 +6,7 @@ import { PlusCircle, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { SessionsList } from "@/components/dashboard/sessions-list";
+import { HelpIcon } from '@/components/ui/help-icon';
 import { useRouter } from 'next/navigation';
 import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -110,6 +111,12 @@ export default function SessionsPage() {
           {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
           Начать инвентаризацию
         </Button>
+      </div>
+      <div className="mb-4 flex items-center gap-2">
+        <HelpIcon 
+          description="Создавайте и управляйте инвентаризациями. Начните новую инвентаризацию, чтобы отслеживать остатки продуктов. Завершенные инвентаризации сохраняются для истории."
+        />
+        <span className="text-sm text-muted-foreground">Подсказка работы раздела</span>
       </div>
       {isLoading ? (
          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

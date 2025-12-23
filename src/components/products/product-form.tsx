@@ -173,9 +173,10 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
       
       if (duplicate) {
         const duplicateDisplayName = buildProductDisplayName(duplicate.name, duplicate.bottleVolumeMl);
+        const newDisplayName = buildProductDisplayName(data.name, data.bottleVolumeMl);
         toast({
           title: 'Продукт уже существует',
-          description: `Продукт "${duplicateDisplayName}" уже существует в базе. Проверьте правильность названия.`,
+          description: `Продукт "${duplicateDisplayName}" уже существует в базе и похож на "${newDisplayName}". Если это разные продукты, убедитесь, что названия существенно отличаются. Если это тот же продукт, используйте существующий.`,
           variant: 'destructive',
         });
         return;

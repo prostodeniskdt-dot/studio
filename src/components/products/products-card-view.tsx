@@ -6,11 +6,12 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Package } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PlusCircle, Package, X } from 'lucide-react';
 import { ProductCard } from './product-card';
 import { ProductSearch } from './product-search';
 import type { Product, ProductCategory } from '@/lib/types';
-import { translateCategory, dedupeProductsByName, buildProductDisplayName } from '@/lib/utils';
+import { translateCategory, dedupeProductsByName, buildProductDisplayName, productCategories, productSubCategories } from '@/lib/utils';
 
 interface ProductsCardViewProps {
   products: Product[];
@@ -110,18 +111,14 @@ export function ProductsCardView({
     <div className="w-full space-y-4">
       {/* Поиск, фильтры и кнопка добавления */}
       <div className="space-y-3">
+        {/* Поисковая строка и кнопка добавления на одной линии */}
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex-1 min-w-[260px]">
+          <div className="flex-1 min-w-[200px]">
             <ProductSearch
               value={searchQuery}
               onChange={onSearchChange || (() => {})}
-              onCategoryChange={onCategoryChange}
-              onSubCategoryChange={onSubCategoryChange}
-              selectedCategory={selectedCategory}
-              selectedSubCategory={selectedSubCategory}
-              showFilters={true}
+              inline={true}
               placeholder="Поиск продуктов..."
-              resultsCount={filteredProducts.length}
             />
           </div>
           <Button onClick={onAdd} className="h-9 flex-shrink-0">
@@ -129,6 +126,64 @@ export function ProductsCardView({
             Добавить
           </Button>
         </div>
+        
+        {/* Фильтры отдельно ниже */}
+        <div className="flex flex-col sm:flex-row gap-2 flex-wrap items-start">
+          <Select
+            value={selectedCategory || '__all__'}
+            onValueChange={(val) => onCategoryChange?.(val === '__all__' ? undefined : (val as ProductCategory))}
+          >
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Категория" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Все категории</SelectItem>
+              {productCategories.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {translateCategory(cat)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedCategory && productSubCategories[selectedCategory] && productSubCategories[selectedCategory].length > 0 && (
+            <Select
+              value={selectedSubCategory || '__all__'}
+              onValueChange={(val) => onSubCategoryChange?.(val === '__all__' ? undefined : val)}
+            >
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Подкатегория" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Все подкатегории</SelectItem>
+                {productSubCategories[selectedCategory].map((subCat) => (
+                  <SelectItem key={subCat} value={subCat}>
+                    {subCat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {(searchQuery || selectedCategory || selectedSubCategory) && (
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                onSearchChange?.('');
+                onCategoryChange?.(undefined);
+                onSubCategoryChange?.(undefined);
+              }} 
+              className="w-full sm:w-auto"
+            >
+              <X className="mr-2 h-4 w-4" />
+              Очистить
+            </Button>
+          )}
+        </div>
+        
+        {/* Счетчик результатов */}
+        <div className="text-sm text-muted-foreground">
+          Найдено продуктов: {filteredProducts.length}
+        </div>
+        
         {onShowArchivedChange && (
           <div className="flex items-center space-x-2">
             <Checkbox

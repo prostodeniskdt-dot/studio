@@ -109,43 +109,41 @@ export function ProductsCardView({
   return (
     <div className="w-full space-y-4">
       {/* Поиск, фильтры и кнопка добавления */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex-1 space-y-4 min-w-[200px]">
-          {(onSearchChange || onCategoryChange || onShowArchivedChange) && (
-            <>
-              <ProductSearch
-                value={searchQuery}
-                onChange={onSearchChange || (() => {})}
-                onCategoryChange={onCategoryChange}
-                onSubCategoryChange={onSubCategoryChange}
-                selectedCategory={selectedCategory}
-                selectedSubCategory={selectedSubCategory}
-                showFilters={true}
-                placeholder="Поиск продуктов..."
-                resultsCount={filteredProducts.length}
-              />
-              {onShowArchivedChange && (
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="showArchivedCards"
-                    checked={showArchived}
-                    onCheckedChange={(checked) => onShowArchivedChange(checked === true)}
-                  />
-                  <label
-                    htmlFor="showArchivedCards"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                  >
-                    Показать архивированные
-                  </label>
-                </div>
-              )}
-            </>
-          )}
+      <div className="space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex-1 min-w-[260px]">
+            <ProductSearch
+              value={searchQuery}
+              onChange={onSearchChange || (() => {})}
+              onCategoryChange={onCategoryChange}
+              onSubCategoryChange={onSubCategoryChange}
+              selectedCategory={selectedCategory}
+              selectedSubCategory={selectedSubCategory}
+              showFilters={true}
+              placeholder="Поиск продуктов..."
+              resultsCount={filteredProducts.length}
+            />
+          </div>
+          <Button onClick={onAdd} className="h-10">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Добавить
+          </Button>
         </div>
-        <Button onClick={onAdd} className="h-9">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Добавить
-        </Button>
+        {onShowArchivedChange && (
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="showArchivedCards"
+              checked={showArchived}
+              onCheckedChange={(checked) => onShowArchivedChange(checked === true)}
+            />
+            <label
+              htmlFor="showArchivedCards"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+            >
+              Показать архивированные
+            </label>
+          </div>
+        )}
       </div>
 
       {/* Если нет продуктов после фильтрации */}

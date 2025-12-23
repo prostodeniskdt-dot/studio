@@ -60,7 +60,7 @@ export const ProductCard = React.memo<ProductCardProps>(({
               </Badge>
               {product.subCategory && (
                 <Badge variant="outline" className="text-xs">
-                  {translateSubCategory(product.subCategory, product.category)}
+                  {translateSubCategory(product.subCategory)}
                 </Badge>
               )}
               <Badge 

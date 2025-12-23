@@ -16,6 +16,7 @@ interface ProductsCardViewProps {
   onEdit: (product: Product) => void;
   onArchive: (product: Product) => void;
   onDelete: (product: Product) => void;
+  onAdd: () => void;
   isArchiving?: string | null;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
@@ -32,6 +33,7 @@ export function ProductsCardView({
   onEdit,
   onArchive,
   onDelete,
+  onAdd,
   isArchiving = null,
   searchQuery = '',
   onSearchChange,
@@ -173,6 +175,7 @@ export function ProductsCardView({
                     onEdit={onEdit}
                     onArchive={onArchive}
                     onDelete={onDelete}
+                    onAdd={onAdd}
                     isArchiving={isArchiving === product.id}
                     compact
                   />

@@ -1,13 +1,10 @@
 'use client';
 import * as React from 'react';
-import { ProductsTable } from "@/components/products/products-table";
 import { ProductsCardView } from "@/components/products/products-card-view";
-import { ViewModeToggle, useViewMode, type ViewMode } from "@/components/products/view-mode-toggle";
 import { useProducts } from "@/contexts/products-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { HelpIcon } from '@/components/ui/help-icon';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, updateDoc, deleteDoc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -28,8 +25,6 @@ import {
 
 export default function ProductsPage() {
     const { globalProducts, isLoading, refresh: refreshProducts } = useProducts();
-    const savedViewMode = useViewMode('table');
-    const [viewMode, setViewMode] = React.useState<ViewMode>(savedViewMode);
     const [isSheetOpen, setIsSheetOpen] = React.useState(false);
     const [editingProduct, setEditingProduct] = React.useState<Product | undefined>(undefined);
     const [isArchiving, setIsArchiving] = React.useState<string | null>(null);
@@ -44,11 +39,6 @@ export default function ProductsPage() {
     const { user } = useUser();
     const barId = user ? `bar_${user.uid}` : null;
     const { toast } = useToast();
-
-    // Синхронизировать сохраненный режим просмотра
-    React.useEffect(() => {
-        setViewMode(savedViewMode);
-    }, [savedViewMode]);
 
     const handleOpenSheet = (product?: Product) => {
         setEditingProduct(product);
@@ -168,35 +158,29 @@ export default function ProductsPage() {
 
     return (
         <div className="w-full space-y-4">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-2">
-                    <HelpIcon 
-                        description="Добавьте продукты с указанием веса полной и пустой бутылки. Это необходимо для корректной работы калькулятора."
-                    />
-                    <span className="text-sm text-muted-foreground">Подсказка работы раздела</span>
-                </div>
-                <ViewModeToggle value={viewMode} onChange={setViewMode} />
+            <div className="flex items-center gap-2">
+                <HelpIcon 
+                    description="Добавьте продукты с указанием веса полной и пустой бутылки. Это необходимо для корректной работы калькулятора."
+                />
+                <span className="text-sm text-muted-foreground">Подсказка работы раздела</span>
             </div>
 
-            {viewMode === 'cards' ? (
-                <ProductsCardView
-                    products={globalProducts || []}
-                    onEdit={handleOpenSheet}
-                    onArchive={handleArchiveAction}
-                    onDelete={handleDeleteProduct}
-                    isArchiving={isArchiving}
-                    searchQuery={searchQuery}
-                    onSearchChange={setSearchQuery}
-                    selectedCategory={selectedCategory}
-                    onCategoryChange={setSelectedCategory}
-                    selectedSubCategory={selectedSubCategory}
-                    onSubCategoryChange={setSelectedSubCategory}
-                    showArchived={showArchived}
-                    onShowArchivedChange={setShowArchived}
-                />
-            ) : (
-                <ProductsTable products={globalProducts || []} />
-            )}
+            <ProductsCardView
+                products={globalProducts || []}
+                onEdit={handleOpenSheet}
+                onArchive={handleArchiveAction}
+                onDelete={handleDeleteProduct}
+                onAdd={() => handleOpenSheet()}
+                isArchiving={isArchiving}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+                selectedSubCategory={selectedSubCategory}
+                onSubCategoryChange={setSelectedSubCategory}
+                showArchived={showArchived}
+                onShowArchivedChange={setShowArchived}
+            />
 
             {/* Форма редактирования продукта */}
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>

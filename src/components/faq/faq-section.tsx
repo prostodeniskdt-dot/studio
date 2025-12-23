@@ -128,18 +128,6 @@ export function FAQSection() {
       {/* Анимированная подсветка сверху */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 rounded-t-lg" />
       
-      {/* Заголовок */}
-      <div className="flex items-center gap-3 p-6 pb-4 border-b border-yellow-200/50 dark:border-yellow-800/30">
-        <div className="rounded-full bg-yellow-400/20 p-2 ring-2 ring-yellow-400/30">
-          <HelpCircle className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-        </div>
-        <div className="flex-1">
-          <h2 className="text-2xl font-bold text-foreground">Часто задаваемые вопросы</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Найдите ответы на популярные вопросы по использованию приложения
-          </p>
-        </div>
-      </div>
 
       {/* Поиск */}
       <div className="px-6 pt-4 pb-2">

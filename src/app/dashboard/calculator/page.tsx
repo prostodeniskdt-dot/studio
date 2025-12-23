@@ -22,7 +22,6 @@ import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import { ProductSearch } from '@/components/products/product-search';
 import { expandPremixToIngredients } from '@/lib/premix-utils';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FAQSection } from '@/components/faq/faq-section';
 
 export default function UnifiedCalculatorPage() {
   const { toast } = useToast();
@@ -629,9 +628,6 @@ export default function UnifiedCalculatorPage() {
           )}
         </div>
       </div>
-      
-      {/* FAQ раздел */}
-      <FAQSection />
     </div>
   );
 }

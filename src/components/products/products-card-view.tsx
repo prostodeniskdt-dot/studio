@@ -1,0 +1,189 @@
+'use client';
+
+import * as React from 'react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Package } from 'lucide-react';
+import { ProductCard } from './product-card';
+import { ProductSearch } from './product-search';
+import type { Product, ProductCategory } from '@/lib/types';
+import { translateCategory, dedupeProductsByName, buildProductDisplayName } from '@/lib/utils';
+
+interface ProductsCardViewProps {
+  products: Product[];
+  onEdit: (product: Product) => void;
+  onArchive: (product: Product) => void;
+  onDelete: (product: Product) => void;
+  isArchiving?: string | null;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  selectedCategory?: ProductCategory;
+  onCategoryChange?: (category: ProductCategory | undefined) => void;
+  selectedSubCategory?: string;
+  onSubCategoryChange?: (subCategory: string | undefined) => void;
+  showArchived?: boolean;
+  onShowArchivedChange?: (show: boolean) => void;
+}
+
+export function ProductsCardView({
+  products,
+  onEdit,
+  onArchive,
+  onDelete,
+  isArchiving = null,
+  searchQuery = '',
+  onSearchChange,
+  selectedCategory,
+  onCategoryChange,
+  selectedSubCategory,
+  onSubCategoryChange,
+  showArchived = false,
+  onShowArchivedChange,
+}: ProductsCardViewProps) {
+  // Дедупликация продуктов
+  const uniqueProducts = React.useMemo(() => {
+    return dedupeProductsByName(products);
+  }, [products]);
+
+  // Фильтрация продуктов
+  const filteredProducts = React.useMemo(() => {
+    let filtered = uniqueProducts;
+
+    // Фильтр по статусу (активные/архивированные)
+    if (!showArchived) {
+      filtered = filtered.filter(p => p.isActive !== false);
+    }
+
+    // Фильтр по категории
+    if (selectedCategory) {
+      filtered = filtered.filter(p => p.category === selectedCategory);
+    }
+
+    // Фильтр по подкатегории
+    if (selectedSubCategory) {
+      filtered = filtered.filter(p => p.subCategory === selectedSubCategory);
+    }
+
+    // Поиск по названию
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(p => {
+        const displayName = buildProductDisplayName(p.name, p.bottleVolumeMl).toLowerCase();
+        return displayName.includes(query) || p.name.toLowerCase().includes(query);
+      });
+    }
+
+    return filtered;
+  }, [uniqueProducts, showArchived, selectedCategory, selectedSubCategory, searchQuery]);
+
+  // Группировка продуктов по категориям
+  const productsByCategory = React.useMemo(() => {
+    const grouped: Record<string, Product[]> = {};
+    
+    filteredProducts.forEach(product => {
+      const category = product.category || 'Other';
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push(product);
+    });
+
+    // Сортировка категорий по алфавиту (по переведенным названиям)
+    return Object.fromEntries(
+      Object.entries(grouped).sort(([a], [b]) => 
+        translateCategory(a as ProductCategory).localeCompare(translateCategory(b as ProductCategory))
+      )
+    );
+  }, [filteredProducts]);
+
+  // Получить все ключи категорий для defaultValue Accordion
+  const allCategoryKeys = React.useMemo(() => {
+    return Object.keys(productsByCategory);
+  }, [productsByCategory]);
+
+  return (
+    <div className="w-full space-y-4">
+      {/* Поиск и фильтры */}
+      {(onSearchChange || onCategoryChange || onShowArchivedChange) && (
+        <div className="space-y-4">
+          <ProductSearch
+            value={searchQuery}
+            onChange={onSearchChange || (() => {})}
+            onCategoryChange={onCategoryChange}
+            onSubCategoryChange={onSubCategoryChange}
+            selectedCategory={selectedCategory}
+            selectedSubCategory={selectedSubCategory}
+            showFilters={true}
+            placeholder="Поиск продуктов..."
+            resultsCount={filteredProducts.length}
+          />
+          {onShowArchivedChange && (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="showArchivedCards"
+                checked={showArchived}
+                onCheckedChange={(checked) => onShowArchivedChange(checked === true)}
+              />
+              <label
+                htmlFor="showArchivedCards"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                Показать архивированные
+              </label>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Если нет продуктов после фильтрации */}
+      {filteredProducts.length === 0 ? (
+        <EmptyState
+          icon={Package}
+          title={searchQuery || selectedCategory ? "Продукты не найдены" : "Нет продуктов"}
+          description={
+            searchQuery || selectedCategory
+              ? 'Попробуйте изменить поисковый запрос или фильтры.'
+              : 'Создайте свой первый продукт для использования в калькуляторе и инвентаризации.'
+          }
+        />
+      ) : (
+        <Accordion 
+          type="multiple" 
+          defaultValue={allCategoryKeys}
+          className="w-full"
+        >
+        {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
+          <AccordionItem key={category} value={category} className="border-b">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">{translateCategory(category as ProductCategory)}</span>
+                <Badge variant="secondary" className="text-xs">
+                  {categoryProducts.length}
+                </Badge>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
+                {categoryProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onEdit={onEdit}
+                    onArchive={onArchive}
+                    onDelete={onDelete}
+                    isArchiving={isArchiving === product.id}
+                    compact
+                  />
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+        </Accordion>
+      )}
+    </div>
+  );
+}
+

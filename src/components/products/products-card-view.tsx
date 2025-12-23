@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Package } from 'lucide-react';
 import { ProductCard } from './product-card';
 import { ProductSearch } from './product-search';
 import type { Product, ProductCategory } from '@/lib/types';

@@ -124,7 +124,7 @@ export function ProductsCardView({
               resultsCount={filteredProducts.length}
             />
           </div>
-          <Button onClick={onAdd} className="h-10">
+          <Button onClick={onAdd} className="h-9 flex-shrink-0">
             <PlusCircle className="mr-2 h-4 w-4" />
             Добавить
           </Button>

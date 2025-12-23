@@ -5,7 +5,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Package } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
 import { ProductCard } from './product-card';
 import { ProductSearch } from './product-search';
 import type { Product, ProductCategory } from '@/lib/types';
@@ -107,37 +108,45 @@ export function ProductsCardView({
 
   return (
     <div className="w-full space-y-4">
-      {/* Поиск и фильтры */}
-      {(onSearchChange || onCategoryChange || onShowArchivedChange) && (
-        <div className="space-y-4">
-          <ProductSearch
-            value={searchQuery}
-            onChange={onSearchChange || (() => {})}
-            onCategoryChange={onCategoryChange}
-            onSubCategoryChange={onSubCategoryChange}
-            selectedCategory={selectedCategory}
-            selectedSubCategory={selectedSubCategory}
-            showFilters={true}
-            placeholder="Поиск продуктов..."
-            resultsCount={filteredProducts.length}
-          />
-          {onShowArchivedChange && (
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="showArchivedCards"
-                checked={showArchived}
-                onCheckedChange={(checked) => onShowArchivedChange(checked === true)}
+      {/* Поиск, фильтры и кнопка добавления */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex-1 space-y-4 min-w-[200px]">
+          {(onSearchChange || onCategoryChange || onShowArchivedChange) && (
+            <>
+              <ProductSearch
+                value={searchQuery}
+                onChange={onSearchChange || (() => {})}
+                onCategoryChange={onCategoryChange}
+                onSubCategoryChange={onSubCategoryChange}
+                selectedCategory={selectedCategory}
+                selectedSubCategory={selectedSubCategory}
+                showFilters={true}
+                placeholder="Поиск продуктов..."
+                resultsCount={filteredProducts.length}
               />
-              <label
-                htmlFor="showArchivedCards"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-              >
-                Показать архивированные
-              </label>
-            </div>
+              {onShowArchivedChange && (
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="showArchivedCards"
+                    checked={showArchived}
+                    onCheckedChange={(checked) => onShowArchivedChange(checked === true)}
+                  />
+                  <label
+                    htmlFor="showArchivedCards"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    Показать архивированные
+                  </label>
+                </div>
+              )}
+            </>
           )}
         </div>
-      )}
+        <Button onClick={onAdd} className="h-9">
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Добавить
+        </Button>
+      </div>
 
       {/* Если нет продуктов после фильтрации */}
       {filteredProducts.length === 0 ? (
@@ -175,7 +184,6 @@ export function ProductsCardView({
                     onEdit={onEdit}
                     onArchive={onArchive}
                     onDelete={onDelete}
-                    onAdd={onAdd}
                     isArchiving={isArchiving === product.id}
                     compact
                   />

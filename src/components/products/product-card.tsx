@@ -21,7 +21,6 @@ interface ProductCardProps {
   onEdit: (product: Product) => void;
   onArchive: (product: Product) => void;
   onDelete: (product: Product) => void;
-  onAdd: () => void;
   isArchiving?: boolean;
   compact?: boolean;
 }
@@ -31,7 +30,6 @@ export const ProductCard = React.memo<ProductCardProps>(({
   onEdit, 
   onArchive, 
   onDelete,
-  onAdd,
   isArchiving = false,
   compact = true
 }) => {
@@ -92,13 +90,6 @@ export const ProductCard = React.memo<ProductCardProps>(({
       </CardContent>
 
       <CardFooter className="flex gap-2 pt-2 border-t">
-        <Button
-          size="sm"
-          onClick={onAdd}
-          className="flex-1 text-xs"
-        >
-          Добавить
-        </Button>
         <Button
           variant="outline"
           size="sm"

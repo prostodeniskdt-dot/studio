@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/comp
 import { Badge } from "@/components/ui/badge";
 import { cn, translateStatus } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MoreVertical, Trash2, Loader2, Calendar, Circle } from "lucide-react";
+import { ArrowRight, MoreVertical, Trash2, Loader2, Calendar, Circle, Download, BarChart3 } from "lucide-react";
 import { Timestamp } from "firebase/firestore";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -30,7 +30,10 @@ import { useFirestore } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { deleteSessionWithLinesClient } from "@/lib/firestore-utils";
 import { Progress } from "@/components/ui/progress";
-import { BarChart3 } from "lucide-react";
+import { collection, getDocs } from "firebase/firestore";
+import type { InventoryLine } from "@/lib/types";
+import { useProducts } from "@/contexts/products-context";
+import { buildProductDisplayName } from "@/lib/utils";
 
 type SessionsListProps = {
   sessions: InventorySession[];
@@ -42,9 +45,11 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteProgress, setDeleteProgress] = React.useState(0);
   const [currentPage, setCurrentPage] = React.useState(1);
+  const [isExporting, setIsExporting] = React.useState<string | null>(null);
   const itemsPerPage = 9; // 3x3 grid
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { products: allProducts } = useProducts();
 
   const sessionToDelete = React.useMemo(
     () => sessions.find(s => s.id === sessionToDeleteId) ?? null,
@@ -106,6 +111,89 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     }
   };
 
+  const handleExportCSV = async (session: InventorySession) => {
+    if (!firestore || !barId || !allProducts) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Не удалось загрузить данные для экспорта.",
+      });
+      return;
+    }
+
+    setIsExporting(session.id);
+
+    try {
+      // Загрузить линии инвентаризации
+      const linesRef = collection(firestore, 'bars', barId, 'inventorySessions', session.id, 'lines');
+      const linesSnapshot = await getDocs(linesRef);
+      const lines = linesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryLine));
+
+      if (lines.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "Нет данных",
+          description: "В этой инвентаризации нет данных для экспорта.",
+        });
+        return;
+      }
+
+      // Helper function to escape CSV values - always wrap in quotes for consistency
+      const escapeCSV = (value: string | number): string => {
+        const stringValue = String(value);
+        // Always wrap in quotes and escape double quotes by doubling them
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      };
+
+      // Use semicolon as separator for Russian locale Excel compatibility
+      const SEPARATOR = ';';
+      const headers = ["Наименование продукта", "Фактический остаток (мл)"];
+      const headerRow = headers.map(escapeCSV).join(SEPARATOR);
+      
+      // Data rows - только название продукта и фактический остаток
+      const rows = lines.map(line => {
+        const product = allProducts.find(p => p.id === line.productId);
+        return [
+          product ? buildProductDisplayName(product.name, product.bottleVolumeMl) : '',
+          line.endStock
+        ].map(escapeCSV).join(SEPARATOR);
+      });
+
+      // Use \r\n for Windows compatibility
+      const csvContent = [headerRow, ...rows].join('\r\n');
+      
+      // Add UTF-8 BOM at the beginning of the string for Excel compatibility
+      const BOM = '\uFEFF';
+      const csvWithBOM = BOM + csvContent;
+      
+      // Use data URI with proper encoding - this works better than encodeURI for CSV
+      const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvWithBOM);
+      const link = document.createElement("a");
+      link.setAttribute("href", dataUri);
+      const sessionDate = session.createdAt instanceof Timestamp 
+        ? session.createdAt.toDate().toLocaleDateString('ru-RU').replace(/\./g, '-')
+        : new Date().toLocaleDateString('ru-RU').replace(/\./g, '-');
+      link.setAttribute("download", `inventory_${sessionDate}_${session.id}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({ 
+        title: "Экспорт завершен", 
+        description: "Данные инвентаризации выгружены в CSV файл." 
+      });
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      toast({
+        variant: "destructive",
+        title: "Ошибка экспорта",
+        description: error instanceof Error ? error.message : "Не удалось экспортировать данные.",
+      });
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
 
   if (!sessions) {
     return <div className="text-center text-muted-foreground py-10">Загрузка инвентаризаций...</div>;
@@ -154,6 +242,22 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                        {session.status === 'completed' && (
+                            <DropdownMenuItem 
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    handleExportCSV(session);
+                                }}
+                                disabled={isExporting === session.id}
+                            >
+                                {isExporting === session.id ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                                ) : (
+                                    <Download className="mr-2 h-4 w-4"/>
+                                )}
+                                Экспорт в CSV
+                            </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={(e) => handleOpenDeleteDialog(e, session)} className="text-destructive focus:text-destructive">
                             <Trash2 className="mr-2 h-4 w-4"/>
                             Удалить

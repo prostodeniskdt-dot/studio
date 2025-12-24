@@ -15,6 +15,9 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
+import { LEGAL_DOCUMENTS, SUPPORT_EMAIL } from '@/lib/legal-documents';
+import { DeleteAccountButton } from '@/components/delete-account-button';
+import Link from 'next/link';
 
 const profileSchema = z.object({
   displayName: z.string().min(2, { message: 'Имя должно содержать не менее 2 символов.' }),
@@ -214,6 +217,75 @@ export default function ProfilePage() {
               Сохранить изменения
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Правовая информация</CardTitle>
+          <CardDescription>Ссылки на документы и управление данными</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold">Документы</h3>
+            <div className="flex flex-col gap-2">
+              <Link
+                href={LEGAL_DOCUMENTS.termsOfService.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline"
+              >
+                Пользовательское соглашение
+              </Link>
+              <Link
+                href={LEGAL_DOCUMENTS.privacyPolicy.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline"
+              >
+                Политика конфиденциальности и ПДн
+              </Link>
+              <Link
+                href={LEGAL_DOCUMENTS.cookiePolicy.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline"
+              >
+                Политика cookies
+              </Link>
+              <Link
+                href="/legal"
+                className="text-sm text-primary hover:underline"
+              >
+                Правовая информация
+              </Link>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold">Запрос по персональным данным</h3>
+            <p className="text-sm text-muted-foreground">
+              Вы можете запросить копию, уточнение или удаление ваших персональных данных
+            </p>
+            <a
+              href={`mailto:${SUPPORT_EMAIL}?subject=Запрос по персональным данным`}
+              className="text-sm text-primary hover:underline"
+            >
+              Отправить запрос на {SUPPORT_EMAIL}
+            </a>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-destructive">Удаление аккаунта</h3>
+            <p className="text-sm text-muted-foreground">
+              После удаления доступ будет закрыт, данные будут удалены или обезличены в течение 30 дней (если не требуется хранение по закону).
+            </p>
+            <DeleteAccountButton />
+          </div>
         </CardContent>
       </Card>
     </div>

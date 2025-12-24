@@ -8,12 +8,15 @@ import { AppLogo } from "@/components/app-logo";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth, useUser } from "@/firebase";
+import { useAuth, useUser, useFirestore } from "@/firebase";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { LEGAL_DOCUMENTS } from "@/lib/legal-documents";
+import { logConsent } from "@/lib/consent-logger";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Имя должно содержать не менее 2 символов" }),
@@ -23,12 +26,16 @@ const signupSchema = z.object({
   establishment: z.string().optional(),
   phone: z.string().optional(),
   socialLink: z.string().optional(),
+  acceptTerms: z.boolean().refine(val => val === true, {
+    message: "Необходимо принять пользовательское соглашение и политику конфиденциальности"
+  }),
 });
 
 type SignupFormInputs = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
@@ -80,6 +87,31 @@ export default function SignupPage() {
       };
 
       await updateProfile(userCredential.user, profileData);
+
+      // Логирование согласия
+      if (firestore) {
+        const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : undefined;
+        
+        // Логируем согласие в коллекцию consent_logs
+        await logConsent(
+          firestore,
+          userCredential.user.uid,
+          'terms_and_privacy',
+          true,
+          LEGAL_DOCUMENTS.termsOfService.version
+        );
+
+        // Сохраняем согласие в профиле пользователя
+        const userRef = doc(firestore, 'users', userCredential.user.uid);
+        await updateDoc(userRef, {
+          'consents.termsAndPrivacy': {
+            accepted: true,
+            version: LEGAL_DOCUMENTS.termsOfService.version,
+            timestamp: serverTimestamp(),
+            userAgent,
+          }
+        });
+      }
       
     } catch(e: any) {
         if (typeof window !== 'undefined' && Object.keys(detailsToStore).length > 0) {
@@ -181,6 +213,41 @@ export default function SignupPage() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <div className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    id="acceptTerms"
+                    {...register("acceptTerms")}
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <Label htmlFor="acceptTerms" className="text-sm cursor-pointer leading-relaxed">
+                    Я принимаю{' '}
+                    <Link
+                      href={LEGAL_DOCUMENTS.termsOfService.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-4 hover:text-primary"
+                    >
+                      Пользовательское соглашение
+                    </Link>
+                    {' '}и{' '}
+                    <Link
+                      href={LEGAL_DOCUMENTS.privacyPolicy.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-4 hover:text-primary"
+                    >
+                      Политику конфиденциальности
+                    </Link>
+                    {' '}и даю согласие на обработку персональных данных
+                  </Label>
+                </div>
+                {errors.acceptTerms && (
+                  <p className="text-xs text-destructive">{errors.acceptTerms.message}</p>
+                )}
+              </div>
+
               <div>
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -188,18 +255,6 @@ export default function SignupPage() {
                 </Button>
               </div>
             </form>
-             <p className="mt-6 text-center text-sm text-muted-foreground">
-              Создавая аккаунт, вы соглашаетесь с нашей{" "}
-              <Link
-                href="https://docs.google.com/document/d/1v8xS6_m7dttEcfDEqSkVh3Z9byYx3HxCbt4zQMSTxzg/edit?tab=t.0"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline underline-offset-4 hover:text-primary"
-              >
-                Политикой конфиденциальности
-              </Link>
-              .
-            </p>
           </CardContent>
         </Card>
       </div>

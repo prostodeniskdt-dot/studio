@@ -2,6 +2,22 @@ import type { Timestamp } from 'firebase/firestore';
 
 export type UserRole = 'admin' | 'manager' | 'bartender';
 
+export interface ConsentRecord {
+  accepted: boolean;
+  version: string; // версия документа (например "1.0")
+  timestamp: Timestamp;
+  ipAddress?: string;
+  userAgent?: string;
+  documentHash?: string; // хэш текста документа для аудита
+}
+
+export interface CookieConsent {
+  analytics: boolean;
+  marketing: boolean;
+  timestamp: Timestamp;
+  version: string;
+}
+
 export interface UserProfile {
   id: string; // Firebase UID
   displayName: string;
@@ -14,6 +30,11 @@ export interface UserProfile {
   phone?: string;
   socialLink?: string;
   isBanned?: boolean;
+  // Consent tracking
+  consents?: {
+    termsAndPrivacy?: ConsentRecord;
+    cookies?: CookieConsent;
+  };
 }
 
 export type ProductCategory = 'Whiskey' | 'Rum' | 'Vodka' | 'Gin' | 'Tequila' | 'Liqueur' | 'Wine' | 'Beer' | 'Syrup' | 'Brandy' | 'Vermouth' | 'Absinthe' | 'Bitters' | 'Premix' | 'Other';
@@ -156,4 +177,24 @@ export interface PurchaseOrderLine {
 export interface Holiday {
     date: string; // YYYY-MM-DD
     name: string;
+}
+
+// --- Consent Logging ---
+export interface ConsentLog {
+  userId: string;
+  consentType: 'terms_and_privacy' | 'cookies' | 'marketing';
+  accepted: boolean;
+  version: string;
+  timestamp: Timestamp;
+  ipAddress?: string;
+  userAgent?: string;
+  documentHash?: string;
+}
+
+// --- Deletion Request ---
+export interface DeletionRequest {
+  userId: string;
+  requestedAt: Timestamp;
+  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  completedAt?: Timestamp;
 }

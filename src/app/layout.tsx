@@ -5,6 +5,8 @@ import './globals.css';
 import { FirebaseClientProvider } from '@/firebase';
 import { ClientOnly } from '@/components/client-only';
 import { OfflineIndicator } from '@/components/offline-indicator';
+import { Footer } from '@/components/footer';
+import { CookieBanner } from '@/components/cookie-banner';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -39,12 +41,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" className="h-full">
-      <body className={`${inter.variable} font-sans antialiased h-full bg-background`}>
+      <body className={`${inter.variable} font-sans antialiased h-full bg-background flex flex-col`}>
         <FirebaseClientProvider>
-          {children}
+          <div className="flex-1">
+            {children}
+          </div>
+          <Footer />
           <ClientOnly>
             <Toaster />
             <OfflineIndicator />
+            <CookieBanner />
           </ClientOnly>
         </FirebaseClientProvider>
       </body>

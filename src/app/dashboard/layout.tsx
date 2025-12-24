@@ -22,6 +22,7 @@ import { doc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { signOut } from "firebase/auth";
 import { logger } from "@/lib/logger";
+import { Footer } from "@/components/footer";
 
 
 export default function DashboardLayout({
@@ -134,7 +135,7 @@ export default function DashboardLayout({
                 <Sidebar>
                   <AppSidebar />
                 </Sidebar>
-                <SidebarInset>
+                <SidebarInset className="flex flex-col">
                   <ClientOnly>
                     <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 sm:px-6">
                       <SidebarTrigger className="md:hidden" />
@@ -147,6 +148,7 @@ export default function DashboardLayout({
                       {children}
                     </ErrorBoundary>
                   </main>
+                  <Footer />
                 </SidebarInset>
               </div>
             </SidebarProvider>

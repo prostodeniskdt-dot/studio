@@ -8,11 +8,11 @@ export function Footer() {
   return (
     <footer className="border-t bg-background mt-auto pb-safe">
       <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-          <div className="flex flex-wrap justify-center gap-4">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex flex-wrap justify-center md:justify-start gap-x-4 gap-y-2">
             <Link 
               href="/legal" 
-              className="hover:text-primary transition-colors"
+              className="hover:text-primary transition-colors whitespace-nowrap"
             >
               Правовая информация
             </Link>
@@ -20,7 +20,7 @@ export function Footer() {
               href={LEGAL_DOCUMENTS.termsOfService.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-primary transition-colors"
+              className="hover:text-primary transition-colors whitespace-nowrap"
             >
               Пользовательское соглашение
             </Link>
@@ -28,7 +28,7 @@ export function Footer() {
               href={LEGAL_DOCUMENTS.privacyPolicy.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-primary transition-colors"
+              className="hover:text-primary transition-colors whitespace-nowrap"
             >
               Политика конфиденциальности и ПДн
             </Link>
@@ -36,15 +36,15 @@ export function Footer() {
               href={LEGAL_DOCUMENTS.cookiePolicy.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-primary transition-colors"
+              className="hover:text-primary transition-colors whitespace-nowrap"
             >
               Политика cookies
             </Link>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center md:justify-end gap-4 flex-wrap">
             <a 
               href={`mailto:${SUPPORT_EMAIL}`}
-              className="hover:text-primary transition-colors"
+              className="hover:text-primary transition-colors whitespace-nowrap"
             >
               {SUPPORT_EMAIL}
             </a>
@@ -52,7 +52,7 @@ export function Footer() {
               href={TELEGRAM_SUPPORT.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 hover:text-primary transition-colors"
+              className="inline-flex items-center gap-1 hover:text-primary transition-colors whitespace-nowrap"
             >
               <MessageCircle className="h-4 w-4" />
               Связаться в Telegram

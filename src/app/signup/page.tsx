@@ -17,6 +17,7 @@ import { Loader2 } from "lucide-react";
 import { LEGAL_DOCUMENTS } from "@/lib/legal-documents";
 import { logConsent } from "@/lib/consent-logger";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { Footer } from "@/components/footer";
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Имя должно содержать не менее 2 символов" }),
@@ -258,6 +259,7 @@ export default function SignupPage() {
           </CardContent>
         </Card>
       </div>
+      <Footer />
     </div>
   );
 }

@@ -5,7 +5,6 @@ import './globals.css';
 import { FirebaseClientProvider } from '@/firebase';
 import { ClientOnly } from '@/components/client-only';
 import { OfflineIndicator } from '@/components/offline-indicator';
-import { Footer } from '@/components/footer';
 import { CookieBanner } from '@/components/cookie-banner';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -46,7 +45,6 @@ export default function RootLayout({
           <div className="flex-1">
             {children}
           </div>
-          <Footer />
           <ClientOnly>
             <Toaster />
             <OfflineIndicator />

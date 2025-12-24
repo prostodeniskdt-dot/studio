@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { LoginAnimation } from "@/components/login-animation";
 import { RunningManLoader } from "@/components/running-man-loader";
+import { Footer } from "@/components/footer";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Неверный формат электронной почты" }),
@@ -293,6 +294,7 @@ export default function LoginPage() {
           </form>
         </DialogContent>
       </Dialog>
+      <Footer />
     </div>
   );
 }

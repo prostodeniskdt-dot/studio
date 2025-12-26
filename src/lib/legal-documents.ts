@@ -25,7 +25,7 @@ export const LEGAL_DOCUMENTS = {
   }
 } as const;
 
-export const SUPPORT_EMAIL = 'support@barboss.ru';
+export const SUPPORT_EMAIL = 'vitaly.arshuk@gmail.com';
 
 export const TELEGRAM_SUPPORT = {
   username: 'barboss_assistant',

@@ -321,12 +321,15 @@ export default function UnifiedCalculatorPage() {
             });
           } else {
             const lineDoc = linesSnapshot.docs[0];
+            const existingLine = lineDoc.data() as InventoryLine;
             const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines', lineDoc.id);
-            const updateData = { endStock: volume };
+            const existingEndStock = existingLine.endStock || 0;
+            const newEndStock = existingEndStock + volume;
+            const updateData = { endStock: newEndStock };
             await updateDoc(lineRef, updateData);
             toast({
               title: "Данные отправлены",
-              description: `Остаток для продукта ${buildProductDisplayName(selectedProduct.name, selectedProduct.bottleVolumeMl)} (${volume} мл) обновлен в текущую инвентаризацию.`,
+              description: `Остаток для продукта ${buildProductDisplayName(selectedProduct.name, selectedProduct.bottleVolumeMl)} (${volume} мл) добавлен к существующему остатку (${existingEndStock} мл). Итого: ${newEndStock} мл.`,
             });
           }
         }

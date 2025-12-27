@@ -23,26 +23,38 @@ import * as fs from 'fs';
 
 // Инициализация Firebase Admin
 if (getApps().length === 0) {
-  const serviceAccountPath = path.resolve(__dirname, '../serviceAccountKey.json');
-  
-  if (fs.existsSync(serviceAccountPath)) {
-    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-    initializeApp({
-      credential: cert(serviceAccount),
-    });
-  } else {
-    // Используем переменные окружения или default credentials
-    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
-      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
-      : undefined;
+  // ВАЖНО: используем process.cwd(), потому что __dirname может отсутствовать в ESM-режиме (tsx).
+  // Запускать скрипт нужно из корня репозитория.
+  const serviceAccountPath = path.resolve(process.cwd(), 'serviceAccountKey.json');
 
-    if (serviceAccount) {
-      initializeApp({
-        credential: cert(serviceAccount),
-      });
-    } else {
-      initializeApp();
+  const hasEnvServiceAccount = !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  const hasFileServiceAccount = fs.existsSync(serviceAccountPath);
+
+  if (hasFileServiceAccount) {
+    try {
+      const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+      initializeApp({ credential: cert(serviceAccount) });
+      console.log(`[firebase-admin] Используется service account файл: ${serviceAccountPath}`);
+    } catch (e) {
+      console.error('[firebase-admin] Не удалось прочитать/распарсить serviceAccountKey.json.');
+      console.error('Проверьте, что файл валидный JSON и находится в корне проекта:', serviceAccountPath);
+      throw e;
     }
+  } else if (hasEnvServiceAccount) {
+    try {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY as string);
+      initializeApp({ credential: cert(serviceAccount) });
+      console.log('[firebase-admin] Используется service account из переменной окружения FIREBASE_SERVICE_ACCOUNT_KEY');
+    } catch (e) {
+      console.error('[firebase-admin] Не удалось распарсить FIREBASE_SERVICE_ACCOUNT_KEY как JSON.');
+      throw e;
+    }
+  } else {
+    // Application Default Credentials (ADC)
+    // Если ADC не настроены, дальнейшие запросы к Firestore упадут. Дадим понятную подсказку.
+    console.log('[firebase-admin] serviceAccountKey.json не найден и FIREBASE_SERVICE_ACCOUNT_KEY не задан.');
+    console.log('[firebase-admin] Пытаемся использовать Application Default Credentials (ADC)...');
+    initializeApp();
   }
 }
 

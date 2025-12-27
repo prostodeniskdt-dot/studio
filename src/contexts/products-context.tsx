@@ -165,13 +165,23 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   // Продукты из библиотеки (без примиксов)
   const libraryProductsList = React.useMemo(() => {
     const library = libraryProducts || [];
-    return library.filter(p => !p.isPremix && p.category !== 'Premix');
+    // Фильтруем: только продукты БЕЗ barId (или с barId === undefined/null)
+    // чтобы исключить персональные продукты, которые случайно получили isInLibrary: true
+    return library.filter(p => 
+      !p.isPremix && 
+      p.category !== 'Premix' &&
+      (!p.barId || p.barId === undefined || p.barId === null)
+    );
   }, [libraryProducts]);
   
   // Примиксы из библиотеки
   const libraryPremixesList = React.useMemo(() => {
     const library = libraryProducts || [];
-    return library.filter(p => p.isPremix === true || p.category === 'Premix');
+    // Фильтруем: только премиксы БЕЗ barId
+    return library.filter(p => 
+      (p.isPremix === true || p.category === 'Premix') &&
+      (!p.barId || p.barId === undefined || p.barId === null)
+    );
   }, [libraryProducts]);
 
   const refresh = useCallback(() => {

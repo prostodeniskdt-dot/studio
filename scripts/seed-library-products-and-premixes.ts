@@ -283,6 +283,7 @@ async function migrateProductsToLibrary() {
     let skipped = 0;
     let skippedPremixes = 0;
     let skippedAlreadyInLibrary = 0;
+    let skippedPersonal = 0; // Персональные продукты пользователей
     let currentBatch = db.batch();
     let batchCount = 0;
     const BATCH_SIZE = 500;
@@ -304,11 +305,18 @@ async function migrateProductsToLibrary() {
         continue;
       }
 
-      // Мигрируем в библиотеку
+      // ВАЖНО: Пропускаем персональные продукты пользователей (те, что имеют barId)
+      // Мигрируем только продукты БЕЗ barId (старые продукты из общей базы)
+      if (product.barId) {
+        skippedPersonal++;
+        skipped++;
+        continue;
+      }
+
+      // Мигрируем в библиотеку только продукты без barId
       const productRef = db.collection('products').doc(doc.id);
       currentBatch.update(productRef, {
         isInLibrary: true,
-        barId: FieldValue.delete(),
         updatedAt: FieldValue.serverTimestamp(),
       });
       migratedToLibrary++;
@@ -330,6 +338,7 @@ async function migrateProductsToLibrary() {
     console.log(`\nРезультаты миграции:`);
     console.log(`  ✓ Мигрировано в библиотеку: ${migratedToLibrary}`);
     console.log(`  ⊘ Пропущено (уже в библиотеке): ${skippedAlreadyInLibrary}`);
+    console.log(`  ⊘ Пропущено (персональные продукты): ${skippedPersonal}`);
     console.log(`  ⊘ Пропущено (премиксы): ${skippedPremixes}`);
     console.log(`  ⊘ Всего пропущено: ${skipped}`);
     console.log(`  = Всего обработано: ${migratedToLibrary + skipped}`);

@@ -8,9 +8,13 @@ import { logger } from '@/lib/logger';
 import { dedupeProductsByName } from '@/lib/utils';
 
 interface ProductsContextValue {
-  products: Product[]; // Объединенный список (globalProducts + premixes) для обратной совместимости
-  globalProducts: Product[]; // Только глобальные продукты (без примиксов)
-  premixes: Product[]; // Только примиксы пользователя
+  products: Product[]; // Объединенный список (персональные + библиотека) для обратной совместимости
+  globalProducts: Product[]; // Только продукты без примиксов (персональные + библиотека)
+  premixes: Product[]; // Только примиксы (персональные + библиотека)
+  personalProducts: Product[]; // Только персональные продукты пользователя (без примиксов)
+  personalPremixes: Product[]; // Только персональные примиксы пользователя
+  libraryProducts: Product[]; // Только продукты из библиотеки (без примиксов)
+  libraryPremixes: Product[]; // Только примиксы из библиотеки
   isLoading: boolean;
   error: Error | null;
   refresh: () => void;
@@ -54,48 +58,76 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [barId]);
 
-  // Запрос для глобальных продуктов (алкоголь и примиксы) - без фильтра isActive для поддержки архивированных
-  const globalProductsQuery = useMemoFirebase(() =>
-    firestore ? query(collection(firestore, 'products')) : null,
+  // Запрос для персональных продуктов пользователя (barId === текущий barId)
+  const personalProductsQuery = useMemoFirebase(() =>
+    firestore && barId ? query(
+      collection(firestore, 'products'),
+      where('barId', '==', barId)
+    ) : null,
+    [firestore, barId, forceRefresh]
+  );
+  
+  // Запрос для продуктов из библиотеки (isInLibrary === true)
+  const libraryProductsQuery = useMemoFirebase(() =>
+    firestore ? query(
+      collection(firestore, 'products'),
+      where('isInLibrary', '==', true)
+    ) : null,
     [firestore, forceRefresh]
   );
   
-  const { data: globalProducts, isLoading: isLoadingGlobal, error: globalError } = useCollection<Product>(globalProductsQuery);
+  const { data: personalProducts, isLoading: isLoadingPersonal, error: personalError } = useCollection<Product>(personalProductsQuery);
+  const { data: libraryProducts, isLoading: isLoadingLibrary, error: libraryError } = useCollection<Product>(libraryProductsQuery);
+  
+  // Фильтруем персональные продукты: исключаем те, которые в библиотеке (на случай если есть и barId и isInLibrary)
+  const filteredPersonalProducts = React.useMemo(() => {
+    if (!personalProducts || personalProducts.length === 0) return [];
+    return personalProducts.filter(p => p.isInLibrary !== true);
+  }, [personalProducts]);
+  
+  // Объединяем персональные продукты и библиотеку
+  const allProducts = React.useMemo(() => {
+    const personal = filteredPersonalProducts || [];
+    const library = libraryProducts || [];
+    // Объединяем и убираем дубликаты по ID
+    const combined = [...personal, ...library];
+    const uniqueById = new Map<string, Product>();
+    combined.forEach(p => {
+      if (!uniqueById.has(p.id)) {
+        uniqueById.set(p.id, p);
+      }
+    });
+    return Array.from(uniqueById.values());
+  }, [filteredPersonalProducts, libraryProducts]);
   
   // Глобальные продукты (без примиксов) с дедупликацией
   const loadedGlobalProducts = React.useMemo(() => {
-    if (!globalProducts || globalProducts.length === 0) return [];
-    // Фильтруем примиксы из глобальных продуктов
-    const nonPremixes = globalProducts.filter(p => !p.isPremix && p.category !== 'Premix');
+    if (allProducts.length === 0) return [];
+    // Фильтруем примиксы из всех продуктов
+    const nonPremixes = allProducts.filter(p => !p.isPremix && p.category !== 'Premix');
     return dedupeProductsByName(nonPremixes);
-  }, [globalProducts]);
+  }, [allProducts]);
   
-  // Примиксы из глобальной коллекции products с дедупликацией
+  // Примиксы из всех продуктов с дедупликацией
   const loadedPremixes = React.useMemo(() => {
-    if (!globalProducts || globalProducts.length === 0) return [];
-    // Фильтруем примиксы из глобальных продуктов
-    const premixes = globalProducts.filter(p => p.isPremix === true || p.category === 'Premix');
+    if (allProducts.length === 0) return [];
+    // Фильтруем примиксы
+    const premixes = allProducts.filter(p => p.isPremix === true || p.category === 'Premix');
     return dedupeProductsByName(premixes);
-  }, [globalProducts]);
+  }, [allProducts]);
   
-  // Объединить глобальные продукты и примиксы (для обратной совместимости и калькулятора) с дедупликацией
-  const allProducts = React.useMemo(() => {
-    const combined = [...loadedGlobalProducts, ...loadedPremixes];
-    return dedupeProductsByName(combined);
-  }, [loadedGlobalProducts, loadedPremixes]);
-  
-  const isLoading = isLoadingGlobal;
-  const error = globalError;
+  const isLoading = isLoadingPersonal || isLoadingLibrary;
+  const error = personalError || libraryError;
 
   // Обработка ошибок прав доступа - использовать кэш при ошибке
   useEffect(() => {
-    if (globalError) {
-      logger.warn('Permission error loading global products, using cache:', globalError);
+    if (error) {
+      logger.warn('Permission error loading products, using cache:', error);
     }
     if (error && cache && cache.barId === barId) {
       // Не очищаем кэш при ошибке прав доступа, используем его
     }
-  }, [error, globalError, cache, barId]);
+  }, [error, cache, barId]);
 
   // Сохранить в localStorage при загрузке с дедупликацией
   useEffect(() => {
@@ -115,6 +147,30 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, [allProducts, barId]);
+  
+  // Персональные продукты (только те, что принадлежат текущему пользователю, без примиксов)
+  const personalProductsList = React.useMemo(() => {
+    const personal = filteredPersonalProducts || [];
+    return personal.filter(p => !p.isPremix && p.category !== 'Premix');
+  }, [filteredPersonalProducts]);
+  
+  // Персональные примиксы
+  const personalPremixesList = React.useMemo(() => {
+    const personal = filteredPersonalProducts || [];
+    return personal.filter(p => p.isPremix === true || p.category === 'Premix');
+  }, [filteredPersonalProducts]);
+  
+  // Продукты из библиотеки (без примиксов)
+  const libraryProductsList = React.useMemo(() => {
+    const library = libraryProducts || [];
+    return library.filter(p => !p.isPremix && p.category !== 'Premix');
+  }, [libraryProducts]);
+  
+  // Примиксы из библиотеки
+  const libraryPremixesList = React.useMemo(() => {
+    const library = libraryProducts || [];
+    return library.filter(p => p.isPremix === true || p.category === 'Premix');
+  }, [libraryProducts]);
 
   const refresh = useCallback(() => {
     if (typeof window !== 'undefined' && barId) {
@@ -157,14 +213,83 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   
   const effectiveIsLoading = React.useMemo(() => isLoading && !cache, [isLoading, cache]);
 
+  // Эффективные значения с учетом кэша для персональных продуктов
+  const effectivePersonalProducts = React.useMemo(() => {
+    if (personalProductsList.length > 0) return personalProductsList;
+    if (cache?.barId === barId && cache?.products && cachedProductsLength > 0) {
+      const cached = cache.products.filter(p => 
+        p.barId === barId && 
+        p.isInLibrary !== true && 
+        !p.isPremix && 
+        p.category !== 'Premix'
+      );
+      return dedupeProductsByName(cached);
+    }
+    return [];
+  }, [personalProductsList.length, cache?.barId, barId, cachedProductsLength]);
+  
+  const effectivePersonalPremixes = React.useMemo(() => {
+    if (personalPremixesList.length > 0) return personalPremixesList;
+    if (cache?.barId === barId && cache?.products && cachedProductsLength > 0) {
+      const cached = cache.products.filter(p => 
+        p.barId === barId && 
+        p.isInLibrary !== true && 
+        (p.isPremix === true || p.category === 'Premix')
+      );
+      return dedupeProductsByName(cached);
+    }
+    return [];
+  }, [personalPremixesList.length, cache?.barId, barId, cachedProductsLength]);
+  
+  // Эффективные значения для библиотеки
+  const effectiveLibraryProducts = React.useMemo(() => {
+    if (libraryProductsList.length > 0) return libraryProductsList;
+    if (cache?.barId === barId && cache?.products && cachedProductsLength > 0) {
+      const cached = cache.products.filter(p => 
+        p.isInLibrary === true && 
+        !p.isPremix && 
+        p.category !== 'Premix'
+      );
+      return dedupeProductsByName(cached);
+    }
+    return [];
+  }, [libraryProductsList.length, cache?.barId, barId, cachedProductsLength]);
+  
+  const effectiveLibraryPremixes = React.useMemo(() => {
+    if (libraryPremixesList.length > 0) return libraryPremixesList;
+    if (cache?.barId === barId && cache?.products && cachedProductsLength > 0) {
+      const cached = cache.products.filter(p => 
+        p.isInLibrary === true && 
+        (p.isPremix === true || p.category === 'Premix')
+      );
+      return dedupeProductsByName(cached);
+    }
+    return [];
+  }, [libraryPremixesList.length, cache?.barId, barId, cachedProductsLength]);
+
   const value: ProductsContextValue = React.useMemo(() => ({
     products: effectiveProducts, // Объединенный список для обратной совместимости
     globalProducts: effectiveGlobalProducts,
     premixes: effectivePremixes,
+    personalProducts: effectivePersonalProducts,
+    personalPremixes: effectivePersonalPremixes,
+    libraryProducts: effectiveLibraryProducts,
+    libraryPremixes: effectiveLibraryPremixes,
     isLoading: effectiveIsLoading,
     error: error || null,
     refresh,
-  }), [effectiveProducts, effectiveGlobalProducts, effectivePremixes, effectiveIsLoading, error, refresh]);
+  }), [
+    effectiveProducts, 
+    effectiveGlobalProducts, 
+    effectivePremixes, 
+    effectivePersonalProducts,
+    effectivePersonalPremixes,
+    effectiveLibraryProducts,
+    effectiveLibraryPremixes,
+    effectiveIsLoading, 
+    error, 
+    refresh
+  ]);
 
   return (
     <ProductsContext.Provider value={value}>

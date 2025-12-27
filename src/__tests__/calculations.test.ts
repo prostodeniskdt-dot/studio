@@ -6,6 +6,7 @@ import {
   calculateLineFields,
 } from '@/lib/calculations';
 import type { InventoryLine, Product } from '@/lib/types';
+import { Timestamp } from 'firebase/firestore';
 
 describe('calculations', () => {
   const mockProduct: Product = {
@@ -19,6 +20,8 @@ describe('calculations', () => {
     fullBottleWeightG: 1150,
     emptyBottleWeightG: 450,
     isActive: true,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
   };
 
   describe('calculateTheoreticalEndStock', () => {

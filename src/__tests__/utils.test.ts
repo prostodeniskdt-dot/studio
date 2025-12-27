@@ -1,5 +1,6 @@
 import { dedupeProductsByName } from '@/lib/utils';
 import type { Product } from '@/lib/types';
+import { Timestamp } from 'firebase/firestore';
 
 describe('dedupeProductsByName', () => {
   const createProduct = (name: string, volume: number, isActive = true, updatedAt?: Date): Product => ({
@@ -11,7 +12,8 @@ describe('dedupeProductsByName', () => {
     portionVolumeMl: 40,
     bottleVolumeMl: volume,
     isActive,
-    updatedAt: updatedAt ? { toDate: () => updatedAt, toMillis: () => updatedAt.getTime() } as any : undefined,
+    createdAt: updatedAt ? Timestamp.fromDate(updatedAt) : Timestamp.now(),
+    updatedAt: updatedAt ? Timestamp.fromDate(updatedAt) : Timestamp.now(),
   });
 
   it('should remove duplicates with same name and volume', () => {

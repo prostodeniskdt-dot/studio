@@ -1,5 +1,6 @@
 import { calculatePremixCost, expandPremixToIngredients } from '@/lib/premix-utils';
 import type { Product, PremixIngredient } from '@/lib/types';
+import { Timestamp } from 'firebase/firestore';
 
 describe('premix-utils', () => {
   const mockIngredient1: Product = {
@@ -11,6 +12,8 @@ describe('premix-utils', () => {
     portionVolumeMl: 50,
     bottleVolumeMl: 700,
     isActive: true,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
   };
 
   const mockIngredient2: Product = {
@@ -22,6 +25,8 @@ describe('premix-utils', () => {
     portionVolumeMl: 30,
     bottleVolumeMl: 500,
     isActive: true,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
   };
 
   const mockPremix: Product = {
@@ -48,6 +53,8 @@ describe('premix-utils', () => {
     barId: 'bar_test',
     costCalculationMode: 'auto',
     isActive: true,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
   };
 
   describe('calculatePremixCost', () => {
@@ -202,7 +209,7 @@ describe('premix-utils', () => {
 
       expect(() => expandPremixToIngredients(premixWithInvalidVolume, 500)).toThrow(
         'Invalid bottle volume for premix'
-      });
+      );
     });
 
     it('should handle zero volume', () => {

@@ -52,13 +52,22 @@ export const productSchema = z.object({
   premixIngredients: z.array(premixIngredientSchema).optional(),
   barId: z.string().optional(),
   costCalculationMode: z.enum(['auto', 'manual']).optional(),
+  
+  // Библиотека и владение
+  isInLibrary: z.boolean().optional(),
+  createdByUserId: z.string().optional(),
 
   isActive: z.boolean(),
   createdAt: z.any(), // Firestore Timestamp
   updatedAt: z.any(), // Firestore Timestamp
 }).refine(
   (data) => {
-    const isPremix = data.category === 'Premix';
+    const isPremix = data.category === 'Premix' || data.isPremix === true;
+    
+    // barId и isInLibrary взаимоисключающие
+    if (data.barId && data.isInLibrary === true) {
+      return false;
+    }
     
     // Если это примикс
     if (isPremix) {
@@ -71,17 +80,8 @@ export const productSchema = z.object({
       if (totalVolume > data.bottleVolumeMl) {
         return false;
       }
-      // barId должен быть указан для примиксов
-      if (!data.barId) {
-        return false;
-      }
       // isPremix должен быть true
       if (data.isPremix !== true) {
-        return false;
-      }
-    } else {
-      // Для не-примиксов эти поля должны быть undefined
-      if (data.premixIngredients !== undefined || data.barId !== undefined || data.isPremix === true) {
         return false;
       }
     }
@@ -89,7 +89,7 @@ export const productSchema = z.object({
     return true;
   },
   {
-    message: "Примикс должен иметь ингредиенты и barId, сумма объемов ингредиентов не должна превышать объем бутылки",
+    message: "Примикс должен иметь ингредиенты, сумма объемов ингредиентов не должна превышать объем бутылки. barId и isInLibrary не могут быть установлены одновременно.",
   }
 );
 

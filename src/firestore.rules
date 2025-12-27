@@ -67,8 +67,28 @@ service cloud.firestore {
     }
     
     match /products/{productId} {
-        allow read, list: if isSignedIn() && isNotBanned(request.auth.uid);
-        allow create, update, delete: if isSignedIn() && isNotBanned(request.auth.uid);
+      // Читать можно свои продукты или продукты из библиотеки
+      allow read: if isSignedIn() && isNotBanned(request.auth.uid) && (
+        resource.data.barId == 'bar_' + request.auth.uid ||
+        resource.data.isInLibrary == true
+      );
+      
+      // Создавать можно свои продукты или продукты в библиотеку
+      allow create: if isSignedIn() && isNotBanned(request.auth.uid) && (
+        request.resource.data.barId == 'bar_' + request.auth.uid ||
+        request.resource.data.isInLibrary == true
+      );
+      
+      // Обновлять можно только свои продукты
+      allow update: if isSignedIn() && isNotBanned(request.auth.uid) && 
+        resource.data.barId == 'bar_' + request.auth.uid;
+      
+      // Удалять можно только свои продукты
+      allow delete: if isSignedIn() && isNotBanned(request.auth.uid) && 
+        resource.data.barId == 'bar_' + request.auth.uid;
+      
+      // List используется через where в запросах, поэтому требуется отдельная проверка
+      allow list: if isSignedIn() && isNotBanned(request.auth.uid);
     }
 
     match /bars/{barId} {

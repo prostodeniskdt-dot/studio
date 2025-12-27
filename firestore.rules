@@ -15,6 +15,13 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
+    function isNotBanned(userId) {
+      // Allow if the user document doesn't exist yet, OR if the isBanned flag is not explicitly true.
+      // Use exists() first to avoid unnecessary get() calls
+      return !exists(/databases/$(database)/documents/users/$(userId)) ||
+        get(/databases/$(database)/documents/users/$(userId)).data.isBanned != true;
+    }
+
     function isBarOwner(barId) {
       // Simple, robust check that doesn't rely on cross-document reads.
       return isSignedIn() && barId == 'bar_' + request.auth.uid;
@@ -41,10 +48,10 @@ service cloud.firestore {
       allow list: if isAdmin();
       // A user can create their own profile.
       allow create: if isOwner(userId);
-      // A user can update their own profile, or an admin can update any profile.
-      allow update: if isOwner(userId) || isAdmin();
-      // An admin can delete any user except themselves.
-      allow delete: if isAdmin() && request.auth.uid != userId;
+      // A user can update their own profile if not banned, or an admin can update any profile.
+      allow update: if isAdmin() || (isOwner(userId) && isNotBanned(userId));
+      // Deleting user documents is disabled. Use ban flag instead.
+      allow delete: if false;
     }
 
     match /email_to_uid/{emailLower} {
@@ -65,13 +72,33 @@ service cloud.firestore {
     }
     
     match /products/{productId} {
-        allow read, list: if isSignedIn();
-        allow create, update, delete: if isSignedIn();
+      // Читать можно свои продукты или продукты из библиотеки
+      allow read: if isSignedIn() && isNotBanned(request.auth.uid) && (
+        resource.data.barId == 'bar_' + request.auth.uid ||
+        resource.data.isInLibrary == true
+      );
+      
+      // Создавать можно свои продукты или продукты в библиотеку
+      allow create: if isSignedIn() && isNotBanned(request.auth.uid) && (
+        request.resource.data.barId == 'bar_' + request.auth.uid ||
+        request.resource.data.isInLibrary == true
+      );
+      
+      // Обновлять можно только свои продукты
+      allow update: if isSignedIn() && isNotBanned(request.auth.uid) && 
+        resource.data.barId == 'bar_' + request.auth.uid;
+      
+      // Удалять можно только свои продукты
+      allow delete: if isSignedIn() && isNotBanned(request.auth.uid) && 
+        resource.data.barId == 'bar_' + request.auth.uid;
+      
+      // List используется через where в запросах, поэтому требуется отдельная проверка
+      allow list: if isSignedIn() && isNotBanned(request.auth.uid);
     }
 
     match /bars/{barId} {
       // Allow creation only if the bar ID matches the user's UID and they are creating it for themselves.
-      allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid && barId == 'bar_' + request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid && barId == 'bar_' + request.auth.uid && isNotBanned(request.auth.uid);
       
       // Use the simplified owner check for all other operations.
       allow read, update, delete: if isBarOwner(barId) || isAdmin();

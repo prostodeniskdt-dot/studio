@@ -4,50 +4,37 @@ import * as React from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Package, X } from 'lucide-react';
-import { ProductCard } from './product-card';
+import { Package, X, Download } from 'lucide-react';
 import { ProductSearch } from './product-search';
 import type { Product, ProductCategory } from '@/lib/types';
 import { translateCategory, dedupeProductsByName, buildProductDisplayName, productCategories, productSubCategories } from '@/lib/utils';
+import { ProductCard } from './product-card';
 
-interface ProductsCardViewProps {
+interface ProductsLibraryViewProps {
   products: Product[];
-  onEdit: (product: Product) => void;
-  onArchive: (product: Product) => void;
-  onDelete: (product: Product) => void;
-  onSendToLibrary?: (product: Product) => void;
-  onAdd: () => void;
-  isArchiving?: string | null;
+  onAddToMyProducts: (product: Product) => void;
+  isAdding?: string | null;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   selectedCategory?: ProductCategory;
   onCategoryChange?: (category: ProductCategory | undefined) => void;
   selectedSubCategory?: string;
   onSubCategoryChange?: (subCategory: string | undefined) => void;
-  showArchived?: boolean;
-  onShowArchivedChange?: (show: boolean) => void;
 }
 
-export function ProductsCardView({
+export function ProductsLibraryView({
   products,
-  onEdit,
-  onArchive,
-  onDelete,
-  onSendToLibrary,
-  onAdd,
-  isArchiving = null,
+  onAddToMyProducts,
+  isAdding = null,
   searchQuery = '',
   onSearchChange,
   selectedCategory,
   onCategoryChange,
   selectedSubCategory,
   onSubCategoryChange,
-  showArchived = false,
-  onShowArchivedChange,
-}: ProductsCardViewProps) {
+}: ProductsLibraryViewProps) {
   // Дедупликация продуктов
   const uniqueProducts = React.useMemo(() => {
     return dedupeProductsByName(products);
@@ -56,11 +43,6 @@ export function ProductsCardView({
   // Фильтрация продуктов
   const filteredProducts = React.useMemo(() => {
     let filtered = uniqueProducts;
-
-    // Фильтр по статусу (активные/архивированные)
-    if (!showArchived) {
-      filtered = filtered.filter(p => p.isActive !== false);
-    }
 
     // Фильтр по категории
     if (selectedCategory) {
@@ -82,7 +64,7 @@ export function ProductsCardView({
     }
 
     return filtered;
-  }, [uniqueProducts, showArchived, selectedCategory, selectedSubCategory, searchQuery]);
+  }, [uniqueProducts, selectedCategory, selectedSubCategory, searchQuery]);
 
   // Группировка продуктов по категориям
   const productsByCategory = React.useMemo(() => {
@@ -104,49 +86,41 @@ export function ProductsCardView({
     );
   }, [filteredProducts]);
 
-  // Получить все ключи категорий для defaultValue Accordion
   const allCategoryKeys = React.useMemo(() => {
     return Object.keys(productsByCategory);
   }, [productsByCategory]);
 
   return (
     <div className="w-full space-y-4">
-      {/* Поиск, фильтры и кнопка добавления */}
-      <div className="space-y-3">
-        {/* Поисковая строка и кнопка добавления на одной линии */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex-1 min-w-[200px]">
+      {/* Поиск и фильтры */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        {onSearchChange && (
+          <div className="flex-1">
             <ProductSearch
               value={searchQuery}
-              onChange={onSearchChange || (() => {})}
-              inline={true}
-              placeholder="Поиск продуктов..."
+              onChange={onSearchChange}
             />
           </div>
-          <Button onClick={onAdd} className="h-9 flex-shrink-0">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Добавить
-          </Button>
-        </div>
-        
-        {/* Фильтры отдельно ниже */}
-        <div className="flex flex-col sm:flex-row gap-2 flex-wrap items-start">
-          <Select
-            value={selectedCategory || '__all__'}
-            onValueChange={(val) => onCategoryChange?.(val === '__all__' ? undefined : (val as ProductCategory))}
-          >
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Категория" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">Все категории</SelectItem>
-              {productCategories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {translateCategory(cat)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        )}
+        <div className="flex flex-col sm:flex-row gap-2">
+          {onCategoryChange && (
+            <Select
+              value={selectedCategory || '__all__'}
+              onValueChange={(val) => onCategoryChange(val === '__all__' ? undefined : val as ProductCategory)}
+            >
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Категория" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Все категории</SelectItem>
+                {productCategories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {translateCategory(cat)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           {selectedCategory && productSubCategories[selectedCategory] && productSubCategories[selectedCategory].length > 0 && (
             <Select
               value={selectedSubCategory || '__all__'}
@@ -180,38 +154,22 @@ export function ProductsCardView({
             </Button>
           )}
         </div>
-        
-        {/* Счетчик результатов */}
-        <div className="text-sm text-muted-foreground">
-          Найдено продуктов: {filteredProducts.length}
-        </div>
-        
-        {onShowArchivedChange && (
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="showArchivedCards"
-              checked={showArchived}
-              onCheckedChange={(checked) => onShowArchivedChange(checked === true)}
-            />
-            <label
-              htmlFor="showArchivedCards"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-            >
-              Показать архивированные
-            </label>
-          </div>
-        )}
+      </div>
+      
+      {/* Счетчик результатов */}
+      <div className="text-sm text-muted-foreground">
+        Найдено продуктов: {filteredProducts.length}
       </div>
 
       {/* Если нет продуктов после фильтрации */}
       {filteredProducts.length === 0 ? (
         <EmptyState
           icon={Package}
-          title={searchQuery || selectedCategory ? "Продукты не найдены" : "Нет продуктов"}
+          title={searchQuery || selectedCategory ? "Продукты не найдены" : "Библиотека пуста"}
           description={
             searchQuery || selectedCategory
               ? 'Попробуйте изменить поисковый запрос или фильтры.'
-              : 'Создайте свой первый продукт для использования в калькуляторе и инвентаризации.'
+              : 'В библиотеке пока нет продуктов. Добавьте свои продукты и отправьте их в библиотеку, чтобы они стали доступны другим пользователям.'
           }
         />
       ) : (
@@ -233,16 +191,27 @@ export function ProductsCardView({
             <AccordionContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
                 {categoryProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onEdit={onEdit}
-                    onArchive={onArchive}
-                    onDelete={onDelete}
-                    onSendToLibrary={onSendToLibrary}
-                    isArchiving={isArchiving === product.id}
-                    compact
-                  />
+                  <div key={product.id} className="relative">
+                    <ProductCard
+                      product={product}
+                      onEdit={() => {}} // Не показываем редактирование для библиотечных продуктов
+                      onArchive={() => {}} // Не показываем архивирование
+                      onDelete={() => {}} // Не показываем удаление
+                      compact
+                    />
+                    <div className="absolute bottom-16 right-2">
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() => onAddToMyProducts(product)}
+                        disabled={isAdding === product.id}
+                        className="shadow-lg"
+                      >
+                        <Download className="mr-1.5 h-3.5 w-3.5" />
+                        {isAdding === product.id ? 'Добавление...' : 'В мои продукты'}
+                      </Button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </AccordionContent>

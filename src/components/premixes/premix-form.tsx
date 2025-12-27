@@ -69,6 +69,7 @@ interface PremixFormProps {
 export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
+  const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
   const { globalProducts, isLoading: isLoadingProducts, refresh } = useProducts(); // Используем globalProducts для выбора ингредиентов
   const [isSaving, setIsSaving] = React.useState(false);
@@ -373,6 +374,10 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         emptyBottleWeightG: data.emptyBottleWeightG || null,
         updatedAt: serverTimestamp(),
         createdAt: premix?.createdAt || serverTimestamp(),
+        // Устанавливаем barId и isInLibrary при создании нового премикса
+        barId: premix ? premix.barId : (barId || undefined),
+        isInLibrary: premix ? premix.isInLibrary : false,
+        createdByUserId: premix ? premix.createdByUserId : (user?.uid || undefined),
     };
     
     // Добавить id только для обновления

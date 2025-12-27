@@ -207,6 +207,10 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         id: productRef.id,
         updatedAt: serverTimestamp(),
         createdAt: product?.createdAt || serverTimestamp(),
+        // Устанавливаем barId и isInLibrary при создании нового продукта
+        barId: product ? product.barId : (barId || undefined),
+        isInLibrary: product ? product.isInLibrary : false,
+        createdByUserId: product ? product.createdByUserId : (user?.uid || undefined),
     };
 
     const pathPrefix = 'products';

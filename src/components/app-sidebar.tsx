@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, BarChart3, Settings, Calculator, Truck, ShoppingCart, Shield, Bug, FlaskConical, HelpCircle } from 'lucide-react';
+import { Home, Package, BarChart3, Settings, Calculator, Truck, ShoppingCart, Shield, Bug, FlaskConical, HelpCircle, Library } from 'lucide-react';
 import {
   SidebarHeader,
   Sidebar,
@@ -18,7 +18,9 @@ import { useUser } from '@/firebase';
 const menuItems = [
   { href: '/dashboard', label: 'Панель', icon: Home },
   { href: '/dashboard/products', label: 'Продукты', icon: Package },
+  { href: '/dashboard/products/library', label: 'Библиотека продуктов', icon: Library },
   { href: '/dashboard/premixes', label: 'Премиксы', icon: FlaskConical },
+  { href: '/dashboard/premixes/library', label: 'Библиотека премиксов', icon: Library },
   { href: '/dashboard/sessions', label: 'Инвентаризации', icon: BarChart3 },
   { href: '/dashboard/suppliers', label: 'Поставщики', icon: Truck },
   { href: '/dashboard/purchase-orders', label: 'Закупки', icon: ShoppingCart },

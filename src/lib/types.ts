@@ -82,8 +82,12 @@ export interface Product {
   // Примиксы
   isPremix?: boolean; // true если это примикс (category === 'Premix')
   premixIngredients?: PremixIngredient[]; // Состав примикса
-  barId?: string; // ID бара для примиксов (undefined для глобальных продуктов)
+  barId?: string; // ID бара для ВСЕХ продуктов (undefined для продуктов в библиотеке)
   costCalculationMode?: 'auto' | 'manual'; // 'auto' = сумма ингредиентов, 'manual' = указано вручную
+  
+  // Библиотека и владение
+  isInLibrary?: boolean; // true = продукт в общей библиотеке (виден всем пользователям)
+  createdByUserId?: string; // ID пользователя, создавшего продукт (для аудита)
 
   isActive: boolean;
   createdAt: Timestamp;

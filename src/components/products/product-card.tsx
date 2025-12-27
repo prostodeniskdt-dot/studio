@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Edit2, Archive, ArchiveRestore, MoreHorizontal, Loader2 } from 'lucide-react';
+import { Edit2, Archive, ArchiveRestore, MoreHorizontal, Loader2, Upload } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ interface ProductCardProps {
   onEdit: (product: Product) => void;
   onArchive: (product: Product) => void;
   onDelete: (product: Product) => void;
+  onSendToLibrary?: (product: Product) => void;
   isArchiving?: boolean;
   compact?: boolean;
 }
@@ -30,10 +31,12 @@ export const ProductCard = React.memo<ProductCardProps>(({
   onEdit, 
   onArchive, 
   onDelete,
+  onSendToLibrary,
   isArchiving = false,
   compact = true
 }) => {
   const isActive = product.isActive ?? true;
+  const canSendToLibrary = onSendToLibrary && product.barId && product.isInLibrary !== true;
 
   return (
     <Card 
@@ -130,6 +133,15 @@ export const ProductCard = React.memo<ProductCardProps>(({
                 </>
               )}
             </DropdownMenuItem>
+            {canSendToLibrary && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onSendToLibrary(product)}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Отправить в библиотеку
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem 
               className="text-destructive focus:text-destructive focus:bg-destructive/10"

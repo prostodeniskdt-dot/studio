@@ -4,11 +4,14 @@ import { useProducts } from "@/contexts/products-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { HelpIcon } from '@/components/ui/help-icon';
+import { Button } from '@/components/ui/button';
+import { Library } from 'lucide-react';
+import Link from 'next/link';
 
 export default function PremixesPage() {
-    const { premixes, isLoading } = useProducts();
+    const { personalPremixes, isLoading } = useProducts();
 
-    if (isLoading || !premixes) {
+    if (isLoading || !personalPremixes) {
         return (
             <div className="w-full space-y-6">
                 <div className="space-y-2">
@@ -39,13 +42,21 @@ export default function PremixesPage() {
 
     return (
         <div className="w-full">
-            <div className="mb-4 flex items-center gap-2">
-              <HelpIcon 
-                description="Управляйте премиксами - заготовками и коктейлями. Создавайте новые премиксы, редактируйте существующие. Премиксы используются для расчета себестоимости коктейлей."
-              />
-              <span className="text-sm text-muted-foreground">Подсказка работы раздела</span>
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <HelpIcon 
+                  description="Управляйте премиксами - заготовками и коктейлями. Создавайте новые премиксы, редактируйте существующие. Премиксы используются для расчета себестоимости коктейлей."
+                />
+                <span className="text-sm text-muted-foreground">Подсказка работы раздела</span>
+              </div>
+              <Link href="/dashboard/premixes/library">
+                <Button variant="outline" className="gap-2">
+                  <Library className="h-4 w-4" />
+                  Библиотека премиксов
+                </Button>
+              </Link>
             </div>
-            <PremixesCardView premixes={premixes || []} />
+            <PremixesCardView premixes={personalPremixes || []} />
         </div>
     );
 }

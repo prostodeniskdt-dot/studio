@@ -48,9 +48,15 @@ if (getApps().length === 0) {
 
 const db = getFirestore();
 
+// Тип для рецепта премикса
+interface PremixRecipe {
+  name: string;
+  totalVolume: number;
+  ingredients: [string, number][]; // Кортежи [название продукта, объем в мл]
+}
+
 // Рецепты популярных премиксов
-// Структура: название, общий объем порции (мл), ингредиенты [название продукта, объем в мл]
-const PREMIX_RECIPES = [
+const PREMIX_RECIPES: PremixRecipe[] = [
   {
     name: 'Лонг Айленд Айс Ти',
     totalVolume: 180,
@@ -331,7 +337,8 @@ async function createPremixes() {
       const ingredients: Array<{ productId: string; volumeMl: number; ratio: number }> = [];
       let allIngredientsFound = true;
 
-      for (const [ingredientName, volumeMl] of recipe.ingredients) {
+      for (const ingredient of recipe.ingredients) {
+        const [ingredientName, volumeMl] = ingredient as [string, number];
         const mapping = PRODUCT_NAME_MAPPING[ingredientName];
         
         if (!mapping) {

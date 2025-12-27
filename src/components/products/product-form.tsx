@@ -211,11 +211,20 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         id: productRef.id,
         updatedAt: serverTimestamp(),
         createdAt: product?.createdAt || serverTimestamp(),
-        // Устанавливаем barId и isInLibrary при создании нового продукта
-        barId: product ? product.barId : (shouldCreateInLibrary ? undefined : (barId || undefined)),
+        // Устанавливаем isInLibrary при создании нового продукта
         isInLibrary: product ? product.isInLibrary : shouldCreateInLibrary,
         createdByUserId: product ? product.createdByUserId : (user?.uid || undefined),
     };
+
+    // Добавляем barId только если это НЕ библиотечный продукт
+    if (product) {
+      // При редактировании сохраняем существующий barId
+      productData.barId = product.barId;
+    } else if (!shouldCreateInLibrary) {
+      // При создании персонального продукта добавляем barId
+      productData.barId = barId || undefined;
+    }
+    // Если shouldCreateInLibrary === true, поле barId вообще не включается в объект
 
     const pathPrefix = 'products';
     setDoc(productRef, productData, { merge: true })

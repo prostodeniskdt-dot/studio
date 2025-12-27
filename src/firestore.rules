@@ -74,6 +74,7 @@ service cloud.firestore {
       );
       
       // Создавать можно свои продукты или продукты в библиотеку
+      // При создании продукта в библиотеку (isInLibrary == true) поле barId может отсутствовать
       allow create: if isSignedIn() && isNotBanned(request.auth.uid) && (
         request.resource.data.barId == 'bar_' + request.auth.uid ||
         request.resource.data.isInLibrary == true

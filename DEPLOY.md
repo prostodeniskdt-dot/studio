@@ -183,15 +183,26 @@ Vercel автоматически задеплоит новую версию!
 
 ### Требования
 
-1. Установлен Firebase Admin SDK:
+1. **Установлен Firebase Admin SDK:**
    ```bash
    npm install firebase-admin
    ```
 
-2. Настроен доступ к Firestore через один из способов:
-   - Файл `serviceAccountKey.json` в корне проекта
+2. **Настроен доступ к Firestore через один из способов:**
+   - Файл `serviceAccountKey.json` в корне проекта (рекомендуется для локальной разработки)
    - Переменная окружения `FIREBASE_SERVICE_ACCOUNT_KEY` с JSON содержимым service account key
-   - Default credentials (для локальной разработки с gcloud)
+   - Default credentials (для локальной разработки с gcloud CLI)
+
+3. **Права доступа:** Service account должен иметь права на запись в Firestore
+
+### Получение service account key
+
+1. Перейдите в Firebase Console: https://console.firebase.google.com/
+2. Выберите ваш проект
+3. Откройте Project Settings (⚙️) → Service accounts
+4. Нажмите "Generate new private key"
+5. Сохраните JSON файл как `serviceAccountKey.json` в корне проекта
+6. **Важно:** Добавьте `serviceAccountKey.json` в `.gitignore` чтобы не коммитить секреты!
 
 ### Запуск скрипта
 
@@ -205,6 +216,8 @@ npx tsx scripts/seed-library-products-and-premixes.ts
    - Устанавливает `isInLibrary: true` для всех продуктов (кроме премиксов)
    - Удаляет поле `barId` у всех продуктов
    - Все продукты становятся доступными для всех пользователей
+   - Пропускает продукты, которые уже в библиотеке
+   - Пропускает премиксы (они обрабатываются отдельно)
 
 2. **Создает 10 популярных премиксов:**
    - Лонг Айленд Айс Ти
@@ -230,9 +243,41 @@ npx tsx scripts/seed-library-products-and-premixes.ts
 
 После выполнения скрипта:
 
-1. Проверьте в Firebase Console, что продукты имеют `isInLibrary: true`
-2. Убедитесь, что премиксы созданы в коллекции `products` с `category: 'Premix'`
-3. Проверьте, что премиксы доступны в приложении через страницу библиотеки премиксов
+1. **Проверьте вывод скрипта:**
+   - Должны быть указаны количество мигрированных продуктов
+   - Должно быть указано количество созданных премиксов
+   - Проверьте предупреждения о пропущенных премиксах
+
+2. **Проверьте в Firebase Console:**
+   - Перейдите в Firestore Database
+   - Проверьте коллекцию `products`
+   - Фильтруйте по `isInLibrary == true`
+   - Убедитесь, что продукты имеют `isInLibrary: true` и `barId` отсутствует
+   - Проверьте, что премиксы созданы с `category: 'Premix'` и `isInLibrary: true`
+
+3. **Проверьте в приложении:**
+   - Откройте страницу "Библиотека продуктов" - должны отображаться продукты
+   - Откройте страницу "Библиотека премиксов" - должны отображаться премиксы
+
+### Устранение проблем
+
+**Ошибка: "Failed to get document because the client is offline"**
+- Убедитесь, что у вас есть интернет-соединение
+- Проверьте правильность service account key
+
+**Ошибка: "Permission denied"**
+- Убедитесь, что service account имеет роль "Firebase Admin SDK Administrator Service Agent" или "Editor"
+- Проверьте права доступа в Firebase Console → IAM & Admin
+
+**Премиксы не создаются (все пропущены)**
+- Проверьте логи скрипта - будут указаны недостающие ингредиенты
+- Добавьте недостающие продукты в базу данных
+- Повторно запустите скрипт (он не создаст дубликаты уже созданных премиксов)
+
+**Библиотека пуста после миграции**
+- Проверьте запросы в `ProductsContext` - они должны использовать `where('isInLibrary', '==', true)`
+- Убедитесь, что Firestore indexes задеплоены: `firebase deploy --only firestore:indexes`
+- Проверьте Firestore Security Rules - они должны разрешать чтение продуктов с `isInLibrary: true`
 
 ## Troubleshooting
 

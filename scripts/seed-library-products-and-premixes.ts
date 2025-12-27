@@ -265,10 +265,12 @@ async function migrateProductsToLibrary() {
 
   try {
     const productsSnapshot = await db.collection('products').get();
-    console.log(`Найдено продуктов: ${productsSnapshot.size}`);
+    console.log(`Найдено всего продуктов в базе: ${productsSnapshot.size}`);
 
     let migratedToLibrary = 0;
     let skipped = 0;
+    let skippedPremixes = 0;
+    let skippedAlreadyInLibrary = 0;
     let currentBatch = db.batch();
     let batchCount = 0;
     const BATCH_SIZE = 500;
@@ -278,12 +280,14 @@ async function migrateProductsToLibrary() {
 
       // Пропускаем премиксы
       if (product.category === 'Premix' || product.isPremix === true) {
+        skippedPremixes++;
         skipped++;
         continue;
       }
 
       // Пропускаем если уже в библиотеке
       if (product.isInLibrary === true && !product.barId) {
+        skippedAlreadyInLibrary++;
         skipped++;
         continue;
       }
@@ -300,7 +304,7 @@ async function migrateProductsToLibrary() {
 
       if (batchCount % BATCH_SIZE === 0) {
         await currentBatch.commit();
-        console.log(`Обработано ${batchCount} продуктов...`);
+        console.log(`  Обработано ${batchCount} продуктов для миграции...`);
         currentBatch = db.batch();
       }
     }
@@ -308,12 +312,15 @@ async function migrateProductsToLibrary() {
     // Выполняем оставшиеся обновления
     if (batchCount % BATCH_SIZE !== 0 && batchCount > 0) {
       await currentBatch.commit();
+      console.log(`  Завершена миграция ${batchCount} продуктов`);
     }
 
     console.log(`\nРезультаты миграции:`);
-    console.log(`  Мигрировано в библиотеку: ${migratedToLibrary}`);
-    console.log(`  Пропущено: ${skipped}`);
-    console.log(`  Всего обработано: ${migratedToLibrary + skipped}`);
+    console.log(`  ✓ Мигрировано в библиотеку: ${migratedToLibrary}`);
+    console.log(`  ⊘ Пропущено (уже в библиотеке): ${skippedAlreadyInLibrary}`);
+    console.log(`  ⊘ Пропущено (премиксы): ${skippedPremixes}`);
+    console.log(`  ⊘ Всего пропущено: ${skipped}`);
+    console.log(`  = Всего обработано: ${migratedToLibrary + skipped}`);
   } catch (error) {
     console.error('Ошибка при миграции продуктов:', error);
     throw error;
@@ -417,7 +424,9 @@ async function createPremixes() {
  */
 async function main() {
   console.log('=== Скрипт миграции продуктов и создания премиксов ===\n');
-  console.log('Внимание: Этот скрипт мигрирует все продукты в библиотеку (необратимо)!\n');
+  console.log('⚠️  Внимание: Этот скрипт мигрирует все продукты в библиотеку (необратимо)!\n');
+  console.log('Начало выполнения в:', new Date().toISOString());
+  console.log('');
 
   try {
     // Шаг 1: Миграция продуктов в библиотеку
@@ -427,8 +436,13 @@ async function main() {
     await createPremixes();
     
     console.log('\n✅ Все операции выполнены успешно!');
+    console.log('Завершение выполнения в:', new Date().toISOString());
   } catch (error) {
-    console.error('\n❌ Ошибка при выполнении скрипта:', error);
+    console.error('\n❌ Ошибка при выполнении скрипта:');
+    console.error(error);
+    if (error instanceof Error) {
+      console.error('Стек ошибки:', error.stack);
+    }
     process.exit(1);
   }
 }

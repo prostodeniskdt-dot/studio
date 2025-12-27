@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { PremixesCardView } from '@/components/premixes/premixes-card-view';
+import { PremixesLibraryView } from '@/components/premixes/premixes-library-view';
 import { useProducts } from '@/contexts/products-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -9,22 +9,23 @@ import { HelpIcon } from '@/components/ui/help-icon';
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, collection, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import type { Product } from '@/lib/types';
+import type { Product, ProductCategory } from '@/lib/types';
 import { buildProductDisplayName } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PremixesLibraryPage() {
-    const { libraryPremixes, isLoading } = useProducts();
-    const [premixToAdd, setPremixToAdd] = React.useState<Product | null>(null);
+    const { libraryPremixes, isLoading, refresh: refreshProducts } = useProducts();
     const [isAdding, setIsAdding] = React.useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = React.useState('');
+    const [selectedCategory, setSelectedCategory] = React.useState<ProductCategory | undefined>();
+    const [selectedSubCategory, setSelectedSubCategory] = React.useState<string | undefined>();
 
     const firestore = useFirestore();
     const { user } = useUser();
     const barId = user ? `bar_${user.uid}` : null;
     const { toast } = useToast();
-    const { refresh: refreshProducts } = useProducts();
 
     const handleAddToMyPremixes = async (premix: Product) => {
         if (!premix || !firestore || !barId || !user) return;
@@ -64,7 +65,6 @@ export default function PremixesLibraryPage() {
                 title: "Премикс добавлен", 
                 description: `Премикс "${buildProductDisplayName(premix.name, premix.bottleVolumeMl)}" добавлен в ваши премиксы.` 
             });
-            setPremixToAdd(null);
         } catch (serverError) {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: `${pathPrefix}/${premixRef.id}`,
@@ -122,8 +122,17 @@ export default function PremixesLibraryPage() {
                 </div>
             </div>
 
-            {/* TODO: Создать компонент PremixesLibraryView аналогично ProductsLibraryView */}
-            <PremixesCardView premixes={libraryPremixes || []} />
+            <PremixesLibraryView
+                premixes={libraryPremixes || []}
+                onAddToMyPremixes={handleAddToMyPremixes}
+                isAdding={isAdding}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+                selectedSubCategory={selectedSubCategory}
+                onSubCategoryChange={setSelectedSubCategory}
+            />
         </div>
     );
 }

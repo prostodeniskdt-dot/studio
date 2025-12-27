@@ -71,6 +71,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const [isSaving, setIsSaving] = React.useState(false);
   const [showAutoOrderWarning, setShowAutoOrderWarning] = React.useState(true);
   const { globalProducts, refresh: refreshProducts } = useProducts();
+  const [createInLibrary, setCreateInLibrary] = React.useState(false);
 
   // Автозакрытие плашки предупреждения через 5 секунд
   React.useEffect(() => {
@@ -195,6 +196,9 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     // Use the base name for saving, volume is a separate field.
     const { baseName } = extractVolume(data.name);
 
+    // Определяем, создаем ли продукт в библиотеке (только для новых продуктов)
+    const shouldCreateInLibrary = !product && createInLibrary;
+
     const productData: any = {
         ...data,
         name: baseName, // Save the base name only
@@ -208,8 +212,8 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         updatedAt: serverTimestamp(),
         createdAt: product?.createdAt || serverTimestamp(),
         // Устанавливаем barId и isInLibrary при создании нового продукта
-        barId: product ? product.barId : (barId || undefined),
-        isInLibrary: product ? product.isInLibrary : false,
+        barId: product ? product.barId : (shouldCreateInLibrary ? undefined : (barId || undefined)),
+        isInLibrary: product ? product.isInLibrary : shouldCreateInLibrary,
         createdByUserId: product ? product.createdByUserId : (user?.uid || undefined),
     };
 
@@ -236,9 +240,10 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
           console.error('Failed to refresh products context:', e);
         }
         
+        const shouldCreateInLibraryForToast = !product && createInLibrary;
         toast({ 
-          title: product ? "Продукт обновлен" : "Продукт создан",
-          description: product ? "Изменения сохранены успешно" : "Новый продукт добавлен в базу"
+          title: product ? "Продукт обновлен" : (shouldCreateInLibraryForToast ? "Продукт создан в библиотеке" : "Продукт создан"),
+          description: product ? "Изменения сохранены успешно" : (shouldCreateInLibraryForToast ? "Продукт доступен всем пользователям" : "Новый продукт добавлен в вашу базу")
         });
         
         // Закрыть форму после небольшой задержки для обновления UI
@@ -487,6 +492,26 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         </div>
         </div>
        
+        {/* Опция создания в библиотеке (только для новых продуктов) */}
+        {!product && (
+          <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">
+            <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">
+                  Создать в библиотеке
+                </FormLabel>
+                <FormDescription>
+                  Продукт будет доступен всем пользователям. Вы не сможете его редактировать после создания.
+                </FormDescription>
+              </div>
+              <Switch
+                checked={createInLibrary}
+                onCheckedChange={setCreateInLibrary}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">
           <FormField
           control={form.control}

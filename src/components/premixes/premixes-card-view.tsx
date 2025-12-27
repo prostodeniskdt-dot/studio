@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { PlusCircle, Search, Edit2, Trash2, Archive, ArchiveRestore, FlaskConical, Package } from 'lucide-react';
+import { PlusCircle, Search, Edit2, Trash2, Archive, ArchiveRestore, FlaskConical, Package, Upload } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { Button } from '@/components/ui/button';
@@ -35,7 +35,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useProducts } from '@/contexts/products-context';
 
-export function PremixesCardView({ premixes }: { premixes: Product[] }) {
+interface PremixesCardViewProps {
+  premixes: Product[];
+  onSendToLibrary?: (premix: Product) => void;
+}
+
+export function PremixesCardView({ premixes, onSendToLibrary }: PremixesCardViewProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [editingPremix, setEditingPremix] = React.useState<Product | undefined>(undefined);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
@@ -287,6 +292,17 @@ export function PremixesCardView({ premixes }: { premixes: Product[] }) {
                     <Edit2 className="mr-2 h-4 w-4" />
                     Редактировать
                   </Button>
+                  {onSendToLibrary && premix.barId && premix.isInLibrary !== true && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onSendToLibrary(premix)}
+                      className="px-3"
+                      title="Отправить в библиотеку"
+                    >
+                      <Upload className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"

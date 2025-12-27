@@ -68,6 +68,8 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   );
   
   // Запрос для продуктов из библиотеки (isInLibrary === true)
+  // Примечание: Firestore не поддерживает запросы с != для исключения премиксов,
+  // поэтому получаем все библиотечные продукты и фильтруем на клиенте
   const libraryProductsQuery = useMemoFirebase(() =>
     firestore ? query(
       collection(firestore, 'products'),

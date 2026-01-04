@@ -158,8 +158,8 @@ export function FAQSection() {
               return (
                 <div key={category} className="mb-4">
                   <div className="flex items-center gap-2 mb-3 px-2">
-                    <CategoryIcon className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                    <h3 className="text-sm font-semibold text-foreground">
+                    <CategoryIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                    <h3 className="text-base md:text-lg font-semibold text-foreground">
                       {categoryLabel}
                       <span className="ml-2 text-xs text-muted-foreground">
                         ({items.length})
@@ -176,7 +176,7 @@ export function FAQSection() {
                         {faq.question}
                       </AccordionTrigger>
                       <AccordionContent className="px-4 pb-3">
-                        <div className="text-sm text-muted-foreground space-y-3">
+                        <div className="text-xs md:text-sm text-muted-foreground space-y-3">
                           <div className="leading-relaxed">
                             {parseAnswerWithLinks(faq.answer)}
                           </div>

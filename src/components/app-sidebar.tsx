@@ -25,7 +25,7 @@ const menuItems = [
   { href: '/dashboard/suppliers', label: 'Поставщики', icon: Truck },
   { href: '/dashboard/purchase-orders', label: 'Закупки', icon: ShoppingCart },
   { href: '/dashboard/calculator', label: 'Калькулятор', icon: Calculator },
-  { href: '/dashboard/faq', label: 'FAQ', icon: HelpCircle },
+  { href: '/dashboard/faq', label: 'Частые вопросы', icon: HelpCircle },
 ];
 
 const adminMenuItem = { href: '/dashboard/admin', label: 'Админка', icon: Shield };

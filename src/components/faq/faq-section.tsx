@@ -158,8 +158,8 @@ export function FAQSection() {
               return (
                 <div key={category} className="mb-4">
                   <div className="flex items-center gap-2 mb-3 px-2">
-                    <CategoryIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                    <h3 className="text-base md:text-lg font-semibold text-foreground">
+                    <CategoryIcon className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                    <h3 className="text-lg md:text-xl font-semibold text-foreground">
                       {categoryLabel}
                       <span className="ml-2 text-xs text-muted-foreground">
                         ({items.length})

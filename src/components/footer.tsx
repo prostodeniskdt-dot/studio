@@ -74,7 +74,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-4 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} BarBoss. Все права защищены.
+          © {new Date().getFullYear()} BAR BOSS ONLINE. Все права защищены.
         </div>
       </div>
     </footer>

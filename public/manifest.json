@@ -1,6 +1,6 @@
 {
-  "name": "BarBoss Inventory Management",
-  "short_name": "BarBoss",
+  "name": "BAR BOSS ONLINE Inventory Management",
+  "short_name": "BAR BOSS ONLINE",
   "description": "Система управления инвентаризацией для баров и ресторанов",
   "start_url": "/",
   "display": "standalone",

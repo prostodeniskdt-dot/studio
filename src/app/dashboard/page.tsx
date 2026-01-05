@@ -129,7 +129,7 @@ export default function DashboardPage() {
 
       <Card className="mb-6 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 border-primary/20 animate-fade-in">
         <CardHeader>
-          <CardTitle className="text-2xl md:text-3xl gradient-text">Добро пожаловать в BarBoss!</CardTitle>
+          <CardTitle className="text-2xl md:text-3xl gradient-text">Добро пожаловать в BAR BOSS ONLINE!</CardTitle>
           <CardDescription className="text-base">
             Это ваша панель управления для инвентаризации. Отслеживайте остатки, анализируйте расхождения и оптимизируйте работу вашего бара.
           </CardDescription>

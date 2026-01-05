@@ -12,7 +12,7 @@ export default function LegalPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Правовая информация</h1>
           <p className="text-muted-foreground mt-2">
-            Документы и информация о сервисе BarBoss
+            Документы и информация о сервисе BAR BOSS ONLINE
           </p>
         </div>
 

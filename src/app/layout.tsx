@@ -10,13 +10,13 @@ import { CookieBanner } from '@/components/cookie-banner';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'BarBoss Инвентаризация',
+  title: 'BAR BOSS ONLINE Инвентаризация',
   description: 'Калькулятор инвентаризации для баров',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'BarBoss',
+    title: 'BAR BOSS ONLINE',
   },
   formatDetection: {
     telephone: false,

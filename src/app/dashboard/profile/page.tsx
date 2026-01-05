@@ -114,7 +114,7 @@ export default function ProfilePage() {
               </DialogTrigger>
               <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Помощь по использованию BarBoss</DialogTitle>
+                  <DialogTitle>Помощь по использованию BAR BOSS ONLINE</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-6">
                   <div>

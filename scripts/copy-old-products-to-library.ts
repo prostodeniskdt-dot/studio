@@ -82,8 +82,14 @@ async function copyOldProductsToLibrary() {
     let batchCount = 0;
     const BATCH_SIZE = 500;
 
+    // Примеры продуктов для логирования
+    const sampleProductsToCopy: Array<{ id: string; name: string }> = [];
+    const sampleSkippedPersonal: Array<{ id: string; name: string; barId: string }> = [];
+    const sampleSkippedInLibrary: Array<{ id: string; name: string }> = [];
+
     for (const doc of productsSnapshot.docs) {
       const product = doc.data();
+      const productId = doc.id;
 
       // Пропускаем премиксы
       if (product.category === 'Premix' || product.isPremix === true) {
@@ -92,23 +98,30 @@ async function copyOldProductsToLibrary() {
         continue;
       }
 
-      // Пропускаем продукты уже в библиотеке
-      if (product.isInLibrary === true && !product.barId) {
-        skippedAlreadyInLibrary++;
-        skipped++;
-        continue;
-      }
-
       // Пропускаем персональные продукты пользователей (те, что имеют barId)
       if (product.barId) {
         skippedPersonal++;
         skipped++;
+        if (sampleSkippedPersonal.length < 3) {
+          sampleSkippedPersonal.push({ id: productId, name: product.name || 'без названия', barId: product.barId });
+        }
         continue;
       }
 
-      // Копируем старый продукт в библиотеку (без barId)
+      // Пропускаем продукты уже в библиотеке (isInLibrary === true и без barId)
+      // Проверяем это после проверки barId, чтобы не пропустить продукты с isInLibrary: false
+      if (product.isInLibrary === true) {
+        skippedAlreadyInLibrary++;
+        skipped++;
+        if (sampleSkippedInLibrary.length < 3) {
+          sampleSkippedInLibrary.push({ id: productId, name: product.name || 'без названия' });
+        }
+        continue;
+      }
+
+      // Копируем старый продукт в библиотеку (без barId и без isInLibrary или с isInLibrary !== true)
       // Используем set() с merge: true для безопасного обновления с сохранением ID
-      const productRef = db.collection('products').doc(doc.id);
+      const productRef = db.collection('products').doc(productId);
       
       // Подготавливаем данные для обновления
       // На этом этапе product гарантированно не имеет barId (мы пропустили продукты с barId выше)
@@ -124,9 +137,13 @@ async function copyOldProductsToLibrary() {
       copiedToLibrary++;
       batchCount++;
 
+      if (sampleProductsToCopy.length < 5) {
+        sampleProductsToCopy.push({ id: productId, name: product.name || 'без названия' });
+      }
+
       if (batchCount % BATCH_SIZE === 0) {
         await currentBatch.commit();
-        console.log(`  Обработано ${batchCount} продуктов для копирования...`);
+        console.log(`  ✓ Обработано ${batchCount} продуктов для копирования...`);
         currentBatch = db.batch();
       }
     }
@@ -140,14 +157,39 @@ async function copyOldProductsToLibrary() {
     const endTime = Date.now();
     const duration = ((endTime - startTime) / 1000).toFixed(2);
 
-    console.log(`\nРезультаты копирования:`);
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`РЕЗУЛЬТАТЫ КОПИРОВАНИЯ:`);
+    console.log(`${'='.repeat(60)}`);
     console.log(`  ✓ Скопировано в библиотеку: ${copiedToLibrary}`);
     console.log(`  ⊘ Пропущено (уже в библиотеке): ${skippedAlreadyInLibrary}`);
-    console.log(`  ⊘ Пропущено (персональные продукты): ${skippedPersonal}`);
+    console.log(`  ⊘ Пропущено (персональные продукты с barId): ${skippedPersonal}`);
     console.log(`  ⊘ Пропущено (премиксы): ${skippedPremixes}`);
     console.log(`  ⊘ Всего пропущено: ${skipped}`);
     console.log(`  = Всего обработано: ${copiedToLibrary + skipped}`);
     console.log(`  ⏱  Время выполнения: ${duration} сек`);
+    
+    if (sampleProductsToCopy.length > 0) {
+      console.log(`\n📦 Примеры скопированных продуктов (первые ${sampleProductsToCopy.length}):`);
+      sampleProductsToCopy.forEach(p => {
+        console.log(`     - ${p.name} (ID: ${p.id})`);
+      });
+    }
+
+    if (sampleSkippedPersonal.length > 0) {
+      console.log(`\n👤 Примеры пропущенных персональных продуктов:`);
+      sampleSkippedPersonal.forEach(p => {
+        console.log(`     - ${p.name} (barId: ${p.barId})`);
+      });
+    }
+
+    if (sampleSkippedInLibrary.length > 0) {
+      console.log(`\n📚 Примеры продуктов уже в библиотеке:`);
+      sampleSkippedInLibrary.forEach(p => {
+        console.log(`     - ${p.name}`);
+      });
+    }
+
+    console.log(`\n${'='.repeat(60)}`);
   } catch (error) {
     console.error('Ошибка при копировании продуктов:', error);
     throw error;

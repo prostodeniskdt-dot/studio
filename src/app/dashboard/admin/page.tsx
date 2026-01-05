@@ -116,7 +116,19 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Администрирование</h1>
+          <p className="text-muted-foreground mt-2">Управление пользователями и данными</p>
+        </div>
+        <Button asChild variant="outline">
+          <Link href="/dashboard/admin/products-migration">
+            Миграция продуктов
+          </Link>
+        </Button>
+      </div>
+      
       {isLoadingUsers ? (
          <div className="flex justify-center items-center h-48">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

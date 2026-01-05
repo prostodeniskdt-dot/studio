@@ -1,27 +1,58 @@
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
-export function AppLogo({ className }: { className?: string }) {
+interface AppLogoProps {
+  className?: string;
+  variant?: 'dark' | 'light';
+  /**
+   * Размер логотипа. По умолчанию 'default' (h-8)
+   * 'small' - для компактных мест (h-6)
+   * 'default' - стандартный размер (h-8)
+   * 'large' - для крупных отображений (h-12)
+   */
+  size?: 'small' | 'default' | 'large';
+}
+
+export function AppLogo({ className, variant, size = 'default' }: AppLogoProps) {
+  // Определяем вариант логотипа:
+  // - Если передан явно через prop, используем его
+  // - Если className содержит 'text-sidebar' - это сайдбар с черным фоном, нужен светлый логотип
+  // - Иначе - главная страница с серым фоном, нужен темный логотип
+  const logoVariant = variant || (className?.includes('text-sidebar') ? 'light' : 'dark');
+  
+  // Выбираем соответствующий файл логотипа:
+  // - logo-light.png - для черного фона (сайдбар) - золотистый текст на черном фоне
+  // - logo-dark.png - для серого фона (главная страница) - темный текст на сером фоне
+  const logoPath = logoVariant === 'light' 
+    ? '/images/logo/logo-light.png'  // Для черного фона (сайдбар) - золотистый текст "BAR BOSS ONLINE"
+    : '/images/logo/logo-dark.png';   // Для серого фона (главная страница) - темный текст "BAR BOSS ONLINE"
+
+  // Определяем размеры в зависимости от пропа size
+  const sizeClasses = {
+    small: 'h-6',
+    default: 'h-8',
+    large: 'h-12'
+  };
+
+  // Базовые размеры изображения (соотношение примерно 3:1 для логотипа с текстом "BAR BOSS ONLINE")
+  const imageDimensions = {
+    small: { width: 90, height: 30 },
+    default: { width: 150, height: 50 },
+    large: { width: 240, height: 80 }
+  };
+
+  const dimensions = imageDimensions[size];
+
   return (
-    <div className={cn("flex items-center gap-2.5", className)}>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-8 w-8 text-primary"
-      >
-        <path d="M14 10a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V10Z" />
-        <path d="M6 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-        <path d="M18 10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2" />
-        <path d="M22 10h-2" />
-        <path d="M2 10h2" />
-        <path d="m14 4 1-1" />
-        <path d="m6 4-1-1" />
-      </svg>
-      <span className={cn("text-2xl font-bold", className?.includes('text-sidebar') ? 'text-inherit' : 'text-primary')}>BarBoss</span>
+    <div className={cn("flex items-center", className)}>
+      <Image
+        src={logoPath}
+        alt="BAR BOSS ONLINE"
+        width={dimensions.width}
+        height={dimensions.height}
+        className={cn("w-auto object-contain", sizeClasses[size])}
+        priority
+      />
     </div>
   );
 }

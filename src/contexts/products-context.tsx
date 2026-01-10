@@ -167,22 +167,21 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   // Продукты из библиотеки (без примиксов)
   const libraryProductsList = React.useMemo(() => {
     const library = libraryProducts || [];
-    // Фильтруем: только продукты БЕЗ barId (или с barId === undefined/null)
-    // чтобы исключить персональные продукты, которые случайно получили isInLibrary: true
+    // Включаем все продукты с isInLibrary === true, независимо от наличия barId
+    // Это позволяет продуктам быть видимыми и в библиотеке, и в персональных продуктах
     return library.filter(p => 
       !p.isPremix && 
-      p.category !== 'Premix' &&
-      (!p.barId || p.barId === undefined || p.barId === null)
+      p.category !== 'Premix'
     );
   }, [libraryProducts]);
   
   // Примиксы из библиотеки
   const libraryPremixesList = React.useMemo(() => {
     const library = libraryProducts || [];
-    // Фильтруем: только премиксы БЕЗ barId
+    // Включаем все премиксы с isInLibrary === true, независимо от наличия barId
+    // Это позволяет премиксам быть видимыми и в библиотеке, и в персональных премиксах
     return library.filter(p => 
-      (p.isPremix === true || p.category === 'Premix') &&
-      (!p.barId || p.barId === undefined || p.barId === null)
+      p.isPremix === true || p.category === 'Premix'
     );
   }, [libraryProducts]);
 

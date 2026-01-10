@@ -64,6 +64,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
   const { toast } = useToast();
   const { globalProducts, isLoading: isLoadingProducts, refresh } = useProducts(); // Используем globalProducts для выбора ингредиентов
   const [isSaving, setIsSaving] = React.useState(false);
+  const [createInLibrary, setCreateInLibrary] = React.useState(false);
   
   // Инициализация ингредиентов с правильным ratio
   const initialIngredients = React.useMemo(() => {
@@ -334,11 +335,20 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         emptyBottleWeightG: data.emptyBottleWeightG || null,
         updatedAt: serverTimestamp(),
         createdAt: premix?.createdAt || serverTimestamp(),
-        // Устанавливаем barId и isInLibrary при создании нового премикса
-        barId: premix ? premix.barId : (barId || undefined),
-        isInLibrary: premix ? premix.isInLibrary : false,
+        // Определяем, создаем ли премикс в библиотеке (только для новых премиксов)
+        isInLibrary: premix ? premix.isInLibrary : createInLibrary,
         createdByUserId: premix ? premix.createdByUserId : (user?.uid || undefined),
     };
+
+    // Добавляем barId
+    if (premix) {
+      // При редактировании сохраняем существующий barId
+      premixData.barId = premix.barId;
+    } else {
+      // При создании премикса всегда добавляем barId (даже если создаем в библиотеке)
+      // Это позволяет премиксу быть видимым и в библиотеке, и в персональных премиксах
+      premixData.barId = barId || undefined;
+    }
     
     // Добавить id только для обновления
     if (premix) {
@@ -394,9 +404,12 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
       
       setDoc(premixRef, premixDataWithId, { merge: true })
         .then(() => {
+          const shouldCreateInLibraryForToast = createInLibrary;
           toast({ 
             title: "Премикс создан",
-            description: `Премикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно создан.`
+            description: shouldCreateInLibraryForToast 
+              ? `Премикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" создан и доступен всем пользователям в библиотеке.`
+              : `Премикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно создан.`
           });
           refresh();
           setTimeout(() => {
@@ -690,6 +703,26 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         </div>
         
         <Separator />
+
+        {/* Опция создания в библиотеке (только для новых премиксов) */}
+        {!premix && (
+          <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">
+            <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">
+                  Добавить в общую библиотеку
+                </FormLabel>
+                <FormDescription>
+                  Премикс будет доступен всем пользователям в библиотеке и останется в ваших премиксах. Вы сможете его редактировать.
+                </FormDescription>
+              </div>
+              <Switch
+                checked={createInLibrary}
+                onCheckedChange={setCreateInLibrary}
+              />
+            </div>
+          </div>
+        )}
 
         <FormField
           control={form.control}

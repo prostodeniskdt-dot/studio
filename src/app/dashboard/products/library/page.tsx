@@ -7,13 +7,23 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { HelpIcon } from '@/components/ui/help-icon';
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, collection, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, collection, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { Product, ProductCategory } from '@/lib/types';
 import { buildProductDisplayName } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function ProductsLibraryPage() {
     const { libraryProducts, isLoading, refresh: refreshProducts } = useProducts();
@@ -22,6 +32,8 @@ export default function ProductsLibraryPage() {
     const [selectedSubCategory, setSelectedSubCategory] = React.useState<string | undefined>();
     const [productToAdd, setProductToAdd] = React.useState<Product | null>(null);
     const [isAdding, setIsAdding] = React.useState<string | null>(null);
+    const [productToDelete, setProductToDelete] = React.useState<Product | null>(null);
+    const [isDeleting, setIsDeleting] = React.useState(false);
 
     const firestore = useFirestore();
     const { user } = useUser();
@@ -87,6 +99,52 @@ export default function ProductsLibraryPage() {
         }
     };
 
+    const handleDeleteProduct = (product: Product) => {
+        setProductToDelete(product);
+    };
+
+    const confirmDelete = async () => {
+        if (!productToDelete || !firestore) return;
+
+        setIsDeleting(true);
+        
+        const collectionPath = collection(firestore, 'products');
+        const productRef = doc(collectionPath, productToDelete.id);
+        const pathPrefix = 'products';
+
+        try {
+            await deleteDoc(productRef);
+            
+            if (typeof window !== 'undefined' && barId) {
+                try {
+                    localStorage.removeItem(`barboss_products_cache_${barId}`);
+                } catch (e) {
+                    // Игнорировать ошибки очистки кэша
+                }
+            }
+            
+            refreshProducts();
+            
+            toast({ 
+                title: "Продукт удален", 
+                description: `Продукт "${buildProductDisplayName(productToDelete.name, productToDelete.bottleVolumeMl)}" был безвозвратно удален.` 
+            });
+            setProductToDelete(null);
+        } catch (serverError) {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: `${pathPrefix}/${productToDelete.id}`,
+                operation: 'delete',
+            }));
+            toast({
+                variant: 'destructive',
+                title: 'Ошибка удаления',
+                description: 'Не удалось удалить продукт. Попробуйте еще раз.',
+            });
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     if (isLoading || !libraryProducts) {
         return (
             <div className="w-full space-y-4">
@@ -132,6 +190,7 @@ export default function ProductsLibraryPage() {
             <ProductsLibraryView
                 products={libraryProducts || []}
                 onAddToMyProducts={handleAddToMyProducts}
+                onDelete={handleDeleteProduct}
                 isAdding={isAdding}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
@@ -140,6 +199,29 @@ export default function ProductsLibraryPage() {
                 selectedSubCategory={selectedSubCategory}
                 onSubCategoryChange={setSelectedSubCategory}
             />
+
+            {/* Диалог подтверждения удаления */}
+            <AlertDialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Удалить продукт?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Вы уверены, что хотите удалить продукт "{productToDelete ? buildProductDisplayName(productToDelete.name, productToDelete.bottleVolumeMl) : ''}"? 
+                            Это действие нельзя отменить.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setProductToDelete(null)}>Отмена</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            disabled={isDeleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {isDeleting ? 'Удаление...' : 'Удалить'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

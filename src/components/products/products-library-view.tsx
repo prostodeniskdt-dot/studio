@@ -15,6 +15,7 @@ import { ProductCard } from './product-card';
 interface ProductsLibraryViewProps {
   products: Product[];
   onAddToMyProducts: (product: Product) => void;
+  onDelete?: (product: Product) => void;
   isAdding?: string | null;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
@@ -27,6 +28,7 @@ interface ProductsLibraryViewProps {
 export function ProductsLibraryView({
   products,
   onAddToMyProducts,
+  onDelete,
   isAdding = null,
   searchQuery = '',
   onSearchChange,
@@ -196,7 +198,7 @@ export function ProductsLibraryView({
                       product={product}
                       onEdit={() => {}} // Не показываем редактирование для библиотечных продуктов
                       onArchive={() => {}} // Не показываем архивирование
-                      onDelete={() => {}} // Не показываем удаление
+                      onDelete={onDelete || (() => {})}
                       compact
                     />
                     <div className="absolute bottom-16 right-2">

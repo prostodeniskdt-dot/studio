@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { Product } from '@/lib/types';
-import { formatCurrency, buildProductDisplayName, cn } from '@/lib/utils';
+import { buildProductDisplayName, cn } from '@/lib/utils';
 import { PremixForm } from './premix-form';
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, updateDoc, deleteDoc, collection } from 'firebase/firestore';
@@ -271,14 +271,10 @@ export function PremixesCardView({ premixes, onSendToLibrary }: PremixesCardView
                   )}
 
                   {/* Информация */}
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+                  <div className="grid grid-cols-1 gap-4 pt-2 border-t">
                     <div>
                       <div className="text-xs text-muted-foreground mb-1">Объем</div>
                       <div className="font-semibold text-base">{premix.bottleVolumeMl} мл</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted-foreground mb-1">Стоимость</div>
-                      <div className="font-semibold text-base">{formatCurrency(premix.costPerBottle ?? 0)}</div>
                     </div>
                   </div>
                 </CardContent>

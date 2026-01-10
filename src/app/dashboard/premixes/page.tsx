@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Library } from 'lucide-react';
 import Link from 'next/link';
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, updateDoc, collection, serverTimestamp, deleteField } from 'firebase/firestore';
+import { doc, updateDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { Product } from '@/lib/types';
 import { buildProductDisplayName } from '@/lib/utils';
@@ -123,7 +123,6 @@ export default function PremixesPage() {
 
         try {
             await updateDoc(premixRef, {
-                barId: deleteField(), // Удаляем поле barId
                 isInLibrary: true,
                 updatedAt: serverTimestamp(),
             });

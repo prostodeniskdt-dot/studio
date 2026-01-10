@@ -153,14 +153,6 @@ export default function LoginPage() {
              <LoginAnimation />
           </div>
 
-          <div className="relative z-20 mt-auto">
-            <blockquote className="space-y-2">
-              <p className="text-lg font-medium text-foreground">
-                &ldquo;Эта система инвентаризации — лучшее, что случалось с моим баром. Просто, эффективно и экономит мне кучу денег!&rdquo;
-              </p>
-              <footer className="text-sm text-muted-foreground">Владелец бара</footer>
-            </blockquote>
-          </div>
         </div>
         <div className="lg:p-8 flex items-center h-full">
           <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">

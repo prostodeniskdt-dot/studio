@@ -23,8 +23,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import type { Product, PremixIngredient } from '@/lib/types';
 import { buildProductDisplayName, extractVolume, translateCategory, productCategories } from '@/lib/utils';
 import { Separator } from '../ui/separator';
@@ -38,19 +36,12 @@ import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import { useProducts } from '@/contexts/products-context';
-import { calculatePremixCost } from '@/lib/premix-utils';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
   category: z.literal('Premix'),
   subCategory: z.string().optional(),
   imageUrl: z.string().optional(),
-  
-  costPerBottle: z.coerce.number().positive('Должно быть положительным числом.'),
-  sellingPricePerPortion: z.coerce.number().positive('Должно быть положительным числом.'),
-  portionVolumeMl: z.coerce.number().positive('Должно быть положительным числом.'),
 
   bottleVolumeMl: z.coerce.number().positive('Должно быть положительным числом.'),
   fullBottleWeightG: z.coerce.number().optional(),
@@ -100,15 +91,9 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
       if (JSON.stringify(newIngredients) !== JSON.stringify(ingredients)) {
         setIngredients(newIngredients);
       }
-      if (premix.costCalculationMode && premix.costCalculationMode !== costMode) {
-        setCostMode(premix.costCalculationMode);
-      }
     }
   }, [premix?.id, premix?.premixIngredients, premix?.bottleVolumeMl, premix?.costCalculationMode]);
   
-  const [costMode, setCostMode] = React.useState<'auto' | 'manual'>(
-    premix?.costCalculationMode || 'auto'
-  );
   
   // Состояния для выбора продукта из таблицы
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -130,9 +115,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
       name: '',
       category: 'Premix',
       bottleVolumeMl: 700,
-      costPerBottle: 0,
-      sellingPricePerPortion: 0,
-      portionVolumeMl: 40,
       isActive: true,
       imageUrl: PlaceHolderImages.find(p => p.id.toLowerCase() === 'premix')?.imageUrl || PlaceHolderImages.find(p => p.id.toLowerCase() === 'other')?.imageUrl,
       fullBottleWeightG: undefined,
@@ -196,27 +178,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
     }
   }, [watchedVolume, ingredients.length]); // Используем только length, чтобы избежать бесконечного цикла
   
-  // Расчет стоимости при изменении ингредиентов (если auto mode)
-  const prevIngredientsRef = React.useRef<string>(JSON.stringify(ingredients));
-  React.useEffect(() => {
-    if (costMode === 'auto' && ingredients.length > 0 && watchedVolume > 0 && productsMap.size > 0) {
-      const ingredientsStr = JSON.stringify(ingredients);
-      if (prevIngredientsRef.current !== ingredientsStr) {
-        prevIngredientsRef.current = ingredientsStr;
-        
-        const premixProduct: Product = {
-          ...form.getValues(),
-          isPremix: true,
-          premixIngredients: ingredients,
-          bottleVolumeMl: watchedVolume,
-          costPerBottle: 0, // Временное значение для расчета
-        } as Product;
-        
-        const calculatedCost = calculatePremixCost(premixProduct, productsMap);
-        form.setValue('costPerBottle', calculatedCost, { shouldDirty: true });
-      }
-    }
-  }, [ingredients, costMode, watchedVolume, productsMap.size, form]);
 
   React.useEffect(() => {
     const { baseName, volumeMl } = extractVolume(watchedName ?? "");
@@ -369,7 +330,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         category: 'Premix', // Всегда Premix
         isPremix: true, // Всегда true
         premixIngredients: finalIngredients,
-        costCalculationMode: costMode,
         fullBottleWeightG: data.fullBottleWeightG || null,
         emptyBottleWeightG: data.emptyBottleWeightG || null,
         updatedAt: serverTimestamp(),
@@ -474,13 +434,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 mt-6">
-        <Alert className="mb-4">
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            Премикс будет сохранен в глобальную базу данных и будет доступен всем пользователям системы.
-          </AlertDescription>
-        </Alert>
-        
         <FormField
           control={form.control}
           name="name"
@@ -687,83 +640,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
             </Collapsible>
           )}
         </div>
-        
-        <Separator />
-        <h3 className="text-lg font-medium">Экономика</h3>
-
-        <div className="grid grid-cols-2 gap-4">
-            <FormField
-            control={form.control}
-            name="portionVolumeMl"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel className="font-medium">Объем порции (мл)</FormLabel>
-                <FormControl>
-                    <Input type="number" {...field} className="text-left" />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
-            />
-            <FormField
-            control={form.control}
-            name="sellingPricePerPortion"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel className="font-medium">Цена за порцию (₽)</FormLabel>
-                <FormControl>
-                    <Input type="number" step="0.01" {...field} className="text-left" />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
-            />
-        </div>
-        
-        {/* Режим расчета стоимости */}
-        <div className="space-y-4">
-          <div>
-            <Label className="text-base font-medium">Режим расчета стоимости</Label>
-            <RadioGroup value={costMode} onValueChange={(value: 'auto' | 'manual') => setCostMode(value)} className="mt-2">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="auto" id="cost-auto" />
-                <Label htmlFor="cost-auto" className="font-normal cursor-pointer">
-                  Автоматически (сумма ингредиентов)
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="manual" id="cost-manual" />
-                <Label htmlFor="cost-manual" className="font-normal cursor-pointer">
-                  Установить вручную
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-        </div>
-        
-        <FormField
-            control={form.control}
-            name="costPerBottle"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel className="font-medium">Стоимость закупки (₽)</FormLabel>
-                <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01" 
-                      {...field} 
-                      className="text-left" 
-                      readOnly={costMode === 'auto'}
-                      disabled={costMode === 'auto'}
-                    />
-                </FormControl>
-                {costMode === 'auto' && (
-                  <FormDescription>Стоимость рассчитывается автоматически на основе суммы ингредиентов</FormDescription>
-                )}
-                <FormMessage />
-                </FormItem>
-            )}
-            />
 
         <Separator />
         <h3 className="text-lg font-medium">Профиль бутылки для калькулятора</h3>

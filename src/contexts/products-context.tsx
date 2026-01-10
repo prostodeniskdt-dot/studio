@@ -81,10 +81,12 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const { data: personalProducts, isLoading: isLoadingPersonal, error: personalError } = useCollection<Product>(personalProductsQuery);
   const { data: libraryProducts, isLoading: isLoadingLibrary, error: libraryError } = useCollection<Product>(libraryProductsQuery);
   
-  // Фильтруем персональные продукты: исключаем те, которые в библиотеке (на случай если есть и barId и isInLibrary)
+  // Персональные продукты: включаем все продукты с barId (включая те, что также в библиотеке)
   const filteredPersonalProducts = React.useMemo(() => {
     if (!personalProducts || personalProducts.length === 0) return [];
-    return personalProducts.filter(p => p.isInLibrary !== true);
+    // Включаем все продукты с barId, независимо от флага isInLibrary
+    // Это позволяет продуктам быть видимыми и в библиотеке, и в персональных продуктах
+    return personalProducts;
   }, [personalProducts]);
   
   // Объединяем персональные продукты и библиотеку

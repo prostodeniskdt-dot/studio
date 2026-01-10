@@ -146,6 +146,7 @@ export const ProductCard = React.memo<ProductCardProps>(({
             <DropdownMenuItem 
               className="text-destructive focus:text-destructive focus:bg-destructive/10"
               onClick={() => onDelete(product)}
+              disabled={product.isInLibrary === true}
             >
               Удалить
             </DropdownMenuItem>

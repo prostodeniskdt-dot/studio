@@ -216,15 +216,15 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         createdByUserId: product ? product.createdByUserId : (user?.uid || undefined),
     };
 
-    // Добавляем barId только если это НЕ библиотечный продукт
+    // Добавляем barId
     if (product) {
       // При редактировании сохраняем существующий barId
       productData.barId = product.barId;
-    } else if (!shouldCreateInLibrary) {
-      // При создании персонального продукта добавляем barId
+    } else {
+      // При создании продукта всегда добавляем barId (даже если создаем в библиотеке)
+      // Это позволяет продукту быть видимым и в библиотеке, и в персональных продуктах
       productData.barId = barId || undefined;
     }
-    // Если shouldCreateInLibrary === true, поле barId вообще не включается в объект
 
     const pathPrefix = 'products';
     setDoc(productRef, productData, { merge: true })
@@ -507,10 +507,10 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             <div className="flex flex-row items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
                 <FormLabel className="text-base">
-                  Создать в библиотеке
+                  Добавить в общую библиотеку
                 </FormLabel>
                 <FormDescription>
-                  Продукт будет доступен всем пользователям. Вы не сможете его редактировать после создания.
+                  Продукт будет доступен всем пользователям в библиотеке и останется в ваших продуктах. Вы сможете его редактировать.
                 </FormDescription>
               </div>
               <Switch

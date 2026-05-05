@@ -10,7 +10,6 @@
 - **Tailwind CSS** - Стилизация
 - **Radix UI** - UI компоненты
 - **Zod** - Валидация данных
-- **Genkit AI / Google Gemini** - AI-анализ отклонений инвентаризации
 
 ## Установка
 
@@ -52,7 +51,6 @@ src/
 
 - **Управление продуктами** - Каталог товаров с категориями
 - **Инвентаризация** - Создание и управление сессиями инвентаризации
-- **AI-анализ отклонений** - Автоматический анализ причин отклонений с использованием ИИ (Google Gemini)
 - **Калькулятор** - Расчет остатков в бутылках
 - **Заказы на закупку** - Автоматическое создание заказов на основе остатков
 - **Аналитика** - Отчеты и анализ потерь с графиками
@@ -92,10 +90,6 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
-
-# Google Generative AI (опционально, для AI-анализа отклонений)
-# Получите API ключ: https://makersuite.google.com/app/apikey
-GOOGLE_GENAI_API_KEY=your_google_genai_api_key_here
 
 # Sentry (опционально, для мониторинга ошибок)
 # Для включения Sentry:

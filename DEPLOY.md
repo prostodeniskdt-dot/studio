@@ -72,7 +72,7 @@ NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=ваш_measurement_id
 #### Опциональные:
 
 ```
-GOOGLE_GENAI_API_KEY=ваш_google_genai_key (для AI-анализа)
+# (пусто)
 ```
 
 **Где взять Firebase credentials:**

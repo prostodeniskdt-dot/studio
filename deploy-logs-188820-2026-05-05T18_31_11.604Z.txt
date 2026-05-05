@@ -1,0 +1,858 @@
+21:23:45 | DEBUG | Cloning into '/workspace'...
+21:23:47 | DEBUG | 
+21:23:47 | DEBUG | do so (now or later) by using -c with the switch command. Example:
+21:23:47 | DEBUG | changes and commit them, and you can discard any commits you make in this
+21:23:47 | DEBUG | 
+21:23:47 | DEBUG | 
+21:23:47 | DEBUG | Or undo this operation with:
+21:23:47 | DEBUG | 
+21:23:47 | DEBUG | If you want to create a new branch to retain commits you create, you may
+21:23:47 | DEBUG | You are in 'detached HEAD' state. You can look around, make experimental
+21:23:47 | DEBUG | 
+21:23:47 | DEBUG | state without impacting any branches by switching back to a branch.
+21:23:47 | DEBUG | Note: switching to '0edb0f5545189f4d0b0214e0e45d39097026ec82'.
+21:23:47 | DEBUG | 
+21:23:47 | DEBUG |   git switch -c <new-branch-name>
+21:23:47 | DEBUG |   git switch -
+21:23:47 | DEBUG | Turn off this advice by setting config variable advice.detachedHead to false
+21:23:47 | DEBUG | HEAD is now at 0edb0f5 Fix library products filtering: include products with barId in library if isInLibrary is true
+21:23:47 | DEBUG | 
+21:23:50 | DEBUG | 
+21:23:50 | INFO | Build started
+21:23:50 | DEBUG | #1 WARN: Empty continuation line found in: RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends     curl     && rm -rf /var/lib/apt/lists/*
+21:23:50 | DEBUG | #1 [internal] load build definition from Dockerfile
+21:23:50 | DEBUG | #2 DONE 0.6s
+21:23:50 | DEBUG | #4 resolve docker.io/library/node:24-slim@sha256:03eae3ef7e88a9de535496fb488d67e02b9d96a063a8967bae657744ecd513f2 done
+21:23:50 | DEBUG | #4 CACHED
+21:23:50 | DEBUG | 
+21:23:50 | DEBUG | 
+21:23:50 | DEBUG | 
+21:23:50 | DEBUG | #3 DONE 0.0s
+21:23:50 | DEBUG | 
+21:23:50 | DEBUG | #5 transferring context: 3.94MB 0.2s done
+21:23:50 | DEBUG | #4 [ 1/11] FROM docker.io/library/node:24-slim@sha256:03eae3ef7e88a9de535496fb488d67e02b9d96a063a8967bae657744ecd513f2
+21:23:50 | DEBUG | #5 [internal] load build context
+21:23:50 | DEBUG | #3 [internal] load .dockerignore
+21:23:50 | DEBUG | #5 DONE 0.2s
+21:23:50 | DEBUG | #1 transferring dockerfile: 1.39kB done
+21:23:50 | DEBUG | #3 transferring context: 2B 0.0s done
+21:23:50 | DEBUG | #2 [internal] load metadata for docker.io/library/node:24-slim
+21:23:50 | DEBUG | #1 DONE 0.0s
+21:23:50 | DEBUG | #6 [ 2/11] RUN corepack enable
+21:23:50 | DEBUG | #6 DONE 0.7s
+21:23:50 | DEBUG | 
+21:23:50 | DEBUG | #7 [ 3/11] RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends     curl     && rm -rf /var/lib/apt/lists/*
+21:23:50 | DEBUG | #7 0.203 Get:1 http://deb.debian.org/debian bookworm InRelease [151 kB]
+21:23:50 | DEBUG | #7 0.375 Get:2 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+21:23:51 | DEBUG | #7 0.487 Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [48.0 kB]
+21:23:51 | DEBUG | #7 0.569 Get:4 http://deb.debian.org/debian bookworm/main amd64 Packages [8792 kB]
+21:24:09 | DEBUG | #7 18.56 Get:5 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [6924 B]
+21:24:09 | DEBUG | #7 18.60 Get:6 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [299 kB]
+21:24:10 | DEBUG | #7 19.80 Fetched 9352 kB in 20s (475 kB/s)
+21:24:11 | DEBUG | #7 19.80 Reading package lists...
+21:24:11 | DEBUG | #7 20.49 Reading package lists...
+21:24:11 | DEBUG | #7 21.17 Building dependency tree...
+21:24:11 | DEBUG | #7 21.37 Reading state information...
+21:24:12 | DEBUG | #7 21.63 The following additional packages will be installed:
+21:24:12 | DEBUG | #7 21.63   ca-certificates krb5-locales libldap-common publicsuffix libsasl2-modules
+21:24:12 | DEBUG | #7 21.63   libkrb5support0 libldap-2.5-0 libnghttp2-14 libpsl5 librtmp1 libsasl2-2
+21:24:12 | DEBUG | #7 21.63 Suggested packages:
+21:24:12 | DEBUG | #7 21.63 Recommended packages:
+21:24:12 | DEBUG | #7 21.63   libsasl2-modules-db libssh2-1 libssl3
+21:24:12 | DEBUG | #7 21.63   libbrotli1 libcurl4 libgssapi-krb5-2 libk5crypto3 libkeyutils1 libkrb5-3
+21:24:12 | DEBUG | #7 21.63   krb5-doc krb5-user
+21:24:12 | DEBUG | #7 21.78 The following NEW packages will be installed:
+21:24:12 | DEBUG | #7 21.78   libsasl2-2 libsasl2-modules-db libssh2-1 libssl3
+21:24:12 | DEBUG | #7 21.78   libkrb5-3 libkrb5support0 libldap-2.5-0 libnghttp2-14 libpsl5 librtmp1
+21:24:12 | DEBUG | #7 21.92 Need to get 4240 kB of archives.
+21:24:12 | DEBUG | #7 21.92 After this operation, 12.0 MB of additional disk space will be used.
+21:24:12 | DEBUG | #7 21.92 Get:1 http://deb.debian.org/debian bookworm/main amd64 libbrotli1 amd64 1.0.9-2+b6 [275 kB]
+21:24:12 | DEBUG | #7 21.78   curl libbrotli1 libcurl4 libgssapi-krb5-2 libk5crypto3 libkeyutils1
+21:24:12 | DEBUG | #7 21.92 0 upgraded, 16 newly installed, 0 to remove and 0 not upgraded.
+21:24:12 | DEBUG | #7 22.15 Get:2 http://deb.debian.org/debian bookworm/main amd64 libkrb5support0 amd64 1.20.1-2+deb12u4 [33.2 kB]
+21:24:12 | DEBUG | #7 22.17 Get:4 http://deb.debian.org/debian bookworm/main amd64 libkeyutils1 amd64 1.6.3-2 [8808 B]
+21:24:12 | DEBUG | #7 22.17 Get:5 http://deb.debian.org/debian-security bookworm-security/main amd64 libssl3 amd64 3.0.19-1~deb12u2 [2032 kB]
+21:24:12 | DEBUG | #7 22.15 Get:3 http://deb.debian.org/debian bookworm/main amd64 libk5crypto3 amd64 1.20.1-2+deb12u4 [79.8 kB]
+21:24:13 | DEBUG | #7 22.63 Get:6 http://deb.debian.org/debian bookworm/main amd64 libkrb5-3 amd64 1.20.1-2+deb12u4 [334 kB]
+21:24:13 | DEBUG | #7 22.76 Get:7 http://deb.debian.org/debian bookworm/main amd64 libgssapi-krb5-2 amd64 1.20.1-2+deb12u4 [135 kB]
+21:24:13 | DEBUG | #7 22.87 Get:10 http://deb.debian.org/debian bookworm/main amd64 libldap-2.5-0 amd64 2.5.13+dfsg-5 [183 kB]
+21:24:13 | DEBUG | #7 22.87 Get:9 http://deb.debian.org/debian bookworm/main amd64 libsasl2-2 amd64 2.1.28+dfsg-10 [59.7 kB]
+21:24:13 | DEBUG | #7 22.84 Get:8 http://deb.debian.org/debian bookworm/main amd64 libsasl2-modules-db amd64 2.1.28+dfsg-10 [20.3 kB]
+21:24:13 | DEBUG | #7 22.97 Get:11 http://deb.debian.org/debian bookworm/main amd64 libnghttp2-14 amd64 1.52.0-1+deb12u2 [73.0 kB]
+21:24:13 | DEBUG | #7 23.12 Get:13 http://deb.debian.org/debian bookworm/main amd64 librtmp1 amd64 2.4+20151223.gitfa8646d.1-2+b2 [60.8 kB]
+21:24:13 | DEBUG | #7 23.03 Get:12 http://deb.debian.org/debian bookworm/main amd64 libpsl5 amd64 0.21.2-1 [58.7 kB]
+21:24:13 | DEBUG | #7 23.17 Get:14 http://deb.debian.org/debian bookworm/main amd64 libssh2-1 amd64 1.10.0-3+b1 [179 kB]
+21:24:13 | DEBUG | #7 23.38 Get:15 http://deb.debian.org/debian bookworm/main amd64 libcurl4 amd64 7.88.1-10+deb12u14 [392 kB]
+21:24:14 | DEBUG | #7 23.92 Get:16 http://deb.debian.org/debian bookworm/main amd64 curl amd64 7.88.1-10+deb12u14 [316 kB]
+21:24:15 | DEBUG | #7 24.49 debconf: delaying package configuration, since apt-utils is not installed
+21:24:15 | DEBUG | #7 24.56 Fetched 4240 kB in 2s (1700 kB/s)
+21:24:15 | DEBUG | #7 24.63 Selecting previously unselected package libbrotli1:amd64.
+21:24:15 | DEBUG | #7 24.65 Unpacking libbrotli1:amd64 (1.0.9-2+b6) ...
+21:24:15 | DEBUG | #7 24.63 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 6096 files and directories currently installed.)
+21:24:15 | DEBUG | #7 24.64 Preparing to unpack .../00-libbrotli1_1.0.9-2+b6_amd64.deb ...
+21:24:15 | DEBUG | #7 24.72 Selecting previously unselected package libkrb5support0:amd64.
+21:24:15 | DEBUG | #7 24.74 Preparing to unpack .../01-libkrb5support0_1.20.1-2+deb12u4_amd64.deb ...
+21:24:15 | DEBUG | #7 24.81 Preparing to unpack .../02-libk5crypto3_1.20.1-2+deb12u4_amd64.deb ...
+21:24:15 | DEBUG | #7 24.75 Unpacking libkrb5support0:amd64 (1.20.1-2+deb12u4) ...
+21:24:15 | DEBUG | #7 24.81 Unpacking libk5crypto3:amd64 (1.20.1-2+deb12u4) ...
+21:24:15 | DEBUG | #7 24.80 Selecting previously unselected package libk5crypto3:amd64.
+21:24:15 | DEBUG | #7 24.86 Selecting previously unselected package libkeyutils1:amd64.
+21:24:15 | DEBUG | #7 24.92 Preparing to unpack .../04-libssl3_3.0.19-1~deb12u2_amd64.deb ...
+21:24:15 | DEBUG | #7 24.92 Unpacking libssl3:amd64 (3.0.19-1~deb12u2) ...
+21:24:15 | DEBUG | #7 24.91 Selecting previously unselected package libssl3:amd64.
+21:24:15 | DEBUG | #7 24.87 Unpacking libkeyutils1:amd64 (1.6.3-2) ...
+21:24:15 | DEBUG | #7 24.86 Preparing to unpack .../03-libkeyutils1_1.6.3-2_amd64.deb ...
+21:24:15 | DEBUG | #7 25.13 Selecting previously unselected package libkrb5-3:amd64.
+21:24:15 | DEBUG | #7 25.14 Preparing to unpack .../05-libkrb5-3_1.20.1-2+deb12u4_amd64.deb ...
+21:24:15 | DEBUG | #7 25.28 Selecting previously unselected package libsasl2-modules-db:amd64.
+21:24:15 | DEBUG | #7 25.22 Unpacking libgssapi-krb5-2:amd64 (1.20.1-2+deb12u4) ...
+21:24:15 | DEBUG | #7 25.21 Preparing to unpack .../06-libgssapi-krb5-2_1.20.1-2+deb12u4_amd64.deb ...
+21:24:15 | DEBUG | #7 25.14 Unpacking libkrb5-3:amd64 (1.20.1-2+deb12u4) ...
+21:24:15 | DEBUG | #7 25.21 Selecting previously unselected package libgssapi-krb5-2:amd64.
+21:24:15 | DEBUG | #7 25.33 Preparing to unpack .../08-libsasl2-2_2.1.28+dfsg-10_amd64.deb ...
+21:24:15 | DEBUG | #7 25.29 Unpacking libsasl2-modules-db:amd64 (2.1.28+dfsg-10) ...
+21:24:15 | DEBUG | #7 25.33 Unpacking libsasl2-2:amd64 (2.1.28+dfsg-10) ...
+21:24:15 | DEBUG | #7 25.33 Selecting previously unselected package libsasl2-2:amd64.
+21:24:15 | DEBUG | #7 25.28 Preparing to unpack .../07-libsasl2-modules-db_2.1.28+dfsg-10_amd64.deb ...
+21:24:15 | DEBUG | #7 25.39 Preparing to unpack .../09-libldap-2.5-0_2.5.13+dfsg-5_amd64.deb ...
+21:24:15 | DEBUG | #7 25.39 Selecting previously unselected package libldap-2.5-0:amd64.
+21:24:16 | DEBUG | #7 25.48 Unpacking libnghttp2-14:amd64 (1.52.0-1+deb12u2) ...
+21:24:16 | DEBUG | #7 25.41 Unpacking libldap-2.5-0:amd64 (2.5.13+dfsg-5) ...
+21:24:16 | DEBUG | #7 25.47 Preparing to unpack .../10-libnghttp2-14_1.52.0-1+deb12u2_amd64.deb ...
+21:24:16 | DEBUG | #7 25.54 Selecting previously unselected package libpsl5:amd64.
+21:24:16 | DEBUG | #7 25.47 Selecting previously unselected package libnghttp2-14:amd64.
+21:24:16 | DEBUG | #7 25.61 Preparing to unpack .../12-librtmp1_2.4+20151223.gitfa8646d.1-2+b2_amd64.deb ...
+21:24:16 | DEBUG | #7 25.61 Selecting previously unselected package librtmp1:amd64.
+21:24:16 | DEBUG | #7 25.54 Unpacking libpsl5:amd64 (0.21.2-1) ...
+21:24:16 | DEBUG | #7 25.65 Selecting previously unselected package libssh2-1:amd64.
+21:24:16 | DEBUG | #7 25.54 Preparing to unpack .../11-libpsl5_0.21.2-1_amd64.deb ...
+21:24:16 | DEBUG | #7 25.61 Unpacking librtmp1:amd64 (2.4+20151223.gitfa8646d.1-2+b2) ...
+21:24:16 | DEBUG | #7 25.71 Preparing to unpack .../14-libcurl4_7.88.1-10+deb12u14_amd64.deb ...
+21:24:16 | DEBUG | #7 25.65 Unpacking libssh2-1:amd64 (1.10.0-3+b1) ...
+21:24:16 | DEBUG | #7 25.71 Selecting previously unselected package libcurl4:amd64.
+21:24:16 | DEBUG | #7 25.65 Preparing to unpack .../13-libssh2-1_1.10.0-3+b1_amd64.deb ...
+21:24:16 | DEBUG | #7 25.79 Selecting previously unselected package curl.
+21:24:16 | DEBUG | #7 25.71 Unpacking libcurl4:amd64 (7.88.1-10+deb12u14) ...
+21:24:16 | DEBUG | #7 25.87 Setting up libkeyutils1:amd64 (1.6.3-2) ...
+21:24:16 | DEBUG | #7 25.89 Setting up libbrotli1:amd64 (1.0.9-2+b6) ...
+21:24:16 | DEBUG | #7 25.88 Setting up libpsl5:amd64 (0.21.2-1) ...
+21:24:16 | DEBUG | #7 25.79 Preparing to unpack .../15-curl_7.88.1-10+deb12u14_amd64.deb ...
+21:24:16 | DEBUG | #7 25.79 Unpacking curl (7.88.1-10+deb12u14) ...
+21:24:16 | DEBUG | #7 25.94 Setting up librtmp1:amd64 (2.4+20151223.gitfa8646d.1-2+b2) ...
+21:24:16 | DEBUG | #7 25.95 Setting up libsasl2-2:amd64 (2.1.28+dfsg-10) ...
+21:24:16 | DEBUG | #7 25.93 Setting up libsasl2-modules-db:amd64 (2.1.28+dfsg-10) ...
+21:24:16 | DEBUG | #7 25.90 Setting up libssl3:amd64 (3.0.19-1~deb12u2) ...
+21:24:16 | DEBUG | #7 25.94 Setting up libk5crypto3:amd64 (1.20.1-2+deb12u4) ...
+21:24:16 | DEBUG | #7 25.91 Setting up libnghttp2-14:amd64 (1.52.0-1+deb12u2) ...
+21:24:16 | DEBUG | #7 25.92 Setting up libkrb5support0:amd64 (1.20.1-2+deb12u4) ...
+21:24:16 | DEBUG | #7 25.98 Setting up libkrb5-3:amd64 (1.20.1-2+deb12u4) ...
+21:24:16 | DEBUG | #7 25.99 Setting up libldap-2.5-0:amd64 (2.5.13+dfsg-5) ...
+21:24:16 | DEBUG | #7 25.97 Setting up libssh2-1:amd64 (1.10.0-3+b1) ...
+21:24:16 | DEBUG | #7 26.03 Setting up curl (7.88.1-10+deb12u14) ...
+21:24:16 | DEBUG | #7 26.05 Processing triggers for libc-bin (2.36-9+deb12u13) ...
+21:24:16 | DEBUG | #7 26.01 Setting up libcurl4:amd64 (7.88.1-10+deb12u14) ...
+21:24:16 | DEBUG | #7 26.00 Setting up libgssapi-krb5-2:amd64 (1.20.1-2+deb12u4) ...
+21:24:17 | DEBUG | #7 DONE 26.5s
+21:24:17 | DEBUG | #8 [ 4/11] RUN npm install -g @nestjs/cli
+21:24:17 | DEBUG | 
+21:24:29 | DEBUG | #8 11.97 
+21:24:29 | DEBUG | #8 11.97 
+21:24:29 | DEBUG | #8 11.97 added 210 packages in 12s
+21:24:29 | DEBUG | #8 11.97 38 packages are looking for funding
+21:24:29 | DEBUG | #8 11.97   run `npm fund` for details
+21:24:30 | DEBUG | #8 DONE 13.5s
+21:24:30 | DEBUG | 
+21:24:30 | DEBUG | #9 [ 5/11] RUN groupadd --gid 2000 app && useradd --uid 2000 --gid 2000 -m -s /bin/bash app
+21:24:30 | DEBUG | #9 DONE 0.3s
+21:24:31 | DEBUG | #10 DONE 0.1s
+21:24:31 | DEBUG | #11 DONE 0.1s
+21:24:31 | DEBUG | 
+21:24:31 | DEBUG | 
+21:24:31 | DEBUG | #10 [ 6/11] WORKDIR /app
+21:24:31 | DEBUG | #11 [ 7/11] COPY package.json pnpm-lock.yaml* package-lock.json* pnpm-workspace.yaml* ./
+21:24:31 | DEBUG | 
+21:24:31 | DEBUG | #12 0.065 Detected npm project
+21:24:31 | DEBUG | #12 [ 8/11] RUN if [ -f pnpm-lock.yaml ]; then       echo "Detected pnpm workspace";       corepack prepare pnpm --activate && pnpm install --frozen-lockfile;     elif [ -f package-lock.json ]; then       echo "Detected npm project";       npm ci;     else       echo "No lockfile, installing NestJS dependencies";       npm install @nestjs/core @nestjs/common @nestjs/platform-express;       npm install;     fi
+21:24:33 | DEBUG | #12 1.941 npm error code EUSAGE
+21:24:33 | DEBUG | #12 1.949 npm error Clean install a project
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error `npm ci` can only install packages when your package.json and package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock file with `npm install` before continuing.
+21:24:33 | DEBUG | #12 1.949 npm error [--allow-git <all|none|root>] [--no-audit] [--no-bin-links] [--no-fund]
+21:24:33 | DEBUG | #12 1.949 npm error [--workspaces] [--include-workspace-root] [--install-links]
+21:24:33 | DEBUG | #12 1.949 npm error [-w|--workspace <workspace-name> [-w|--workspace <workspace-name> ...]]
+21:24:33 | DEBUG | #12 1.949 npm error     Instead of hoisting package installs in `node_modules`, install packages
+21:24:33 | DEBUG | #12 1.949 npm error     Sets the strategy for installing packages in node_modules.
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error [--install-strategy <hoisted|nested|shallow|linked>] [--legacy-bundling]
+21:24:33 | DEBUG | #12 1.949 npm error [--global-style] [--omit <dev|optional|peer> [--omit <dev|optional|peer> ...]]
+21:24:33 | DEBUG | #12 1.949 npm error   --global-style
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error Usage:
+21:24:33 | DEBUG | #12 1.949 npm error npm ci
+21:24:33 | DEBUG | #12 1.949 npm error [--strict-peer-deps] [--foreground-scripts] [--ignore-scripts]
+21:24:33 | DEBUG | #12 1.949 npm error [--dry-run]
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error Options:
+21:24:33 | DEBUG | #12 1.949 npm error [--include <prod|dev|optional|peer> [--include <prod|dev|optional|peer> ...]]
+21:24:33 | DEBUG | #12 1.949 npm error Missing: winston@3.19.0 from lock file
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error   --install-strategy
+21:24:33 | DEBUG | #12 1.949 npm error   --legacy-bundling
+21:24:33 | DEBUG | #12 1.949 npm error     Dependency types to omit from the installation tree on disk.
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error     Only install direct dependencies in the top level `node_modules`,
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error   --omit
+21:24:33 | DEBUG | #12 1.949 npm error   --fund
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error     Limits the ability for npm to fetch dependencies from git references.
+21:24:33 | DEBUG | 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error     If true, npm does not run scripts specified in package.json files.
+21:24:33 | DEBUG | #12 1.949 npm error   --install-links
+21:24:33 | DEBUG | 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error     Include the workspace root when workspaces are enabled for a command.
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error     Indicates that you don't want npm to make any changes and that it should
+21:24:33 | DEBUG | 1.949 npm error aliases: clean-install, ic, install-clean, isntall-clean
+21:24:33 | DEBUG | #12 1.949 npm error   -w|--workspace
+21:24:33 | DEBUG | #12 1.949 npm error aliases: clean-install, ic, install-clean, isntall-clean
+21:24:33 | DEBUG |  > [ 8/11] RUN if [ -f pnpm-lock.yaml ]; then       echo "Detected pnpm workspace";       corepack prepare pnpm --activate && pnpm install --frozen-lockfile;     elif [ -f package-lock.json ]; then       echo "Detected npm project";       npm ci;     else       echo "No lockfile, installing NestJS dependencies";       npm install @nestjs/core @nestjs/common @nestjs/platform-express;       npm install;     fi:
+21:24:33 | DEBUG | ------
+21:24:33 | DEBUG | #12 1.949 npm error   --bin-links
+21:24:33 | DEBUG | 1.949 npm error   --install-links
+21:24:33 | DEBUG | #12 1.949 npm error     When "true" submit audit reports alongside the current npm command to the
+21:24:33 | DEBUG | #12 1.949 npm error   --include
+21:24:33 | DEBUG | 1.949 npm error     When set file: protocol dependencies will be packed and installed as
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error     Tells npm to create symlinks (or `.cmd` shims on Windows) for package
+21:24:33 | DEBUG | #12 1.949 npm error   --ignore-scripts
+21:24:33 | DEBUG | 1.949 npm error
+21:24:33 | DEBUG | #12 ERROR: process "/bin/sh -c if [ -f pnpm-lock.yaml ]; then       echo \"Detected pnpm workspace\";       corepack prepare pnpm --activate && pnpm install --frozen-lockfile;     elif [ -f package-lock.json ]; then       echo \"Detected npm project\";       npm ci;     else       echo \"No lockfile, installing NestJS dependencies\";       npm install @nestjs/core @nestjs/common @nestjs/platform-express;       npm install;     fi" did not complete successfully: exit code: 1
+21:24:33 | DEBUG | #12 1.949 npm error     When "true" displays the message at the end of each `npm install`
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error   --dry-run
+21:24:33 | DEBUG | 1.949 npm error Run "npm help ci" for more info
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error   --audit
+21:24:33 | DEBUG | #12 1.949 npm error   --workspaces
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error     If set to `true`, and `--legacy-peer-deps` is not set, then _any_
+21:24:33 | DEBUG | #12 1.949 npm error   --foreground-scripts
+21:24:33 | DEBUG | #12 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error     When set file: protocol dependencies will be packed and installed as
+21:24:33 | DEBUG | 1.949 npm error
+21:24:33 | DEBUG | #12 1.949 npm error Run "npm help ci" for more info
+21:24:33 | DEBUG | #12 1.949 npm error     Option that allows for defining which types of dependencies to install.
+21:24:33 | DEBUG | #12 1.949 npm error     Run all build scripts (ie, `preinstall`, `install`, and
+21:24:33 | DEBUG | #12 1.949 npm error     Set to true to run the command in the context of **all** configured
+21:24:33 | DEBUG | #12 1.949 npm error   --strict-peer-deps
+21:24:33 | DEBUG | #12 1.949 npm error   --include-workspace-root
+21:24:33 | DEBUG | #12 1.949 npm error   --allow-git
+21:24:33 | DEBUG | 1.951 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-05-05T18_24_31_279Z-debug-0.log
+21:24:33 | DEBUG | #12 1.951 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-05-05T18_24_31_279Z-debug-0.log
+21:24:33 | DEBUG | ------
+21:24:33 | DEBUG | 1.949 npm error     Include the workspace root when workspaces are enabled for a command.
+21:24:33 | DEBUG | #12 1.949 npm error     Enable running a command in the context of the configured workspaces of the
+21:24:33 | DEBUG |   38 | >>>       npm ci; \
+21:24:33 | DEBUG |   32 |     # Detect and install dependencies
+21:24:33 | DEBUG |   36 | >>>     elif [ -f package-lock.json ]; then \
+21:24:33 | DEBUG | Dockerfile:33
+21:24:33 | DEBUG |   35 | >>>       corepack prepare pnpm --activate && pnpm install --frozen-lockfile; \
+21:24:33 | DEBUG |   33 | >>> RUN if [ -f pnpm-lock.yaml ]; then \
+21:24:33 | DEBUG |   34 | >>>       echo "Detected pnpm workspace"; \
+21:24:33 | DEBUG |   44 |     
+21:24:33 | DEBUG |   41 | >>>       npm install @nestjs/core @nestjs/common @nestjs/platform-express; \
+21:24:33 | DEBUG |   40 | >>>       echo "No lockfile, installing NestJS dependencies"; \
+21:24:33 | DEBUG |   39 | >>>     else \
+21:24:33 | DEBUG |   42 | >>>       npm install; \
+21:24:33 | DEBUG | --------------------
+21:24:33 | DEBUG |   37 | >>>       echo "Detected npm project"; \
+21:24:33 | INFO | error: failed to solve: process "/bin/sh -c if [ -f pnpm-lock.yaml ]; then       echo \"Detected pnpm workspace\";       corepack prepare pnpm --activate && pnpm install --frozen-lockfile;     elif [ -f package-lock.json ]; then       echo \"Detected npm project\";       npm ci;     else       echo \"No lockfile, installing NestJS dependencies\";       npm install @nestjs/core @nestjs/common @nestjs/platform-express;       npm install;     fi" did not complete successfully: exit code: 1
+21:24:33 | DEBUG | --------------------
+21:24:33 | DEBUG |   43 | >>>     fi
+21:24:33 | INFO | Build failed
+21:24:45 | DEBUG |   git switch -
+21:24:45 | DEBUG | 
+21:24:45 | DEBUG | state without impacting any branches by switching back to a branch.
+21:24:45 | DEBUG |   git switch -c <new-branch-name>
+21:24:45 | DEBUG | You are in 'detached HEAD' state. You can look around, make experimental
+21:24:45 | DEBUG | 
+21:24:45 | DEBUG | Turn off this advice by setting config variable advice.detachedHead to false
+21:24:45 | DEBUG | Note: switching to '0edb0f5545189f4d0b0214e0e45d39097026ec82'.
+21:24:45 | DEBUG | If you want to create a new branch to retain commits you create, you may
+21:24:45 | DEBUG | 
+21:24:45 | DEBUG | Or undo this operation with:
+21:24:45 | DEBUG | changes and commit them, and you can discard any commits you make in this
+21:24:45 | DEBUG | Cloning into '/workspace'...
+21:24:45 | DEBUG | do so (now or later) by using -c with the switch command. Example:
+21:24:45 | DEBUG | 
+21:24:45 | DEBUG | HEAD is now at 0edb0f5 Fix library products filtering: include products with barId in library if isInLibrary is true
+21:24:45 | DEBUG | 
+21:24:45 | DEBUG | 
+21:24:45 | DEBUG | 
+21:24:50 | DEBUG | 
+21:24:50 | DEBUG | #1 DONE 0.0s
+21:24:50 | DEBUG | 
+21:24:50 | DEBUG | #3 CACHED
+21:24:50 | DEBUG | #2 DONE 0.7s
+21:24:50 | DEBUG | #2 [internal] load metadata for docker.io/library/node:24-slim
+21:24:50 | DEBUG | 
+21:24:50 | DEBUG | 
+21:24:50 | DEBUG | #1 WARN: Empty continuation line found in: RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends     curl     && rm -rf /var/lib/apt/lists/*
+21:24:50 | DEBUG | #3 resolve docker.io/library/node:24-slim@sha256:03eae3ef7e88a9de535496fb488d67e02b9d96a063a8967bae657744ecd513f2 done
+21:24:50 | DEBUG | 
+21:24:50 | DEBUG | #4 transferring context: 2B done
+21:24:50 | DEBUG | #7 0.359 Get:2 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+21:24:50 | DEBUG | #5 ...
+21:24:50 | DEBUG | 
+21:24:50 | DEBUG | #1 [internal] load build definition from Dockerfile
+21:24:50 | DEBUG | #5 [internal] load build context
+21:24:50 | DEBUG | #7 [ 3/11] RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends     curl     && rm -rf /var/lib/apt/lists/*
+21:24:50 | DEBUG | #5 DONE 0.7s
+21:24:50 | DEBUG | #1 transferring dockerfile: 1.39kB done
+21:24:50 | DEBUG | #6 DONE 0.3s
+21:24:50 | DEBUG | #7 0.227 Get:1 http://deb.debian.org/debian bookworm InRelease [151 kB]
+21:24:50 | DEBUG | #6 [ 2/11] RUN corepack enable
+21:24:50 | DEBUG | #5 [internal] load build context
+21:24:50 | DEBUG | #7 0.474 Get:4 http://deb.debian.org/debian bookworm/main amd64 Packages [8792 kB]
+21:24:50 | DEBUG | 
+21:24:50 | DEBUG | #3 [1/7] FROM docker.io/library/node:24-slim@sha256:03eae3ef7e88a9de535496fb488d67e02b9d96a063a8967bae657744ecd513f2
+21:24:50 | DEBUG | #4 [internal] load .dockerignore
+21:24:50 | DEBUG | #4 DONE 0.0s
+21:24:50 | DEBUG | 
+21:24:50 | DEBUG | #7 ...
+21:24:50 | DEBUG | #7 0.404 Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [48.0 kB]
+21:24:50 | DEBUG | #7 [ 3/11] RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends     curl     && rm -rf /var/lib/apt/lists/*
+21:24:50 | DEBUG | #5 transferring context: 3.94MB 0.7s done
+21:24:50 | INFO | Build started
+21:25:00 | DEBUG | #7 11.81 Get:5 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [6924 B]
+21:25:00 | DEBUG | #7 11.83 Get:6 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [299 kB]
+21:25:01 | DEBUG | #7 13.17 Fetched 9352 kB in 13s (718 kB/s)
+21:25:02 | DEBUG | #7 13.17 Reading package lists...
+21:25:03 | DEBUG | #7 14.22 Reading package lists...
+21:25:03 | DEBUG | #7 15.30 Reading state information...
+21:25:03 | DEBUG | #7 15.06 Building dependency tree...
+21:25:04 | DEBUG | #7 15.65 The following additional packages will be installed:
+21:25:04 | DEBUG | #7 15.66   ca-certificates krb5-locales libldap-common publicsuffix libsasl2-modules
+21:25:04 | DEBUG | #7 15.66 Suggested packages:
+21:25:04 | DEBUG | #7 15.65   libsasl2-modules-db libssh2-1 libssl3
+21:25:04 | DEBUG | #7 15.65   libbrotli1 libcurl4 libgssapi-krb5-2 libk5crypto3 libkeyutils1 libkrb5-3
+21:25:04 | DEBUG | #7 15.66   krb5-doc krb5-user
+21:25:04 | DEBUG | #7 15.65   libkrb5support0 libldap-2.5-0 libnghttp2-14 libpsl5 librtmp1 libsasl2-2
+21:25:04 | DEBUG | #7 15.66 Recommended packages:
+21:25:04 | DEBUG | #7 15.83 The following NEW packages will be installed:
+21:25:04 | DEBUG | #7 15.98 0 upgraded, 16 newly installed, 0 to remove and 0 not upgraded.
+21:25:04 | DEBUG | #7 15.98 Get:1 http://deb.debian.org/debian bookworm/main amd64 libbrotli1 amd64 1.0.9-2+b6 [275 kB]
+21:25:04 | DEBUG | #7 15.83   curl libbrotli1 libcurl4 libgssapi-krb5-2 libk5crypto3 libkeyutils1
+21:25:04 | DEBUG | #7 15.83   libsasl2-2 libsasl2-modules-db libssh2-1 libssl3
+21:25:04 | DEBUG | #7 15.98 Need to get 4240 kB of archives.
+21:25:04 | DEBUG | #7 15.98 After this operation, 12.0 MB of additional disk space will be used.
+21:25:04 | DEBUG | #7 15.83   libkrb5-3 libkrb5support0 libldap-2.5-0 libnghttp2-14 libpsl5 librtmp1
+21:25:04 | DEBUG | #7 16.22 Get:2 http://deb.debian.org/debian bookworm/main amd64 libkrb5support0 amd64 1.20.1-2+deb12u4 [33.2 kB]
+21:25:04 | DEBUG | #7 16.29 Get:5 http://deb.debian.org/debian-security bookworm-security/main amd64 libssl3 amd64 3.0.19-1~deb12u2 [2032 kB]
+21:25:04 | DEBUG | #7 16.28 Get:4 http://deb.debian.org/debian bookworm/main amd64 libkeyutils1 amd64 1.6.3-2 [8808 B]
+21:25:04 | DEBUG | #7 16.24 Get:3 http://deb.debian.org/debian bookworm/main amd64 libk5crypto3 amd64 1.20.1-2+deb12u4 [79.8 kB]
+21:25:08 | DEBUG | #7 20.19 Get:6 http://deb.debian.org/debian bookworm/main amd64 libkrb5-3 amd64 1.20.1-2+deb12u4 [334 kB]
+21:25:09 | DEBUG | #7 21.09 Get:7 http://deb.debian.org/debian bookworm/main amd64 libgssapi-krb5-2 amd64 1.20.1-2+deb12u4 [135 kB]
+21:25:09 | DEBUG | #7 21.52 Get:8 http://deb.debian.org/debian bookworm/main amd64 libsasl2-modules-db amd64 2.1.28+dfsg-10 [20.3 kB]
+21:25:10 | DEBUG | #7 21.59 Get:9 http://deb.debian.org/debian bookworm/main amd64 libsasl2-2 amd64 2.1.28+dfsg-10 [59.7 kB]
+21:25:10 | DEBUG | #7 21.83 Get:10 http://deb.debian.org/debian bookworm/main amd64 libldap-2.5-0 amd64 2.5.13+dfsg-5 [183 kB]
+21:25:11 | DEBUG | #7 22.64 Get:11 http://deb.debian.org/debian bookworm/main amd64 libnghttp2-14 amd64 1.52.0-1+deb12u2 [73.0 kB]
+21:25:11 | DEBUG | #7 22.87 Get:12 http://deb.debian.org/debian bookworm/main amd64 libpsl5 amd64 0.21.2-1 [58.7 kB]
+21:25:11 | DEBUG | #7 23.05 Get:13 http://deb.debian.org/debian bookworm/main amd64 librtmp1 amd64 2.4+20151223.gitfa8646d.1-2+b2 [60.8 kB]
+21:25:11 | DEBUG | #7 23.33 Get:14 http://deb.debian.org/debian bookworm/main amd64 libssh2-1 amd64 1.10.0-3+b1 [179 kB]
+21:25:12 | DEBUG | #7 23.91 Get:15 http://deb.debian.org/debian bookworm/main amd64 libcurl4 amd64 7.88.1-10+deb12u14 [392 kB]
+21:25:13 | DEBUG | #7 24.82 Get:16 http://deb.debian.org/debian bookworm/main amd64 curl amd64 7.88.1-10+deb12u14 [316 kB]
+21:25:13 | DEBUG | #7 25.49 debconf: delaying package configuration, since apt-utils is not installed
+21:25:14 | DEBUG | #7 25.57 Selecting previously unselected package libbrotli1:amd64.
+21:25:14 | DEBUG | #7 25.53 Fetched 4240 kB in 9s (448 kB/s)
+21:25:14 | DEBUG | #7 25.58 Unpacking libbrotli1:amd64 (1.0.9-2+b6) ...
+21:25:14 | DEBUG | #7 25.57 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 6096 files and directories currently installed.)
+21:25:14 | DEBUG | #7 25.58 Preparing to unpack .../00-libbrotli1_1.0.9-2+b6_amd64.deb ...
+21:25:14 | DEBUG | #7 25.64 Selecting previously unselected package libkrb5support0:amd64.
+21:25:14 | DEBUG | #7 25.67 Selecting previously unselected package libk5crypto3:amd64.
+21:25:14 | DEBUG | #7 25.71 Unpacking libkeyutils1:amd64 (1.6.3-2) ...
+21:25:14 | DEBUG | #7 25.71 Preparing to unpack .../03-libkeyutils1_1.6.3-2_amd64.deb ...
+21:25:14 | DEBUG | #7 25.75 Selecting previously unselected package libssl3:amd64.
+21:25:14 | DEBUG | #7 25.67 Unpacking libk5crypto3:amd64 (1.20.1-2+deb12u4) ...
+21:25:14 | DEBUG | #7 25.71 Selecting previously unselected package libkeyutils1:amd64.
+21:25:14 | DEBUG | #7 25.64 Preparing to unpack .../01-libkrb5support0_1.20.1-2+deb12u4_amd64.deb ...
+21:25:14 | DEBUG | #7 25.67 Preparing to unpack .../02-libk5crypto3_1.20.1-2+deb12u4_amd64.deb ...
+21:25:14 | DEBUG | #7 25.64 Unpacking libkrb5support0:amd64 (1.20.1-2+deb12u4) ...
+21:25:14 | DEBUG | #7 25.75 Unpacking libssl3:amd64 (3.0.19-1~deb12u2) ...
+21:25:14 | DEBUG | #7 25.75 Preparing to unpack .../04-libssl3_3.0.19-1~deb12u2_amd64.deb ...
+21:25:14 | DEBUG | #7 25.95 Selecting previously unselected package libkrb5-3:amd64.
+21:25:14 | DEBUG | #7 25.95 Unpacking libkrb5-3:amd64 (1.20.1-2+deb12u4) ...
+21:25:14 | DEBUG | #7 26.02 Preparing to unpack .../06-libgssapi-krb5-2_1.20.1-2+deb12u4_amd64.deb ...
+21:25:14 | DEBUG | #7 25.95 Preparing to unpack .../05-libkrb5-3_1.20.1-2+deb12u4_amd64.deb ...
+21:25:14 | DEBUG | #7 26.02 Selecting previously unselected package libgssapi-krb5-2:amd64.
+21:25:14 | DEBUG | #7 26.03 Unpacking libgssapi-krb5-2:amd64 (1.20.1-2+deb12u4) ...
+21:25:14 | DEBUG | #7 26.06 Selecting previously unselected package libsasl2-modules-db:amd64.
+21:25:14 | DEBUG | #7 26.10 Selecting previously unselected package libsasl2-2:amd64.
+21:25:14 | DEBUG | #7 26.14 Unpacking libldap-2.5-0:amd64 (2.5.13+dfsg-5) ...
+21:25:14 | DEBUG | #7 26.10 Unpacking libsasl2-2:amd64 (2.1.28+dfsg-10) ...
+21:25:14 | DEBUG | #7 26.19 Selecting previously unselected package libnghttp2-14:amd64.
+21:25:14 | DEBUG | #7 26.14 Preparing to unpack .../09-libldap-2.5-0_2.5.13+dfsg-5_amd64.deb ...
+21:25:14 | DEBUG | #7 26.07 Unpacking libsasl2-modules-db:amd64 (2.1.28+dfsg-10) ...
+21:25:14 | DEBUG | #7 26.10 Preparing to unpack .../08-libsasl2-2_2.1.28+dfsg-10_amd64.deb ...
+21:25:14 | DEBUG | #7 26.14 Selecting previously unselected package libldap-2.5-0:amd64.
+21:25:14 | DEBUG | #7 26.07 Preparing to unpack .../07-libsasl2-modules-db_2.1.28+dfsg-10_amd64.deb ...
+21:25:14 | DEBUG | #7 26.26 Unpacking librtmp1:amd64 (2.4+20151223.gitfa8646d.1-2+b2) ...
+21:25:14 | DEBUG | #7 26.30 Selecting previously unselected package libssh2-1:amd64.
+21:25:14 | DEBUG | #7 26.19 Unpacking libnghttp2-14:amd64 (1.52.0-1+deb12u2) ...
+21:25:14 | DEBUG | #7 26.19 Preparing to unpack .../10-libnghttp2-14_1.52.0-1+deb12u2_amd64.deb ...
+21:25:14 | DEBUG | #7 26.23 Unpacking libpsl5:amd64 (0.21.2-1) ...
+21:25:14 | DEBUG | #7 26.22 Preparing to unpack .../11-libpsl5_0.21.2-1_amd64.deb ...
+21:25:14 | DEBUG | #7 26.22 Selecting previously unselected package libpsl5:amd64.
+21:25:14 | DEBUG | #7 26.26 Preparing to unpack .../12-librtmp1_2.4+20151223.gitfa8646d.1-2+b2_amd64.deb ...
+21:25:14 | DEBUG | #7 26.26 Selecting previously unselected package librtmp1:amd64.
+21:25:14 | DEBUG | #7 26.35 Preparing to unpack .../14-libcurl4_7.88.1-10+deb12u14_amd64.deb ...
+21:25:14 | DEBUG | #7 26.30 Unpacking libssh2-1:amd64 (1.10.0-3+b1) ...
+21:25:14 | DEBUG | #7 26.34 Selecting previously unselected package libcurl4:amd64.
+21:25:14 | DEBUG | #7 26.35 Unpacking libcurl4:amd64 (7.88.1-10+deb12u14) ...
+21:25:14 | DEBUG | #7 26.30 Preparing to unpack .../13-libssh2-1_1.10.0-3+b1_amd64.deb ...
+21:25:14 | DEBUG | #7 26.40 Preparing to unpack .../15-curl_7.88.1-10+deb12u14_amd64.deb ...
+21:25:14 | DEBUG | #7 26.40 Selecting previously unselected package curl.
+21:25:14 | DEBUG | #7 26.47 Setting up libbrotli1:amd64 (1.0.9-2+b6) ...
+21:25:14 | DEBUG | #7 26.49 Setting up librtmp1:amd64 (2.4+20151223.gitfa8646d.1-2+b2) ...
+21:25:14 | DEBUG | #7 26.48 Setting up libnghttp2-14:amd64 (1.52.0-1+deb12u2) ...
+21:25:14 | DEBUG | #7 26.50 Setting up libsasl2-2:amd64 (2.1.28+dfsg-10) ...
+21:25:14 | DEBUG | #7 26.49 Setting up libsasl2-modules-db:amd64 (2.1.28+dfsg-10) ...
+21:25:14 | DEBUG | #7 26.50 Setting up libk5crypto3:amd64 (1.20.1-2+deb12u4) ...
+21:25:14 | DEBUG | #7 26.46 Setting up libkeyutils1:amd64 (1.6.3-2) ...
+21:25:14 | DEBUG | #7 26.46 Setting up libpsl5:amd64 (0.21.2-1) ...
+21:25:14 | DEBUG | #7 26.48 Setting up libkrb5support0:amd64 (1.20.1-2+deb12u4) ...
+21:25:14 | DEBUG | #7 26.40 Unpacking curl (7.88.1-10+deb12u14) ...
+21:25:14 | DEBUG | #7 26.47 Setting up libssl3:amd64 (3.0.19-1~deb12u2) ...
+21:25:15 | DEBUG | #7 26.51 Setting up libssh2-1:amd64 (1.10.0-3+b1) ...
+21:25:15 | DEBUG | #7 26.52 Setting up libldap-2.5-0:amd64 (2.5.13+dfsg-5) ...
+21:25:15 | DEBUG | #7 26.52 Setting up libgssapi-krb5-2:amd64 (1.20.1-2+deb12u4) ...
+21:25:15 | DEBUG | #7 26.54 Processing triggers for libc-bin (2.36-9+deb12u13) ...
+21:25:15 | DEBUG | #7 26.51 Setting up libkrb5-3:amd64 (1.20.1-2+deb12u4) ...
+21:25:15 | DEBUG | #7 26.53 Setting up curl (7.88.1-10+deb12u14) ...
+21:25:15 | DEBUG | #7 26.53 Setting up libcurl4:amd64 (7.88.1-10+deb12u14) ...
+21:25:15 | DEBUG | #7 DONE 26.7s
+21:25:15 | DEBUG | 
+21:25:15 | DEBUG | #8 [ 4/11] RUN npm install -g @nestjs/cli
+21:25:26 | DEBUG | #8 11.34 
+21:25:26 | DEBUG | #8 11.34 
+21:25:26 | DEBUG | #8 11.34 added 210 packages in 11s
+21:25:26 | DEBUG | #8 11.34 38 packages are looking for funding
+21:25:26 | DEBUG | #8 11.34   run `npm fund` for details
+21:25:27 | DEBUG | #8 DONE 12.1s
+21:25:27 | DEBUG | 
+21:25:27 | DEBUG | #9 [ 5/11] RUN groupadd --gid 2000 app && useradd --uid 2000 --gid 2000 -m -s /bin/bash app
+21:25:27 | DEBUG | #9 DONE 0.3s
+21:25:27 | DEBUG | #11 DONE 0.1s
+21:25:27 | DEBUG | #11 [ 7/11] COPY package.json pnpm-lock.yaml* package-lock.json* pnpm-workspace.yaml* ./
+21:25:27 | DEBUG | 
+21:25:27 | DEBUG | #10 [ 6/11] WORKDIR /app
+21:25:27 | DEBUG | #10 DONE 0.1s
+21:25:27 | DEBUG | 
+21:25:27 | DEBUG | 
+21:25:27 | DEBUG | #12 [ 8/11] RUN if [ -f pnpm-lock.yaml ]; then       echo "Detected pnpm workspace";       corepack prepare pnpm --activate && pnpm install --frozen-lockfile;     elif [ -f package-lock.json ]; then       echo "Detected npm project";       npm ci;     else       echo "No lockfile, installing NestJS dependencies";       npm install @nestjs/core @nestjs/common @nestjs/platform-express;       npm install;     fi
+21:25:27 | DEBUG | #12 0.066 Detected npm project
+21:25:29 | DEBUG | #12 2.208 npm error code EUSAGE
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error Usage:
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error   --dry-run
+21:25:29 | DEBUG | #12 2.215 npm error   --strict-peer-deps
+21:25:29 | DEBUG | #12 2.215 npm error [--global-style] [--omit <dev|optional|peer> [--omit <dev|optional|peer> ...]]
+21:25:29 | DEBUG | #12 2.215 npm error     Tells npm to create symlinks (or `.cmd` shims on Windows) for package
+21:25:29 | DEBUG | #12 2.215 npm error Missing: winston@3.19.0 from lock file
+21:25:29 | DEBUG | #12 2.215 npm error [--allow-git <all|none|root>] [--no-audit] [--no-bin-links] [--no-fund]
+21:25:29 | DEBUG | #12 2.215 npm error     When set file: protocol dependencies will be packed and installed as
+21:25:29 | DEBUG | #12 2.215 npm error     Dependency types to omit from the installation tree on disk.
+21:25:29 | DEBUG | #12 2.215 npm error   --legacy-bundling
+21:25:29 | DEBUG | #12 2.215 npm error     Run all build scripts (ie, `preinstall`, `install`, and
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error   --install-strategy
+21:25:29 | DEBUG | #12 2.215 npm error     When "true" displays the message at the end of each `npm install`
+21:25:29 | DEBUG | #12 2.215 npm error   --include
+21:25:29 | DEBUG | #12 2.215 npm error [--dry-run]
+21:25:29 | DEBUG | #12 2.215 npm error   --audit
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error     Sets the strategy for installing packages in node_modules.
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error   --allow-git
+21:25:29 | DEBUG | #12 2.215 npm error [-w|--workspace <workspace-name> [-w|--workspace <workspace-name> ...]]
+21:25:29 | DEBUG | #12 2.215 npm error     Include the workspace root when workspaces are enabled for a command.
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error   --foreground-scripts
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error     If set to `true`, and `--legacy-peer-deps` is not set, then _any_
+21:25:29 | DEBUG | #12 2.215 npm error Options:
+21:25:29 | DEBUG | #12 2.215 npm error   --bin-links
+21:25:29 | DEBUG | #12 2.215 npm error   --include-workspace-root
+21:25:29 | DEBUG | #12 2.215 npm error     Limits the ability for npm to fetch dependencies from git references.
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error   --install-links
+21:25:29 | DEBUG | #12 2.215 npm error     Enable running a command in the context of the configured workspaces of the
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error   --omit
+21:25:29 | DEBUG | #12 2.215 npm error [--strict-peer-deps] [--foreground-scripts] [--ignore-scripts]
+21:25:29 | DEBUG | #12 2.215 npm error     If true, npm does not run scripts specified in package.json files.
+21:25:29 | DEBUG | #12 2.215 npm error [--workspaces] [--include-workspace-root] [--install-links]
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error `npm ci` can only install packages when your package.json and package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock file with `npm install` before continuing.
+21:25:29 | DEBUG | #12 2.215 npm error   -w|--workspace
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error Clean install a project
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error   --global-style
+21:25:29 | DEBUG | #12 2.215 npm error     Option that allows for defining which types of dependencies to install.
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error     Instead of hoisting package installs in `node_modules`, install packages
+21:25:29 | DEBUG | #12 2.215 npm error [--include <prod|dev|optional|peer> [--include <prod|dev|optional|peer> ...]]
+21:25:29 | DEBUG | #12 2.215 npm error   --fund
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error     Set to true to run the command in the context of **all** configured
+21:25:29 | DEBUG | #12 2.215 npm error npm ci
+21:25:29 | DEBUG | #12 2.215 npm error   --workspaces
+21:25:29 | DEBUG | #12 2.215 npm error   --ignore-scripts
+21:25:29 | DEBUG | #12 2.215 npm error     Only install direct dependencies in the top level `node_modules`,
+21:25:29 | DEBUG | #12 2.215 npm error     When "true" submit audit reports alongside the current npm command to the
+21:25:29 | DEBUG | #12 2.215 npm error     Indicates that you don't want npm to make any changes and that it should
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error [--install-strategy <hoisted|nested|shallow|linked>] [--legacy-bundling]
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.215 npm error Run "npm help ci" for more info
+21:25:29 | DEBUG | #12 2.215 npm error aliases: clean-install, ic, install-clean, isntall-clean
+21:25:29 | DEBUG | #12 2.215 npm error
+21:25:29 | DEBUG | #12 2.217 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-05-05T18_25_27_811Z-debug-0.log
+21:25:29 | DEBUG |   42 | >>>       npm install; \
+21:25:29 | DEBUG |   38 | >>>       npm ci; \
+21:25:29 | DEBUG | 2.215 npm error
+21:25:29 | DEBUG |   33 | >>> RUN if [ -f pnpm-lock.yaml ]; then \
+21:25:29 | DEBUG |   39 | >>>     else \
+21:25:29 | DEBUG | 2.215 npm error     Include the workspace root when workspaces are enabled for a command.
+21:25:29 | DEBUG |   40 | >>>       echo "No lockfile, installing NestJS dependencies"; \
+21:25:29 | DEBUG | 2.217 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-05-05T18_25_27_811Z-debug-0.log
+21:25:29 | DEBUG | ------
+21:25:29 | DEBUG | Dockerfile:33
+21:25:29 | DEBUG |   37 | >>>       echo "Detected npm project"; \
+21:25:29 | DEBUG |   35 | >>>       corepack prepare pnpm --activate && pnpm install --frozen-lockfile; \
+21:25:29 | DEBUG |   43 | >>>     fi
+21:25:29 | DEBUG | --------------------
+21:25:29 | DEBUG | --------------------
+21:25:29 | DEBUG |  > [ 8/11] RUN if [ -f pnpm-lock.yaml ]; then       echo "Detected pnpm workspace";       corepack prepare pnpm --activate && pnpm install --frozen-lockfile;     elif [ -f package-lock.json ]; then       echo "Detected npm project";       npm ci;     else       echo "No lockfile, installing NestJS dependencies";       npm install @nestjs/core @nestjs/common @nestjs/platform-express;       npm install;     fi:
+21:25:29 | DEBUG | 2.215 npm error
+21:25:29 | DEBUG | 2.215 npm error
+21:25:29 | DEBUG |   36 | >>>     elif [ -f package-lock.json ]; then \
+21:25:29 | DEBUG |   32 |     # Detect and install dependencies
+21:25:29 | DEBUG |   34 | >>>       echo "Detected pnpm workspace"; \
+21:25:29 | DEBUG | 2.215 npm error Run "npm help ci" for more info
+21:25:29 | DEBUG |   44 |     
+21:25:29 | DEBUG | 2.215 npm error     When set file: protocol dependencies will be packed and installed as
+21:25:29 | DEBUG |   41 | >>>       npm install @nestjs/core @nestjs/common @nestjs/platform-express; \
+21:25:29 | DEBUG | #12 ERROR: process "/bin/sh -c if [ -f pnpm-lock.yaml ]; then       echo \"Detected pnpm workspace\";       corepack prepare pnpm --activate && pnpm install --frozen-lockfile;     elif [ -f package-lock.json ]; then       echo \"Detected npm project\";       npm ci;     else       echo \"No lockfile, installing NestJS dependencies\";       npm install @nestjs/core @nestjs/common @nestjs/platform-express;       npm install;     fi" did not complete successfully: exit code: 1
+21:25:29 | DEBUG | 2.215 npm error aliases: clean-install, ic, install-clean, isntall-clean
+21:25:29 | DEBUG | 2.215 npm error
+21:25:29 | INFO | error: failed to solve: process "/bin/sh -c if [ -f pnpm-lock.yaml ]; then       echo \"Detected pnpm workspace\";       corepack prepare pnpm --activate && pnpm install --frozen-lockfile;     elif [ -f package-lock.json ]; then       echo \"Detected npm project\";       npm ci;     else       echo \"No lockfile, installing NestJS dependencies\";       npm install @nestjs/core @nestjs/common @nestjs/platform-express;       npm install;     fi" did not complete successfully: exit code: 1
+21:25:29 | DEBUG | ------
+21:25:29 | DEBUG | 2.215 npm error   --install-links
+21:25:29 | INFO | Build failed
+21:25:50 | DEBUG | Cloning into '/workspace'...
+21:25:52 | DEBUG | Or undo this operation with:
+21:25:52 | DEBUG | 
+21:25:52 | DEBUG | Note: switching to '0edb0f5545189f4d0b0214e0e45d39097026ec82'.
+21:25:52 | DEBUG |   git switch -
+21:25:52 | DEBUG | If you want to create a new branch to retain commits you create, you may
+21:25:52 | DEBUG | changes and commit them, and you can discard any commits you make in this
+21:25:52 | DEBUG | do so (now or later) by using -c with the switch command. Example:
+21:25:52 | DEBUG | 
+21:25:52 | DEBUG | 
+21:25:52 | DEBUG |   git switch -c <new-branch-name>
+21:25:52 | DEBUG | state without impacting any branches by switching back to a branch.
+21:25:52 | DEBUG | 
+21:25:52 | DEBUG | You are in 'detached HEAD' state. You can look around, make experimental
+21:25:52 | DEBUG | 
+21:25:52 | DEBUG | Turn off this advice by setting config variable advice.detachedHead to false
+21:25:52 | DEBUG | 
+21:25:52 | DEBUG | HEAD is now at 0edb0f5 Fix library products filtering: include products with barId in library if isInLibrary is true
+21:25:52 | DEBUG | 
+21:25:55 | INFO | Build started
+21:25:55 | DEBUG | #5 [internal] load build context
+21:25:55 | DEBUG | #1 [internal] load build definition from Dockerfile
+21:25:55 | DEBUG | 
+21:25:55 | DEBUG | 
+21:25:55 | DEBUG | #4 [ 1/11] FROM docker.io/library/node:24-slim@sha256:03eae3ef7e88a9de535496fb488d67e02b9d96a063a8967bae657744ecd513f2
+21:25:55 | DEBUG | #1 transferring dockerfile: 1.39kB 0.0s done
+21:25:55 | DEBUG | #1 DONE 0.0s
+21:25:55 | DEBUG | #6 [ 2/11] RUN corepack enable
+21:25:55 | DEBUG | 
+21:25:55 | DEBUG | #2 [internal] load metadata for docker.io/library/node:24-slim
+21:25:55 | DEBUG | 
+21:25:55 | DEBUG | #1 WARN: Empty continuation line found in: RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends     curl     && rm -rf /var/lib/apt/lists/*
+21:25:55 | DEBUG | #5 transferring context: 3.94MB 0.2s done
+21:25:55 | DEBUG | #4 CACHED
+21:25:55 | DEBUG | #3 DONE 0.0s
+21:25:55 | DEBUG | #4 resolve docker.io/library/node:24-slim@sha256:03eae3ef7e88a9de535496fb488d67e02b9d96a063a8967bae657744ecd513f2 done
+21:25:55 | DEBUG | #5 DONE 0.2s
+21:25:55 | DEBUG | #3 [internal] load .dockerignore
+21:25:55 | DEBUG | #3 transferring context: 2B done
+21:25:55 | DEBUG | 
+21:25:55 | DEBUG | #2 DONE 0.7s
+21:25:55 | DEBUG | #6 DONE 1.2s
+21:25:55 | DEBUG | #7 [ 3/11] RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends     curl     && rm -rf /var/lib/apt/lists/*
+21:25:55 | DEBUG | 
+21:25:56 | DEBUG | #7 0.551 Get:1 http://deb.debian.org/debian bookworm InRelease [151 kB]
+21:25:56 | DEBUG | #7 0.660 Get:2 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+21:25:56 | DEBUG | #7 0.748 Get:4 http://deb.debian.org/debian bookworm/main amd64 Packages [8792 kB]
+21:25:56 | DEBUG | #7 0.700 Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [48.0 kB]
+21:25:56 | DEBUG | #7 1.054 Get:5 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [6924 B]
+21:25:56 | DEBUG | #7 1.055 Get:6 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [299 kB]
+21:25:57 | DEBUG | #7 2.271 Fetched 9352 kB in 2s (5119 kB/s)
+21:25:58 | DEBUG | #7 2.271 Reading package lists...
+21:25:59 | DEBUG | #7 3.012 Reading package lists...
+21:25:59 | DEBUG | #7 3.896 Reading state information...
+21:25:59 | DEBUG | #7 3.718 Building dependency tree...
+21:25:59 | DEBUG | #7 4.107 The following additional packages will be installed:
+21:25:59 | DEBUG | #7 4.108   libsasl2-modules-db libssh2-1 libssl3
+21:25:59 | DEBUG | #7 4.109 Recommended packages:
+21:25:59 | DEBUG | #7 4.238 The following NEW packages will be installed:
+21:25:59 | DEBUG | #7 4.109 Suggested packages:
+21:25:59 | DEBUG | #7 4.109   krb5-doc krb5-user
+21:25:59 | DEBUG | #7 4.107   libbrotli1 libcurl4 libgssapi-krb5-2 libk5crypto3 libkeyutils1 libkrb5-3
+21:25:59 | DEBUG | #7 4.107   libkrb5support0 libldap-2.5-0 libnghttp2-14 libpsl5 librtmp1 libsasl2-2
+21:25:59 | DEBUG | #7 4.109   ca-certificates krb5-locales libldap-common publicsuffix libsasl2-modules
+21:26:00 | DEBUG | #7 4.239   libsasl2-2 libsasl2-modules-db libssh2-1 libssl3
+21:26:00 | DEBUG | #7 4.238   curl libbrotli1 libcurl4 libgssapi-krb5-2 libk5crypto3 libkeyutils1
+21:26:00 | DEBUG | #7 4.339 Get:1 http://deb.debian.org/debian bookworm/main amd64 libbrotli1 amd64 1.0.9-2+b6 [275 kB]
+21:26:00 | DEBUG | #7 4.339 Need to get 4240 kB of archives.
+21:26:00 | DEBUG | #7 4.339 After this operation, 12.0 MB of additional disk space will be used.
+21:26:00 | DEBUG | #7 4.339 0 upgraded, 16 newly installed, 0 to remove and 0 not upgraded.
+21:26:00 | DEBUG | #7 4.239   libkrb5-3 libkrb5support0 libldap-2.5-0 libnghttp2-14 libpsl5 librtmp1
+21:26:00 | DEBUG | #7 4.488 Get:2 http://deb.debian.org/debian bookworm/main amd64 libkrb5support0 amd64 1.20.1-2+deb12u4 [33.2 kB]
+21:26:00 | DEBUG | #7 4.493 Get:4 http://deb.debian.org/debian bookworm/main amd64 libkeyutils1 amd64 1.6.3-2 [8808 B]
+21:26:00 | DEBUG | #7 4.493 Get:5 http://deb.debian.org/debian-security bookworm-security/main amd64 libssl3 amd64 3.0.19-1~deb12u2 [2032 kB]
+21:26:00 | DEBUG | #7 4.489 Get:3 http://deb.debian.org/debian bookworm/main amd64 libk5crypto3 amd64 1.20.1-2+deb12u4 [79.8 kB]
+21:26:00 | DEBUG | #7 4.605 Get:6 http://deb.debian.org/debian bookworm/main amd64 libkrb5-3 amd64 1.20.1-2+deb12u4 [334 kB]
+21:26:00 | DEBUG | #7 4.689 Get:16 http://deb.debian.org/debian bookworm/main amd64 curl amd64 7.88.1-10+deb12u14 [316 kB]
+21:26:00 | DEBUG | #7 4.641 Get:8 http://deb.debian.org/debian bookworm/main amd64 libsasl2-modules-db amd64 2.1.28+dfsg-10 [20.3 kB]
+21:26:00 | DEBUG | #7 4.681 Get:11 http://deb.debian.org/debian bookworm/main amd64 libnghttp2-14 amd64 1.52.0-1+deb12u2 [73.0 kB]
+21:26:00 | DEBUG | #7 4.682 Get:12 http://deb.debian.org/debian bookworm/main amd64 libpsl5 amd64 0.21.2-1 [58.7 kB]
+21:26:00 | DEBUG | #7 4.683 Get:14 http://deb.debian.org/debian bookworm/main amd64 libssh2-1 amd64 1.10.0-3+b1 [179 kB]
+21:26:00 | DEBUG | #7 4.836 debconf: delaying package configuration, since apt-utils is not installed
+21:26:00 | DEBUG | #7 4.680 Get:10 http://deb.debian.org/debian bookworm/main amd64 libldap-2.5-0 amd64 2.5.13+dfsg-5 [183 kB]
+21:26:00 | DEBUG | #7 4.682 Get:13 http://deb.debian.org/debian bookworm/main amd64 librtmp1 amd64 2.4+20151223.gitfa8646d.1-2+b2 [60.8 kB]
+21:26:00 | DEBUG | #7 4.642 Get:9 http://deb.debian.org/debian bookworm/main amd64 libsasl2-2 amd64 2.1.28+dfsg-10 [59.7 kB]
+21:26:00 | DEBUG | #7 4.640 Get:7 http://deb.debian.org/debian bookworm/main amd64 libgssapi-krb5-2 amd64 1.20.1-2+deb12u4 [135 kB]
+21:26:00 | DEBUG | #7 4.686 Get:15 http://deb.debian.org/debian bookworm/main amd64 libcurl4 amd64 7.88.1-10+deb12u14 [392 kB]
+21:26:00 | DEBUG | #7 4.874 Fetched 4240 kB in 0s (9619 kB/s)
+21:26:00 | DEBUG | #7 4.900 Selecting previously unselected package libbrotli1:amd64.
+21:26:00 | DEBUG | #7 4.906 Preparing to unpack .../00-libbrotli1_1.0.9-2+b6_amd64.deb ...
+21:26:00 | DEBUG | #7 4.912 Unpacking libbrotli1:amd64 (1.0.9-2+b6) ...
+21:26:00 | DEBUG | #7 4.964 Selecting previously unselected package libkrb5support0:amd64.
+21:26:00 | DEBUG | #7 4.900 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 6096 files and directories currently installed.)
+21:26:00 | DEBUG | #7 4.966 Preparing to unpack .../01-libkrb5support0_1.20.1-2+deb12u4_amd64.deb ...
+21:26:00 | DEBUG | #7 5.001 Preparing to unpack .../02-libk5crypto3_1.20.1-2+deb12u4_amd64.deb ...
+21:26:00 | DEBUG | #7 5.004 Unpacking libk5crypto3:amd64 (1.20.1-2+deb12u4) ...
+21:26:00 | DEBUG | #7 5.077 Selecting previously unselected package libssl3:amd64.
+21:26:00 | DEBUG | #7 5.043 Preparing to unpack .../03-libkeyutils1_1.6.3-2_amd64.deb ...
+21:26:00 | DEBUG | #7 5.041 Selecting previously unselected package libkeyutils1:amd64.
+21:26:00 | DEBUG | #7 4.968 Unpacking libkrb5support0:amd64 (1.20.1-2+deb12u4) ...
+21:26:00 | DEBUG | #7 5.000 Selecting previously unselected package libk5crypto3:amd64.
+21:26:00 | DEBUG | #7 5.046 Unpacking libkeyutils1:amd64 (1.6.3-2) ...
+21:26:00 | DEBUG | #7 5.078 Preparing to unpack .../04-libssl3_3.0.19-1~deb12u2_amd64.deb ...
+21:26:00 | DEBUG | #7 5.081 Unpacking libssl3:amd64 (3.0.19-1~deb12u2) ...
+21:26:00 | DEBUG | #7 5.247 Selecting previously unselected package libkrb5-3:amd64.
+21:26:01 | DEBUG | #7 5.309 Preparing to unpack .../06-libgssapi-krb5-2_1.20.1-2+deb12u4_amd64.deb ...
+21:26:01 | DEBUG | #7 5.345 Selecting previously unselected package libsasl2-modules-db:amd64.
+21:26:01 | DEBUG | #7 5.251 Unpacking libkrb5-3:amd64 (1.20.1-2+deb12u4) ...
+21:26:01 | DEBUG | #7 5.346 Preparing to unpack .../07-libsasl2-modules-db_2.1.28+dfsg-10_amd64.deb ...
+21:26:01 | DEBUG | #7 5.248 Preparing to unpack .../05-libkrb5-3_1.20.1-2+deb12u4_amd64.deb ...
+21:26:01 | DEBUG | #7 5.311 Unpacking libgssapi-krb5-2:amd64 (1.20.1-2+deb12u4) ...
+21:26:01 | DEBUG | #7 5.348 Unpacking libsasl2-modules-db:amd64 (2.1.28+dfsg-10) ...
+21:26:01 | DEBUG | #7 5.307 Selecting previously unselected package libgssapi-krb5-2:amd64.
+21:26:01 | DEBUG | #7 5.415 Unpacking libldap-2.5-0:amd64 (2.5.13+dfsg-5) ...
+21:26:01 | DEBUG | #7 5.376 Preparing to unpack .../08-libsasl2-2_2.1.28+dfsg-10_amd64.deb ...
+21:26:01 | DEBUG | #7 5.379 Unpacking libsasl2-2:amd64 (2.1.28+dfsg-10) ...
+21:26:01 | DEBUG | #7 5.375 Selecting previously unselected package libsasl2-2:amd64.
+21:26:01 | DEBUG | #7 5.460 Selecting previously unselected package libnghttp2-14:amd64.
+21:26:01 | DEBUG | #7 5.413 Preparing to unpack .../09-libldap-2.5-0_2.5.13+dfsg-5_amd64.deb ...
+21:26:01 | DEBUG | #7 5.412 Selecting previously unselected package libldap-2.5-0:amd64.
+21:26:01 | DEBUG | #7 5.501 Preparing to unpack .../11-libpsl5_0.21.2-1_amd64.deb ...
+21:26:01 | DEBUG | #7 5.538 Selecting previously unselected package librtmp1:amd64.
+21:26:01 | DEBUG | #7 5.464 Unpacking libnghttp2-14:amd64 (1.52.0-1+deb12u2) ...
+21:26:01 | DEBUG | #7 5.579 Selecting previously unselected package libssh2-1:amd64.
+21:26:01 | DEBUG | #7 5.504 Unpacking libpsl5:amd64 (0.21.2-1) ...
+21:26:01 | DEBUG | #7 5.500 Selecting previously unselected package libpsl5:amd64.
+21:26:01 | DEBUG | #7 5.462 Preparing to unpack .../10-libnghttp2-14_1.52.0-1+deb12u2_amd64.deb ...
+21:26:01 | DEBUG | #7 5.543 Unpacking librtmp1:amd64 (2.4+20151223.gitfa8646d.1-2+b2) ...
+21:26:01 | DEBUG | #7 5.539 Preparing to unpack .../12-librtmp1_2.4+20151223.gitfa8646d.1-2+b2_amd64.deb ...
+21:26:01 | DEBUG | #7 5.635 Unpacking libcurl4:amd64 (7.88.1-10+deb12u14) ...
+21:26:01 | DEBUG | #7 5.629 Selecting previously unselected package libcurl4:amd64.
+21:26:01 | DEBUG | #7 5.584 Unpacking libssh2-1:amd64 (1.10.0-3+b1) ...
+21:26:01 | DEBUG | #7 5.695 Selecting previously unselected package curl.
+21:26:01 | DEBUG | #7 5.581 Preparing to unpack .../13-libssh2-1_1.10.0-3+b1_amd64.deb ...
+21:26:01 | DEBUG | #7 5.631 Preparing to unpack .../14-libcurl4_7.88.1-10+deb12u14_amd64.deb ...
+21:26:01 | DEBUG | #7 5.801 Setting up libsasl2-modules-db:amd64 (2.1.28+dfsg-10) ...
+21:26:01 | DEBUG | #7 5.771 Setting up libbrotli1:amd64 (1.0.9-2+b6) ...
+21:26:01 | DEBUG | #7 5.765 Setting up libpsl5:amd64 (0.21.2-1) ...
+21:26:01 | DEBUG | #7 5.785 Setting up libnghttp2-14:amd64 (1.52.0-1+deb12u2) ...
+21:26:01 | DEBUG | #7 5.793 Setting up libkrb5support0:amd64 (1.20.1-2+deb12u4) ...
+21:26:01 | DEBUG | #7 5.779 Setting up libssl3:amd64 (3.0.19-1~deb12u2) ...
+21:26:01 | DEBUG | #7 5.700 Unpacking curl (7.88.1-10+deb12u14) ...
+21:26:01 | DEBUG | #7 5.756 Setting up libkeyutils1:amd64 (1.6.3-2) ...
+21:26:01 | DEBUG | #7 5.697 Preparing to unpack .../15-curl_7.88.1-10+deb12u14_amd64.deb ...
+21:26:01 | DEBUG | #7 5.878 Setting up libcurl4:amd64 (7.88.1-10+deb12u14) ...
+21:26:01 | DEBUG | #7 5.841 Setting up libkrb5-3:amd64 (1.20.1-2+deb12u4) ...
+21:26:01 | DEBUG | #7 5.808 Setting up librtmp1:amd64 (2.4+20151223.gitfa8646d.1-2+b2) ...
+21:26:01 | DEBUG | #7 5.851 Setting up libldap-2.5-0:amd64 (2.5.13+dfsg-5) ...
+21:26:01 | DEBUG | #7 5.863 Setting up libgssapi-krb5-2:amd64 (1.20.1-2+deb12u4) ...
+21:26:01 | DEBUG | #7 5.833 Setting up libssh2-1:amd64 (1.10.0-3+b1) ...
+21:26:01 | DEBUG | #7 5.824 Setting up libsasl2-2:amd64 (2.1.28+dfsg-10) ...
+21:26:01 | DEBUG | #7 5.890 Setting up curl (7.88.1-10+deb12u14) ...
+21:26:01 | DEBUG | #7 5.903 Processing triggers for libc-bin (2.36-9+deb12u13) ...
+21:26:01 | DEBUG | #7 5.816 Setting up libk5crypto3:amd64 (1.20.1-2+deb12u4) ...
+21:26:01 | DEBUG | #7 DONE 6.0s
+21:26:01 | DEBUG | 
+21:26:01 | DEBUG | #8 [ 4/11] RUN npm install -g @nestjs/cli
+21:26:12 | DEBUG | #8 10.48 
+21:26:12 | DEBUG | #8 10.48 added 210 packages in 10s
+21:26:12 | DEBUG | #8 10.48 
+21:26:12 | DEBUG | #8 10.48   run `npm fund` for details
+21:26:12 | DEBUG | #8 10.48 38 packages are looking for funding
+21:26:12 | DEBUG | #8 DONE 11.1s
+21:26:13 | DEBUG | #9 [ 5/11] RUN groupadd --gid 2000 app && useradd --uid 2000 --gid 2000 -m -s /bin/bash app
+21:26:13 | DEBUG | 
+21:26:13 | DEBUG | #9 DONE 0.3s
+21:26:13 | DEBUG | #11 [ 7/11] COPY package.json pnpm-lock.yaml* package-lock.json* pnpm-workspace.yaml* ./
+21:26:13 | DEBUG | 
+21:26:13 | DEBUG | 
+21:26:13 | DEBUG | #11 DONE 0.1s
+21:26:13 | DEBUG | #10 DONE 0.1s
+21:26:13 | DEBUG | #10 [ 6/11] WORKDIR /app
+21:26:13 | DEBUG | #12 0.136 Detected npm project
+21:26:13 | DEBUG | #12 [ 8/11] RUN if [ -f pnpm-lock.yaml ]; then       echo "Detected pnpm workspace";       corepack prepare pnpm --activate && pnpm install --frozen-lockfile;     elif [ -f package-lock.json ]; then       echo "Detected npm project";       npm ci;     else       echo "No lockfile, installing NestJS dependencies";       npm install @nestjs/core @nestjs/common @nestjs/platform-express;       npm install;     fi
+21:26:13 | DEBUG | 
+21:26:15 | DEBUG | #12 1.997 npm error code EUSAGE
+21:26:15 | DEBUG | #12 2.003 npm error   --strict-peer-deps
+21:26:15 | DEBUG | #12 2.003 npm error     Include the workspace root when workspaces are enabled for a command.
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error     If true, npm does not run scripts specified in package.json files.
+21:26:15 | DEBUG | #12 2.003 npm error     Instead of hoisting package installs in `node_modules`, install packages
+21:26:15 | DEBUG | #12 2.003 npm error [--dry-run]
+21:26:15 | DEBUG | #12 2.003 npm error     Dependency types to omit from the installation tree on disk.
+21:26:15 | DEBUG | #12 2.003 npm error [--strict-peer-deps] [--foreground-scripts] [--ignore-scripts]
+21:26:15 | DEBUG | #12 2.003 npm error     Enable running a command in the context of the configured workspaces of the
+21:26:15 | DEBUG | #12 2.003 npm error   --allow-git
+21:26:15 | DEBUG | #12 2.003 npm error     When set file: protocol dependencies will be packed and installed as
+21:26:15 | DEBUG | #12 2.003 npm error Clean install a project
+21:26:15 | DEBUG | #12 2.003 npm error     Set to true to run the command in the context of **all** configured
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error `npm ci` can only install packages when your package.json and package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock file with `npm install` before continuing.
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 ERROR: process "/bin/sh -c if [ -f pnpm-lock.yaml ]; then       echo \"Detected pnpm workspace\";       corepack prepare pnpm --activate && pnpm install --frozen-lockfile;     elif [ -f package-lock.json ]; then       echo \"Detected npm project\";       npm ci;     else       echo \"No lockfile, installing NestJS dependencies\";       npm install @nestjs/core @nestjs/common @nestjs/platform-express;       npm install;     fi" did not complete successfully: exit code: 1
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error     Option that allows for defining which types of dependencies to install.
+21:26:15 | DEBUG | #12 2.003 npm error aliases: clean-install, ic, install-clean, isntall-clean
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error     Run all build scripts (ie, `preinstall`, `install`, and
+21:26:15 | DEBUG | #12 2.003 npm error Options:
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error   --workspaces
+21:26:15 | DEBUG | #12 2.003 npm error [--include <prod|dev|optional|peer> [--include <prod|dev|optional|peer> ...]]
+21:26:15 | DEBUG | #12 2.003 npm error [--install-strategy <hoisted|nested|shallow|linked>] [--legacy-bundling]
+21:26:15 | DEBUG | #12 2.003 npm error   --dry-run
+21:26:15 | DEBUG | #12 2.003 npm error   --install-strategy
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error Usage:
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error [--workspaces] [--include-workspace-root] [--install-links]
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error   --ignore-scripts
+21:26:15 | DEBUG | #12 2.003 npm error     Indicates that you don't want npm to make any changes and that it should
+21:26:15 | DEBUG | #12 2.003 npm error   --audit
+21:26:15 | DEBUG | #12 2.003 npm error     Only install direct dependencies in the top level `node_modules`,
+21:26:15 | DEBUG | #12 2.003 npm error     When "true" displays the message at the end of each `npm install`
+21:26:15 | DEBUG | #12 2.003 npm error     When "true" submit audit reports alongside the current npm command to the
+21:26:15 | DEBUG | #12 2.003 npm error     Limits the ability for npm to fetch dependencies from git references.
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error   --omit
+21:26:15 | DEBUG | #12 2.003 npm error   --bin-links
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error     Tells npm to create symlinks (or `.cmd` shims on Windows) for package
+21:26:15 | DEBUG | #12 2.003 npm error   --foreground-scripts
+21:26:15 | DEBUG | #12 2.003 npm error npm ci
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error Run "npm help ci" for more info
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error   --global-style
+21:26:15 | DEBUG | #12 2.003 npm error   -w|--workspace
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error     If set to `true`, and `--legacy-peer-deps` is not set, then _any_
+21:26:15 | DEBUG | #12 2.003 npm error   --install-links
+21:26:15 | DEBUG | #12 2.003 npm error   --legacy-bundling
+21:26:15 | DEBUG | #12 2.003 npm error
+21:26:15 | DEBUG | #12 2.003 npm error [--global-style] [--omit <dev|optional|peer> [--omit <dev|optional|peer> ...]]
+21:26:15 | DEBUG | #12 2.003 npm error Missing: winston@3.19.0 from lock file
+21:26:15 | DEBUG | #12 2.005 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-05-05T18_26_13_564Z-debug-0.log
+21:26:15 | DEBUG | #12 2.003 npm error   --include
+21:26:15 | DEBUG | #12 2.003 npm error   --include-workspace-root
+21:26:15 | DEBUG | #12 2.003 npm error   --fund
+21:26:15 | DEBUG | #12 2.003 npm error     Sets the strategy for installing packages in node_modules.
+21:26:15 | DEBUG | #12 2.003 npm error [-w|--workspace <workspace-name> [-w|--workspace <workspace-name> ...]]
+21:26:15 | DEBUG | #12 2.003 npm error [--allow-git <all|none|root>] [--no-audit] [--no-bin-links] [--no-fund]
+21:26:15 | DEBUG |  > [ 8/11] RUN if [ -f pnpm-lock.yaml ]; then       echo "Detected pnpm workspace";       corepack prepare pnpm --activate && pnpm install --frozen-lockfile;     elif [ -f package-lock.json ]; then       echo "Detected npm project";       npm ci;     else       echo "No lockfile, installing NestJS dependencies";       npm install @nestjs/core @nestjs/common @nestjs/platform-express;       npm install;     fi:
+21:26:15 | DEBUG | 2.003 npm error Run "npm help ci" for more info
+21:26:15 | DEBUG | 2.003 npm error     Include the workspace root when workspaces are enabled for a command.
+21:26:15 | DEBUG | 2.003 npm error     When set file: protocol dependencies will be packed and installed as
+21:26:15 | DEBUG | 2.003 npm error
+21:26:15 | DEBUG | 2.003 npm error
+21:26:15 | DEBUG | 2.003 npm error
+21:26:15 | DEBUG | 2.003 npm error aliases: clean-install, ic, install-clean, isntall-clean
+21:26:15 | DEBUG | ------
+21:26:15 | DEBUG | 2.003 npm error   --install-links
+21:26:15 | DEBUG | 2.003 npm error
+21:26:15 | DEBUG | 2.005 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-05-05T18_26_13_564Z-debug-0.log
+21:26:15 | DEBUG | ------
+21:26:15 | DEBUG |   33 | >>> RUN if [ -f pnpm-lock.yaml ]; then \
+21:26:15 | DEBUG |   35 | >>>       corepack prepare pnpm --activate && pnpm install --frozen-lockfile; \
+21:26:15 | DEBUG | Dockerfile:33
+21:26:15 | DEBUG |   34 | >>>       echo "Detected pnpm workspace"; \
+21:26:15 | DEBUG | --------------------
+21:26:15 | DEBUG |   32 |     # Detect and install dependencies
+21:26:15 | DEBUG |   37 | >>>       echo "Detected npm project"; \
+21:26:15 | DEBUG |   36 | >>>     elif [ -f package-lock.json ]; then \
+21:26:15 | DEBUG |   41 | >>>       npm install @nestjs/core @nestjs/common @nestjs/platform-express; \
+21:26:15 | DEBUG |   43 | >>>     fi
+21:26:15 | DEBUG |   44 |     
+21:26:15 | DEBUG |   39 | >>>     else \
+21:26:15 | DEBUG |   42 | >>>       npm install; \
+21:26:15 | DEBUG |   38 | >>>       npm ci; \
+21:26:15 | DEBUG |   40 | >>>       echo "No lockfile, installing NestJS dependencies"; \
+21:26:15 | INFO | error: failed to solve: process "/bin/sh -c if [ -f pnpm-lock.yaml ]; then       echo \"Detected pnpm workspace\";       corepack prepare pnpm --activate && pnpm install --frozen-lockfile;     elif [ -f package-lock.json ]; then       echo \"Detected npm project\";       npm ci;     else       echo \"No lockfile, installing NestJS dependencies\";       npm install @nestjs/core @nestjs/common @nestjs/platform-express;       npm install;     fi" did not complete successfully: exit code: 1
+21:26:15 | DEBUG | --------------------
+21:26:15 | INFO | Build failed

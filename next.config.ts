@@ -3,11 +3,28 @@ import withPWA from 'next-pwa';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
+/**
+ * PWA / service worker: на Vercel это обычно ок; на другом хостинге (Timeweb, свой VPS)
+ * Workbox может закешировать навигацию/HTML/чанки так, что в браузере получается «белый экран»
+ * после смены домена или некорректной раздачи `/_next/static`.
+ *
+ * По умолчанию: PWA включён только на Vercel (`VERCEL=1` на этапе сборки).
+ * Явно включить везде: `ENABLE_PWA=1`
+ * Явно выключить везде: `DISABLE_PWA=1`
+ */
+const isVercel = Boolean(process.env.VERCEL);
+const enablePWAExplicit = process.env.ENABLE_PWA === '1' || process.env.ENABLE_PWA === 'true';
+const disablePWAExplicit = process.env.DISABLE_PWA === '1' || process.env.DISABLE_PWA === 'true';
+const disablePWA =
+  isDevelopment ||
+  disablePWAExplicit ||
+  (!isVercel && !enablePWAExplicit);
+
 const pwaConfig = withPWA({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: isDevelopment, // Disable PWA in development
+  disable: disablePWA,
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/fonts\.(?:gstatic|googleapis)\.com\/.*/i,
@@ -171,7 +188,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Conditionally wrap with PWA config
-const config = isDevelopment ? nextConfig : pwaConfig(nextConfig);
+// Conditionally wrap with PWA config (disabled in dev or when disablePWA is true)
+const config = disablePWA ? nextConfig : pwaConfig(nextConfig);
 
 export default config;

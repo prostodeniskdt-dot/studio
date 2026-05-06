@@ -42,3 +42,7 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+# next-pwa (генерируется при сборке, не коммитить — иначе на новом хосте остаётся старый SW)
+public/sw.js
+public/workbox-*.js

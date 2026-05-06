@@ -10,8 +10,8 @@ test.describe('Offline Mode', () => {
     test.skip(!testEmail || !testPassword, 'Test credentials not provided');
     
     await page.goto('/');
-    await page.fill('input[type="email"]', testEmail);
-    await page.fill('input[type="password"]', testPassword);
+    await page.fill('input[type="email"]', testEmail!);
+    await page.fill('input[type="password"]', testPassword!);
     await page.click('button[type="submit"]');
     
     // Use 'load' instead of 'networkidle'

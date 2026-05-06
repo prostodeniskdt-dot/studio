@@ -21,6 +21,9 @@ import Image from 'next/image';
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, writeBatch, collection, setDoc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface PurchaseOrderLinesTableProps {
   lines: PurchaseOrderLine[];
@@ -35,6 +38,7 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
   const [isAdding, setIsAdding] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isProcessing, setIsProcessing] = React.useState(false);
+  const isMobile = useIsMobile();
 
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -224,116 +228,255 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
                 <Loader2 className="h-8 w-8 animate-spin" />
             </div>
         )}
-        <div className="rounded-md border">
-        <Table>
-            <TableHeader>
-            <TableRow>
-                <TableHead className="w-[40%]">Продукт</TableHead>
-                <TableHead className="text-right">Кол-во (бут.)</TableHead>
-                <TableHead className="text-right">Цена за шт.</TableHead>
-                <TableHead className="text-right">Получено</TableHead>
-                <TableHead className="text-right">Сумма</TableHead>
-                {isEditable && <TableHead className="w-[50px]"></TableHead>}
-            </TableRow>
-            </TableHeader>
-            <TableBody>
+        {isMobile ? (
+          <div className="space-y-3">
             {linesWithProducts.length > 0 ? (
-                linesWithProducts.map(line => (
-                <TableRow key={line.id}>
-                    <TableCell>
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-md bg-muted overflow-hidden relative flex-shrink-0">
-                                {line.product?.imageUrl && (
-                                    <Image src={line.product.imageUrl} alt={line.product ? translateProductName(line.product.name, line.product.bottleVolumeMl) : 'product image'} fill style={{objectFit: 'contain'}} />
-                                )}
-                            </div>
-                            <div>{line.product ? translateProductName(line.product.name, line.product.bottleVolumeMl) : 'Неизвестный продукт'}</div>
+              linesWithProducts.map((line) => {
+                const productName = line.product
+                  ? translateProductName(line.product.name, line.product.bottleVolumeMl)
+                  : 'Неизвестный продукт';
+                const lineTotal = line.quantity * line.costPerItem;
+
+                return (
+                  <Card key={line.id} className="overflow-hidden">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className="w-12 h-12 rounded-md bg-muted overflow-hidden relative flex-shrink-0">
+                          {line.product?.imageUrl && (
+                            <Image
+                              src={line.product.imageUrl}
+                              alt={productName}
+                              fill
+                              style={{ objectFit: 'contain' }}
+                            />
+                          )}
                         </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                        {isEditable ? (
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium truncate">{productName}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {formatCurrency(lineTotal)}
+                          </div>
+                        </div>
+                        {isEditable && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveLine(line.id)}
+                            className="flex-shrink-0"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <div className="text-xs text-muted-foreground">Кол-во (бут.)</div>
+                          {isEditable ? (
                             <Input
-                                type="number"
-                                value={line.quantity}
-                                onChange={e => handleLineChange(line.id, 'quantity', e.target.value)}
-                                className="w-20 ml-auto text-right"
+                              type="number"
+                              value={line.quantity}
+                              onChange={(e) => handleLineChange(line.id, 'quantity', e.target.value)}
+                              className="h-11"
                             />
-                        ) : line.quantity}
-                    </TableCell>
-                    <TableCell className="text-right">
-                        {isEditable ? (
-                           <Input
-                                type="number"
-                                step="0.01"
-                                value={line.costPerItem}
-                                onChange={e => handleLineChange(line.id, 'costPerItem', e.target.value)}
-                                className="w-24 ml-auto text-right"
+                          ) : (
+                            <div className="h-11 flex items-center font-medium">{line.quantity}</div>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-xs text-muted-foreground">Цена за шт.</div>
+                          {isEditable ? (
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={line.costPerItem}
+                              onChange={(e) => handleLineChange(line.id, 'costPerItem', e.target.value)}
+                              className="h-11"
                             />
-                        ) : formatCurrency(line.costPerItem)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                         <Input
+                          ) : (
+                            <div className="h-11 flex items-center font-medium">{formatCurrency(line.costPerItem)}</div>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-xs text-muted-foreground">Получено</div>
+                          <Input
                             type="number"
                             value={line.receivedQuantity || ''}
-                            onChange={e => handleLineChange(line.id, 'receivedQuantity', e.target.value)}
-                            className="w-20 ml-auto text-right"
+                            onChange={(e) => handleLineChange(line.id, 'receivedQuantity', e.target.value)}
+                            className="h-11"
                             placeholder="0"
-                        />
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                        {formatCurrency(line.quantity * line.costPerItem)}
-                    </TableCell>
-                    {isEditable && (
-                        <TableCell>
-                            <Button variant="ghost" size="icon" onClick={() => handleRemoveLine(line.id)}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                        </TableCell>
-                    )}
-                </TableRow>
-                ))
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-xs text-muted-foreground">Сумма</div>
+                          <div className="h-11 flex items-center justify-end font-semibold">
+                            <Badge variant="outline" className="text-sm">
+                              {formatCurrency(lineTotal)}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
             ) : (
-                <TableRow>
-                    <TableCell colSpan={isEditable ? 6 : 5} className="h-24 text-center">
-                        В этом заказе пока нет позиций.
-                    </TableCell>
-                </TableRow>
+              <Card>
+                <CardContent className="p-6 text-center text-muted-foreground">
+                  В этом заказе пока нет позиций.
+                </CardContent>
+              </Card>
             )}
-            </TableBody>
-            <TableFooter>
-                <TableRow>
-                    <TableCell colSpan={4} className="text-right text-lg font-bold">Итого</TableCell>
-                    <TableCell className="text-right text-lg font-bold">{formatCurrency(totalAmount)}</TableCell>
-                    {isEditable && <TableCell></TableCell>}
-                </TableRow>
-            </TableFooter>
-        </Table>
-        </div>
-        <div className="flex items-center gap-4">
-            {isEditable && (
-                <>
-                {isAdding ? (
-                    <Combobox
+
+            <Card>
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">Итого</div>
+                <div className="text-lg font-bold">{formatCurrency(totalAmount)}</div>
+              </CardContent>
+            </Card>
+
+            <div className="sticky bottom-0 z-10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t p-3 -mx-4 sm:mx-0 sm:rounded-md">
+              <div className="space-y-3">
+                {isEditable && (
+                  <>
+                    {isAdding ? (
+                      <Combobox
                         options={groupedProductOptions}
                         onSelect={(value) => handleAddProduct(value)}
                         placeholder="Выберите продукт для добавления..."
                         searchPlaceholder="Поиск продукта..."
                         notFoundText="Продукт не найден или уже в заказе."
                         triggerClassName="w-full"
-                    />
-                ) : (
-                    <Button variant="outline" onClick={() => setIsAdding(true)}>
+                      />
+                    ) : (
+                      <Button variant="outline" onClick={() => setIsAdding(true)} className="w-full h-11">
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Добавить продукт
-                    </Button>
+                      </Button>
+                    )}
+                  </>
                 )}
+                <Button onClick={handleSaveLines} disabled={!hasChanges || isSaving} className="w-full h-11">
+                  {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[40%]">Продукт</TableHead>
+                    <TableHead className="text-right">Кол-во (бут.)</TableHead>
+                    <TableHead className="text-right">Цена за шт.</TableHead>
+                    <TableHead className="text-right">Получено</TableHead>
+                    <TableHead className="text-right">Сумма</TableHead>
+                    {isEditable && <TableHead className="w-[50px]"></TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {linesWithProducts.length > 0 ? (
+                    linesWithProducts.map(line => (
+                      <TableRow key={line.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-md bg-muted overflow-hidden relative flex-shrink-0">
+                              {line.product?.imageUrl && (
+                                <Image src={line.product.imageUrl} alt={line.product ? translateProductName(line.product.name, line.product.bottleVolumeMl) : 'product image'} fill style={{objectFit: 'contain'}} />
+                              )}
+                            </div>
+                            <div>{line.product ? translateProductName(line.product.name, line.product.bottleVolumeMl) : 'Неизвестный продукт'}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {isEditable ? (
+                            <Input
+                              type="number"
+                              value={line.quantity}
+                              onChange={e => handleLineChange(line.id, 'quantity', e.target.value)}
+                              className="w-20 ml-auto text-right"
+                            />
+                          ) : line.quantity}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {isEditable ? (
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={line.costPerItem}
+                              onChange={e => handleLineChange(line.id, 'costPerItem', e.target.value)}
+                              className="w-24 ml-auto text-right"
+                            />
+                          ) : formatCurrency(line.costPerItem)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            type="number"
+                            value={line.receivedQuantity || ''}
+                            onChange={e => handleLineChange(line.id, 'receivedQuantity', e.target.value)}
+                            className="w-20 ml-auto text-right"
+                            placeholder="0"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(line.quantity * line.costPerItem)}
+                        </TableCell>
+                        {isEditable && (
+                          <TableCell>
+                            <Button variant="ghost" size="icon" onClick={() => handleRemoveLine(line.id)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={isEditable ? 6 : 5} className="h-24 text-center">
+                        В этом заказе пока нет позиций.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+                <TableFooter>
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-right text-lg font-bold">Итого</TableCell>
+                    <TableCell className="text-right text-lg font-bold">{formatCurrency(totalAmount)}</TableCell>
+                    {isEditable && <TableCell></TableCell>}
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            </div>
+            <div className="flex items-center gap-4">
+              {isEditable && (
+                <>
+                  {isAdding ? (
+                    <Combobox
+                      options={groupedProductOptions}
+                      onSelect={(value) => handleAddProduct(value)}
+                      placeholder="Выберите продукт для добавления..."
+                      searchPlaceholder="Поиск продукта..."
+                      notFoundText="Продукт не найден или уже в заказе."
+                      triggerClassName="w-full"
+                    />
+                  ) : (
+                    <Button variant="outline" onClick={() => setIsAdding(true)}>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Добавить продукт
+                    </Button>
+                  )}
                 </>
-            )}
-            <Button onClick={handleSaveLines} disabled={!hasChanges || isSaving}>
+              )}
+              <Button onClick={handleSaveLines} disabled={!hasChanges || isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
-            </Button>
-        </div>
+              </Button>
+            </div>
+          </>
+        )}
     </div>
   );
 }

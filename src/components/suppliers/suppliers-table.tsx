@@ -34,6 +34,8 @@ import { SupplierForm } from './supplier-form';
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface SuppliersTableProps {
   suppliers: Supplier[];
@@ -44,6 +46,7 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [editingSupplier, setEditingSupplier] = React.useState<Supplier | undefined>(undefined);
   const [supplierToDelete, setSupplierToDelete] = React.useState<Supplier | null>(null);
+  const isMobile = useIsMobile();
 
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -144,62 +147,133 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
   return (
     <>
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <div className="flex items-center justify-between py-4">
+        <div className="flex items-center justify-between py-4 gap-4 flex-wrap">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Поставщики</h1>
             <p className="text-muted-foreground">Управляйте списком ваших поставщиков.</p>
           </div>
           <SheetTrigger asChild>
-            <Button onClick={() => handleOpenSheet()}>
+            <Button onClick={() => handleOpenSheet()} className="h-11">
               <PlusCircle className="mr-2 h-4 w-4" />
               Добавить поставщика
             </Button>
           </SheetTrigger>
         </div>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
+
+        {isMobile ? (
+          <div className="space-y-3">
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => {
+                const supplier = row.original;
+                return (
+                  <Card key={supplier.id} className="overflow-hidden">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{supplier.name}</div>
+                          <div className="text-sm text-muted-foreground truncate">
+                            {supplier.contactName || '-'}
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-11 w-11 p-0">
+                              <span className="sr-only">Открыть меню</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Действия</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => handleOpenSheet(supplier)}>
+                              Редактировать
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => handleDeleteClick(supplier)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Удалить
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-2 text-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-muted-foreground">Телефон</div>
+                          <div className="font-medium truncate">{supplier.phone || '-'}</div>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-muted-foreground">Email</div>
+                          <div className="font-medium truncate">{supplier.email || '-'}</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            ) : (
+              <Card>
+                <CardContent className="p-0">
+                  <EmptyState
+                    icon={Truck}
+                    title="Поставщиков пока нет"
+                    description="Начните добавлять поставщиков для управления закупками"
+                    action={{
+                      label: "Добавить поставщика",
+                      onClick: () => handleOpenSheet()
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableHead>
                     ))}
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 p-0">
-                    <EmptyState
-                      icon={Truck}
-                      title="Поставщиков пока нет"
-                      description="Начните добавлять поставщиков для управления закупками"
-                      action={{
-                        label: "Добавить поставщика",
-                        onClick: () => handleOpenSheet()
-                      }}
-                    />
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={columns.length} className="h-24 p-0">
+                      <EmptyState
+                        icon={Truck}
+                        title="Поставщиков пока нет"
+                        description="Начните добавлять поставщиков для управления закупками"
+                        action={{
+                          label: "Добавить поставщика",
+                          onClick: () => handleOpenSheet()
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
         <div className="flex items-center justify-between px-2 py-4">
           <div className="text-sm text-muted-foreground">
             Показано {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} - {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, suppliers.length)} из {suppliers.length}

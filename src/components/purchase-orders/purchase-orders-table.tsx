@@ -38,6 +38,7 @@ import Link from 'next/link';
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, deleteDoc, getDocs, collection, writeBatch } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface OrderWithSupplier extends PurchaseOrder {
   supplier?: Supplier;
@@ -55,6 +56,7 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [editingOrder, setEditingOrder] = React.useState<PurchaseOrder | undefined>(undefined);
   const [orderToDelete, setOrderToDelete] = React.useState<PurchaseOrder | null>(null);
+  const isMobile = useIsMobile();
 
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -203,50 +205,124 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                    {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => (
-                            <TableHead key={header.id}>
-                            {header.isPlaceholder
-                                ? null
-                                : flexRender(header.column.columnDef.header, header.getContext())}
-                            </TableHead>
-                        ))}
-                        </TableRow>
-                    ))}
-                    </TableHeader>
-                    <TableBody>
+                {isMobile ? (
+                  <div className="space-y-3">
                     {table.getRowModel().rows?.length ? (
-                        table.getRowModel().rows.map((row) => (
-                        <TableRow key={row.id}>
-                            {row.getVisibleCells().map((cell) => (
-                            <TableCell key={cell.id}>
-                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </TableCell>
-                            ))}
-                        </TableRow>
-                        ))
+                      table.getRowModel().rows.map((row) => {
+                        const order = row.original;
+                        const supplierName = order.supplier?.name || 'Неизвестный поставщик';
+                        const date = (order.orderDate as any)?.toDate?.();
+                        const dateText = date ? date.toLocaleDateString('ru-RU') : '-';
+                        const amountText = order.totalAmount ? formatCurrency(order.totalAmount) : '-';
+                        return (
+                          <Card key={order.id} className="overflow-hidden">
+                            <CardContent className="p-4 space-y-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="font-medium">#{order.id.substring(0, 6)}</div>
+                                  <div className="text-sm text-muted-foreground truncate">{supplierName}</div>
+                                </div>
+                                <Badge variant="outline" className="flex-shrink-0">
+                                  {translateStatus(order.status)}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center justify-between text-sm">
+                                <div className="text-muted-foreground">Дата</div>
+                                <div className="font-medium">{dateText}</div>
+                              </div>
+                              <div className="flex items-center justify-between text-sm">
+                                <div className="text-muted-foreground">Сумма</div>
+                                <div className="font-semibold">{amountText}</div>
+                              </div>
+                              <div className="flex items-center gap-2 pt-1">
+                                <Button
+                                  variant="outline"
+                                  className="h-11 flex-1"
+                                  onClick={() => router.push(`/dashboard/purchase-orders/${order.id}`)}
+                                >
+                                  Просмотреть
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  className="h-11"
+                                  onClick={() => handleOpenSheet(order)}
+                                >
+                                  Редактировать
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  className="h-11"
+                                  onClick={() => handleDeleteClick(order)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })
                     ) : (
-                        <TableRow>
-                        <TableCell colSpan={columns.length} className="h-24 p-0">
-                            <EmptyState
-                              icon={ShoppingCart}
-                              title="Заказов пока нет"
-                              description="Создайте первый заказ на закупку у ваших поставщиков"
-                              action={{
-                                label: "Создать заказ",
-                                onClick: () => handleOpenSheet()
-                              }}
-                            />
-                        </TableCell>
-                        </TableRow>
+                      <Card>
+                        <CardContent className="p-0">
+                          <EmptyState
+                            icon={ShoppingCart}
+                            title="Заказов пока нет"
+                            description="Создайте первый заказ на закупку у ваших поставщиков"
+                            action={{
+                              label: "Создать заказ",
+                              onClick: () => handleOpenSheet()
+                            }}
+                          />
+                        </CardContent>
+                      </Card>
                     )}
-                    </TableBody>
-                </Table>
-                </div>
+                  </div>
+                ) : (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        {table.getHeaderGroups().map((headerGroup) => (
+                          <TableRow key={headerGroup.id}>
+                            {headerGroup.headers.map((header) => (
+                              <TableHead key={header.id}>
+                                {header.isPlaceholder
+                                  ? null
+                                  : flexRender(header.column.columnDef.header, header.getContext())}
+                              </TableHead>
+                            ))}
+                          </TableRow>
+                        ))}
+                      </TableHeader>
+                      <TableBody>
+                        {table.getRowModel().rows?.length ? (
+                          table.getRowModel().rows.map((row) => (
+                            <TableRow key={row.id}>
+                              {row.getVisibleCells().map((cell) => (
+                                <TableCell key={cell.id}>
+                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={columns.length} className="h-24 p-0">
+                              <EmptyState
+                                icon={ShoppingCart}
+                                title="Заказов пока нет"
+                                description="Создайте первый заказ на закупку у ваших поставщиков"
+                                action={{
+                                  label: "Создать заказ",
+                                  onClick: () => handleOpenSheet()
+                                }}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
                 <div className="flex items-center justify-between px-2 py-4">
                   <div className="text-sm text-muted-foreground">
                     Показано {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} - {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, orders.length)} из {orders.length}

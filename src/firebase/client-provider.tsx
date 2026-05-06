@@ -51,7 +51,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   // During SSR or before hydration, show loading state
   if (!isClient) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-svh items-center justify-center bg-background">
         <div className="text-center">
           <p className="text-muted-foreground">Загрузка...</p>
         </div>
@@ -62,7 +62,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   // Show error if initialization failed
   if (initError) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="flex min-h-svh items-center justify-center bg-background p-4">
         <div className="text-center space-y-4 max-w-md">
           <h1 className="text-2xl font-bold text-destructive">Ошибка инициализации</h1>
           <p className="text-muted-foreground">
@@ -86,7 +86,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   // Check if services were successfully initialized
   if (!firebaseServices?.firebaseApp || !firebaseServices?.auth || !firebaseServices?.firestore) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-svh items-center justify-center bg-background">
         <div className="text-center">
           <p className="text-muted-foreground">Загрузка Firebase...</p>
         </div>

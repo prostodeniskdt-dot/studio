@@ -93,7 +93,7 @@ export default function DashboardLayout({
   
   if (isLoading) {
      return (
-      <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background">
+      <div className="flex min-h-svh w-full flex-col items-center justify-center gap-4 bg-background">
         <Loader2 className="h-8 w-8 animate-spin" />
         <p>Подготовка вашей панели управления...</p>
       </div>
@@ -102,7 +102,7 @@ export default function DashboardLayout({
   
   if (userProfile?.isBanned) {
      return (
-        <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background p-4 text-center">
+        <div className="flex min-h-svh w-full flex-col items-center justify-center gap-4 bg-background p-4 text-center">
             <ShieldX className="h-16 w-16 text-destructive" />
             <h2 className="text-2xl font-semibold text-destructive">Ваш аккаунт заблокирован</h2>
             <p className="max-w-md text-muted-foreground">Доступ к приложению ограничен администратором. Если вы считаете, что это ошибка, обратитесь в поддержку.</p>
@@ -115,7 +115,7 @@ export default function DashboardLayout({
 
   if (error) {
      return (
-      <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background p-4 text-center">
+      <div className="flex min-h-svh w-full flex-col items-center justify-center gap-4 bg-background p-4 text-center">
         <h2 className="text-xl font-semibold text-destructive">Ошибка инициализации</h2>
         <p className="text-destructive-foreground bg-destructive/10 p-4 rounded-md">{error}</p>
         <p className="text-muted-foreground">Пожалуйста, попробуйте обновить страницу. Если ошибка повторится, свяжитесь с поддержкой.</p>
@@ -131,7 +131,7 @@ export default function DashboardLayout({
         <SessionsProvider barId={barId}>
           <SuppliersProvider barId={barId}>
             <SidebarProvider>
-              <div className="flex min-h-screen w-full">
+              <div className="flex min-h-svh w-full min-w-0">
                 <Sidebar>
                   <AppSidebar />
                 </Sidebar>

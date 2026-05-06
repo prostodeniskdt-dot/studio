@@ -55,6 +55,8 @@ import { cn } from '@/lib/utils';
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, updateDoc, deleteDoc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Card, CardContent } from '@/components/ui/card';
 
 export function PremixesTable({ premixes }: { premixes: Product[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -72,6 +74,7 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
   const [globalFilter, setGlobalFilter] = React.useState('');
   const [premixToDelete, setPremixToDelete] = React.useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const isMobile = useIsMobile();
 
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -298,8 +301,8 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
                       <h1 className="text-3xl font-bold tracking-tight">Премиксы</h1>
                       <p className="text-muted-foreground">Управляйте премиксами и заготовками для калькулятора.</p>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                      <div className="relative flex-1 min-w-[200px]">
+                  <div className="flex items-center gap-2 flex-wrap min-w-0">
+                      <div className="relative flex-1 min-w-0">
                           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <Input
                               type="text"
@@ -309,40 +312,42 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
                               className="pl-9"
                           />
                       </div>
-                      <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                          <Button variant="outline" className="h-9">
-                              Колонки <ChevronDown className="ml-2 h-4 w-4" />
-                          </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                          {table
-                              .getAllColumns()
-                              .filter((column) => column.getCanHide())
-                              .map((column) => {
-                              return (
-                                  <DropdownMenuCheckboxItem
-                                  key={column.id}
-                                  className="capitalize"
-                                  checked={column.getIsVisible()}
-                                  onCheckedChange={(value) =>
-                                      column.toggleVisibility(!!value)
-                                  }
-                                  >
-                                  {{
-                                      name: 'Название',
-                                      category: 'Категория',
-                                      subCategory: 'Подкатегория',
-                                      costPerBottle: 'Стоимость',
-                                      bottleVolumeMl: 'Объем',
-                                      isActive: 'Статус',
-                                      id: 'ID'
-                                  }[column.id] || column.id}
-                                  </DropdownMenuCheckboxItem>
-                              );
-                              })}
-                          </DropdownMenuContent>
-                      </DropdownMenu>
+                      {!isMobile && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="h-9">
+                                Колонки <ChevronDown className="ml-2 h-4 w-4" />
+                            </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                            {table
+                                .getAllColumns()
+                                .filter((column) => column.getCanHide())
+                                .map((column) => {
+                                return (
+                                    <DropdownMenuCheckboxItem
+                                    key={column.id}
+                                    className="capitalize"
+                                    checked={column.getIsVisible()}
+                                    onCheckedChange={(value) =>
+                                        column.toggleVisibility(!!value)
+                                    }
+                                    >
+                                    {{
+                                        name: 'Название',
+                                        category: 'Категория',
+                                        subCategory: 'Подкатегория',
+                                        costPerBottle: 'Стоимость',
+                                        bottleVolumeMl: 'Объем',
+                                        isActive: 'Статус',
+                                        id: 'ID'
+                                    }[column.id] || column.id}
+                                    </DropdownMenuCheckboxItem>
+                                );
+                                })}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                       <SheetTrigger asChild>
                           <Button onClick={() => handleOpenSheet()} className="h-9">
                               <PlusCircle className="mr-2 h-4 w-4" />
@@ -357,7 +362,60 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
                   </div>
               )}
             
-          <div className="rounded-md border">
+          {isMobile ? (
+            <div className="space-y-3">
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => {
+                  const premix = row.original;
+                  const name = buildProductDisplayName(premix.name, premix.bottleVolumeMl);
+                  const categoryText = translateCategory(premix.category as any);
+                  const statusText = (premix.isActive ?? true) ? 'Активен' : 'Архивирован';
+                  return (
+                    <Card key={premix.id} className="overflow-hidden">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="font-medium truncate">{name}</div>
+                            <div className="text-sm text-muted-foreground truncate">{categoryText}</div>
+                          </div>
+                          <Badge variant={(premix.isActive ?? true) ? 'default' : 'outline'} className="flex-shrink-0">
+                            {statusText}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="text-muted-foreground">Стоимость</div>
+                          <div className="font-semibold">{premix.costPerBottle ? formatCurrency(premix.costPerBottle) : '-'}</div>
+                        </div>
+                        <div className="flex items-center gap-2 pt-1">
+                          <Button variant="outline" className="h-11 flex-1" onClick={() => handleOpenSheet(premix)}>
+                            Редактировать
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="h-11"
+                            disabled={isArchiving === premix.id}
+                            onClick={() => handleArchiveAction(premix)}
+                          >
+                            {isArchiving === premix.id ? <Loader2 className="h-4 w-4 animate-spin" /> : (premix.isActive ? 'Архив' : 'Восст.' )}
+                          </Button>
+                          <Button variant="ghost" className="h-11" onClick={() => handleDeletePremix(premix)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              ) : (
+                <Card>
+                  <CardContent className="p-6 text-center text-muted-foreground">
+                    Премиксы не найдены.
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-md border">
               <Table>
               <TableHeader>
                   {table.getHeaderGroups().map((headerGroup) => (
@@ -416,7 +474,8 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
                   )}
               </TableBody>
               </Table>
-          </div>
+            </div>
+          )}
           <div className="flex items-center justify-end space-x-2 py-4">
               <div className="flex-1 text-sm text-muted-foreground hidden sm:block">
               {table.getFilteredSelectedRowModel().rows.length} из{' '}

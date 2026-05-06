@@ -249,7 +249,7 @@ describe('edge-cases', () => {
     });
 
     it('should detect missing fields', () => {
-      const obj = {
+      const obj: { name: string; email: string; age: number; phone?: string } = {
         name: 'Test',
         email: '',
         age: 25,
@@ -271,7 +271,7 @@ describe('edge-cases', () => {
     });
 
     it('should detect undefined values', () => {
-      const obj = {
+      const obj: { name: string; email?: string } = {
         name: 'Test',
       };
       const result = validateRequired(obj, ['name', 'email']);
@@ -280,7 +280,7 @@ describe('edge-cases', () => {
     });
 
     it('should handle empty object', () => {
-      const obj = {};
+      const obj: { name?: string; email?: string } = {};
       const result = validateRequired(obj, ['name', 'email']);
       expect(result.valid).toBe(false);
       expect(result.missing).toEqual(['name', 'email']);

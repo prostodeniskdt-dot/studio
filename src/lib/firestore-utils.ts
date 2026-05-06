@@ -54,13 +54,11 @@ export async function deleteSessionWithLinesClient(
     // No lines to delete, just delete the session
     await deleteDoc(sessionRef);
     if (onProgress) {
-      requestAnimationFrame(() => {
-        try {
-          onProgress(100);
-        } catch (e) {
-          // Ignore errors if component is unmounted
-        }
-      });
+      try {
+        onProgress(100);
+      } catch (e) {
+        // Ignore errors if component is unmounted
+      }
     }
     return;
   }
@@ -90,15 +88,12 @@ export async function deleteSessionWithLinesClient(
 
     deletedCount += snapshot.docs.length;
     const progress = Math.round((deletedCount / totalCount) * 100);
-    // Use requestAnimationFrame to ensure progress updates happen on next frame, preventing React warnings
     if (onProgress) {
-      requestAnimationFrame(() => {
-        try {
-          onProgress(progress);
-        } catch (e) {
-          // Ignore errors if component is unmounted
-        }
-      });
+      try {
+        onProgress(progress);
+      } catch (e) {
+        // Ignore errors if component is unmounted
+      }
     }
     // Yield to the main thread to prevent UI freezing on large deletions
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -110,14 +105,11 @@ export async function deleteSessionWithLinesClient(
 
   // After all lines are deleted, delete the main session document itself.
   await deleteDoc(sessionRef);
-  // Use requestAnimationFrame to ensure progress updates happen on next frame
   if (onProgress) {
-    requestAnimationFrame(() => {
-      try {
-        onProgress(100);
-      } catch (e) {
-        // Ignore errors if component is unmounted
-      }
-    });
+    try {
+      onProgress(100);
+    } catch (e) {
+      // Ignore errors if component is unmounted
+    }
   }
 }

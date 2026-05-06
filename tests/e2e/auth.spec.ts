@@ -38,8 +38,8 @@ test.describe('Authentication', () => {
     test.skip(!testEmail || !testPassword, 'Test credentials not provided');
     
     // Fill in credentials
-    await page.fill('input[type="email"]', testEmail);
-    await page.fill('input[type="password"]', testPassword);
+    await page.fill('input[type="email"]', testEmail!);
+    await page.fill('input[type="password"]', testPassword!);
     
     // Submit form
     await page.click('button[type="submit"]');

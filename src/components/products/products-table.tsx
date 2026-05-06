@@ -14,7 +14,6 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { MoreHorizontal, ArrowUpDown, ChevronDown, PlusCircle, Loader2, Trash2, Search, Package } from 'lucide-react';
-import { ProductSearch } from './product-search';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -60,6 +59,7 @@ import { useProducts } from '@/contexts/products-context';
 import { doc, updateDoc, deleteDoc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export function ProductsTable({ products }: { products: Product[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -71,12 +71,14 @@ export function ProductsTable({ products }: { products: Product[] }) {
   });
   const [rowSelection, setRowSelection] = React.useState({});
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [isFiltersOpen, setIsFiltersOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | undefined>(undefined);
   const [isArchiving, setIsArchiving] = React.useState<string | null>(null);
   const [globalFilter, setGlobalFilter] = React.useState('');
   const [productToDelete, setProductToDelete] = React.useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [showArchived, setShowArchived] = React.useState(false);
+  const isMobile = useIsMobile();
 
   const firestore = useFirestore();
   const { user } = useUser();
@@ -365,6 +367,109 @@ export function ProductsTable({ products }: { products: Product[] }) {
           table.getColumn('subCategory')?.setFilterValue(undefined);
       }
   }, [selectedCategory, table]);
+
+  const MobileFiltersContent = (
+    <div className="space-y-4 py-4">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="text"
+          value={globalFilter ?? ''}
+          onChange={(e) => setGlobalFilter(e.target.value)}
+          placeholder="Поиск по названию..."
+          className="pl-9"
+        />
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="showArchivedMobile"
+          checked={showArchived}
+          onCheckedChange={(checked) => setShowArchived(checked === true)}
+        />
+        <label
+          htmlFor="showArchivedMobile"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+        >
+          Показать архивированные
+        </label>
+      </div>
+
+      <Select
+        value={selectedCategory ? selectedCategory : '__all__'}
+        onValueChange={(value) =>
+          handleCategoryChange(
+            value === '__all__' ? undefined : (value as ProductCategory)
+          )
+        }
+      >
+        <SelectTrigger className="w-full h-10">
+          <SelectValue placeholder="Все категории" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">Все категории</SelectItem>
+          {productCategories.map((cat) => (
+            <SelectItem key={cat} value={cat}>
+              {translateCategory(cat)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {selectedCategory && subCategoryOptions.length > 0 && (
+        <Select
+          value={selectedSubCategory ? selectedSubCategory : '__all__'}
+          onValueChange={(value) =>
+            handleSubCategoryChange(value === '__all__' ? undefined : value)
+          }
+        >
+          <SelectTrigger className="w-full h-10">
+            <SelectValue placeholder="Все подкатегории" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Все подкатегории</SelectItem>
+            {subCategoryOptions.map((subCat) => (
+              <SelectItem key={subCat} value={subCat}>
+                {translateSubCategory(subCat)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+
+      <div className="space-y-2">
+        <div className="text-sm font-medium">Колонки (для таблицы)</div>
+        <div className="grid grid-cols-2 gap-2">
+          {table
+            .getAllColumns()
+            .filter((column) => column.getCanHide())
+            .map((column) => (
+              <label
+                key={column.id}
+                className="flex items-center gap-2 text-sm cursor-pointer select-none"
+              >
+                <Checkbox
+                  checked={column.getIsVisible()}
+                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                />
+                <span className="truncate">
+                  {
+                    {
+                      name: 'Название',
+                      category: 'Категория',
+                      subCategory: 'Подкатегория',
+                      bottleVolumeMl: 'Объем',
+                      isActive: 'Статус',
+                      id: 'ID',
+                    }[column.id] || column.id
+                  }
+                </span>
+              </label>
+            ))}
+        </div>
+      </div>
+    </div>
+  );
 
 
   return (

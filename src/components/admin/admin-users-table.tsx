@@ -43,6 +43,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
 import { Badge } from '../ui/badge';
 import Link from 'next/link';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface AdminUsersTableProps {
   users: UserProfile[];
@@ -54,6 +56,7 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [processingUserId, setProcessingUserId] = React.useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   const handleBanToggle = (e: React.MouseEvent, user: UserProfile) => {
     e.stopPropagation(); // Prevent row click event
@@ -194,53 +197,141 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
                 <p className="text-muted-foreground">Просмотр и блокировка учетных записей пользователей.</p>
             </div>
         </div>
-        <div className="rounded-md border">
-            <Table>
-            <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                    return (
-                        <TableHead key={header.id}>
-                        {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                            )}
-                        </TableHead>
-                    );
-                    })}
-                </TableRow>
-                ))}
-            </TableHeader>
-            <TableBody>
-                {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} onClick={() => handleRowClick(row.original.id)} className="cursor-pointer">
-                    {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                        {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                        )}
-                        </TableCell>
-                    ))}
-                    </TableRow>
-                ))
-                ) : (
-                <TableRow>
-                    <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                    >
-                    Пользователи не найдены.
-                    </TableCell>
-                </TableRow>
-                )}
-            </TableBody>
-            </Table>
-        </div>
+        {isMobile ? (
+          <div className="space-y-3">
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => {
+                const profile = row.original;
+                const isSelf = adminUser?.uid === profile.id;
+                const isProcessing = processingUserId === profile.id;
+                const name = profile.displayName || 'Имя не указано';
+                const email = profile.email || 'Email не найден';
+                const avatarUrl = profile.email ? `https://avatar.vercel.sh/${profile.email}.png` : undefined;
+                const initials = profile.displayName ? profile.displayName.split(' ').map(n => n[0]).join('') : '??';
+                return (
+                  <Card key={profile.id} className="overflow-hidden">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Avatar>
+                            {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
+                            <AvatarFallback>{initials}</AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <div className="font-medium truncate">{name}</div>
+                            <div className="text-sm text-muted-foreground truncate">{email}</div>
+                          </div>
+                        </div>
+                        <Badge variant={profile.isBanned ? 'destructive' : 'default'} className="flex-shrink-0">
+                          {profile.isBanned ? 'Заблокирован' : 'Активен'}
+                        </Badge>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-2 text-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-muted-foreground">Заведение</div>
+                          <div className="font-medium truncate">{profile.establishment || '-'}</div>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-muted-foreground">Город</div>
+                          <div className="font-medium truncate">{profile.city || '-'}</div>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-muted-foreground">Телефон</div>
+                          <div className="font-medium truncate">{profile.phone || '-'}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1">
+                        <Button
+                          variant="outline"
+                          className="h-11 flex-1"
+                          onClick={() => handleRowClick(profile.id)}
+                        >
+                          Открыть
+                        </Button>
+                        <div className="flex items-center gap-2">
+                          {isProcessing ? (
+                            <div className="h-11 w-11 flex items-center justify-center">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            </div>
+                          ) : (
+                            <Switch
+                              checked={!!profile.isBanned}
+                              onCheckedChange={(checked) => {
+                                // preserve original handler semantics
+                                handleBanToggle(new MouseEvent('click') as any, profile as any);
+                              }}
+                              disabled={isSelf || isProcessing}
+                              aria-label={profile.isBanned ? 'Разблокировать пользователя' : 'Заблокировать пользователя'}
+                            />
+                          )}
+                        </div>
+                        <Button variant="ghost" className="h-11" onClick={() => handleRowClick(profile.id)}>
+                          <ArrowRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            ) : (
+              <Card>
+                <CardContent className="p-6 text-center text-muted-foreground">
+                  Пользователи не найдены.
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-md border">
+              <Table>
+              <TableHeader>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => {
+                      return (
+                          <TableHead key={header.id}>
+                          {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                              )}
+                          </TableHead>
+                      );
+                      })}
+                  </TableRow>
+                  ))}
+              </TableHeader>
+              <TableBody>
+                  {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                      <TableRow key={row.id} onClick={() => handleRowClick(row.original.id)} className="cursor-pointer">
+                      {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id}>
+                          {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                          )}
+                          </TableCell>
+                      ))}
+                      </TableRow>
+                  ))
+                  ) : (
+                  <TableRow>
+                      <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
+                      >
+                      Пользователи не найдены.
+                      </TableCell>
+                  </TableRow>
+                  )}
+              </TableBody>
+              </Table>
+          </div>
+        )}
     </>
   );
 }

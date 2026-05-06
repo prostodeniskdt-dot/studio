@@ -22,6 +22,7 @@ import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import { ProductSearch } from '@/components/products/product-search';
 import { expandPremixToIngredients } from '@/lib/premix-utils';
 import { Checkbox } from '@/components/ui/checkbox';
+import { calculateVolumeMl } from '@/lib/calculator';
 
 export default function UnifiedCalculatorPage() {
   const { toast } = useToast();
@@ -44,11 +45,13 @@ export default function UnifiedCalculatorPage() {
   const [liquidLevel, setLiquidLevel] = React.useState('');
   
   const [calculatedVolume, setCalculatedVolume] = React.useState<number | null>(null);
+  const [calculationMethod, setCalculationMethod] = React.useState<'weight' | 'height' | null>(null);
   
   const [isSending, setIsSending] = React.useState(false);
   
   // Состояние для разложения примиксов
   const [shouldExpandPremix, setShouldExpandPremix] = React.useState(false);
+  const [sendMode, setSendMode] = React.useState<'set' | 'add'>('set');
 
   const filteredProducts = React.useMemo(() => {
     if (!products) return [];
@@ -85,8 +88,12 @@ export default function UnifiedCalculatorPage() {
     const product = products?.find(p => p.id === productId);
     setSelectedProductId(productId);
     setCalculatedVolume(null);
+    setCalculationMethod(null);
     // Сбрасываем состояние разложения при выборе нового продукта
     setShouldExpandPremix(false);
+    setSendMode('set');
+    setCurrentWeight('');
+    setLiquidLevel('');
     if (product) {
         setBottleVolume(product.bottleVolumeMl?.toString() ?? '');
         setFullWeight(product.fullBottleWeightG?.toString() ?? '');
@@ -117,12 +124,18 @@ export default function UnifiedCalculatorPage() {
     setBottleVolume('');
     setFullWeight('');
     setEmptyWeight('');
+    setCurrentWeight('');
+    setLiquidLevel('');
     setCalculatedVolume(null);
+    setCalculationMethod(null);
+    setShouldExpandPremix(false);
+    setSendMode('set');
   };
 
 
   const handleCalculate = () => {
     setCalculatedVolume(null);
+    setCalculationMethod(null);
     
     const bv = parseFloat(bottleVolume);
     const fw = parseFloat(fullWeight);
@@ -130,79 +143,32 @@ export default function UnifiedCalculatorPage() {
     const cw = parseFloat(currentWeight);
     const ll = parseFloat(liquidLevel);
 
-    // Проверка обязательных полей
-    if (!liquidLevel || ll <= 0) {
+    const result = calculateVolumeMl({
+      bottleVolumeMl: bv,
+      fullBottleWeightG: Number.isFinite(fw) ? fw : undefined,
+      emptyBottleWeightG: Number.isFinite(ew) ? ew : undefined,
+      currentWeightG: Number.isFinite(cw) ? cw : undefined,
+      liquidLevelCm: Number.isFinite(ll) ? ll : undefined,
+      fullLiquidHeightCm: selectedProduct?.fullLiquidHeightCm ?? undefined,
+      roundingStepMl: 10,
+    });
+
+    if (!result.ok) {
       toast({
         variant: "destructive",
-        title: "Ошибка",
-        description: "Обязательно заполните уровень жидкости (1 резка = 1 см). Без этого параметра расчет невозможен.",
+        title: "Ошибка расчета",
+        description: result.errors.join(' '),
       });
       return;
     }
 
-    // Получить реальную высоту жидкости из продукта или использовать значение по умолчанию 25см
-    const fullLiquidHeightCm = selectedProduct?.fullLiquidHeightCm ?? 25;
-
-    let volumeByWeight: number | null = null;
-    let volumeByHeight: number | null = null;
-
-    // Weight calculation - более точный метод
-    if (fw > ew && cw >= ew && bv > 0) {
-        const liquidNetWeight = fw - ew;
-        const currentLiquidWeight = cw - ew;
-        if (currentLiquidWeight <= 0) {
-            volumeByWeight = 0;
-        } else {
-            // Точный расчет по весу
-            const volume = (currentLiquidWeight / liquidNetWeight) * bv;
-            volumeByWeight = volume; // Не округляем пока, округлим в конце
-        }
-    }
-    
-    // Height calculation с калибровкой по реальной высоте
-    if (ll > 0 && bv > 0 && fullLiquidHeightCm > 0) {
-        // Используем реальную высоту жидкости в полной бутылке
-        const percentage = Math.min(ll / fullLiquidHeightCm, 1);
-        const volume = bv * percentage;
-        volumeByHeight = volume; // Не округляем пока
-    }
-
-    // Комбинированная формула с весами для максимальной точности
-    if (volumeByWeight !== null && volumeByHeight !== null) {
-        // Разница между двумя методами
-        const difference = Math.abs(volumeByWeight - volumeByHeight);
-        const percentageDifference = (difference / bv) * 100;
-        
-        let finalVolume: number;
-        
-        // Если разница меньше 5%, используем взвешенное среднее (70% вес, 30% высота)
-        // Вес считается более точным, но высота помогает учесть форму бутылки
-        if (percentageDifference < 5) {
-            finalVolume = volumeByWeight * 0.7 + volumeByHeight * 0.3;
-        }
-        // Если разница 5-15%, используем среднее (50/50)
-        else if (percentageDifference < 15) {
-            finalVolume = (volumeByWeight + volumeByHeight) / 2;
-        }
-        // Если разница большая (>15%), приоритет весу (90% вес, 10% высота)
-        else {
-            finalVolume = volumeByWeight * 0.9 + volumeByHeight * 0.1;
-        }
-        
-        // Округляем до целого числа
-        setCalculatedVolume(Math.round(finalVolume));
-    } else if (volumeByWeight !== null) {
-        // Если нет высоты, используем только вес
-        setCalculatedVolume(Math.round(volumeByWeight));
-    } else if (volumeByHeight !== null) {
-        // Если нет веса, используем только высоту (не должно происходить при правильной валидации)
-        setCalculatedVolume(Math.round(volumeByHeight));
-    } else {
-        toast({
-          variant: "destructive",
-          title: "Ошибка расчета",
-          description: "Не удалось рассчитать объем. Проверьте все поля (вес полной, пустой, текущий вес и уровень жидкости).",
-        });
+    setCalculatedVolume(result.volumeMl);
+    setCalculationMethod(result.method);
+    if (result.warnings.length > 0) {
+      toast({
+        title: "Проверка данных",
+        description: result.warnings.join(' '),
+      });
     }
   };
 
@@ -280,16 +246,16 @@ export default function UnifiedCalculatorPage() {
               const lineDoc = linesSnapshot.docs[0];
               const lineRef = doc(linesColRef, lineDoc.id);
               const existingLine = lineDoc.data() as InventoryLine;
-              batch.update(lineRef, { 
-                endStock: (existingLine.endStock || 0) + ingredient.volumeMl 
-              });
+              const existingEndStock = existingLine.endStock || 0;
+              const newEndStock = sendMode === 'add' ? existingEndStock + ingredient.volumeMl : ingredient.volumeMl;
+              batch.update(lineRef, { endStock: newEndStock });
             }
           }
           
           await batch.commit();
           toast({
             title: "Премикс разложен на ингредиенты",
-            description: `Создано/обновлено ${ingredients.length} ингредиентов в инвентаризации. Объемы суммированы с существующими остатками.`,
+            description: `Создано/обновлено ${ingredients.length} ингредиентов в инвентаризации. Режим: ${sendMode === 'add' ? 'прибавить' : 'установить'}.`,
           });
         } else {
           // Обычная логика (как раньше) - создать/обновить одну линию для продукта/примикса
@@ -324,12 +290,15 @@ export default function UnifiedCalculatorPage() {
             const existingLine = lineDoc.data() as InventoryLine;
             const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines', lineDoc.id);
             const existingEndStock = existingLine.endStock || 0;
-            const newEndStock = existingEndStock + volume;
+            const newEndStock = sendMode === 'add' ? existingEndStock + volume : volume;
             const updateData = { endStock: newEndStock };
             await updateDoc(lineRef, updateData);
             toast({
               title: "Данные отправлены",
-              description: `Остаток для продукта ${buildProductDisplayName(selectedProduct.name, selectedProduct.bottleVolumeMl)} (${volume} мл) добавлен к существующему остатку (${existingEndStock} мл). Итого: ${newEndStock} мл.`,
+              description:
+                sendMode === 'add'
+                  ? `Остаток для продукта ${buildProductDisplayName(selectedProduct.name, selectedProduct.bottleVolumeMl)} (${volume} мл) прибавлен к существующему остатку (${existingEndStock} мл). Итого: ${newEndStock} мл.`
+                  : `Остаток для продукта ${buildProductDisplayName(selectedProduct.name, selectedProduct.bottleVolumeMl)} установлен в ${newEndStock} мл (было ${existingEndStock} мл).`,
             });
           }
         }
@@ -384,7 +353,7 @@ export default function UnifiedCalculatorPage() {
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>ВАЖНО</AlertTitle>
         <AlertDescription>
-          Обязательно заполните вес полной бутылки, вес пустой бутылки, текущий вес И уровень жидкости (1 резка = 1 см). Без всех данных расчет невозможен!
+          Для точного расчета без линейки нужен профиль бутылки: вес полной, вес пустой и номинальный объем. Уровень жидкости (см) — только резервный вариант, если веса в профиле нет.
         </AlertDescription>
       </Alert>
       
@@ -497,6 +466,9 @@ export default function UnifiedCalculatorPage() {
                   <Ruler className="h-4 w-4 text-muted-foreground" />
                   <h3 className="text-base font-semibold">Расчет по высоте</h3>
                 </div>
+                <p className="text-sm text-muted-foreground">
+                  Резервный метод. Используйте только если в профиле продукта не заполнены веса.
+                </p>
                 <div className="space-y-2">
                   <Label htmlFor="liquidLevel" className="flex items-center gap-2">
                     <Ruler className="h-3 w-3" />
@@ -569,11 +541,32 @@ export default function UnifiedCalculatorPage() {
                     <Weight className='h-4 w-4'/> 
                     Рассчитанный объем:
                   </p>
+                  {calculationMethod && (
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Метод: {calculationMethod === 'weight' ? 'по весу (без линейки)' : 'резервный (по высоте)'} · Округление: 10 мл
+                    </p>
+                  )}
                   <div className="flex items-center justify-center gap-2 mb-4">
                     <p className="text-5xl font-bold gradient-text">{calculatedVolume}</p>
                     <span className="text-2xl font-semibold text-muted-foreground">мл</span>
                   </div>
                   
+                  <div className="space-y-2 mt-2 mb-4">
+                    <Label className="text-sm">Отправка в инвентаризацию</Label>
+                    <Select value={sendMode} onValueChange={(v) => setSendMode(v === 'add' ? 'add' : 'set')}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="set">Установить остаток (по умолчанию)</SelectItem>
+                        <SelectItem value="add">Прибавить к остатку</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      “Установить” перезапишет остаток для продукта. “Прибавить” полезно, если вы намеренно суммируете несколько емкостей.
+                    </p>
+                  </div>
+
                   {/* Чекбокс для разложения примиксов */}
                   {isPremix && (
                     <>
@@ -589,8 +582,8 @@ export default function UnifiedCalculatorPage() {
                       </div>
                       <p className="text-xs text-muted-foreground mb-4">
                         {shouldExpandPremix 
-                          ? 'Премикс будет разложен на ингредиенты, объемы суммируются с существующими остатками'
-                          : 'Премикс будет добавлен как единое целое в инвентаризацию'}
+                          ? 'Премикс будет разложен на ингредиенты'
+                          : 'Премикс будет отправлен как единое целое'}
                       </p>
                     </>
                   )}

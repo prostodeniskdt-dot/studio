@@ -31,7 +31,14 @@ export function SessionHeader({ session, isEditable }: SessionHeaderProps) {
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">{session.name}</h1>
           <p className="text-muted-foreground mt-1">
-            {session.createdAt && (session.createdAt.toDate ? session.createdAt.toDate().toLocaleDateString('ru-RU') : (session.createdAt instanceof Date ? session.createdAt.toLocaleDateString('ru-RU') : new Date(session.createdAt.toMillis ? session.createdAt.toMillis() : Date.now()).toLocaleDateString('ru-RU')))}
+            {session.createdAt &&
+              (session.createdAt.toDate
+                ? session.createdAt.toDate().toLocaleDateString('ru-RU')
+                : session.createdAt instanceof Date
+                  ? session.createdAt.toLocaleDateString('ru-RU')
+                  : typeof session.createdAt === 'string'
+                    ? new Date(session.createdAt).toLocaleDateString('ru-RU')
+                    : new Date(session.createdAt.toMillis ? session.createdAt.toMillis() : Date.now()).toLocaleDateString('ru-RU'))}
           </p>
         </div>
         <Badge variant={getStatusVariant(session.status)} className="capitalize text-base px-3 py-1 flex items-center gap-1.5">

@@ -37,8 +37,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import type { UserProfile } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { useFirestore, errorEmitter, FirestorePermissionError, useUser } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
 import { Badge } from '../ui/badge';
@@ -52,7 +51,6 @@ interface AdminUsersTableProps {
 
 export function AdminUsersTable({ users }: AdminUsersTableProps) {
   const { user: adminUser } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
   const [processingUserId, setProcessingUserId] = React.useState<string | null>(null);
@@ -60,26 +58,30 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
 
   const handleBanToggle = (e: React.MouseEvent, user: UserProfile) => {
     e.stopPropagation(); // Prevent row click event
-    if (!firestore || !adminUser || adminUser.uid === user.id) return;
+    if (!adminUser || adminUser.uid === user.id) return;
 
     setProcessingUserId(user.id);
-    const userRef = doc(firestore, 'users', user.id);
     const newBanStatus = !user.isBanned;
-
-    updateDoc(userRef, { isBanned: newBanStatus })
-      .then(() => {
+    (async () => {
+      try {
+        const token = await adminUser.getIdToken();
+        const res = await fetch(`/api/admin/users/${user.id}`, {
+          method: 'PATCH',
+          headers: {
+            'content-type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ isBanned: newBanStatus }),
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
         toast({ title: newBanStatus ? "Пользователь заблокирован" : "Пользователь разблокирован" });
-      })
-      .catch((error) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: userRef.path,
-          operation: 'update',
-          requestResourceData: { isBanned: newBanStatus }
-        }));
-      })
-      .finally(() => {
+      } catch {
+        toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось изменить статус пользователя.' });
+      } finally {
         setProcessingUserId(null);
-      });
+      }
+    })();
   };
 
   const handleRowClick = (userId: string) => {

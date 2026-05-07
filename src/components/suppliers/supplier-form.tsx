@@ -16,8 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import type { Supplier } from '@/lib/types';
-import { doc, collection, setDoc } from 'firebase/firestore';
-import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useUser } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -37,7 +36,7 @@ interface SupplierFormProps {
 }
 
 export function SupplierForm({ barId, supplier, onFormSubmit }: SupplierFormProps) {
-  const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = React.useState(false);
 
@@ -58,31 +57,44 @@ export function SupplierForm({ barId, supplier, onFormSubmit }: SupplierFormProp
   });
 
   function onSubmit(data: SupplierFormValues) {
-    if (!firestore) return;
+    if (!user) return;
     setIsSaving(true);
-    
-    const supplierRef = supplier ? doc(firestore, 'bars', barId, 'suppliers', supplier.id) : doc(collection(firestore, 'bars', barId, 'suppliers'));
-    const supplierData = {
-      ...data,
-      id: supplierRef.id,
-      barId: barId,
-    };
 
-    setDoc(supplierRef, supplierData, { merge: true })
-      .then(() => {
-        toast({ title: supplier ? 'Поставщик обновлен' : 'Поставщик создан' });
+    (async () => {
+      try {
+        const token = await user.getIdToken();
+        if (supplier) {
+          const res = await fetch(`/api/suppliers/${supplier.id}`, {
+            method: 'PATCH',
+            headers: {
+              'content-type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ supplier: data }),
+          });
+          const json = await res.json();
+          if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+          toast({ title: 'Поставщик обновлен' });
+        } else {
+          const res = await fetch('/api/suppliers/new', {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ supplier: data }),
+          });
+          const json = await res.json();
+          if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+          toast({ title: 'Поставщик создан' });
+        }
         onFormSubmit();
-      })
-      .catch((error) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-            path: supplierRef.path, 
-            operation: supplier ? 'update' : 'create',
-            requestResourceData: supplierData,
-        }));
-      })
-      .finally(() => {
+      } catch {
+        toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось сохранить поставщика.' });
+      } finally {
         setIsSaving(false);
-      });
+      }
+    })();
   }
 
   return (

@@ -52,8 +52,7 @@ import { formatCurrency, translateCategory, dedupeProductsByName, buildProductDi
 import { PremixForm } from './premix-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, updateDoc, deleteDoc, collection } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent } from '@/components/ui/card';
@@ -76,7 +75,7 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
   const [isDeleting, setIsDeleting] = React.useState(false);
   const isMobile = useIsMobile();
 
-  const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
 
   const handleOpenSheet = (premix?: Product) => {
@@ -90,25 +89,28 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
   }
 
   const handleArchiveAction = (premix: Product) => {
-    if (!firestore) return;
+    if (!user) return;
     setIsArchiving(premix.id);
     
-    // Используем глобальную коллекцию products для примиксов
-    const collectionPath = collection(firestore, 'products');
-    const premixRef = doc(collectionPath, premix.id);
     const updateData = { isActive: !premix.isActive };
-    const pathPrefix = 'products';
-    
-    updateDoc(premixRef, updateData)
-      .then(() => {
+
+    (async () => {
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(`/api/products/${premix.id}`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ product: updateData }),
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
         toast({ title: "Статус премикса изменен." });
-      })
-      .catch((serverError) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `${pathPrefix}/${premix.id}`, operation: 'update', requestResourceData: updateData }));
-      })
-      .finally(() => {
+      } catch {
+        toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось изменить статус.' });
+      } finally {
         setIsArchiving(null);
-      });
+      }
+    })();
   }
 
   const handleDeletePremix = (premix: Product) => {
@@ -116,24 +118,22 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
   }
 
   const confirmDelete = async () => {
-    if (!premixToDelete || !firestore) return;
+    if (!premixToDelete || !user) return;
 
     setIsDeleting(true);
-    
-    // Используем глобальную коллекцию products для примиксов
-    const collectionPath = collection(firestore, 'products');
-    const premixRef = doc(collectionPath, premixToDelete.id);
-    const pathPrefix = 'products';
 
     try {
-        await deleteDoc(premixRef);
+        const token = await user.getIdToken();
+        const res = await fetch(`/api/products/${premixToDelete.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
         toast({ title: "Премикс удален", description: `Премикс "${buildProductDisplayName(premixToDelete.name, premixToDelete.bottleVolumeMl)}" был безвозвратно удален.` });
         setPremixToDelete(null);
-    } catch (serverError) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: `${pathPrefix}/${premixToDelete.id}`,
-            operation: 'delete',
-        }));
+    } catch {
+        toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось удалить премикс.' });
     } finally {
         setIsDeleting(false);
     }

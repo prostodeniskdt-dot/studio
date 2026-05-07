@@ -8,7 +8,7 @@ import {
 import { UserNav } from "@/components/user-nav";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ClientOnly } from "@/components/client-only";
-import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase";
+import { useUser, useAuth } from "@/firebase";
 import { ProductsProvider } from "@/contexts/products-context";
 import { SessionsProvider } from "@/contexts/sessions-context";
 import { SuppliersProvider } from "@/contexts/suppliers-context";
@@ -16,9 +16,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { Loader2, ShieldX } from "lucide-react";
-import { ensureUserAndBarDocuments } from "@/firebase/non-blocking-login";
 import type { UserProfile } from "@/lib/types";
-import { doc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { signOut } from "firebase/auth";
 import { logger } from "@/lib/logger";
@@ -31,18 +29,32 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, isUserLoading } = useUser();
-  const uid = user ? user.uid : null;
   const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
   const [isDataReady, setIsDataReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
-  const userProfileRef = useMemoFirebase(
-    () => (firestore && uid ? doc(firestore, 'users', uid) : null),
-    [firestore, uid]
-  );
-  const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileRef);
+  async function loadProfileAndBootstrap(currentUser: NonNullable<typeof user>) {
+    const token = await currentUser.getIdToken();
+    // Bootstrap (creates Postgres user+bar if missing)
+    const boot = await fetch('/api/bootstrap', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+    const bootJson = await boot.json();
+    if (!boot.ok || bootJson?.ok === false) throw new Error(bootJson?.error || 'Bootstrap failed');
+
+    const res = await fetch('/api/me', {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+    const json = await res.json();
+    if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed to load profile');
+    setUserProfile(json.profile ?? null);
+  }
 
   useEffect(() => {
     if (isUserLoading) {
@@ -54,29 +66,27 @@ export default function DashboardLayout({
       return;
     }
 
-    if (user && firestore) {
-      let isMounted = true;
-      
-      ensureUserAndBarDocuments(firestore, user)
-        .then(() => {
-          if (isMounted) {
-            setIsDataReady(true);
-          }
-        })
-        .catch((err: unknown) => {
-          if (isMounted) {
-            logger.error("Failed to ensure user/bar documents:", err);
-            const errorMessage = err instanceof Error ? err.message : "Не удалось инициализировать данные пользователя.";
-            setError(errorMessage);
-            setIsDataReady(true);
-          }
-        });
+    let isMounted = true;
+    setIsLoadingProfile(true);
+    loadProfileAndBootstrap(user)
+      .then(() => {
+        if (isMounted) setIsDataReady(true);
+      })
+      .catch((err: unknown) => {
+        if (!isMounted) return;
+        logger.error("Failed to bootstrap/load profile:", err);
+        const errorMessage = err instanceof Error ? err.message : "Не удалось инициализировать данные пользователя.";
+        setError(errorMessage);
+        setIsDataReady(true);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingProfile(false);
+      });
 
-      return () => {
-        isMounted = false;
-      };
-    }
-  }, [user, isUserLoading, firestore, router]);
+    return () => {
+      isMounted = false;
+    };
+  }, [user, isUserLoading, router]);
 
 
   const handleLogoutAndRedirect = () => {

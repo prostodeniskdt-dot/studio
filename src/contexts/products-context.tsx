@@ -1,11 +1,11 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import type { Product } from '@/lib/types';
 import { logger } from '@/lib/logger';
 import { dedupeProductsByName } from '@/lib/utils';
+import { getIdTokenOrThrow } from '@/lib/auth-token';
 
 interface ProductsContextValue {
   products: Product[]; // Объединенный список (персональные + библиотека) для обратной совместимости
@@ -32,11 +32,16 @@ interface CachedProducts {
 }
 
 export function ProductsProvider({ children }: { children: React.ReactNode }) {
-  const firestore = useFirestore();
   const { user } = useUser();
   const barId = user ? `bar_${user.uid}` : null;
   const [cache, setCache] = useState<CachedProducts | null>(null);
   const [forceRefresh, setForceRefresh] = useState(0);
+  const [personalProducts, setPersonalProducts] = useState<Product[] | null>(null);
+  const [libraryProducts, setLibraryProducts] = useState<Product[] | null>(null);
+  const [isLoadingPersonal, setIsLoadingPersonal] = useState(false);
+  const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
+  const [personalError, setPersonalError] = useState<Error | null>(null);
+  const [libraryError, setLibraryError] = useState<Error | null>(null);
 
   // Загрузить из localStorage при монтировании
   useEffect(() => {
@@ -58,28 +63,59 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [barId]);
 
-  // Запрос для персональных продуктов пользователя (barId === текущий barId)
-  const personalProductsQuery = useMemoFirebase(() =>
-    firestore && barId ? query(
-      collection(firestore, 'products'),
-      where('barId', '==', barId)
-    ) : null,
-    [firestore, barId, forceRefresh]
-  );
-  
-  // Запрос для продуктов из библиотеки (isInLibrary === true)
-  // Примечание: Firestore не поддерживает запросы с != для исключения премиксов,
-  // поэтому получаем все библиотечные продукты и фильтруем на клиенте
-  const libraryProductsQuery = useMemoFirebase(() =>
-    firestore ? query(
-      collection(firestore, 'products'),
-      where('isInLibrary', '==', true)
-    ) : null,
-    [firestore, forceRefresh]
-  );
-  
-  const { data: personalProducts, isLoading: isLoadingPersonal, error: personalError } = useCollection<Product>(personalProductsQuery);
-  const { data: libraryProducts, isLoading: isLoadingLibrary, error: libraryError } = useCollection<Product>(libraryProductsQuery);
+  // Load from Postgres via API
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      if (!user) {
+        setPersonalProducts(null);
+        setLibraryProducts(null);
+        return;
+      }
+
+      setIsLoadingPersonal(true);
+      setIsLoadingLibrary(true);
+      setPersonalError(null);
+      setLibraryError(null);
+
+      try {
+        const token = await getIdTokenOrThrow(user);
+        const res = await fetch('/api/products', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: 'no-store',
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.error || 'Failed to load products');
+
+        if (!cancelled) {
+          setPersonalProducts(json.personalProducts ?? []);
+          setLibraryProducts(json.libraryProducts ?? []);
+        }
+      } catch (e) {
+        const err = e instanceof Error ? e : new Error(String(e));
+        logger.warn('Failed loading products from API, using cache if present:', err);
+        if (!cancelled) {
+          setPersonalError(err);
+          setLibraryError(err);
+          setPersonalProducts([]);
+          setLibraryProducts([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingPersonal(false);
+          setIsLoadingLibrary(false);
+        }
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, forceRefresh]);
   
   // Персональные продукты: включаем все продукты с barId (включая те, что также в библиотеке)
   const filteredPersonalProducts = React.useMemo(() => {

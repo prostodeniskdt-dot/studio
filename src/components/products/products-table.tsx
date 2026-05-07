@@ -54,9 +54,8 @@ import { formatCurrency, translateCategory, translateSubCategory, productCategor
 import { ProductForm } from './product-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useUser } from '@/firebase';
 import { useProducts } from '@/contexts/products-context';
-import { doc, updateDoc, deleteDoc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -80,7 +79,6 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const [showArchived, setShowArchived] = React.useState(false);
   const isMobile = useIsMobile();
 
-  const firestore = useFirestore();
   const { user } = useUser();
   const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
@@ -101,41 +99,37 @@ export function ProductsTable({ products }: { products: Product[] }) {
   }
 
   const handleArchiveAction = (product: Product) => {
-    if (!firestore || !barId) return;
+    if (!user || !barId) return;
     setIsArchiving(product.id);
     
-    // Всегда используем коллекцию products для обычных продуктов
-    const collectionPath = collection(firestore, 'products');
-    const productRef = doc(collectionPath, product.id);
     const currentIsActive = product.isActive ?? true;
     const updateData = { isActive: !currentIsActive };
-    const pathPrefix = 'products';
-    
-    updateDoc(productRef, updateData)
-      .then(() => {
-        // Очистить кэш localStorage
+
+    (async () => {
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(`/api/products/${product.id}`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ product: updateData }),
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+
         if (typeof window !== 'undefined' && barId) {
           try {
             localStorage.removeItem(`barboss_products_cache_${barId}`);
-          } catch (e) {
-            // Игнорировать ошибки очистки кэша
-          }
+          } catch {}
         }
-        
         toast({ title: "Статус продукта изменен." });
-        // Обновить контекст продуктов для отображения изменений
         refreshProducts();
-        // Принудительно обновить данные через небольшую задержку для надежности
-        setTimeout(() => {
-          refreshProducts();
-        }, 100);
-      })
-      .catch((serverError) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `${pathPrefix}/${product.id}`, operation: 'update', requestResourceData: updateData }));
-      })
-      .finally(() => {
+        setTimeout(() => refreshProducts(), 100);
+      } catch {
+        toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось изменить статус.' });
+      } finally {
         setIsArchiving(null);
-      });
+      }
+    })();
   }
 
   const handleDeleteProduct = (product: Product) => {
@@ -143,17 +137,18 @@ export function ProductsTable({ products }: { products: Product[] }) {
   }
 
   const confirmDelete = async () => {
-    if (!productToDelete || !firestore || !barId) return;
+    if (!productToDelete || !user || !barId) return;
 
     setIsDeleting(true);
-    
-    // Всегда используем коллекцию products для обычных продуктов
-    const collectionPath = collection(firestore, 'products');
-    const productRef = doc(collectionPath, productToDelete.id);
-    const pathPrefix = 'products';
 
     try {
-        await deleteDoc(productRef);
+        const token = await user.getIdToken();
+        const res = await fetch(`/api/products/${productToDelete.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
         
         // Очистить кэш localStorage
         if (typeof window !== 'undefined' && barId) {
@@ -173,10 +168,6 @@ export function ProductsTable({ products }: { products: Product[] }) {
         });
         setProductToDelete(null);
     } catch (serverError) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: `${pathPrefix}/${productToDelete.id}`,
-            operation: 'delete',
-        }));
         toast({
           variant: 'destructive',
           title: 'Ошибка удаления',

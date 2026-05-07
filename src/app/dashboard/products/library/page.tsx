@@ -6,8 +6,7 @@ import { useProducts } from '@/contexts/products-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { HelpIcon } from '@/components/ui/help-icon';
-import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, collection, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Product, ProductCategory } from '@/lib/types';
 import { buildProductDisplayName } from '@/lib/utils';
@@ -35,10 +34,14 @@ export default function ProductsLibraryPage() {
     const [productToDelete, setProductToDelete] = React.useState<Product | null>(null);
     const [isDeleting, setIsDeleting] = React.useState(false);
 
-    const firestore = useFirestore();
     const { user } = useUser();
     const barId = user ? `bar_${user.uid}` : null;
     const { toast } = useToast();
+
+    const getToken = React.useCallback(async () => {
+        if (!user) throw new Error('Not authenticated');
+        return await user.getIdToken();
+    }, [user]);
 
     const handleAddToMyProducts = (product: Product) => {
         setProductToAdd(product);
@@ -46,29 +49,29 @@ export default function ProductsLibraryPage() {
     };
 
     const handleConfirmAddToMyProducts = async (product: Product) => {
-        if (!product || !firestore || !barId || !user) return;
+        if (!product || !barId || !user) return;
 
         setIsAdding(product.id);
-        
-        const collectionPath = collection(firestore, 'products');
-        // Создаем новый документ с уникальным ID
-        const productRef = doc(collectionPath);
-        const pathPrefix = 'products';
 
         try {
-            // Копируем все поля продукта, но устанавливаем barId и isInLibrary
-            const { id: _, ...productDataWithoutId } = product;
-            const newProductData: any = {
-                ...productDataWithoutId,
-                id: productRef.id,
-                barId: barId,
-                isInLibrary: false,
-                createdByUserId: user.uid,
-                updatedAt: serverTimestamp(),
-                createdAt: serverTimestamp(),
-            };
-            
-            await setDoc(productRef, newProductData);
+            const token = await getToken();
+            const { id: _oldId, createdAt: _ca, updatedAt: _ua, ...rest } = product as any;
+            const res = await fetch('/api/products', {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    product: {
+                        ...rest,
+                        isInLibrary: false,
+                        isActive: product.isActive ?? true,
+                    },
+                }),
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json?.error || 'Failed to add product');
             
             if (typeof window !== 'undefined' && barId) {
                 try {
@@ -86,10 +89,6 @@ export default function ProductsLibraryPage() {
             });
             setProductToAdd(null);
         } catch (serverError) {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `${pathPrefix}/${productRef.id}`,
-                operation: 'create',
-            }));
             toast({
                 variant: 'destructive',
                 title: 'Ошибка добавления',
@@ -105,16 +104,20 @@ export default function ProductsLibraryPage() {
     };
 
     const confirmDelete = async () => {
-        if (!productToDelete || !firestore) return;
+        if (!productToDelete || !user) return;
 
         setIsDeleting(true);
-        
-        const collectionPath = collection(firestore, 'products');
-        const productRef = doc(collectionPath, productToDelete.id);
-        const pathPrefix = 'products';
 
         try {
-            await deleteDoc(productRef);
+            const token = await getToken();
+            const res = await fetch(`/api/products/${productToDelete.id}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json?.error || 'Failed to delete');
             
             if (typeof window !== 'undefined' && barId) {
                 try {
@@ -132,10 +135,6 @@ export default function ProductsLibraryPage() {
             });
             setProductToDelete(null);
         } catch (serverError) {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `${pathPrefix}/${productToDelete.id}`,
-                operation: 'delete',
-            }));
             toast({
                 variant: 'destructive',
                 title: 'Ошибка удаления',

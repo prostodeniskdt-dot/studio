@@ -35,8 +35,7 @@ import { PurchaseOrderForm } from './purchase-order-form';
 import { formatCurrency, translateStatus } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import Link from 'next/link';
-import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, deleteDoc, getDocs, collection, writeBatch } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -58,7 +57,7 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
   const [orderToDelete, setOrderToDelete] = React.useState<PurchaseOrder | null>(null);
   const isMobile = useIsMobile();
 
-  const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
 
   const handleOpenSheet = (order?: PurchaseOrder) => {
@@ -76,20 +75,19 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
   };
 
   const confirmDelete = async () => {
-    if (!orderToDelete || !firestore) return;
-    const orderRef = doc(firestore, 'bars', barId, 'purchaseOrders', orderToDelete.id);
+    if (!orderToDelete || !user) return;
     
     try {
-        const linesRef = collection(orderRef, 'lines');
-        const linesSnapshot = await getDocs(linesRef);
-        const batch = writeBatch(firestore);
-        linesSnapshot.forEach((lineDoc) => batch.delete(lineDoc.ref));
-        batch.delete(orderRef);
-        
-        await batch.commit();
+        const token = await user.getIdToken();
+        const res = await fetch(`/api/purchase-orders/${orderToDelete.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
         toast({ title: "Заказ удален." });
     } catch (error) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: orderRef.path, operation: 'delete' }));
+        toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось удалить заказ.' });
     } finally {
         setOrderToDelete(null);
     }
@@ -113,8 +111,9 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
       accessorKey: 'orderDate',
       header: 'Дата заказа',
       cell: ({ row }) => {
-        const date = (row.getValue('orderDate') as any).toDate();
-        return <div className="text-left">{date.toLocaleDateString('ru-RU')}</div>;
+        const v = row.getValue('orderDate') as any;
+        const date = typeof v === 'string' ? new Date(v) : v?.toDate?.() ?? null;
+        return <div className="text-left">{date ? date.toLocaleDateString('ru-RU') : '-'}</div>;
       }
     },
     {

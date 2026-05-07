@@ -1,8 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useUser, useFirestore } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { firebaseConfig } from '@/firebase/config';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function AdminDebugPage() {
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
 
   const [testResult, setTestResult] = React.useState<string | null>(null);
@@ -20,8 +18,8 @@ export default function AdminDebugPage() {
   const [isActivating, setIsActivating] = React.useState(false);
 
   const runTest = React.useCallback(async () => {
-    if (!firestore || !user) {
-      setTestResult('Firestore или пользователь недоступны.');
+    if (!user) {
+      setTestResult('Пользователь недоступен.');
       return;
     }
     setIsTesting(true);
@@ -29,35 +27,28 @@ export default function AdminDebugPage() {
     setTestResult(null);
 
     try {
-      const roleRef = doc(firestore, 'roles_admin', user.uid);
-      const docSnap = await getDoc(roleRef);
-
-      setDocExists(docSnap.exists());
-
-      if (docSnap.exists()) {
-        setTestResult(`✅ Успех! Документ найден (exists() = true). Данные: ${JSON.stringify(docSnap.data())}`);
-      } else {
-        setTestResult('ℹ️ Документ не найден (exists() = false). Это ожидаемо, если роль еще не создана. Ошибки прав доступа не было.');
-      }
+      setDocExists(null);
+      setTestResult(
+        'Firestore отключён (мы мигрировали данные на Postgres). ' +
+          'Проверка `roles_admin` больше не актуальна. Админ-роль определяется из Postgres через `/api/admin/*`.'
+      );
     } catch (e: unknown) {
-      setDocExists(false);
       const error = e as { code?: string; message?: string };
       setTestResult(`❌ Ошибка!
 Код: ${error.code || 'N/A'}
 Сообщение: ${error.message || 'Неизвестная ошибка'}
-Это означает, что правила безопасности блокируют GET-запрос, или проект/правила не синхронизированы.`);
+`);
     } finally {
       setIsTesting(false);
     }
-  }, [firestore, user]);
+  }, [user]);
 
 
   const handleActivateAdmin = async () => {
-    if (!firestore || !user) return;
+    if (!user) return;
     setIsActivating(true);
     try {
-        const roleRef = doc(firestore, 'roles_admin', user.uid);
-        await setDoc(roleRef, { isAdmin: true });
+        throw new Error('Firestore отключён. Активируйте админа через базу данных Postgres (UserProfile.role = admin).');
         toast({
             title: "Роль администратора активирована!",
             description: "Теперь у вас есть доступ к панели администратора.",
@@ -69,7 +60,7 @@ export default function AdminDebugPage() {
         toast({
             variant: "destructive",
             title: "Ошибка активации",
-            description: error.message || "Не удалось создать документ роли. Проверьте правила безопасности."
+            description: error.message || "Не удалось активировать роль."
         });
     } finally {
         setIsActivating(false);
@@ -78,10 +69,10 @@ export default function AdminDebugPage() {
 
   // Automatically run the test once the user is loaded.
   React.useEffect(() => {
-    if (user && firestore) {
+    if (user) {
       runTest();
     }
-  }, [user, firestore, runTest]);
+  }, [user, runTest]);
 
 
   return (

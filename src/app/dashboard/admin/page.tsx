@@ -2,8 +2,7 @@
 
 import * as React from 'react';
 import dynamic from 'next/dynamic';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, doc } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import type { UserProfile } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -28,32 +27,51 @@ const AdminUsersTable = dynamic(
 
 export default function AdminPage() {
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
   const router = useRouter();
+  const [users, setUsers] = React.useState<UserProfile[] | null>(null);
+  const [isLoadingUsers, setIsLoadingUsers] = React.useState(false);
+  const [usersError, setUsersError] = React.useState<Error | null>(null);
 
-  // --- ВСЕ ХУКИ ПЕРЕМЕЩЕНЫ ВВЕРХ ---
+  const [isAuthorizedAdmin, setIsAuthorizedAdmin] = React.useState<boolean>(false);
+  const [adminRoleError, setAdminRoleError] = React.useState<Error | null>(null);
 
-  // Хук для получения роли администратора
-  const adminRoleRef = useMemoFirebase(() => 
-    firestore && user ? doc(firestore, 'roles_admin', user.uid) : null, 
-    [firestore, user]
-  );
-  const { data: adminRoleDoc, isLoading: isAdminRoleLoading, error: adminRoleError } = useDoc(adminRoleRef);
-  
-  // Хук для получения списка всех пользователей (выполняется всегда, если есть firestore)
-  const usersQuery = useMemoFirebase(() =>
-    firestore ? query(collection(firestore, 'users')) : null,
-    [firestore]
-  );
-  const { data: users, isLoading: isLoadingUsers, error: usersError } = useCollection<UserProfile>(usersQuery);
-
-  // --- КОНЕЦ БЛОКА ХУКОВ ---
-
-
-  const isAuthorizedAdmin = adminRoleDoc !== null;
+  React.useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      if (!user) return;
+      setIsLoadingUsers(true);
+      setUsersError(null);
+      setAdminRoleError(null);
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch('/api/admin/users', {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        });
+        const json = await res.json();
+        if (res.status === 403) {
+          if (!cancelled) setIsAuthorizedAdmin(false);
+          return;
+        }
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed to load users');
+        if (!cancelled) {
+          setIsAuthorizedAdmin(true);
+          setUsers(json.users ?? []);
+        }
+      } catch (e) {
+        if (!cancelled) setAdminRoleError(e instanceof Error ? e : new Error(String(e)));
+      } finally {
+        if (!cancelled) setIsLoadingUsers(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   // Условная логика рендеринга теперь идет ПОСЛЕ всех хуков
-  if (isUserLoading || isAdminRoleLoading) {
+  if (isUserLoading) {
     return (
       <div className="flex justify-center items-center h-full">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

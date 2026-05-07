@@ -5,8 +5,7 @@ import { useProducts } from "@/contexts/products-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { HelpIcon } from '@/components/ui/help-icon';
-import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, updateDoc, deleteDoc, collection, serverTimestamp, deleteField } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Product, ProductCategory } from '@/lib/types';
 import { buildProductDisplayName } from '@/lib/utils';
@@ -40,10 +39,14 @@ export default function ProductsPage() {
     const [productToSendToLibrary, setProductToSendToLibrary] = React.useState<Product | null>(null);
     const [isSendingToLibrary, setIsSendingToLibrary] = React.useState(false);
 
-    const firestore = useFirestore();
     const { user } = useUser();
     const barId = user ? `bar_${user.uid}` : null;
     const { toast } = useToast();
+
+    const getToken = React.useCallback(async () => {
+        if (!user) throw new Error('Not authenticated');
+        return await user.getIdToken();
+    }, [user]);
 
     const handleOpenSheet = (product?: Product) => {
         setEditingProduct(product);
@@ -59,37 +62,35 @@ export default function ProductsPage() {
     };
 
     const handleArchiveAction = (product: Product) => {
-        if (!firestore || !barId) return;
+        if (!barId) return;
         setIsArchiving(product.id);
-        
-        const collectionPath = collection(firestore, 'products');
-        const productRef = doc(collectionPath, product.id);
         const currentIsActive = product.isActive ?? true;
-        const updateData = { isActive: !currentIsActive };
-        const pathPrefix = 'products';
-        
-        updateDoc(productRef, updateData)
-            .then(() => {
+
+        (async () => {
+            try {
+                const token = await getToken();
+                const res = await fetch(`/api/products/${product.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'content-type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ product: { isActive: !currentIsActive } }),
+                });
+                const json = await res.json();
+                if (!res.ok) throw new Error(json?.error || 'Failed to update product');
+
                 if (typeof window !== 'undefined' && barId) {
-                    try {
-                        localStorage.removeItem(`barboss_products_cache_${barId}`);
-                    } catch (e) {
-                        // Игнорировать ошибки очистки кэша
-                    }
+                    try { localStorage.removeItem(`barboss_products_cache_${barId}`); } catch {}
                 }
-                
                 toast({ title: "Статус продукта изменен." });
                 refreshProducts();
-                setTimeout(() => {
-                    refreshProducts();
-                }, 100);
-            })
-            .catch((serverError) => {
-                errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `${pathPrefix}/${product.id}`, operation: 'update', requestResourceData: updateData }));
-            })
-            .finally(() => {
+            } catch {
+                toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось обновить продукт.' });
+            } finally {
                 setIsArchiving(null);
-            });
+            }
+        })();
     };
 
     const handleDeleteProduct = (product: Product) => {
@@ -101,20 +102,22 @@ export default function ProductsPage() {
     };
 
     const confirmSendToLibrary = async () => {
-        if (!productToSendToLibrary || !firestore || !barId) return;
+        if (!productToSendToLibrary || !barId) return;
 
         setIsSendingToLibrary(true);
-        
-        const collectionPath = collection(firestore, 'products');
-        const productRef = doc(collectionPath, productToSendToLibrary.id);
-        const pathPrefix = 'products';
 
         try {
-            await updateDoc(productRef, {
-                barId: deleteField(), // Удаляем поле barId
-                isInLibrary: true,
-                updatedAt: serverTimestamp(),
+            const token = await getToken();
+            const res = await fetch(`/api/products/${productToSendToLibrary.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'content-type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ sendToLibrary: true }),
             });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json?.error || 'Failed to send to library');
             
             if (typeof window !== 'undefined' && barId) {
                 try {
@@ -132,10 +135,6 @@ export default function ProductsPage() {
             });
             setProductToSendToLibrary(null);
         } catch (serverError) {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `${pathPrefix}/${productToSendToLibrary.id}`,
-                operation: 'update',
-            }));
             toast({
                 variant: 'destructive',
                 title: 'Ошибка отправки в библиотеку',
@@ -147,16 +146,20 @@ export default function ProductsPage() {
     };
 
     const confirmDelete = async () => {
-        if (!productToDelete || !firestore || !barId) return;
+        if (!productToDelete || !barId) return;
 
         setIsDeleting(true);
-        
-        const collectionPath = collection(firestore, 'products');
-        const productRef = doc(collectionPath, productToDelete.id);
-        const pathPrefix = 'products';
 
         try {
-            await deleteDoc(productRef);
+            const token = await getToken();
+            const res = await fetch(`/api/products/${productToDelete.id}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json?.error || 'Failed to delete');
             
             if (typeof window !== 'undefined' && barId) {
                 try {
@@ -174,10 +177,6 @@ export default function ProductsPage() {
             });
             setProductToDelete(null);
         } catch (serverError) {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `${pathPrefix}/${productToDelete.id}`,
-                operation: 'delete',
-            }));
             toast({
                 variant: 'destructive',
                 title: 'Ошибка удаления',

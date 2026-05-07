@@ -1,8 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import type { Supplier } from '@/lib/types';
 import { logger } from '@/lib/logger';
 
@@ -25,9 +24,12 @@ interface CachedSuppliers {
 }
 
 export function SuppliersProvider({ children, barId }: { children: React.ReactNode; barId: string | null }) {
-  const firestore = useFirestore();
+  const { user } = useUser();
   const [cache, setCache] = useState<CachedSuppliers | null>(null);
   const [forceRefresh, setForceRefresh] = useState(0);
+  const [suppliers, setSuppliers] = useState<Supplier[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !barId) return;
@@ -48,12 +50,42 @@ export function SuppliersProvider({ children, barId }: { children: React.ReactNo
     }
   }, [barId]);
 
-  const suppliersQuery = useMemoFirebase(() =>
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'suppliers')) : null,
-    [firestore, barId, forceRefresh]
-  );
-  
-  const { data: suppliers, isLoading, error } = useCollection<Supplier>(suppliersQuery);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      if (!user || !barId) {
+        setSuppliers(null);
+        return;
+      }
+      setIsLoading(true);
+      setError(null);
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch('/api/suppliers', {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed to load suppliers');
+        if (!cancelled) setSuppliers(json.suppliers ?? []);
+      } catch (e) {
+        const err = e instanceof Error ? e : new Error(String(e));
+        logger.warn('Failed loading suppliers from API, using cache if present:', err);
+        if (!cancelled) {
+          setError(err);
+          setSuppliers([]);
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, barId, forceRefresh]);
 
   // Обработка ошибок прав доступа - использовать кэш при ошибке
   useEffect(() => {

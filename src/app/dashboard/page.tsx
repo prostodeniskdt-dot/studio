@@ -12,8 +12,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, query, where, getDocs, doc, setDoc, serverTimestamp, writeBatch, limit } from 'firebase/firestore';
+import { useUser } from '@/firebase';
+import { useSessions } from '@/contexts/sessions-context';
 import { metricsTracker } from '@/lib/metrics';
 
 
@@ -21,28 +21,25 @@ export default function DashboardPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();
-  const firestore = useFirestore();
 
   const barId = user ? `bar_${user.uid}` : null; 
-
-  const sessionsQuery = useMemoFirebase(() => 
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'inventorySessions')) : null,
-    [firestore, barId]
-  );
-  
-  const { data: sessions, isLoading: isLoadingSessions, error: sessionsError } = useCollection<InventorySession>(sessionsQuery);
+  const { sessions, isLoading: isLoadingSessions, error: sessionsError } = useSessions();
   const [isCreating, setIsCreating] = React.useState(false);
 
   const activeSessions = React.useMemo(() => {
     if (!sessions) return [];
     return sessions
       .filter(s => s.status === 'in_progress' || s.status === 'draft')
-      .sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
+      .sort((a, b) => {
+        const aMs = typeof (a as any).createdAt === 'string' ? new Date((a as any).createdAt).getTime() : (a.createdAt?.toMillis?.() ?? 0);
+        const bMs = typeof (b as any).createdAt === 'string' ? new Date((b as any).createdAt).getTime() : (b.createdAt?.toMillis?.() ?? 0);
+        return bMs - aMs;
+      });
   }, [sessions]);
 
 
   const handleCreateSession = async () => {
-    if (!user || !barId || !firestore) {
+    if (!user || !barId) {
       toast({
         variant: "destructive",
         title: "Ошибка",
@@ -54,33 +51,27 @@ export default function DashboardPage() {
     setIsCreating(true);
 
     try {
-        const inventoriesCollection = collection(firestore, 'bars', barId, 'inventorySessions');
-        const activeSessionQuery = query(inventoriesCollection, where('status', '==', 'in_progress'), limit(1));
-        const activeSessionSnapshot = await getDocs(activeSessionQuery);
-        
-        if (!activeSessionSnapshot.empty) {
-             toast({
-                title: "Активная инвентаризация уже существует",
-                description: "Вы будете перенаправлены на существующую инвентаризацию.",
-            });
-            router.push(`/dashboard/sessions/${activeSessionSnapshot.docs[0].id}`);
-            return;
+        const active = (sessions ?? []).find((s) => s.status === 'in_progress');
+        if (active) {
+          toast({
+            title: "Активная инвентаризация уже существует",
+            description: "Вы будете перенаправлены на существующую инвентаризацию.",
+          });
+          router.push(`/dashboard/sessions/${active.id}`);
+          return;
         }
 
-        const newSessionRef = doc(inventoriesCollection);
-        const newSessionData = {
-            id: newSessionRef.id,
-            barId: barId,
-            name: `Инвентаризация от ${new Date().toLocaleDateString('ru-RU')}`,
-            status: 'in_progress' as const,
-            createdByUserId: user.uid,
-            createdAt: serverTimestamp(),
-            closedAt: null,
-        };
-        
-        await setDoc(newSessionRef, newSessionData);
-
-        const sessionId = newSessionRef.id;
+        const token = await user.getIdToken();
+        const name = `Инвентаризация от ${new Date().toLocaleDateString('ru-RU')}`;
+        const res = await fetch('/api/sessions', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ session: { name, status: 'in_progress' } }),
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+        const sessionId = json.session?.id as string | undefined;
+        if (!sessionId) throw new Error('Session not created');
         
         // Track metric
         metricsTracker.track('session_created', { sessionId, barId });
@@ -88,7 +79,7 @@ export default function DashboardPage() {
         // Сохранить данные в sessionStorage для немедленного доступа (исправление race condition)
         if (typeof window !== 'undefined') {
             const sessionDataForCache = {
-                ...newSessionData,
+                ...json.session,
                 createdAt: new Date().toISOString(), // Заменить serverTimestamp на дату для кэша
                 isNew: true // Флаг новой сессии
             };
@@ -108,8 +99,6 @@ export default function DashboardPage() {
             title: "Ошибка",
             description: errorMessage,
         });
-        const permissionError = new FirestorePermissionError({ path: `bars/${barId}/inventorySessions`, operation: 'create' });
-        errorEmitter.emit('permission-error', permissionError);
     } finally {
         setIsCreating(false);
     }

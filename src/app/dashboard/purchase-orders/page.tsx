@@ -1,8 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, deleteDoc, doc, getDocs } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import type { PurchaseOrder, PurchaseOrderLine, Supplier, Product } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -29,17 +28,37 @@ import {
 
 export default function PurchaseOrdersPage() {
   const { user } = useUser();
-  const firestore = useFirestore();
   const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = React.useState<string | null>(null);
+  const [orders, setOrders] = React.useState<any[] | null>(null);
+  const [isLoadingOrders, setIsLoadingOrders] = React.useState(false);
   
-  // Загружаем заказы
-  const ordersQuery = useMemoFirebase(() =>
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'purchaseOrders'), orderBy('orderDate', 'desc')) : null,
-    [firestore, barId]
-  );
-  const { data: orders, isLoading: isLoadingOrders } = useCollection<PurchaseOrder>(ordersQuery);
+  React.useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      if (!user) return;
+      setIsLoadingOrders(true);
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch('/api/purchase-orders', {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed to load orders');
+        if (!cancelled) setOrders(json.orders ?? []);
+      } catch {
+        if (!cancelled) setOrders([]);
+      } finally {
+        if (!cancelled) setIsLoadingOrders(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   // Загружаем поставщиков и продукты
   const { suppliers, isLoading: isLoadingSuppliers } = useSuppliers();
@@ -47,11 +66,14 @@ export default function PurchaseOrdersPage() {
 
   // Загружаем строки заказов
   const orderIds = React.useMemo(() => orders?.map(o => o.id) || [], [orders]);
-  const { data: allOrderLines, isLoading: isLoadingLines } = useRelatedCollection<PurchaseOrderLine>(
-    firestore,
-    orderIds,
-    (orderId) => `bars/${barId}/purchaseOrders/${orderId}/lines`
-  );
+  const allOrderLines = React.useMemo(() => {
+    const map: Record<string, any[]> = {};
+    (orders ?? []).forEach((o: any) => {
+      map[o.id] = o.lines ?? [];
+    });
+    return map;
+  }, [orders]);
+  const isLoadingLines = false;
 
   // Группируем заказы по поставщикам
   const ordersBySupplier = React.useMemo(() => {
@@ -130,25 +152,23 @@ export default function PurchaseOrdersPage() {
   };
 
   const handleDeleteOrder = async (orderId: string) => {
-    if (!firestore || !barId) return;
+    if (!user || !barId) return;
 
     setIsDeleting(orderId);
     try {
-      const orderRef = doc(firestore, 'bars', barId, 'purchaseOrders', orderId);
-      const linesRef = collection(orderRef, 'lines');
-      
-      // Удалить все строки заказа
-      const linesSnapshot = await getDocs(linesRef);
-      const deletePromises = linesSnapshot.docs.map(lineDoc => deleteDoc(lineDoc.ref));
-      await Promise.all(deletePromises);
-      
-      // Удалить сам заказ
-      await deleteDoc(orderRef);
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/purchase-orders/${orderId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
 
       toast({
         title: 'Заказ удален',
         description: 'Заказ и все его позиции были успешно удалены.',
       });
+      setOrders((prev) => (prev ?? []).filter((o: any) => o.id !== orderId));
     } catch (error) {
       console.error('Error deleting order:', error);
       toast({

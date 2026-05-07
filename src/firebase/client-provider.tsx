@@ -84,7 +84,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   }
 
   // Check if services were successfully initialized
-  if (!firebaseServices?.firebaseApp || !firebaseServices?.auth || !firebaseServices?.firestore) {
+  if (!firebaseServices?.firebaseApp || !firebaseServices?.auth) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background">
         <div className="text-center">
@@ -98,7 +98,6 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     <FirebaseProvider
       firebaseApp={firebaseServices.firebaseApp}
       auth={firebaseServices.auth}
-      firestore={firebaseServices.firestore}
     >
       {children}
     </FirebaseProvider>

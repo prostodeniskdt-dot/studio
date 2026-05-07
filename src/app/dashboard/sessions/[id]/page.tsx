@@ -1,16 +1,14 @@
 'use client';
 
 import * as React from 'react';
-import { useParams, notFound, useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
+import { useParams, useRouter } from "next/navigation";
 import { InventoryTable } from "@/components/sessions/inventory-table";
 import { Button } from "@/components/ui/button";
 import { FileText, Loader2, Save, MoreVertical, Trash2, Download, Upload, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { translateStatus, buildProductDisplayName } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine, CalculatedInventoryLine } from '@/lib/types';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, collection, query, setDoc, writeBatch, serverTimestamp, updateDoc, getDoc, where, getDocs } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { useProducts } from '@/contexts/products-context';
 import {
   DropdownMenu,
@@ -42,7 +40,6 @@ import { Combobox } from '@/components/ui/combobox';
 import { translateCategory } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { calculateLineFields } from '@/lib/calculations';
-import { deleteSessionWithLinesClient } from '@/lib/firestore-utils';
 import { SessionHeader } from '@/components/sessions/session-header';
 import { SessionActions } from '@/components/sessions/session-actions';
 import { useOffline } from '@/hooks/use-offline';
@@ -54,7 +51,6 @@ export default function SessionPage() {
   const params = useParams();
   const id = params.id as string;
   const { user } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -71,18 +67,12 @@ export default function SessionPage() {
   const [isSaving, setIsSaving] = React.useState(false);
   const [isCompleting, setIsCompleting] = React.useState(false);
   const [isAddingProduct, setIsAddingProduct] = React.useState(false);
-  
-  const sessionRef = useMemoFirebase(() => 
-    firestore && barId ? doc(firestore, 'bars', barId, 'inventorySessions', id) : null,
-    [firestore, barId, id]
-  );
-  const { data: session, isLoading: isLoadingSession, error: sessionError } = useDoc<InventorySession>(sessionRef);
 
-  const linesRef = useMemoFirebase(() =>
-    firestore && barId ? collection(firestore, 'bars', barId, 'inventorySessions', id, 'lines') : null,
-    [firestore, barId, id]
-  );
-  const { data: lines, isLoading: isLoadingLines } = useCollection<InventoryLine>(linesRef);
+  const [session, setSession] = React.useState<InventorySession | null>(null);
+  const [lines, setLines] = React.useState<InventoryLine[] | null>(null);
+  const [isLoadingSession, setIsLoadingSession] = React.useState(false);
+  const [isLoadingLines, setIsLoadingLines] = React.useState(false);
+  const [sessionError, setSessionError] = React.useState<Error | null>(null);
 
   const hasNavigatedRef = React.useRef(false);
   const [cachedSession, setCachedSession] = React.useState<InventorySession | null>(null);
@@ -125,6 +115,41 @@ export default function SessionPage() {
       setCachedSession(null);
     }
   }, [session, id, cachedSession]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      if (!user) return;
+      setIsLoadingSession(true);
+      setIsLoadingLines(true);
+      setSessionError(null);
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(`/api/sessions/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed to load session');
+        if (!cancelled) {
+          setSession(json.session ?? null);
+          setLines(json.lines ?? []);
+        }
+      } catch (e) {
+        const err = e instanceof Error ? e : new Error(String(e));
+        if (!cancelled) setSessionError(err);
+      } finally {
+        if (!cancelled) {
+          setIsLoadingSession(false);
+          setIsLoadingLines(false);
+        }
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, id]);
 
   React.useEffect(() => {
     // Использовать кэшированную сессию если есть, иначе проверять загрузку
@@ -208,17 +233,24 @@ export default function SessionPage() {
   
   // Event Handlers
   const handleDeleteSession = async () => {
-    if (!firestore || !barId) return;
+    if (!user) return;
 
     setIsDeletingSession(true);
     setIsDeleteDialogOpen(false);
     setDeleteProgress(0);
 
     try {
-        await deleteSessionWithLinesClient(firestore, barId, id, setDeleteProgress);
-        toast({ title: "Инвентаризация удалена." });
-        // Navigate AFTER successful deletion to prevent component unmounting during async operation
-        router.replace("/dashboard/sessions");
+      setDeleteProgress(25);
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/sessions/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+      setDeleteProgress(100);
+      toast({ title: "Инвентаризация удалена." });
+      router.replace("/dashboard/sessions");
     } catch(e: unknown) {
         const errorMessage = e instanceof Error ? e.message : "Произошла неизвестная ошибка.";
         toast({ 
@@ -234,7 +266,7 @@ export default function SessionPage() {
   };
   
   const handleAddToOrder = async (line: CalculatedInventoryLine & { product: Product }) => {
-    if (!user || !barId || !allProducts || !firestore) {
+    if (!user || !barId || !allProducts) {
       toast({
         variant: 'destructive',
         title: 'Ошибка',
@@ -253,64 +285,47 @@ export default function SessionPage() {
     }
 
     try {
-      // Получить supplierId (может быть пустой строкой если поставщик не указан)
+      const token = await user.getIdToken();
       const supplierId = line.product.defaultSupplierId || '';
-      
-      // Найти существующий заказ для этого поставщика (или без поставщика) со статусом draft
-      const ordersRef = collection(firestore, 'bars', barId, 'purchaseOrders');
-      const ordersQuery = query(
-        ordersRef,
-        where('supplierId', '==', supplierId),
-        where('status', '==', 'draft')
-      );
-      const ordersSnapshot = await getDocs(ordersQuery);
-      
-      let orderRef;
-      if (!ordersSnapshot.empty) {
-        // Использовать существующий заказ
-        orderRef = doc(firestore, 'bars', barId, 'purchaseOrders', ordersSnapshot.docs[0].id);
-      } else {
-        // Создать новый заказ
-        orderRef = doc(collection(firestore, 'bars', barId, 'purchaseOrders'));
-        const orderData = {
-          id: orderRef.id,
-          barId,
-          supplierId: supplierId, // Может быть пустой строкой
-          status: 'draft' as const,
-          orderDate: serverTimestamp(),
-          createdAt: serverTimestamp(),
-          createdByUserId: user.uid,
-        };
-        await setDoc(orderRef, orderData);
-      }
 
-      // Проверить, нет ли уже этого продукта в заказе
-      const linesRef = collection(orderRef, 'lines');
-      const linesQuery = query(linesRef, where('productId', '==', line.product.id));
-      const linesSnapshot = await getDocs(linesQuery);
+      const ordersRes = await fetch('/api/purchase-orders', {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      });
+      const ordersJson = await ordersRes.json();
+      if (!ordersRes.ok || ordersJson?.ok === false) throw new Error(ordersJson?.error || 'Failed');
+      const orders = (ordersJson.orders ?? []) as Array<{ id: string; supplierId: string; status: string }>;
 
-      if (!linesSnapshot.empty) {
-        // Обновить существующую строку
-        const existingLine = linesSnapshot.docs[0];
-        const currentQuantity = existingLine.data().quantity || 0;
-        const newQuantity = currentQuantity + (line.product.reorderQuantity || 1);
-        await updateDoc(existingLine.ref, {
-          quantity: newQuantity,
-          costPerItem: line.product.costPerBottle || 0,
+      let orderId = orders.find((o) => o.status === 'draft' && o.supplierId === supplierId)?.id;
+      if (!orderId) {
+        const createRes = await fetch('/api/purchase-orders', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            order: {
+              supplierId,
+              status: 'draft',
+              orderDate: new Date().toISOString(),
+            },
+          }),
         });
-      } else {
-        // Создать новую строку
-        const lineRef = doc(collection(orderRef, 'lines'));
-        const lineData = {
-          id: lineRef.id,
-          purchaseOrderId: orderRef.id,
-          productId: line.product.id,
-          quantity: line.product.reorderQuantity || 1,
-          costPerItem: line.product.costPerBottle || 0,
-          receivedQuantity: 0,
-        };
-        await setDoc(lineRef, lineData);
+        const createJson = await createRes.json();
+        if (!createRes.ok || createJson?.ok === false) throw new Error(createJson?.error || 'Failed');
+        orderId = createJson.order?.id;
       }
+      if (!orderId) throw new Error('Order not created');
+
+      await fetch(`/api/purchase-orders/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'content-type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ addLine: { productId: line.product.id } }),
+      });
 
       toast({
         title: 'Продукт добавлен в заказ',
@@ -327,26 +342,28 @@ export default function SessionPage() {
   };
 
   const handleAddProductToSession = async (productId: string) => {
-    if (!productId || !barId || !firestore) return;
+    if (!productId || !user) return;
     setIsAddingProduct(true);
     try {
-        const product = allProducts?.find(p => p.id === productId);
-        if (!product) throw new Error("Продукт не найден");
+      const product = allProducts?.find(p => p.id === productId);
+      if (!product) throw new Error("Продукт не найден");
 
-        const newLineRef = doc(collection(firestore, 'bars', barId, 'inventorySessions', id, 'lines'));
-        const newLineData = {
-            id: newLineRef.id,
-            productId: productId,
-            inventorySessionId: id,
-            startStock: 0,
-            purchases: 0,
-            sales: 0,
-            endStock: 0,
-            ...calculateLineFields({}, product),
-        };
-        await setDoc(newLineRef, newLineData);
-        toast({ title: "Продукт добавлен", description: `"${product ? buildProductDisplayName(product.name, product.bottleVolumeMl) : ''}" добавлен в инвентаризацию.` });
-        setIsAddProductOpen(false);
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/sessions/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'content-type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ addProductLine: { productId } }),
+      });
+      const json = await res.json();
+      if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+
+      setSession(json.session ?? null);
+      setLines(json.lines ?? []);
+      toast({ title: "Продукт добавлен", description: `"${buildProductDisplayName(product.name, product.bottleVolumeMl)}" добавлен в инвентаризацию.` });
+      setIsAddProductOpen(false);
     } catch (serverError: unknown) {
         const errorMessage = serverError instanceof Error ? serverError.message : 'Не удалось добавить продукт';
         toast({
@@ -354,34 +371,52 @@ export default function SessionPage() {
             title: "Ошибка",
             description: errorMessage,
         });
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/inventorySessions/${id}/lines`, operation: 'create' }));
     } finally {
         setIsAddingProduct(false);
     }
   };
   
   const handleSaveChanges = async () => {
-    if (!localLines || !barId || !firestore) return;
+    if (!localLines || !user) return;
     setIsSaving(true);
     try {
-        const batch = writeBatch(firestore);
-        localLines.forEach(line => {
-            const product = allProducts?.find(p => p.id === line.productId);
-            if (!product) return;
-            
+      const token = await user.getIdToken();
+      const payloadLines =
+        localLines
+          .map((line) => {
+            const product = allProducts?.find((p) => p.id === line.productId);
+            if (!product) return null;
             const calculatedFields = calculateLineFields(line, product);
-            const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', id, 'lines', line.id);
             const { startStock, purchases, sales, endStock } = line;
-            batch.update(lineRef, {
-                startStock,
-                purchases,
-                sales,
-                endStock,
-                ...calculatedFields
-            });
-        });
-        await batch.commit();
-        toast({ title: "Изменения сохранены" });
+            return {
+              id: line.id,
+              productId: line.productId,
+              startStock,
+              purchases,
+              sales,
+              endStock,
+              theoreticalEndStock: calculatedFields.theoreticalEndStock,
+              differenceVolume: calculatedFields.differenceVolume,
+              differenceMoney: calculatedFields.differenceMoney,
+              differencePercent: calculatedFields.differencePercent ?? 0,
+            };
+          })
+          .filter(Boolean) as any[];
+
+      const res = await fetch(`/api/sessions/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'content-type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ upsertLines: payloadLines }),
+      });
+      const json = await res.json();
+      if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+
+      setSession(json.session ?? null);
+      setLines(json.lines ?? []);
+      toast({ title: "Изменения сохранены" });
     } catch (serverError: unknown) {
         const errorMessage = serverError instanceof Error ? serverError.message : 'Не удалось сохранить изменения';
         toast({
@@ -389,23 +424,30 @@ export default function SessionPage() {
             title: "Ошибка сохранения",
             description: errorMessage,
         });
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/inventorySessions/${id}/lines`, operation: 'update' }));
     } finally {
         setIsSaving(false);
     }
   };
 
   const handleCompleteSession = async () => {
-    if (!sessionRef || !barId || !firestore) return;
+    if (!user) return;
     setIsCompleting(true);
     try {
       if (hasUnsavedChanges) {
           await handleSaveChanges();
       }
-      await updateDoc(sessionRef, {
-        status: 'completed',
-        closedAt: serverTimestamp(),
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/sessions/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'content-type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ session: { status: 'completed', closedAt: new Date().toISOString() } }),
       });
+      const json = await res.json();
+      if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+      setSession(json.session ?? null);
       toast({
           title: "Инвентаризация завершена",
           description: "Инвентаризация завершена.",
@@ -418,7 +460,6 @@ export default function SessionPage() {
             title: "Ошибка",
             description: errorMessage,
         });
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: sessionRef.path, operation: 'update' }));
     } finally {
       setIsCompleting(false);
     }

@@ -18,8 +18,7 @@ import { buildProductDisplayName } from '@/lib/utils';
 import { formatCurrency, translateCategory, translateProductName } from '@/lib/utils';
 import { Combobox, GroupedComboboxOption } from '../ui/combobox';
 import Image from 'next/image';
-import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, writeBatch, collection, setDoc, deleteDoc } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent } from '@/components/ui/card';
@@ -40,7 +39,7 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
   const [isProcessing, setIsProcessing] = React.useState(false);
   const isMobile = useIsMobile();
 
-  const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
 
   // Create products map for O(1) lookup
@@ -66,28 +65,35 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
   };
   
   const handleSaveLines = () => {
-    if (!firestore) return;
+    if (!user) return;
     setIsSaving(true);
-    const batch = writeBatch(firestore);
-    localLines.forEach(line => {
-        const lineRef = doc(firestore, 'bars', barId, 'purchaseOrders', orderId, 'lines', line.id);
-        batch.update(lineRef, {
-            quantity: line.quantity,
-            costPerItem: line.costPerItem,
-            receivedQuantity: line.receivedQuantity,
+    (async () => {
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(`/api/purchase-orders/${orderId}`, {
+          method: 'PATCH',
+          headers: {
+            'content-type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            updateLines: localLines.map((l) => ({
+              id: l.id,
+              quantity: l.quantity,
+              costPerItem: l.costPerItem,
+              receivedQuantity: l.receivedQuantity,
+            })),
+          }),
         });
-    });
-
-    batch.commit()
-      .then(() => {
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
         toast({ title: 'Позиции заказа обновлены' });
-      })
-      .catch((error) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/purchaseOrders/${orderId}/lines`, operation: 'update' }));
-      })
-      .finally(() => {
+      } catch {
+        toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось сохранить позиции.' });
+      } finally {
         setIsSaving(false);
-      });
+      }
+    })();
   };
 
   const handleExportCSV = () => {
@@ -145,48 +151,59 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
   };
 
   const handleRemoveLine = (lineId: string) => {
-    if (!firestore) return;
+    if (!user) return;
     setIsProcessing(true);
-    const lineRef = doc(firestore, 'bars', barId, 'purchaseOrders', orderId, 'lines', lineId);
-
-    deleteDoc(lineRef)
-      .then(() => {
+    (async () => {
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(`/api/purchase-orders/${orderId}`, {
+          method: 'PATCH',
+          headers: {
+            'content-type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ deleteLineId: lineId }),
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+        setLocalLines((prev) => prev.filter((l) => l.id !== lineId));
         toast({ title: 'Позиция удалена' });
-      })
-      .catch((error) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/purchaseOrders/${orderId}/lines/${lineId}`, operation: 'delete' }));
-      })
-      .finally(() => {
+      } catch {
+        toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось удалить позицию.' });
+      } finally {
         setIsProcessing(false);
-      });
+      }
+    })();
   };
   
   const handleAddProduct = (productId: string) => {
     const product = productsMap.get(productId);
-    if (!product || !firestore) return;
+    if (!product || !user) return;
     setIsProcessing(true);
     setIsAdding(false);
-
-    const lineRef = doc(collection(firestore, 'bars', barId, 'purchaseOrders', orderId, 'lines'));
-    const newLineData = {
-        id: lineRef.id,
-        purchaseOrderId: orderId,
-        productId: product.id,
-        quantity: 1,
-        costPerItem: product.costPerBottle,
-        receivedQuantity: 0,
-    };
-    
-    setDoc(lineRef, newLineData)
-      .then(() => {
+    (async () => {
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(`/api/purchase-orders/${orderId}`, {
+          method: 'PATCH',
+          headers: {
+            'content-type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ addLine: { productId } }),
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+        // refresh local from server response if possible
+        const newLines = (json.order?.lines ?? []) as any[];
+        setLocalLines(newLines);
         toast({ title: 'Продукт добавлен в заказ' });
-      })
-      .catch((error) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `bars/${barId}/purchaseOrders/${orderId}/lines`, operation: 'create' }));
-      })
-      .finally(() => {
+      } catch {
+        toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось добавить продукт.' });
+      } finally {
         setIsProcessing(false);
-      });
+      }
+    })();
   };
 
   const linesWithProducts = React.useMemo(() => {

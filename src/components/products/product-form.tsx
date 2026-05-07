@@ -37,18 +37,13 @@ import { useProducts } from '@/contexts/products-context';
 import { productCategorySchema } from '@/lib/schemas/product.schema';
 import { Separator } from '../ui/separator';
 import {
-  useFirestore,
   useUser,
-  useCollection,
-  useMemoFirebase,
-  errorEmitter,
-  FirestorePermissionError,
 } from '@/firebase';
-import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useSuppliers } from '@/contexts/suppliers-context';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
@@ -75,7 +70,6 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
-  const firestore = useFirestore();
   const { user } = useUser();
   const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
@@ -83,6 +77,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const [showAutoOrderWarning, setShowAutoOrderWarning] = React.useState(true);
   const { globalProducts, refresh: refreshProducts } = useProducts();
   const [createInLibrary, setCreateInLibrary] = React.useState(false);
+  const { suppliers, isLoading: isLoadingSuppliers } = useSuppliers();
 
   React.useEffect(() => {
     if (showAutoOrderWarning) {
@@ -93,11 +88,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     }
   }, [showAutoOrderWarning]);
 
-  const suppliersQuery = useMemoFirebase(
-    () => (firestore && barId ? collection(firestore, 'bars', barId, 'suppliers') : null),
-    [firestore, barId]
-  );
-  const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
+  const suppliersList: Supplier[] = suppliers ?? [];
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(formSchema),
@@ -156,7 +147,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   }, [watchedName, form]);
 
   function onSubmit(data: ProductFormValues) {
-    if (!firestore || !barId) {
+    if (!barId || !user) {
       toast({
         title: 'Ошибка',
         description: 'Не удалось определить пользователя',
@@ -183,9 +174,6 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
 
     setIsSaving(true);
 
-    const collectionPath = collection(firestore, 'products');
-    const productRef = product ? doc(collectionPath, product.id) : doc(collectionPath);
-
     const { baseName } = extractVolume(data.name);
     const shouldCreateInLibrary = !product && createInLibrary;
 
@@ -197,9 +185,6 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
       reorderQuantity: data.reorderQuantity || null,
       fullBottleWeightG: data.fullBottleWeightG || null,
       emptyBottleWeightG: data.emptyBottleWeightG || null,
-      id: productRef.id,
-      updatedAt: serverTimestamp(),
-      createdAt: product?.createdAt || serverTimestamp(),
       isInLibrary: product ? product.isInLibrary : shouldCreateInLibrary,
       createdByUserId: product ? product.createdByUserId : user?.uid || undefined,
     };
@@ -212,9 +197,33 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
       productData.barId = barId || undefined;
     }
 
-    const pathPrefix = 'products';
-    setDoc(productRef, productData, { merge: true })
-      .then(() => {
+    (async () => {
+      try {
+        const token = await user.getIdToken();
+        if (product) {
+          const res = await fetch(`/api/products/${product.id}`, {
+            method: 'PATCH',
+            headers: {
+              'content-type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ product: productData }),
+          });
+          const json = await res.json();
+          if (!res.ok) throw new Error(json?.error || 'Failed to update product');
+        } else {
+          const res = await fetch('/api/products', {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ product: productData }),
+          });
+          const json = await res.json();
+          if (!res.ok) throw new Error(json?.error || 'Failed to create product');
+        }
+
         if (typeof window !== 'undefined' && barId) {
           try {
             localStorage.removeItem(`barboss_products_cache_${barId}`);
@@ -241,17 +250,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         setTimeout(() => {
           onFormSubmit();
         }, 100);
-      })
-      .catch((serverError) => {
-        errorEmitter.emit(
-          'permission-error',
-          new FirestorePermissionError({
-            path: `${pathPrefix}/${productRef.id}`,
-            operation: product ? 'update' : 'create',
-            requestResourceData: productData,
-          })
-        );
-
+      } catch (serverError) {
         toast({
           title: 'Ошибка сохранения',
           description:
@@ -260,10 +259,10 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
               : 'Не удалось сохранить продукт. Проверьте права доступа и подключение к интернету.',
           variant: 'destructive',
         });
-      })
-      .finally(() => {
+      } finally {
         setIsSaving(false);
-      });
+      }
+    })();
   }
 
   const finalDisplayName = React.useMemo(() => buildProductDisplayName(watchedName, watchedVolume), [watchedName, watchedVolume]);
@@ -473,8 +472,8 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {suppliers ? (
-                        suppliers.map((s) => (
+                      {suppliersList.length > 0 ? (
+                        suppliersList.map((s) => (
                           <SelectItem key={s.id} value={s.id}>
                             {s.name}
                           </SelectItem>

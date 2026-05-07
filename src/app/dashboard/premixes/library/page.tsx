@@ -6,8 +6,7 @@ import { useProducts } from '@/contexts/products-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { HelpIcon } from '@/components/ui/help-icon';
-import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, collection, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Product, ProductCategory } from '@/lib/types';
 import { buildProductDisplayName } from '@/lib/utils';
@@ -22,35 +21,34 @@ export default function PremixesLibraryPage() {
     const [selectedCategory, setSelectedCategory] = React.useState<ProductCategory | undefined>();
     const [selectedSubCategory, setSelectedSubCategory] = React.useState<string | undefined>();
 
-    const firestore = useFirestore();
     const { user } = useUser();
     const barId = user ? `bar_${user.uid}` : null;
     const { toast } = useToast();
 
     const handleAddToMyPremixes = async (premix: Product) => {
-        if (!premix || !firestore || !barId || !user) return;
+        if (!premix || !barId || !user) return;
 
         setIsAdding(premix.id);
-        
-        const collectionPath = collection(firestore, 'products');
-        // Создаем новый документ с уникальным ID
-        const premixRef = doc(collectionPath);
-        const pathPrefix = 'products';
 
         try {
-            // Копируем все поля премикса, но устанавливаем barId и isInLibrary
-            const { id: _, ...premixDataWithoutId } = premix;
-            const newPremixData: any = {
-                ...premixDataWithoutId,
-                id: premixRef.id,
-                barId: barId,
-                isInLibrary: false,
-                createdByUserId: user.uid,
-                updatedAt: serverTimestamp(),
-                createdAt: serverTimestamp(),
-            };
-            
-            await setDoc(premixRef, newPremixData);
+            const token = await user.getIdToken();
+            const { id: _oldId, createdAt: _ca, updatedAt: _ua, ...rest } = premix as any;
+            const res = await fetch('/api/products', {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    product: {
+                        ...rest,
+                        isInLibrary: false,
+                        isActive: premix.isActive ?? true,
+                    },
+                }),
+            });
+            const json = await res.json();
+            if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
             
             if (typeof window !== 'undefined' && barId) {
                 try {
@@ -67,10 +65,6 @@ export default function PremixesLibraryPage() {
                 description: `Премикс "${buildProductDisplayName(premix.name, premix.bottleVolumeMl)}" добавлен в ваши премиксы.` 
             });
         } catch (serverError) {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `${pathPrefix}/${premixRef.id}`,
-                operation: 'create',
-            }));
             toast({
                 variant: 'destructive',
                 title: 'Ошибка добавления',

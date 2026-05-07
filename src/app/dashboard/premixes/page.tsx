@@ -7,8 +7,7 @@ import { HelpIcon } from '@/components/ui/help-icon';
 import { Button } from '@/components/ui/button';
 import { Library } from 'lucide-react';
 import Link from 'next/link';
-import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, updateDoc, collection, serverTimestamp, deleteField } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Product } from '@/lib/types';
 import { buildProductDisplayName } from '@/lib/utils';
@@ -29,7 +28,6 @@ export default function PremixesPage() {
     const [premixToSendToLibrary, setPremixToSendToLibrary] = React.useState<Product | null>(null);
     const [isSendingToLibrary, setIsSendingToLibrary] = React.useState(false);
 
-    const firestore = useFirestore();
     const { user } = useUser();
     const barId = user ? `bar_${user.uid}` : null;
     const { toast } = useToast();
@@ -113,20 +111,22 @@ export default function PremixesPage() {
     }
 
     async function confirmSendToLibrary() {
-        if (!premixToSendToLibrary || !firestore || !barId) return;
+        if (!premixToSendToLibrary || !user || !barId) return;
 
         setIsSendingToLibrary(true);
-        
-        const collectionPath = collection(firestore, 'products');
-        const premixRef = doc(collectionPath, premixToSendToLibrary.id);
-        const pathPrefix = 'products';
 
         try {
-            await updateDoc(premixRef, {
-                barId: deleteField(),
-                isInLibrary: true,
-                updatedAt: serverTimestamp(),
+            const token = await user.getIdToken();
+            const res = await fetch(`/api/products/${premixToSendToLibrary.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'content-type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ sendToLibrary: true }),
             });
+            const json = await res.json();
+            if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
             
             if (typeof window !== 'undefined' && barId) {
                 try {
@@ -144,10 +144,6 @@ export default function PremixesPage() {
             });
             setPremixToSendToLibrary(null);
         } catch (serverError) {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `${pathPrefix}/${premixToSendToLibrary.id}`,
-                operation: 'update',
-            }));
             toast({
                 variant: 'destructive',
                 title: 'Ошибка отправки в библиотеку',

@@ -1,8 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import type { UserProfile } from '@/lib/types';
 import { Loader2, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -31,15 +30,34 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const [isHelpOpen, setIsHelpOpen] = React.useState(false);
+  const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = React.useState(false);
 
-  const userRef = useMemoFirebase(() => 
-    firestore && user ? doc(firestore, 'users', user.uid) : null,
-    [firestore, user]
-  );
-  const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userRef);
+  React.useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      if (!user) return;
+      setIsLoadingProfile(true);
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch('/api/me', {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed to load profile');
+        if (!cancelled) setUserProfile(json.profile ?? null);
+      } finally {
+        if (!cancelled) setIsLoadingProfile(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -65,26 +83,37 @@ export default function ProfilePage() {
   }, [userProfile, reset]);
 
   const onSubmit: SubmitHandler<ProfileFormValues> = async (data) => {
-    if (!userRef) return;
+    if (!user) return;
     
     try {
-      await updateDoc(userRef, {
+      const token = await user.getIdToken();
+      const res = await fetch('/api/me', {
+        method: 'PATCH',
+        headers: {
+          'content-type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
           displayName: data.displayName,
           city: data.city,
           establishment: data.establishment,
           phone: data.phone,
           socialLink: data.socialLink,
+        }),
       });
+      const json = await res.json();
+      if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed to update profile');
+      setUserProfile(json.profile ?? userProfile);
       toast({
         title: 'Профиль обновлен',
         description: 'Ваша информация была успешно сохранена.',
       });
     } catch (error) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: userRef.path,
-          operation: 'update',
-          requestResourceData: data,
-      }));
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Не удалось сохранить профиль. Попробуйте еще раз.',
+      });
     }
   };
 

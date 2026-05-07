@@ -26,8 +26,7 @@ import { Switch } from '@/components/ui/switch';
 import type { Product, PremixIngredient } from '@/lib/types';
 import { buildProductDisplayName, extractVolume, translateCategory, productCategories } from '@/lib/utils';
 import { Separator } from '../ui/separator';
-import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Loader2, X, Plus, Search, Check, ChevronDown } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -58,7 +57,6 @@ interface PremixFormProps {
 }
 
 export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
-  const firestore = useFirestore();
   const { user } = useUser();
   const barId = user ? `bar_${user.uid}` : null;
   const { toast } = useToast();
@@ -279,7 +277,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
   }, [ingredients]);
 
   async function onSubmit(data: PremixFormValues) {
-    if (!firestore || !user) {
+    if (!user) {
       toast({
         title: 'Ошибка',
         description: 'Не удалось определить пользователя',
@@ -308,10 +306,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
     }
     
     setIsSaving(true);
-    
-    // Используем глобальную коллекцию products для примиксов
-    const collectionPath = collection(firestore, 'products');
-    
+
     // Use the base name for saving, volume is a separate field.
     const { baseName } = extractVolume(data.name);
 
@@ -333,8 +328,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         premixIngredients: finalIngredients,
         fullBottleWeightG: data.fullBottleWeightG || null,
         emptyBottleWeightG: data.emptyBottleWeightG || null,
-        updatedAt: serverTimestamp(),
-        createdAt: premix?.createdAt || serverTimestamp(),
         // Определяем, создаем ли премикс в библиотеке (только для новых премиксов)
         isInLibrary: premix ? premix.isInLibrary : createInLibrary,
         createdByUserId: premix ? premix.createdByUserId : (user?.uid || undefined),
@@ -356,89 +349,50 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
       premixData.id = premix.id;
     }
 
-    const pathPrefix = 'products';
-    
-    // Использовать setDoc для создания и обновления
-    if (premix) {
-      // Обновление существующего примикса
-      const premixRef = doc(collectionPath, premix.id);
-      
-      setDoc(premixRef, premixData, { merge: true })
-        .then(() => {
-          toast({ 
-            title: "Премикс обновлен",
-            description: `Премикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно обновлен.`
+    (async () => {
+      try {
+        const token = await user.getIdToken();
+        if (premix) {
+          const res = await fetch(`/api/products/${premix.id}`, {
+            method: 'PATCH',
+            headers: {
+              'content-type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ product: premixData }),
           });
-          refresh();
-          setTimeout(() => {
-            onFormSubmit();
-          }, 100);
-        })
-        .catch((serverError: any) => {
-          const errorMessage = serverError?.message || 'Неизвестная ошибка';
-          const errorCode = serverError?.code || 'unknown';
-          
+          const json = await res.json();
+          if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
           toast({
-            title: 'Ошибка сохранения',
-            description: `Не удалось обновить премикс: ${errorMessage} (код: ${errorCode})`,
-            variant: 'destructive',
+            title: 'Премикс обновлен',
+            description: `Премикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно обновлен.`,
           });
-          
-          if (serverError?.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-                path: `${pathPrefix}/${premixRef.id}`, 
-                operation: 'update',
-                requestResourceData: premixData
-            }));
-          }
-        })
-        .finally(() => {
-          setIsSaving(false);
-        });
-    } else {
-      // Создание нового примикса
-      const premixRef = doc(collectionPath);
-      const premixDataWithId = {
-        ...premixData,
-        id: premixRef.id,
-      };
-      
-      setDoc(premixRef, premixDataWithId, { merge: true })
-        .then(() => {
-          const shouldCreateInLibraryForToast = createInLibrary;
-          toast({ 
-            title: "Премикс создан",
-            description: shouldCreateInLibraryForToast 
+        } else {
+          const res = await fetch('/api/products', {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ product: premixData }),
+          });
+          const json = await res.json();
+          if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+          toast({
+            title: 'Премикс создан',
+            description: createInLibrary
               ? `Премикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" создан и доступен всем пользователям в библиотеке.`
-              : `Премикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно создан.`
+              : `Премикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно создан.`,
           });
-          refresh();
-          setTimeout(() => {
-            onFormSubmit();
-          }, 100);
-        })
-        .catch((serverError: any) => {
-          const errorMessage = serverError?.message || 'Неизвестная ошибка';
-          const errorCode = serverError?.code || 'unknown';
-          
-          toast({
-            title: 'Ошибка сохранения',
-            description: `Не удалось создать премикс: ${errorMessage} (код: ${errorCode})`,
-            variant: 'destructive',
-          });
-          
-          if (serverError?.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-                path: premixRef.path, 
-                operation: 'create',
-                requestResourceData: premixDataWithId
-            }));
-          }
-        })
-        .finally(() => {
-          setIsSaving(false);
-        });
-    }
+        }
+        refresh();
+        setTimeout(() => onFormSubmit(), 100);
+      } catch {
+        toast({ variant: 'destructive', title: 'Ошибка сохранения', description: 'Не удалось сохранить премикс.' });
+      } finally {
+        setIsSaving(false);
+      }
+    })();
   }
   
   const finalDisplayName = React.useMemo(() => {

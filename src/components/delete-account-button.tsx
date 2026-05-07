@@ -14,11 +14,10 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Trash2 } from 'lucide-react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 
 export function DeleteAccountButton() {
@@ -26,7 +25,6 @@ export function DeleteAccountButton() {
   const [confirmText, setConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -42,23 +40,13 @@ export function DeleteAccountButton() {
 
     setIsDeleting(true);
     try {
-      if (firestore && auth?.currentUser) {
-        // Создать документ запроса на удаление
-        await addDoc(collection(firestore, 'deletion_requests'), {
-          userId: auth.currentUser.uid,
-          requestedAt: serverTimestamp(),
-          status: 'pending',
-        });
-
-        toast({
-          title: 'Запрос отправлен',
-          description: 'Ваш запрос на удаление аккаунта отправлен. Мы обработаем его в течение 30 дней.',
-        });
-
-        // Выйти из аккаунта
-        await signOut(auth);
-        router.push('/');
-      }
+      if (!auth?.currentUser) throw new Error('Пользователь не найден');
+      // TODO: implement Postgres-backed deletion request endpoint.
+      toast({
+        variant: 'destructive',
+        title: 'Функция временно недоступна',
+        description: 'Удаление аккаунта сейчас в процессе миграции на Postgres. Напишите в поддержку для удаления.',
+      });
     } catch (error) {
       console.error('Failed to create deletion request:', error);
       toast({

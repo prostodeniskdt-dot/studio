@@ -31,8 +31,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import type { Supplier } from '@/lib/types';
 import { SupplierForm } from './supplier-form';
-import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent } from '@/components/ui/card';
@@ -48,7 +47,7 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
   const [supplierToDelete, setSupplierToDelete] = React.useState<Supplier | null>(null);
   const isMobile = useIsMobile();
 
-  const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
 
   const handleOpenSheet = (supplier?: Supplier) => {
@@ -66,19 +65,23 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
   };
 
   const confirmDelete = () => {
-    if (!supplierToDelete || !firestore) return;
-    const supplierRef = doc(firestore, 'bars', barId, 'suppliers', supplierToDelete.id);
-    
-    deleteDoc(supplierRef)
-      .then(() => {
+    if (!supplierToDelete || !user) return;
+    (async () => {
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(`/api/suppliers/${supplierToDelete.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
         toast({ title: "Поставщик удален." });
-      })
-      .catch((error: unknown) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: supplierRef.path, operation: 'delete' }));
-      })
-      .finally(() => {
+      } catch {
+        toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось удалить поставщика.' });
+      } finally {
         setSupplierToDelete(null);
-      });
+      }
+    })();
   };
 
   const columns: ColumnDef<Supplier>[] = [

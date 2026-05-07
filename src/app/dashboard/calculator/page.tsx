@@ -14,11 +14,9 @@ import { HelpIcon } from '@/components/ui/help-icon';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { InventorySession, Product, ProductCategory, InventoryLine } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore } from '@/firebase';
-import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { useProducts } from '@/contexts/products-context';
 import { translateCategory, productCategories, productSubCategories, translateSubCategory, dedupeProductsByName, buildProductDisplayName } from '@/lib/utils';
-import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import { ProductSearch } from '@/components/products/product-search';
 import { expandPremixToIngredients } from '@/lib/premix-utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -27,7 +25,6 @@ import { calculateVolumeMl } from '@/lib/calculator';
 export default function UnifiedCalculatorPage() {
   const { toast } = useToast();
   const { user } = useUser();
-  const firestore = useFirestore();
   const barId = user ? `bar_${user.uid}` : null;
 
   // Использовать контекст продуктов вместо прямой загрузки
@@ -168,7 +165,7 @@ export default function UnifiedCalculatorPage() {
   };
 
   const handleSendToInventory = async (volume: number | null) => {
-    if (volume === null || !selectedProductId || !barId || !firestore || !selectedProduct) {
+    if (volume === null || !selectedProductId || !barId || !user || !selectedProduct) {
       toast({
         variant: "destructive",
         title: "Ошибка",
@@ -180,15 +177,17 @@ export default function UnifiedCalculatorPage() {
     setIsSending(true);
     
     try {
-        const sessionsQuery = query(
-            collection(firestore, 'bars', barId, 'inventorySessions'),
-            where('status', '==', 'in_progress'),
-            limit(1)
-        );
+        const token = await user.getIdToken();
+        const sessionsRes = await fetch('/api/sessions', {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        });
+        const sessionsJson = await sessionsRes.json();
+        if (!sessionsRes.ok || sessionsJson?.ok === false) throw new Error(sessionsJson?.error || 'Failed');
+        const sessions = (sessionsJson.sessions ?? []) as InventorySession[];
+        const activeSession = sessions.find((s) => s.status === 'in_progress');
 
-        const sessionsSnapshot = await getDocs(sessionsQuery);
-
-        if (sessionsSnapshot.empty) {
+        if (!activeSession) {
             toast({
                 variant: "destructive",
                 title: "Нет активной инвентаризации",
@@ -197,105 +196,90 @@ export default function UnifiedCalculatorPage() {
             setIsSending(false);
             return;
         }
-
-        const activeSessionDoc = sessionsSnapshot.docs[0];
-        const activeSession = activeSessionDoc.data() as InventorySession;
-        const activeSessionId = activeSessionDoc.id;
-        const linesColRef = collection(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines');
         
         // Если это примикс и включено разложение на ингредиенты
         if (isPremix && shouldExpandPremix && selectedProduct.premixIngredients && selectedProduct.premixIngredients.length > 0) {
-          const batch = writeBatch(firestore);
-          
           // Разложить примикс на ингредиенты
           const ingredients = expandPremixToIngredients(selectedProduct, volume);
-          
-          // Для каждого ингредиента найти или создать линию
-          for (const ingredient of ingredients) {
-            const linesQuery = query(
-              linesColRef, 
-              where('productId', '==', ingredient.productId), 
-              limit(1)
-            );
-            const linesSnapshot = await getDocs(linesQuery);
-            
-            if (linesSnapshot.empty) {
-              // Создать новую линию
-              const newLineRef = doc(linesColRef);
-              const newLineData: InventoryLine = {
-                id: newLineRef.id,
-                productId: ingredient.productId,
-                inventorySessionId: activeSessionId,
-                startStock: 0,
-                purchases: 0,
-                sales: 0,
-                endStock: ingredient.volumeMl, // Новая линия - установить объем
-                theoreticalEndStock: 0,
-                differenceVolume: 0,
-                differenceMoney: 0,
-                differencePercent: 0,
-              };
-              batch.set(newLineRef, newLineData);
-            } else {
-              // Обновить существующую линию - СУММИРОВАТЬ с существующим остатком
-              const lineDoc = linesSnapshot.docs[0];
-              const lineRef = doc(linesColRef, lineDoc.id);
-              const existingLine = lineDoc.data() as InventoryLine;
-              const existingEndStock = existingLine.endStock || 0;
-              const newEndStock = sendMode === 'add' ? existingEndStock + ingredient.volumeMl : ingredient.volumeMl;
-              batch.update(lineRef, { endStock: newEndStock });
-            }
-          }
-          
-          await batch.commit();
+          const detailRes = await fetch(`/api/sessions/${activeSession.id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: 'no-store',
+          });
+          const detailJson = await detailRes.json();
+          if (!detailRes.ok || detailJson?.ok === false) throw new Error(detailJson?.error || 'Failed');
+          const existingLines = (detailJson.lines ?? []) as InventoryLine[];
+
+          const payloadLines = ingredients.map((ing) => {
+            const existing = existingLines.find((l) => l.productId === ing.productId);
+            const existingEndStock = existing?.endStock ?? 0;
+            const newEndStock = sendMode === 'add' ? existingEndStock + ing.volumeMl : ing.volumeMl;
+            return {
+              id: existing?.id ?? `calc_${activeSession.id}_${ing.productId}`,
+              productId: ing.productId,
+              startStock: existing?.startStock ?? 0,
+              purchases: existing?.purchases ?? 0,
+              sales: existing?.sales ?? 0,
+              endStock: newEndStock,
+              theoreticalEndStock: existing?.theoreticalEndStock ?? 0,
+              differenceVolume: existing?.differenceVolume ?? 0,
+              differenceMoney: existing?.differenceMoney ?? 0,
+              differencePercent: (existing as any)?.differencePercent ?? 0,
+            };
+          });
+
+          const patchRes = await fetch(`/api/sessions/${activeSession.id}`, {
+            method: 'PATCH',
+            headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ upsertLines: payloadLines }),
+          });
+          const patchJson = await patchRes.json();
+          if (!patchRes.ok || patchJson?.ok === false) throw new Error(patchJson?.error || 'Failed');
+
           toast({
             title: "Премикс разложен на ингредиенты",
             description: `Создано/обновлено ${ingredients.length} ингредиентов в инвентаризации. Режим: ${sendMode === 'add' ? 'прибавить' : 'установить'}.`,
           });
         } else {
           // Обычная логика (как раньше) - создать/обновить одну линию для продукта/примикса
-          const linesQuery = query(linesColRef, where('productId', '==', selectedProductId), limit(1));
-          const linesSnapshot = await getDocs(linesQuery);
+          const detailRes = await fetch(`/api/sessions/${activeSession.id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: 'no-store',
+          });
+          const detailJson = await detailRes.json();
+          if (!detailRes.ok || detailJson?.ok === false) throw new Error(detailJson?.error || 'Failed');
+          const existingLines = (detailJson.lines ?? []) as InventoryLine[];
+          const existing = existingLines.find((l) => l.productId === selectedProductId);
+          const existingEndStock = existing?.endStock ?? 0;
+          const newEndStock = sendMode === 'add' ? existingEndStock + volume : volume;
 
-          if (linesSnapshot.empty) {
-            const batch = writeBatch(firestore);
-            const newLineRef = doc(linesColRef);
-            const newLineData: InventoryLine = {
-              id: newLineRef.id,
-              productId: selectedProductId,
-              inventorySessionId: activeSessionId,
-              startStock: 0,
-              purchases: 0,
-              sales: 0,
-              endStock: volume,
-              theoreticalEndStock: 0,
-              differenceVolume: 0,
-              differenceMoney: 0,
-              differencePercent: 0,
-            };
-            batch.set(newLineRef, newLineData);
-            
-            await batch.commit();
-            toast({
-              title: "Данные отправлены",
-              description: `Остаток для продукта ${buildProductDisplayName(selectedProduct.name, selectedProduct.bottleVolumeMl)} (${volume} мл) добавлен в текущую инвентаризацию.`,
-            });
-          } else {
-            const lineDoc = linesSnapshot.docs[0];
-            const existingLine = lineDoc.data() as InventoryLine;
-            const lineRef = doc(firestore, 'bars', barId, 'inventorySessions', activeSessionId, 'lines', lineDoc.id);
-            const existingEndStock = existingLine.endStock || 0;
-            const newEndStock = sendMode === 'add' ? existingEndStock + volume : volume;
-            const updateData = { endStock: newEndStock };
-            await updateDoc(lineRef, updateData);
-            toast({
-              title: "Данные отправлены",
-              description:
-                sendMode === 'add'
-                  ? `Остаток для продукта ${buildProductDisplayName(selectedProduct.name, selectedProduct.bottleVolumeMl)} (${volume} мл) прибавлен к существующему остатку (${existingEndStock} мл). Итого: ${newEndStock} мл.`
-                  : `Остаток для продукта ${buildProductDisplayName(selectedProduct.name, selectedProduct.bottleVolumeMl)} установлен в ${newEndStock} мл (было ${existingEndStock} мл).`,
-            });
-          }
+          const payloadLine = {
+            id: existing?.id ?? `calc_${activeSession.id}_${selectedProductId}`,
+            productId: selectedProductId,
+            startStock: existing?.startStock ?? 0,
+            purchases: existing?.purchases ?? 0,
+            sales: existing?.sales ?? 0,
+            endStock: newEndStock,
+            theoreticalEndStock: existing?.theoreticalEndStock ?? 0,
+            differenceVolume: existing?.differenceVolume ?? 0,
+            differenceMoney: existing?.differenceMoney ?? 0,
+            differencePercent: (existing as any)?.differencePercent ?? 0,
+          };
+
+          const patchRes = await fetch(`/api/sessions/${activeSession.id}`, {
+            method: 'PATCH',
+            headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ upsertLines: [payloadLine] }),
+          });
+          const patchJson = await patchRes.json();
+          if (!patchRes.ok || patchJson?.ok === false) throw new Error(patchJson?.error || 'Failed');
+
+          toast({
+            title: "Данные отправлены",
+            description:
+              sendMode === 'add'
+                ? `Остаток для продукта ${buildProductDisplayName(selectedProduct.name, selectedProduct.bottleVolumeMl)} (${volume} мл) прибавлен к существующему остатку (${existingEndStock} мл). Итого: ${newEndStock} мл.`
+                : `Остаток для продукта ${buildProductDisplayName(selectedProduct.name, selectedProduct.bottleVolumeMl)} установлен в ${newEndStock} мл (было ${existingEndStock} мл).`,
+          });
         }
     } catch (serverError: unknown) {
         const errorMessage = serverError instanceof Error ? serverError.message : 'Не удалось отправить данные в инвентаризацию';
@@ -304,9 +288,6 @@ export default function UnifiedCalculatorPage() {
             title: "Ошибка",
             description: errorMessage,
         });
-        const operation = 'write';
-        const permissionError = new FirestorePermissionError({ path: `bars/${barId}/inventorySessions`, operation });
-        errorEmitter.emit('permission-error', permissionError);
     } finally {
         setIsSending(false);
     }

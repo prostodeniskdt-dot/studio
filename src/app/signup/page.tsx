@@ -8,15 +8,13 @@ import { AppLogo } from "@/components/app-logo";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth, useUser, useFirestore } from "@/firebase";
+import { useAuth, useUser } from "@/firebase";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { LEGAL_DOCUMENTS } from "@/lib/legal-documents";
-import { logConsent } from "@/lib/consent-logger";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { Footer } from "@/components/footer";
 
 const signupSchema = z.object({
@@ -36,7 +34,6 @@ type SignupFormInputs = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
   const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
@@ -89,30 +86,7 @@ export default function SignupPage() {
 
       await updateProfile(userCredential.user, profileData);
 
-      // Логирование согласия
-      if (firestore) {
-        const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : undefined;
-        
-        // Логируем согласие в коллекцию consent_logs
-        await logConsent(
-          firestore,
-          userCredential.user.uid,
-          'terms_and_privacy',
-          true,
-          LEGAL_DOCUMENTS.termsOfService.version
-        );
-
-        // Сохраняем согласие в профиле пользователя
-        const userRef = doc(firestore, 'users', userCredential.user.uid);
-        await updateDoc(userRef, {
-          'consents.termsAndPrivacy': {
-            accepted: true,
-            version: LEGAL_DOCUMENTS.termsOfService.version,
-            timestamp: serverTimestamp(),
-            userAgent,
-          }
-        });
-      }
+      // Consent logging moved to Postgres bootstrap/profile flow.
       
     } catch(e: any) {
         if (typeof window !== 'undefined' && Object.keys(detailsToStore).length > 0) {

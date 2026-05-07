@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { cn, translateStatus } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MoreVertical, Trash2, Loader2, Calendar, Circle, Download, BarChart3 } from "lucide-react";
-import { Timestamp } from "firebase/firestore";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   DropdownMenu,
@@ -26,11 +25,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import * as React from "react";
-import { useFirestore } from "@/firebase";
+import { useUser } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { deleteSessionWithLinesClient } from "@/lib/firestore-utils";
 import { Progress } from "@/components/ui/progress";
-import { collection, getDocs } from "firebase/firestore";
 import type { InventoryLine } from "@/lib/types";
 import { useProducts } from "@/contexts/products-context";
 import { buildProductDisplayName } from "@/lib/utils";
@@ -47,7 +44,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [isExporting, setIsExporting] = React.useState<string | null>(null);
   const itemsPerPage = 9; // 3x3 grid
-  const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
   const { products: allProducts } = useProducts();
 
@@ -75,19 +72,19 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     }
   };
   
-  const formatDate = (timestamp: Timestamp | Date | undefined) => {
+  const formatDate = (timestamp: any) => {
     if (!timestamp) return 'Неверная дата';
-    if (timestamp instanceof Timestamp) {
-      return timestamp.toDate().toLocaleDateString('ru-RU');
-    }
     if (timestamp instanceof Date) {
       return timestamp.toLocaleDateString('ru-RU');
+    }
+    if (typeof timestamp === 'string') {
+      return new Date(timestamp).toLocaleDateString('ru-RU');
     }
     return 'Неверная дата';
   }
 
   const confirmDelete = async () => {
-    if (!sessionToDeleteId || !barId || !firestore) return;
+    if (!sessionToDeleteId || !barId || !user) return;
     
     const idToDelete = sessionToDeleteId;
     
@@ -95,7 +92,15 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     setDeleteProgress(0);
 
     try {
-        await deleteSessionWithLinesClient(firestore, barId, idToDelete, setDeleteProgress);
+        setDeleteProgress(25);
+        const token = await user.getIdToken();
+        const res = await fetch(`/api/sessions/${idToDelete}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+        setDeleteProgress(100);
         toast({ title: "Инвентаризация удалена." });
     } catch (e: unknown) {
         const errorMessage = e instanceof Error ? e.message : "Произошла неизвестная ошибка.";
@@ -112,7 +117,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
   };
 
   const handleExportCSV = async (session: InventorySession) => {
-    if (!firestore || !barId || !allProducts) {
+    if (!user || !barId || !allProducts) {
       toast({
         variant: "destructive",
         title: "Ошибка",
@@ -124,10 +129,14 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     setIsExporting(session.id);
 
     try {
-      // Загрузить линии инвентаризации
-      const linesRef = collection(firestore, 'bars', barId, 'inventorySessions', session.id, 'lines');
-      const linesSnapshot = await getDocs(linesRef);
-      const lines = linesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryLine));
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/sessions/${session.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      });
+      const json = await res.json();
+      if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+      const lines = (json.lines ?? []) as InventoryLine[];
 
       if (lines.length === 0) {
         toast({
@@ -170,9 +179,10 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
       const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvWithBOM);
       const link = document.createElement("a");
       link.setAttribute("href", dataUri);
-      const sessionDate = session.createdAt instanceof Timestamp 
-        ? session.createdAt.toDate().toLocaleDateString('ru-RU').replace(/\./g, '-')
-        : new Date().toLocaleDateString('ru-RU').replace(/\./g, '-');
+      const sessionDate =
+        typeof (session as any).createdAt === 'string'
+          ? new Date((session as any).createdAt).toLocaleDateString('ru-RU').replace(/\./g, '-')
+          : new Date().toLocaleDateString('ru-RU').replace(/\./g, '-');
       link.setAttribute("download", `inventory_${sessionDate}_${session.id}.csv`);
       document.body.appendChild(link);
       link.click();

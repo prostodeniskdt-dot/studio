@@ -1,8 +1,7 @@
 'use client';
 import * as React from 'react';
-import { useParams, notFound, useRouter } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
+import { useParams, notFound } from 'next/navigation';
+import { useUser } from '@/firebase';
 import type { PurchaseOrder, PurchaseOrderLine, Product, Supplier } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,34 +17,39 @@ export default function PurchaseOrderPage() {
     const params = useParams();
     const id = params.id as string;
     const { user } = useUser();
-    const firestore = useFirestore();
-    const router = useRouter();
 
     const barId = user ? `bar_${user.uid}` : null;
-
-    const orderRef = useMemoFirebase(() =>
-        firestore && barId ? doc(firestore, 'bars', barId, 'purchaseOrders', id) : null,
-        [firestore, barId, id]
-    );
-    const { data: order, isLoading: isLoadingOrder } = useDoc<PurchaseOrder>(orderRef);
-
-    const supplierRef = useMemoFirebase(() =>
-        firestore && barId && order ? doc(firestore, 'bars', barId, 'suppliers', order.supplierId) : null,
-        [firestore, barId, order]
-    );
-    const { data: supplier, isLoading: isLoadingSupplier } = useDoc<Supplier>(supplierRef);
-    
-    const linesRef = useMemoFirebase(() =>
-        firestore && barId ? collection(firestore, 'bars', barId, 'purchaseOrders', id, 'lines') : null,
-        [firestore, barId, id]
-    );
-    const { data: lines, isLoading: isLoadingLines } = useCollection<PurchaseOrderLine>(linesRef);
+    const [order, setOrder] = React.useState<any | null>(null);
+    const [isLoadingOrder, setIsLoadingOrder] = React.useState(false);
 
     // Использовать контекст продуктов вместо прямой загрузки
     const { products: allProducts, isLoading: isLoadingProducts } = useProducts();
 
+    React.useEffect(() => {
+      let cancelled = false;
+      async function load() {
+        if (!user) return;
+        setIsLoadingOrder(true);
+        try {
+          const token = await user.getIdToken();
+          const res = await fetch(`/api/purchase-orders/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: 'no-store',
+          });
+          const json = await res.json();
+          if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+          if (!cancelled) setOrder(json.order ?? null);
+        } finally {
+          if (!cancelled) setIsLoadingOrder(false);
+        }
+      }
+      load();
+      return () => {
+        cancelled = true;
+      };
+    }, [user, id]);
 
-    const isLoading = isLoadingOrder || isLoadingSupplier || isLoadingLines || isLoadingProducts;
+    const isLoading = isLoadingOrder || isLoadingProducts;
 
     if (isLoading) {
         return (
@@ -61,6 +65,9 @@ export default function PurchaseOrderPage() {
         }
         return null;
     }
+
+    const supplier = order.supplier as Supplier | undefined;
+    const lines = (order.lines ?? []) as PurchaseOrderLine[];
 
     return (
         <>
@@ -79,7 +86,7 @@ export default function PurchaseOrderPage() {
                             <CardTitle className="text-2xl">Заказ №{order.id.substring(0, 6)}</CardTitle>
                             <CardDescription>
                                 Поставщик: <span className="font-semibold">{supplier?.name || 'Загрузка...'}</span> | 
-                                Дата заказа: {order.orderDate.toDate().toLocaleDateString('ru-RU')}
+                                Дата заказа: {new Date(order.orderDate).toLocaleDateString('ru-RU')}
                             </CardDescription>
                         </div>
                         <Badge variant="outline" className="text-base">

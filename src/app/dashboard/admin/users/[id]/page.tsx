@@ -1,8 +1,7 @@
 'use client';
 import * as React from 'react';
 import { useParams, notFound } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import type { UserProfile, Supplier } from '@/lib/types';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -16,21 +15,43 @@ export default function AdminUserDetailsPage() {
   const params = useParams();
   const userId = params.id as string;
   const { user: adminUser } = useUser();
-  const firestore = useFirestore();
-
-  const userProfileRef = useMemoFirebase(() => 
-    firestore && userId ? doc(firestore, 'users', userId) : null,
-    [firestore, userId]
-  );
-  const { data: userProfile, isLoading: isLoadingProfile } = useDoc<UserProfile>(userProfileRef);
+  const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null);
+  const [suppliers, setSuppliers] = React.useState<Supplier[] | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = React.useState(false);
+  const [isLoadingSuppliers, setIsLoadingSuppliers] = React.useState(false);
 
   const barId = userId ? `bar_${userId}` : null;
-  
-  const suppliersQuery = useMemoFirebase(() =>
-    firestore && barId ? query(collection(firestore, 'bars', barId, 'suppliers')) : null,
-    [firestore, barId]
-  );
-  const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      if (!adminUser) return;
+      setIsLoadingProfile(true);
+      setIsLoadingSuppliers(true);
+      try {
+        const token = await adminUser.getIdToken();
+        const res = await fetch(`/api/admin/users/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+        if (!cancelled) {
+          setUserProfile(json.user ?? null);
+          setSuppliers(json.suppliers ?? []);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingProfile(false);
+          setIsLoadingSuppliers(false);
+        }
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [adminUser, userId]);
 
 
   const isLoading = isLoadingProfile || isLoadingSuppliers;

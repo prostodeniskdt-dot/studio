@@ -1,0 +1,263 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  manager
+  bartender
+}
+
+enum ProductCategory {
+  Whiskey
+  Rum
+  Vodka
+  Gin
+  Tequila
+  Liqueur
+  Wine
+  Beer
+  Syrup
+  Brandy
+  Vermouth
+  Absinthe
+  Bitters
+  Premix
+  Other
+}
+
+enum InventorySessionStatus {
+  draft
+  in_progress
+  completed
+}
+
+enum PurchaseOrderStatus {
+  draft
+  ordered
+  partially_received
+  received
+  cancelled
+}
+
+model UserProfile {
+  id          String   @id
+  displayName String
+  email       String   @unique
+  role        UserRole
+  city        String?
+  establishment String?
+  phone       String?
+  socialLink  String?
+  isBanned    Boolean  @default(false)
+
+  /// Stores consent objects (terms/cookies) as-is.
+  consents    Json?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  barsOwned   Bar[]    @relation("BarsOwned")
+}
+
+model Bar {
+  id          String   @id @default(cuid())
+  name        String
+  location    String?
+
+  ownerUserId String
+  owner       UserProfile @relation("BarsOwned", fields: [ownerUserId], references: [id], onDelete: Restrict)
+
+  products          Product[]
+  suppliers         Supplier[]
+  purchaseOrders    PurchaseOrder[]
+  inventorySessions InventorySession[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ownerUserId])
+}
+
+model Product {
+  id        String @id @default(cuid())
+  name      String
+  category  ProductCategory
+  subCategory String?
+  imageUrl  String?
+
+  // Economics
+  costPerBottle          Float?
+  sellingPricePerPortion Float?
+  portionVolumeMl        Float?
+
+  // Bottle profile
+  bottleVolumeMl      Float
+  fullBottleWeightG   Float?
+  emptyBottleWeightG  Float?
+
+  // Purchases
+  reorderPointMl      Float?
+  reorderQuantity     Float?
+  defaultSupplierId   String?
+  defaultSupplier     Supplier? @relation(fields: [defaultSupplierId], references: [id], onDelete: SetNull)
+
+  // Premixes
+  isPremix            Boolean @default(false)
+  costCalculationMode String? // 'auto' | 'manual' (kept string for flexibility)
+  premixIngredients   PremixIngredient[] @relation("PremixIngredients")
+  usedAsIngredientIn  PremixIngredient[] @relation("IngredientProduct")
+
+  // Library / ownership
+  isInLibrary     Boolean @default(false)
+  createdByUserId String?
+
+  // Bar-scoped products (null for library)
+  barId String?
+  bar   Bar? @relation(fields: [barId], references: [id], onDelete: Cascade)
+
+  isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchaseOrderLines PurchaseOrderLine[]
+  inventoryLines    InventoryLine[]
+
+  @@index([barId])
+  @@index([defaultSupplierId])
+  @@index([category])
+}
+
+model PremixIngredient {
+  id String @id @default(cuid())
+
+  premixId String
+  premix   Product @relation("PremixIngredients", fields: [premixId], references: [id], onDelete: Cascade)
+
+  ingredientProductId String
+  ingredientProduct   Product @relation("IngredientProduct", fields: [ingredientProductId], references: [id], onDelete: Restrict)
+
+  volumeMl Float
+  ratio    Float
+
+  @@index([premixId])
+  @@index([ingredientProductId])
+  @@unique([premixId, ingredientProductId])
+}
+
+model Supplier {
+  id     String @id @default(cuid())
+  barId  String
+  bar    Bar    @relation(fields: [barId], references: [id], onDelete: Cascade)
+
+  name          String
+  contactPerson String?
+  email         String?
+  phone         String?
+  address       String?
+  notes         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  productsAsDefault Product[] @relation
+  purchaseOrders    PurchaseOrder[]
+
+  @@index([barId])
+}
+
+model PurchaseOrder {
+  id        String @id @default(cuid())
+  barId     String
+  bar       Bar    @relation(fields: [barId], references: [id], onDelete: Cascade)
+
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+
+  status     PurchaseOrderStatus @default(draft)
+  orderDate  DateTime? @default(now())
+  expectedDeliveryDate DateTime?
+
+  createdByUserId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lines     PurchaseOrderLine[]
+  totalAmount Float?
+
+  @@index([barId])
+  @@index([supplierId])
+  @@index([createdByUserId])
+}
+
+model PurchaseOrderLine {
+  id             String @id @default(cuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  quantity        Int
+  costPerItem     Float
+  receivedQuantity Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([purchaseOrderId])
+  @@index([productId])
+}
+
+model InventorySession {
+  id     String @id @default(cuid())
+  barId  String
+  bar    Bar    @relation(fields: [barId], references: [id], onDelete: Cascade)
+
+  name   String
+  status InventorySessionStatus @default(draft)
+
+  createdByUserId String
+  createdAt DateTime @default(now())
+  closedAt  DateTime?
+  updatedAt DateTime @updatedAt
+
+  lines InventoryLine[]
+
+  @@index([barId])
+  @@index([createdByUserId])
+}
+
+model InventoryLine {
+  id                String @id @default(cuid())
+  inventorySessionId String
+  inventorySession   InventorySession @relation(fields: [inventorySessionId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  // Volumes in ml
+  startStock Float
+  purchases  Float
+  endStock   Float
+
+  // Portions sold
+  sales      Float
+
+  theoreticalEndStock Float
+  differenceVolume    Float
+  differenceMoney     Float
+  differencePercent   Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([inventorySessionId])
+  @@index([productId])
+}
+

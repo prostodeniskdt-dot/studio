@@ -31,8 +31,7 @@ import { format } from "date-fns"
 import { ru } from "date-fns/locale"
 
 import type { PurchaseOrder, PurchaseOrderStatus, Supplier } from '@/lib/types';
-import { doc, collection, Timestamp, setDoc, serverTimestamp } from 'firebase/firestore';
-import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useUser } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -63,7 +62,6 @@ interface PurchaseOrderFormProps {
 }
 
 export function PurchaseOrderForm({ barId, order, suppliers, onFormSubmit }: PurchaseOrderFormProps) {
-  const firestore = useFirestore();
   const { user } = useUser();
   const router = useRouter();
   const { toast } = useToast();
@@ -73,7 +71,7 @@ export function PurchaseOrderForm({ barId, order, suppliers, onFormSubmit }: Pur
     resolver: zodResolver(formSchema),
     defaultValues: order ? {
       supplierId: order.supplierId,
-      orderDate: order.orderDate.toDate(),
+      orderDate: new Date((order as any).orderDate),
       status: order.status,
     } : {
       supplierId: '',
@@ -83,37 +81,58 @@ export function PurchaseOrderForm({ barId, order, suppliers, onFormSubmit }: Pur
   });
 
   function onSubmit(data: PurchaseOrderFormValues) {
-    if (!firestore || !user) return;
+    if (!user) return;
     setIsSaving(true);
     
-    const orderRef = order ? doc(firestore, 'bars', barId, 'purchaseOrders', order.id) : doc(collection(firestore, 'bars', barId, 'purchaseOrders'));
-    const orderData = {
-      ...data,
-      id: orderRef.id,
-      barId,
-      createdByUserId: user.uid,
-      orderDate: Timestamp.fromDate(data.orderDate),
-      createdAt: order?.createdAt || serverTimestamp(),
-    };
-
-    setDoc(orderRef, orderData, { merge: true })
-      .then(() => {
-        toast({ title: order ? 'Заказ обновлен' : 'Заказ создан' });
-        onFormSubmit();
-        if (!order) {
-            router.push(`/dashboard/purchase-orders/${orderRef.id}`);
+    (async () => {
+      try {
+        const token = await user.getIdToken();
+        if (order) {
+          const res = await fetch(`/api/purchase-orders/${order.id}`, {
+            method: 'PATCH',
+            headers: {
+              'content-type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              order: {
+                supplierId: data.supplierId,
+                status: data.status,
+                orderDate: data.orderDate.toISOString(),
+              },
+            }),
+          });
+          const json = await res.json();
+          if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed to update');
+          toast({ title: 'Заказ обновлен' });
+          onFormSubmit();
+        } else {
+          const res = await fetch('/api/purchase-orders', {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              order: {
+                supplierId: data.supplierId,
+                status: data.status,
+                orderDate: data.orderDate.toISOString(),
+              },
+            }),
+          });
+          const json = await res.json();
+          if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed to create');
+          toast({ title: 'Заказ создан' });
+          onFormSubmit();
+          router.push(`/dashboard/purchase-orders/${json.order.id}`);
         }
-      })
-      .catch((serverError) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-            path: `bars/${barId}/purchaseOrders/${orderRef.id}`, 
-            operation: order ? 'update' : 'create',
-            requestResourceData: orderData,
-        }));
-      })
-      .finally(() => {
+      } catch {
+        toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось сохранить заказ.' });
+      } finally {
         setIsSaving(false);
-      });
+      }
+    })();
   }
 
   return (

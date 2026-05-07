@@ -42,10 +42,10 @@ export default function UnifiedCalculatorPage() {
   const [fullWeight, setFullWeight] = React.useState('');
   const [emptyWeight, setEmptyWeight] = React.useState('');
   const [currentWeight, setCurrentWeight] = React.useState('');
-  const [liquidLevel, setLiquidLevel] = React.useState('');
+  // liquid level removed: height-based method is deprecated
   
   const [calculatedVolume, setCalculatedVolume] = React.useState<number | null>(null);
-  const [calculationMethod, setCalculationMethod] = React.useState<'weight' | 'height' | null>(null);
+  const [calculationMethod, setCalculationMethod] = React.useState<'weight' | null>(null);
   
   const [isSending, setIsSending] = React.useState(false);
   
@@ -93,7 +93,6 @@ export default function UnifiedCalculatorPage() {
     setShouldExpandPremix(false);
     setSendMode('set');
     setCurrentWeight('');
-    setLiquidLevel('');
     if (product) {
         setBottleVolume(product.bottleVolumeMl?.toString() ?? '');
         setFullWeight(product.fullBottleWeightG?.toString() ?? '');
@@ -125,7 +124,6 @@ export default function UnifiedCalculatorPage() {
     setFullWeight('');
     setEmptyWeight('');
     setCurrentWeight('');
-    setLiquidLevel('');
     setCalculatedVolume(null);
     setCalculationMethod(null);
     setShouldExpandPremix(false);
@@ -141,15 +139,12 @@ export default function UnifiedCalculatorPage() {
     const fw = parseFloat(fullWeight);
     const ew = parseFloat(emptyWeight);
     const cw = parseFloat(currentWeight);
-    const ll = parseFloat(liquidLevel);
 
     const result = calculateVolumeMl({
       bottleVolumeMl: bv,
       fullBottleWeightG: Number.isFinite(fw) ? fw : undefined,
       emptyBottleWeightG: Number.isFinite(ew) ? ew : undefined,
       currentWeightG: Number.isFinite(cw) ? cw : undefined,
-      liquidLevelCm: Number.isFinite(ll) ? ll : undefined,
-      fullLiquidHeightCm: selectedProduct?.fullLiquidHeightCm ?? undefined,
       roundingStepMl: 10,
     });
 
@@ -344,7 +339,7 @@ export default function UnifiedCalculatorPage() {
       
       <div className="mb-4 flex items-center gap-2">
         <HelpIcon 
-          description="Выберите продукт, введите вес полной бутылки, вес пустой бутылки, текущий вес и уровень жидкости (1 резка = 1 см на мерной ложке). Нажмите 'Рассчитать', затем 'Отправить в инвентаризацию'."
+          description="Выберите продукт, введите вес полной бутылки, вес пустой бутылки и текущий вес. Нажмите 'Рассчитать', затем 'Отправить в инвентаризацию'."
         />
         <span className="text-sm text-muted-foreground">Подсказка работы раздела</span>
       </div>
@@ -353,7 +348,7 @@ export default function UnifiedCalculatorPage() {
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>ВАЖНО</AlertTitle>
         <AlertDescription>
-          Для точного расчета без линейки нужен профиль бутылки: вес полной, вес пустой и номинальный объем. Уровень жидкости (см) — только резервный вариант, если веса в профиле нет.
+          Для точного расчета нужен профиль бутылки: вес полной, вес пустой и номинальный объем. Калькулятор считает только по весу — линейка не требуется.
         </AlertDescription>
       </Alert>
       
@@ -460,34 +455,6 @@ export default function UnifiedCalculatorPage() {
 
               <Separator />
               
-              {/* Расчет по высоте */}
-              <div className="space-y-4 p-4 rounded-lg border border-border bg-card/50">
-                <div className="flex items-center gap-2">
-                  <Ruler className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="text-base font-semibold">Расчет по высоте</h3>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Резервный метод. Используйте только если в профиле продукта не заполнены веса.
-                </p>
-                <div className="space-y-2">
-                  <Label htmlFor="liquidLevel" className="flex items-center gap-2">
-                    <Ruler className="h-3 w-3" />
-                    Уровень жидкости (см)
-                  </Label>
-                  <Input 
-                    id="liquidLevel" 
-                    type="number" 
-                    value={liquidLevel} 
-                    onChange={e => setLiquidLevel(e.target.value)} 
-                    placeholder="Замер линейкой" 
-                    disabled={!selectedProductId}
-                    className="transition-all duration-200"
-                  />
-                </div>
-              </div>
-
-              <Separator />
-              
               <div className="space-y-2">
                 <Label htmlFor="bottleVolume" className="flex items-center gap-2">
                   <Package className="h-3 w-3" />
@@ -543,7 +510,7 @@ export default function UnifiedCalculatorPage() {
                   </p>
                   {calculationMethod && (
                     <p className="text-xs text-muted-foreground mb-2">
-                      Метод: {calculationMethod === 'weight' ? 'по весу (без линейки)' : 'резервный (по высоте)'} · Округление: 10 мл
+                      Метод: по весу (без линейки) · Округление: 10 мл
                     </p>
                   )}
                   <div className="flex items-center justify-center gap-2 mb-4">

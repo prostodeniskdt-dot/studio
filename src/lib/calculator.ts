@@ -1,12 +1,10 @@
-export type CalculationMethod = 'weight' | 'height';
+export type CalculationMethod = 'weight';
 
 export type CalculateVolumeInput = {
   bottleVolumeMl: number;
   fullBottleWeightG?: number | null;
   emptyBottleWeightG?: number | null;
   currentWeightG?: number | null;
-  liquidLevelCm?: number | null;
-  fullLiquidHeightCm?: number | null;
   roundingStepMl?: number; // default 10
 };
 
@@ -48,8 +46,6 @@ export function calculateVolumeMl(input: CalculateVolumeInput): CalculateVolumeR
   const fw = input.fullBottleWeightG ?? undefined;
   const ew = input.emptyBottleWeightG ?? undefined;
   const cw = input.currentWeightG ?? undefined;
-  const ll = input.liquidLevelCm ?? undefined;
-  const fullH = input.fullLiquidHeightCm ?? undefined;
 
   const warnings: string[] = [];
 
@@ -80,26 +76,10 @@ export function calculateVolumeMl(input: CalculateVolumeInput): CalculateVolumeR
     return { ok: true, volumeMl: rounded, method: 'weight', roundingStepMl, warnings };
   }
 
-  // Fallback: height-based (only when weight profile isn't available)
-  const heightOk =
-    typeof ll === 'number' && Number.isFinite(ll) && ll > 0 && (typeof fullH !== 'number' || !Number.isFinite(fullH) || fullH <= 0 || fullH > 0);
-
-  if (!heightOk) {
-    const errors: string[] = [];
-    if (!(typeof cw === 'number' && Number.isFinite(cw))) errors.push('Введите текущий вес.');
-    if (!(typeof fw === 'number' && Number.isFinite(fw))) errors.push('Не задан вес полной бутылки в профиле продукта.');
-    if (!(typeof ew === 'number' && Number.isFinite(ew))) errors.push('Не задан вес пустой бутылки в профиле продукта.');
-    if (!(typeof ll === 'number' && Number.isFinite(ll) && ll > 0)) errors.push('Для резервного расчета заполните уровень жидкости (см).');
-    return { ok: false, errors };
-  }
-
-  const fallbackFullH = isFinitePositiveNumber(fullH) ? fullH : 25;
-  if (!isFinitePositiveNumber(fullH)) warnings.push('Высота жидкости полной бутылки не задана — используется значение по умолчанию 25 см.');
-
-  const percentage = clamp(ll / fallbackFullH, 0, 1);
-  const raw = bv * percentage;
-  const rounded = clamp(roundToStep(raw, roundingStepMl), 0, bv);
-
-  return { ok: true, volumeMl: rounded, method: 'height', roundingStepMl, warnings };
+  const errors: string[] = [];
+  if (!(typeof cw === 'number' && Number.isFinite(cw))) errors.push('Введите текущий вес.');
+  if (!(typeof fw === 'number' && Number.isFinite(fw))) errors.push('Не задан вес полной бутылки в профиле продукта.');
+  if (!(typeof ew === 'number' && Number.isFinite(ew))) errors.push('Не задан вес пустой бутылки в профиле продукта.');
+  return { ok: false, errors };
 }
 

@@ -60,6 +60,7 @@ export default function ProductsLibraryPage() {
             const { id: _, ...productDataWithoutId } = product;
             const newProductData: any = {
                 ...productDataWithoutId,
+                id: productRef.id,
                 barId: barId,
                 isInLibrary: false,
                 createdByUserId: user.uid,

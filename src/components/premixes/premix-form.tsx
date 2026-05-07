@@ -340,14 +340,15 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         createdByUserId: premix ? premix.createdByUserId : (user?.uid || undefined),
     };
 
-    // Добавляем barId
+    // Модель данных: библиотека и персональные взаимоисключающие.
+    // Если премикс в библиотеке, `barId` не должен быть установлен.
     if (premix) {
       // При редактировании сохраняем существующий barId
       premixData.barId = premix.barId;
     } else {
-      // При создании премикса всегда добавляем barId (даже если создаем в библиотеке)
-      // Это позволяет премиксу быть видимым и в библиотеке, и в персональных премиксах
-      premixData.barId = barId || undefined;
+      if (!createInLibrary) {
+        premixData.barId = barId || undefined;
+      }
     }
     
     // Добавить id только для обновления

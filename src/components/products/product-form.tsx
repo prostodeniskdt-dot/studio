@@ -23,15 +23,27 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import type { Product, Supplier } from '@/lib/types';
-import { productCategories, productSubCategories, translateCategory, translateSubCategory, buildProductDisplayName, extractVolume } from '@/lib/utils';
+import {
+  productCategories,
+  productSubCategories,
+  translateCategory,
+  translateSubCategory,
+  buildProductDisplayName,
+  extractVolume,
+} from '@/lib/utils';
 import { checkProductDuplicate } from '@/lib/product-duplicate-check';
 import { useProducts } from '@/contexts/products-context';
 import { productCategorySchema } from '@/lib/schemas/product.schema';
 import { Separator } from '../ui/separator';
-import { useFirestore, useUser, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
+import {
+  useFirestore,
+  useUser,
+  useCollection,
+  useMemoFirebase,
+  errorEmitter,
+  FirestorePermissionError,
+} from '@/firebase';
 import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Loader2, AlertTriangle } from 'lucide-react';
@@ -58,8 +70,8 @@ const formSchema = z.object({
 type ProductFormValues = z.infer<typeof formSchema>;
 
 interface ProductFormProps {
-    product?: Product;
-    onFormSubmit: () => void;
+  product?: Product;
+  onFormSubmit: () => void;
 }
 
 export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
@@ -72,57 +84,58 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const { globalProducts, refresh: refreshProducts } = useProducts();
   const [createInLibrary, setCreateInLibrary] = React.useState(false);
 
-  // Автозакрытие плашки предупреждения через 5 секунд
   React.useEffect(() => {
     if (showAutoOrderWarning) {
       const timer = setTimeout(() => {
         setShowAutoOrderWarning(false);
-      }, 5000); // 5 секунд
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [showAutoOrderWarning]);
 
-  const suppliersQuery = useMemoFirebase(() => 
-    firestore && barId ? collection(firestore, 'bars', barId, 'suppliers') : null,
+  const suppliersQuery = useMemoFirebase(
+    () => (firestore && barId ? collection(firestore, 'bars', barId, 'suppliers') : null),
     [firestore, barId]
   );
   const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: product ? {
-        ...product,
-        name: buildProductDisplayName(product.name, product.bottleVolumeMl), // Show full name for editing
-        subCategory: product.subCategory ?? undefined,
-        imageUrl: product.imageUrl ?? undefined,
-        fullBottleWeightG: product.fullBottleWeightG ?? undefined,
-        emptyBottleWeightG: product.emptyBottleWeightG ?? undefined,
-        reorderPointMl: product.reorderPointMl ?? undefined,
-        reorderQuantity: product.reorderQuantity ?? undefined,
-        defaultSupplierId: product.defaultSupplierId ?? undefined,
-    } : {
-      name: '',
-      category: 'Other',
-      bottleVolumeMl: 700,
-      isActive: true,
-      imageUrl: PlaceHolderImages.find(p => p.id.toLowerCase() === 'other')?.imageUrl,
-      fullBottleWeightG: undefined,
-      emptyBottleWeightG: undefined,
-      reorderPointMl: undefined,
-      reorderQuantity: undefined,
-      defaultSupplierId: undefined,
-    },
+    defaultValues: product
+      ? {
+          ...product,
+          name: buildProductDisplayName(product.name, product.bottleVolumeMl),
+          subCategory: product.subCategory ?? undefined,
+          imageUrl: product.imageUrl ?? undefined,
+          fullBottleWeightG: product.fullBottleWeightG ?? undefined,
+          emptyBottleWeightG: product.emptyBottleWeightG ?? undefined,
+          reorderPointMl: product.reorderPointMl ?? undefined,
+          reorderQuantity: product.reorderQuantity ?? undefined,
+          defaultSupplierId: product.defaultSupplierId ?? undefined,
+        }
+      : {
+          name: '',
+          category: 'Other',
+          bottleVolumeMl: 700,
+          isActive: true,
+          imageUrl: PlaceHolderImages.find((p) => p.id.toLowerCase() === 'other')?.imageUrl,
+          fullBottleWeightG: undefined,
+          emptyBottleWeightG: undefined,
+          reorderPointMl: undefined,
+          reorderQuantity: undefined,
+          defaultSupplierId: undefined,
+        },
   });
 
   const watchedCategory = form.watch('category');
   const watchedName = form.watch('name');
   const watchedVolume = form.watch('bottleVolumeMl');
-  
+
   const volumeTouchedRef = React.useRef(false);
 
   React.useEffect(() => {
     if (form.formState.isDirty) {
-      const image = PlaceHolderImages.find(p => p.id.toLowerCase() === watchedCategory.toLowerCase());
+      const image = PlaceHolderImages.find((p) => p.id.toLowerCase() === watchedCategory.toLowerCase());
       if (image) {
         form.setValue('imageUrl', image.imageUrl, { shouldDirty: true });
       }
@@ -130,27 +143,19 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   }, [watchedCategory, form]);
 
   React.useEffect(() => {
-    const { baseName, volumeMl } = extractVolume(watchedName ?? "");
+    const { baseName, volumeMl } = extractVolume(watchedName ?? '');
     if (!volumeMl) return;
-  
-    // Если пользователь НЕ трогал объём руками — синхронизируем
+
     if (!volumeTouchedRef.current) {
-      form.setValue("bottleVolumeMl", volumeMl, { shouldDirty: true });
+      form.setValue('bottleVolumeMl', volumeMl, { shouldDirty: true });
     }
-  
-    // Опционально: очистить name от объёма сразу, чтобы не было "500 мл" в поле
-    if (baseName !== (watchedName ?? "").trim()) {
-      form.setValue("name", baseName, { shouldDirty: true });
+
+    if (baseName !== (watchedName ?? '').trim()) {
+      form.setValue('name', baseName, { shouldDirty: true });
     }
   }, [watchedName, form]);
 
   function onSubmit(data: ProductFormValues) {
-    console.log('onSubmit called', { 
-      isEditing: !!product, 
-      productId: product?.id, 
-      data: { name: data.name, bottleVolumeMl: data.bottleVolumeMl } 
-    });
-    
     if (!firestore || !barId) {
       toast({
         title: 'Ошибка',
@@ -159,17 +164,11 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
       });
       return;
     }
-    
-    // Проверка на дубликаты (только для новых продуктов)
+
     if (!product && globalProducts) {
       const { baseName } = extractVolume(data.name);
-      const duplicate = checkProductDuplicate(
-        baseName,
-        globalProducts, // Для новых продуктов проверяем все
-        85,
-        data.bottleVolumeMl // Передаем объем для сравнения только с продуктами того же объема
-      );
-      
+      const duplicate = checkProductDuplicate(baseName, globalProducts, 85, data.bottleVolumeMl);
+
       if (duplicate) {
         const duplicateDisplayName = buildProductDisplayName(duplicate.name, duplicate.bottleVolumeMl);
         const newDisplayName = buildProductDisplayName(data.name, data.bottleVolumeMl);
@@ -181,99 +180,84 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         return;
       }
     }
-    
-    setIsSaving(true);
-    
-    // Всегда используем коллекцию products для обычных продуктов
-    const collectionPath = collection(firestore, 'products');
-    
-    const productRef = product 
-      ? doc(collectionPath, product.id) 
-      : doc(collectionPath);
-    
-    // Use the base name for saving, volume is a separate field.
-    const { baseName } = extractVolume(data.name);
 
-    // Определяем, создаем ли продукт в библиотеке (только для новых продуктов)
+    setIsSaving(true);
+
+    const collectionPath = collection(firestore, 'products');
+    const productRef = product ? doc(collectionPath, product.id) : doc(collectionPath);
+
+    const { baseName } = extractVolume(data.name);
     const shouldCreateInLibrary = !product && createInLibrary;
 
     const productData: any = {
-        ...data,
-        name: baseName, // Save the base name only
-        defaultSupplierId: data.defaultSupplierId || null,
-        reorderPointMl: data.reorderPointMl || null,
-        reorderQuantity: data.reorderQuantity || null,
-        fullBottleWeightG: data.fullBottleWeightG || null,
-        emptyBottleWeightG: data.emptyBottleWeightG || null,
-        id: productRef.id,
-        updatedAt: serverTimestamp(),
-        createdAt: product?.createdAt || serverTimestamp(),
-        // Устанавливаем isInLibrary при создании нового продукта
-        isInLibrary: product ? product.isInLibrary : shouldCreateInLibrary,
-        createdByUserId: product ? product.createdByUserId : (user?.uid || undefined),
+      ...data,
+      name: baseName,
+      defaultSupplierId: data.defaultSupplierId || null,
+      reorderPointMl: data.reorderPointMl || null,
+      reorderQuantity: data.reorderQuantity || null,
+      fullBottleWeightG: data.fullBottleWeightG || null,
+      emptyBottleWeightG: data.emptyBottleWeightG || null,
+      id: productRef.id,
+      updatedAt: serverTimestamp(),
+      createdAt: product?.createdAt || serverTimestamp(),
+      isInLibrary: product ? product.isInLibrary : shouldCreateInLibrary,
+      createdByUserId: product ? product.createdByUserId : user?.uid || undefined,
     };
 
-    // Добавляем barId
+    // Модель данных: библиотека и персональные взаимоисключающие.
+    // Если продукт в библиотеке, `barId` не должен быть установлен.
     if (product) {
-      // При редактировании сохраняем существующий barId
       productData.barId = product.barId;
-    } else {
-      // При создании продукта всегда добавляем barId (даже если создаем в библиотеке)
-      // Это позволяет продукту быть видимым и в библиотеке, и в персональных продуктах
+    } else if (!shouldCreateInLibrary) {
       productData.barId = barId || undefined;
     }
 
     const pathPrefix = 'products';
     setDoc(productRef, productData, { merge: true })
       .then(() => {
-        console.log('Product saved successfully:', productRef.id, product ? 'updated' : 'created');
-        
-        // Очистить кэш localStorage
         if (typeof window !== 'undefined' && barId) {
           try {
             localStorage.removeItem(`barboss_products_cache_${barId}`);
-            console.log('Cache cleared for barId:', barId);
-          } catch (e) {
-            console.warn('Failed to clear cache:', e);
+          } catch {
+            // ignore
           }
         }
-        
-        // Обновить контекст продуктов
+
         try {
           refreshProducts();
-          console.log('Products context refreshed');
-        } catch (e) {
-          console.error('Failed to refresh products context:', e);
+        } catch {
+          // ignore
         }
-        
-        const shouldCreateInLibraryForToast = !product && createInLibrary;
-        toast({ 
-          title: product ? "Продукт обновлен" : (shouldCreateInLibraryForToast ? "Продукт создан в библиотеке" : "Продукт создан"),
-          description: product ? "Изменения сохранены успешно" : (shouldCreateInLibraryForToast ? "Продукт доступен всем пользователям" : "Новый продукт добавлен в вашу базу")
+
+        toast({
+          title: product ? 'Продукт обновлен' : shouldCreateInLibrary ? 'Продукт создан в библиотеке' : 'Продукт создан',
+          description: product
+            ? 'Изменения сохранены успешно'
+            : shouldCreateInLibrary
+              ? 'Продукт доступен всем пользователям'
+              : 'Новый продукт добавлен в вашу базу',
         });
-        
-        // Закрыть форму после небольшой задержки для обновления UI
+
         setTimeout(() => {
-          console.log('Closing form via onFormSubmit');
           onFormSubmit();
         }, 100);
       })
       .catch((serverError) => {
-        console.error('Error saving product:', serverError);
-        setIsSaving(false); // Убедиться, что состояние сброшено при ошибке
-        
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-            path: `${pathPrefix}/${productRef.id}`, 
+        errorEmitter.emit(
+          'permission-error',
+          new FirestorePermissionError({
+            path: `${pathPrefix}/${productRef.id}`,
             operation: product ? 'update' : 'create',
-            requestResourceData: productData
-        }));
-        
-        // Показать понятное сообщение об ошибке
+            requestResourceData: productData,
+          })
+        );
+
         toast({
           title: 'Ошибка сохранения',
-          description: serverError instanceof Error 
-            ? serverError.message 
-            : 'Не удалось сохранить продукт. Проверьте права доступа и подключение к интернету.',
+          description:
+            serverError instanceof Error
+              ? serverError.message
+              : 'Не удалось сохранить продукт. Проверьте права доступа и подключение к интернету.',
           variant: 'destructive',
         });
       })
@@ -281,10 +265,8 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
         setIsSaving(false);
       });
   }
-  
-  const finalDisplayName = React.useMemo(() => {
-    return buildProductDisplayName(watchedName, watchedVolume);
-  }, [watchedName, watchedVolume])
+
+  const finalDisplayName = React.useMemo(() => buildProductDisplayName(watchedName, watchedVolume), [watchedName, watchedVolume]);
 
   return (
     <Form {...form}>
@@ -303,6 +285,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             </FormItem>
           )}
         />
+
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -317,217 +300,229 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {productCategories.filter(cat => cat !== 'Premix').map(cat => (
-                      <SelectItem key={cat} value={cat}>{translateCategory(cat)}</SelectItem>
-                    ))}
+                    {productCategories
+                      .filter((cat) => cat !== 'Premix')
+                      .map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {translateCategory(cat)}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
-           {(productSubCategories[watchedCategory] && productSubCategories[watchedCategory].length > 0) && (
-             <FormField
-                control={form.control}
-                name="subCategory"
-                render={({ field }) => (
+
+          {productSubCategories[watchedCategory] && productSubCategories[watchedCategory].length > 0 && (
+            <FormField
+              control={form.control}
+              name="subCategory"
+              render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Подкатегория</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormLabel>Подкатегория</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                        <SelectTrigger>
+                      <SelectTrigger>
                         <SelectValue placeholder="Выберите подкатегорию" />
-                        </SelectTrigger>
+                      </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                        {productSubCategories[watchedCategory].map(subCat => (
-                          <SelectItem key={subCat} value={subCat}>{translateSubCategory(subCat)}</SelectItem>
-                        ))}
+                      {productSubCategories[watchedCategory].map((subCat) => (
+                        <SelectItem key={subCat} value={subCat}>
+                          {translateSubCategory(subCat)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
-                    </Select>
-                    <FormMessage />
+                  </Select>
+                  <FormMessage />
                 </FormItem>
-                )}
+              )}
             />
-           )}
+          )}
         </div>
-        
+
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Внимание!</AlertTitle>
-          <AlertDescription>
-            ВАЖНО: Обязательно заполните вес полной и пустой бутылки, иначе расчеты будут некорректными!
-          </AlertDescription>
+          <AlertDescription>ВАЖНО: Обязательно заполните вес полной и пустой бутылки, иначе расчеты будут некорректными!</AlertDescription>
         </Alert>
 
         <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Профиль бутылки для калькулятора</h3>
-        
-        <FormField
-        control={form.control}
-        name="bottleVolumeMl"
-        render={({ field }) => (
-            <FormItem>
-            <FormLabel className="font-medium">Номинальный объем (мл)</FormLabel>
-            <FormControl>
-                <Input type="number" {...field} onChange={(e) => {
-                    volumeTouchedRef.current = true;
-                    field.onChange(e);
-                }} className="text-left"/>
-            </FormControl>
-            <FormMessage />
-            </FormItem>
-        )}
-        />
-        <div className="grid grid-cols-2 gap-4">
-            <FormField
+
+          <FormField
             control={form.control}
-            name="fullBottleWeightG"
+            name="bottleVolumeMl"
             render={({ field }) => (
-                <FormItem>
-                <FormLabel className="font-medium">Вес полной (г)</FormLabel>
+              <FormItem>
+                <FormLabel className="font-medium">Номинальный объем (мл)</FormLabel>
                 <FormControl>
-                    <Input type="number" {...field} value={field.value ?? ''} placeholder="1150" className="text-left"/>
+                  <Input
+                    type="number"
+                    {...field}
+                    onChange={(e) => {
+                      volumeTouchedRef.current = true;
+                      field.onChange(e);
+                    }}
+                    className="text-left"
+                  />
                 </FormControl>
                 <FormMessage />
-                </FormItem>
+              </FormItem>
             )}
-            />
+          />
+
+          <div className="grid grid-cols-2 gap-4">
             <FormField
-            control={form.control}
-            name="emptyBottleWeightG"
-            render={({ field }) => (
+              control={form.control}
+              name="fullBottleWeightG"
+              render={({ field }) => (
                 <FormItem>
-                <FormLabel className="font-medium">Вес пустой (г)</FormLabel>
-                <FormControl>
-                    <Input type="number" {...field} value={field.value ?? ''} placeholder="450" className="text-left"/>
-                </FormControl>
-                <FormMessage />
+                  <FormLabel className="font-medium">Вес полной (г)</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} value={field.value ?? ''} placeholder="1150" className="text-left" />
+                  </FormControl>
+                  <FormMessage />
                 </FormItem>
-            )}
+              )}
             />
+
+            <FormField
+              control={form.control}
+              name="emptyBottleWeightG"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-medium">Вес пустой (г)</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} value={field.value ?? ''} placeholder="450" className="text-left" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
-        </div>
-        
+
         <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">
           {showAutoOrderWarning && (
             <Alert variant="destructive" className="mb-4 relative">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Внимание</AlertTitle>
-              <AlertDescription>
-                Раздел автозаказ находится на стадии тестирования, для инвентаризации его заполнять не нужно
-              </AlertDescription>
+              <AlertDescription>Раздел автозаказ находится на стадии тестирования, для инвентаризации его заполнять не нужно</AlertDescription>
               <Button
                 variant="ghost"
                 size="sm"
                 className="absolute top-2 right-2 h-6 w-6 p-0"
                 onClick={() => setShowAutoOrderWarning(false)}
+                type="button"
               >
                 ×
               </Button>
             </Alert>
           )}
+
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Параметры автозаказа</h3>
-        <div className="space-y-4">
+          <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-                <FormField
-                    control={form.control}
-                    name="reorderPointMl"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel className="font-medium">Минимальный остаток (мл)</FormLabel>
-                        <FormControl>
-                            <Input type="number" {...field} value={field.value ?? ''} placeholder="Например, 350" className="text-left"/>
-                        </FormControl>
-                        <FormDescription className="text-sm text-muted-foreground">Когда остаток упадет ниже этого значения, товар попадет в автозаказ.</FormDescription>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="reorderQuantity"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel className="font-medium">Количество для заказа (бут.)</FormLabel>
-                        <FormControl>
-                            <Input type="number" {...field} value={field.value ?? ''} placeholder="Например, 6" className="text-left"/>
-                        </FormControl>
-                        <FormDescription className="text-sm text-muted-foreground">Сколько бутылок заказывать, когда остаток низкий.</FormDescription>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
-            <FormField
+              <FormField
                 control={form.control}
-                name="defaultSupplierId"
+                name="reorderPointMl"
                 render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Поставщик по умолчанию</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                  <FormItem>
+                    <FormLabel className="font-medium">Минимальный остаток (мл)</FormLabel>
                     <FormControl>
-                        <SelectTrigger disabled={isLoadingSuppliers}>
-                        <SelectValue placeholder={isLoadingSuppliers ? "Загрузка..." : "Выберите поставщика"} />
-                        </SelectTrigger>
+                      <Input type="number" {...field} value={field.value ?? ''} placeholder="Например, 350" className="text-left" />
+                    </FormControl>
+                    <FormDescription className="text-sm text-muted-foreground">
+                      Когда остаток упадет ниже этого значения, товар попадет в автозаказ.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="reorderQuantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-medium">Количество для заказа (бут.)</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} value={field.value ?? ''} placeholder="Например, 6" className="text-left" />
+                    </FormControl>
+                    <FormDescription className="text-sm text-muted-foreground">
+                      Сколько бутылок заказывать, когда остаток низкий.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="defaultSupplierId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Поставщик по умолчанию</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                    <FormControl>
+                      <SelectTrigger disabled={isLoadingSuppliers}>
+                        <SelectValue placeholder={isLoadingSuppliers ? 'Загрузка...' : 'Выберите поставщика'} />
+                      </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                        {suppliers ? suppliers.map(s => (
-                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                        )) : <SelectItem value="loading" disabled>Загрузка...</SelectItem>}
+                      {suppliers ? (
+                        suppliers.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="loading" disabled>
+                          Загрузка...
+                        </SelectItem>
+                      )}
                     </SelectContent>
-                    </Select>
-                    <FormMessage />
+                  </Select>
+                  <FormMessage />
                 </FormItem>
-                )}
+              )}
             />
+          </div>
         </div>
-        </div>
-       
-        {/* Опция создания в библиотеке (только для новых продуктов) */}
+
         {!product && (
           <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">
             <div className="flex flex-row items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
-                <FormLabel className="text-base">
-                  Добавить в общую библиотеку
-                </FormLabel>
-                <FormDescription>
-                  Продукт будет доступен всем пользователям в библиотеке и останется в ваших продуктах. Вы сможете его редактировать.
-                </FormDescription>
+                <FormLabel className="text-base">Добавить в общую библиотеку</FormLabel>
+                <FormDescription>Продукт будет доступен всем пользователям в библиотеке.</FormDescription>
               </div>
-              <Switch
-                checked={createInLibrary}
-                onCheckedChange={setCreateInLibrary}
-              />
+              <Switch checked={createInLibrary} onCheckedChange={setCreateInLibrary} />
             </div>
           </div>
         )}
 
         <div className="space-y-6 p-6 rounded-lg border border-border bg-card/50">
           <FormField
-          control={form.control}
-          name="isActive"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">
-                  Активен
-                </FormLabel>
-                <FormDescription>
-                  Активные продукты доступны для инвентаризаций и калькулятора.
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+            control={form.control}
+            name="isActive"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">Активен</FormLabel>
+                  <FormDescription>Активные продукты доступны для инвентаризаций и калькулятора.</FormDescription>
+                </div>
+                <FormControl>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
         </div>
+
         <Button type="submit" disabled={isSaving}>
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Сохранить продукт
@@ -536,3 +531,4 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
     </Form>
   );
 }
+

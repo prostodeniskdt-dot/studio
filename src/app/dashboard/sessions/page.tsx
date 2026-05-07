@@ -42,7 +42,7 @@ export default function SessionsPage() {
 
     try {
         const inventoriesCollection = collection(firestore, 'bars', barId, 'inventorySessions');
-        const activeSessionQuery = query(inventoriesCollection, where('status', '==', 'in_progress'), where('barId', '==', barId), limit(1));
+        const activeSessionQuery = query(inventoriesCollection, where('status', '==', 'in_progress'), limit(1));
         const activeSessionSnapshot = await getDocs(activeSessionQuery);
         
         let sessionId;

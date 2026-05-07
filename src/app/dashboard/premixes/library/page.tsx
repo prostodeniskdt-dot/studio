@@ -42,6 +42,7 @@ export default function PremixesLibraryPage() {
             const { id: _, ...premixDataWithoutId } = premix;
             const newPremixData: any = {
                 ...premixDataWithoutId,
+                id: premixRef.id,
                 barId: barId,
                 isInLibrary: false,
                 createdByUserId: user.uid,

@@ -25,21 +25,19 @@ export function SessionHeader({ session, isEditable }: SessionHeaderProps) {
     }
   };
 
+  const createdAtText = React.useMemo(() => {
+    const v: any = session.createdAt;
+    if (!v) return '';
+    const d = v instanceof Date ? v : typeof v === 'string' ? new Date(v) : null;
+    return d ? d.toLocaleDateString('ru-RU') : '';
+  }, [session.createdAt]);
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
       <div className="flex items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">{session.name}</h1>
-          <p className="text-muted-foreground mt-1">
-            {session.createdAt &&
-              (session.createdAt.toDate
-                ? session.createdAt.toDate().toLocaleDateString('ru-RU')
-                : session.createdAt instanceof Date
-                  ? session.createdAt.toLocaleDateString('ru-RU')
-                  : typeof session.createdAt === 'string'
-                    ? new Date(session.createdAt).toLocaleDateString('ru-RU')
-                    : new Date(session.createdAt.toMillis ? session.createdAt.toMillis() : Date.now()).toLocaleDateString('ru-RU'))}
-          </p>
+          {createdAtText ? <p className="text-muted-foreground mt-1">{createdAtText}</p> : null}
         </div>
         <Badge variant={getStatusVariant(session.status)} className="capitalize text-base px-3 py-1 flex items-center gap-1.5">
           {session.status === 'in_progress' && (

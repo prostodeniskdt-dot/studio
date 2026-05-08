@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { requireFirebaseUserId } from '@/lib/firebase-admin';
+import { requireUserId } from '@/lib/auth-server';
 import { jsonResponse, readJson } from '@/lib/http';
 
 function barIdFromUid(uid: string) {
@@ -12,7 +12,7 @@ function toIso(d: Date | null | undefined) {
 
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const uid = await requireFirebaseUserId(req);
+    const uid = await requireUserId(req);
     const barId = barIdFromUid(uid);
     const { id } = await ctx.params;
 
@@ -69,7 +69,7 @@ type PatchBody = {
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const uid = await requireFirebaseUserId(req);
+    const uid = await requireUserId(req);
     const barId = barIdFromUid(uid);
     const { id } = await ctx.params;
     const body = await readJson<PatchBody>(req);
@@ -191,7 +191,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 
 export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const uid = await requireFirebaseUserId(req);
+    const uid = await requireUserId(req);
     const barId = barIdFromUid(uid);
     const { id } = await ctx.params;
 

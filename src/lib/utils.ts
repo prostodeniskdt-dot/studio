@@ -331,11 +331,13 @@ export function dedupeProductsByName(products: Product[]): Product[] {
     }
     
     if (item.isActive === existing.isActive) {
-        const existingTime = existing.updatedAt?.toMillis?.() ?? 0;
-        const itemTime = item.updatedAt?.toMillis?.() ?? 0;
-        if (itemTime > existingTime) {
-            map.set(key, item);
-        }
+      const toMs = (v: any) =>
+        v instanceof Date ? v.getTime() : typeof v === 'string' ? new Date(v).getTime() : 0;
+      const existingTime = toMs((existing as any).updatedAt);
+      const itemTime = toMs((item as any).updatedAt);
+      if (itemTime > existingTime) {
+        map.set(key, item);
+      }
     }
   }
 

@@ -1,13 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import type { PurchaseOrder, PurchaseOrderLine, Supplier, Product } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useRelatedCollection } from '@/hooks/use-related-collection';
 import { useSuppliers } from '@/contexts/suppliers-context';
 import { useProducts } from '@/contexts/products-context';
 import { Download, ShoppingCart, Trash2, Loader2 } from 'lucide-react';
@@ -27,8 +26,8 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function PurchaseOrdersPage() {
-  const { user } = useUser();
-  const barId = user ? `bar_${user.uid}` : null;
+  const { user } = useAuthSession();
+  const barId = user ? `bar_${user.id}` : null;
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = React.useState<string | null>(null);
   const [orders, setOrders] = React.useState<any[] | null>(null);
@@ -40,9 +39,7 @@ export default function PurchaseOrdersPage() {
       if (!user) return;
       setIsLoadingOrders(true);
       try {
-        const token = await user.getIdToken();
         const res = await fetch('/api/purchase-orders', {
-          headers: { Authorization: `Bearer ${token}` },
           cache: 'no-store',
         });
         const json = await res.json();
@@ -156,10 +153,8 @@ export default function PurchaseOrdersPage() {
 
     setIsDeleting(orderId);
     try {
-      const token = await user.getIdToken();
       const res = await fetch(`/api/purchase-orders/${orderId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
       if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');

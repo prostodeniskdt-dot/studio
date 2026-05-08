@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import { useParams, notFound } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import type { UserProfile, Supplier } from '@/lib/types';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import { SuppliersTable } from '@/components/suppliers/suppliers-table';
 export default function AdminUserDetailsPage() {
   const params = useParams();
   const userId = params.id as string;
-  const { user: adminUser } = useUser();
+  const { user: adminUser } = useAuthSession();
   const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null);
   const [suppliers, setSuppliers] = React.useState<Supplier[] | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = React.useState(false);
@@ -29,9 +29,7 @@ export default function AdminUserDetailsPage() {
       setIsLoadingProfile(true);
       setIsLoadingSuppliers(true);
       try {
-        const token = await adminUser.getIdToken();
         const res = await fetch(`/api/admin/users/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
           cache: 'no-store',
         });
         const json = await res.json();

@@ -13,7 +13,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { AppLogo } from '@/components/app-logo';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 
 const menuItems = [
   { href: '/dashboard', label: 'Панель', icon: Home },
@@ -34,9 +34,9 @@ const debugMenuItem = { href: '/dashboard/admin/debug', label: 'Debug', icon: Bu
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { user } = useUser();
+  const { user } = useAuthSession();
 
-  const isAdmin = user?.email === 'prostodeniskdt@gmail.com';
+  const isAdmin = user?.profile?.role === 'admin';
 
   const isActive = (path: string) => {
     if (path === '/dashboard') {

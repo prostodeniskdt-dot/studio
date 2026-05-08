@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import type { Supplier } from '@/lib/types';
 import { logger } from '@/lib/logger';
 
@@ -24,7 +24,7 @@ interface CachedSuppliers {
 }
 
 export function SuppliersProvider({ children, barId }: { children: React.ReactNode; barId: string | null }) {
-  const { user } = useUser();
+  const { user } = useAuthSession();
   const [cache, setCache] = useState<CachedSuppliers | null>(null);
   const [forceRefresh, setForceRefresh] = useState(0);
   const [suppliers, setSuppliers] = useState<Supplier[] | null>(null);
@@ -61,9 +61,7 @@ export function SuppliersProvider({ children, barId }: { children: React.ReactNo
       setIsLoading(true);
       setError(null);
       try {
-        const token = await user.getIdToken();
         const res = await fetch('/api/suppliers', {
-          headers: { Authorization: `Bearer ${token}` },
           cache: 'no-store',
         });
         const json = await res.json();

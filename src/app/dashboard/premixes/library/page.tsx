@@ -6,7 +6,7 @@ import { useProducts } from '@/contexts/products-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { HelpIcon } from '@/components/ui/help-icon';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import type { Product, ProductCategory } from '@/lib/types';
 import { buildProductDisplayName } from '@/lib/utils';
@@ -21,8 +21,8 @@ export default function PremixesLibraryPage() {
     const [selectedCategory, setSelectedCategory] = React.useState<ProductCategory | undefined>();
     const [selectedSubCategory, setSelectedSubCategory] = React.useState<string | undefined>();
 
-    const { user } = useUser();
-    const barId = user ? `bar_${user.uid}` : null;
+    const { user } = useAuthSession();
+    const barId = user ? `bar_${user.id}` : null;
     const { toast } = useToast();
 
     const handleAddToMyPremixes = async (premix: Product) => {
@@ -31,13 +31,11 @@ export default function PremixesLibraryPage() {
         setIsAdding(premix.id);
 
         try {
-            const token = await user.getIdToken();
             const { id: _oldId, createdAt: _ca, updatedAt: _ua, ...rest } = premix as any;
             const res = await fetch('/api/products', {
                 method: 'POST',
                 headers: {
                     'content-type': 'application/json',
-                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     product: {

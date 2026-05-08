@@ -54,7 +54,7 @@ import { formatCurrency, translateCategory, translateSubCategory, productCategor
 import { ProductForm } from './product-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { useProducts } from '@/contexts/products-context';
 import { useToast } from '@/hooks/use-toast';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -79,8 +79,8 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const [showArchived, setShowArchived] = React.useState(false);
   const isMobile = useIsMobile();
 
-  const { user } = useUser();
-  const barId = user ? `bar_${user.uid}` : null;
+  const { user } = useAuthSession();
+  const barId = user ? `bar_${user.id}` : null;
   const { toast } = useToast();
   const { refresh: refreshProducts } = useProducts();
 
@@ -107,10 +107,9 @@ export function ProductsTable({ products }: { products: Product[] }) {
 
     (async () => {
       try {
-        const token = await user.getIdToken();
         const res = await fetch(`/api/products/${product.id}`, {
           method: 'PATCH',
-          headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ product: updateData }),
         });
         const json = await res.json();
@@ -142,10 +141,8 @@ export function ProductsTable({ products }: { products: Product[] }) {
     setIsDeleting(true);
 
     try {
-        const token = await user.getIdToken();
         const res = await fetch(`/api/products/${productToDelete.id}`, {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
         });
         const json = await res.json();
         if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');

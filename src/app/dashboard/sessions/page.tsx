@@ -10,17 +10,17 @@ import { HelpIcon } from '@/components/ui/help-icon';
 import { useRouter } from 'next/navigation';
 import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { useSessions } from '@/contexts/sessions-context';
 
 
 export default function SessionsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user } = useAuthSession();
   const [isCreating, setIsCreating] = React.useState(false);
 
-  const barId = user ? `bar_${user.uid}` : null; 
+  const barId = user ? `bar_${user.id}` : null; 
 
   // Использовать контекст сессий вместо прямой загрузки
   const { sessions, isLoading: isLoadingSessions, error: sessionsError } = useSessions();
@@ -49,11 +49,10 @@ export default function SessionsPage() {
         return;
       }
 
-      const token = await user.getIdToken();
       const name = `Инвентаризация от ${new Date().toLocaleDateString('ru-RU')}`;
       const res = await fetch('/api/sessions', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ session: { name, status: 'in_progress' } }),
       });
       const json = await res.json();

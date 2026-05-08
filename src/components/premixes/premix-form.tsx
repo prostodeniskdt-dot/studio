@@ -26,7 +26,7 @@ import { Switch } from '@/components/ui/switch';
 import type { Product, PremixIngredient } from '@/lib/types';
 import { buildProductDisplayName, extractVolume, translateCategory, productCategories } from '@/lib/utils';
 import { Separator } from '../ui/separator';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Loader2, X, Plus, Search, Check, ChevronDown } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -57,8 +57,8 @@ interface PremixFormProps {
 }
 
 export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
-  const { user } = useUser();
-  const barId = user ? `bar_${user.uid}` : null;
+  const { user } = useAuthSession();
+  const barId = user ? `bar_${user.id}` : null;
   const { toast } = useToast();
   const { globalProducts, isLoading: isLoadingProducts, refresh } = useProducts(); // Используем globalProducts для выбора ингредиентов
   const [isSaving, setIsSaving] = React.useState(false);
@@ -330,7 +330,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         emptyBottleWeightG: data.emptyBottleWeightG || null,
         // Определяем, создаем ли премикс в библиотеке (только для новых премиксов)
         isInLibrary: premix ? premix.isInLibrary : createInLibrary,
-        createdByUserId: premix ? premix.createdByUserId : (user?.uid || undefined),
+        createdByUserId: premix ? premix.createdByUserId : (user?.id || undefined),
     };
 
     // Модель данных: библиотека и персональные взаимоисключающие.
@@ -351,13 +351,11 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
 
     (async () => {
       try {
-        const token = await user.getIdToken();
         if (premix) {
           const res = await fetch(`/api/products/${premix.id}`, {
             method: 'PATCH',
             headers: {
               'content-type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ product: premixData }),
           });
@@ -372,7 +370,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
             method: 'POST',
             headers: {
               'content-type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ product: premixData }),
           });

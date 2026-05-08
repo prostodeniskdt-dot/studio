@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+export type Timestamp = string | Date;
 
 export type UserRole = 'admin' | 'manager' | 'bartender';
 
@@ -19,7 +19,7 @@ export interface CookieConsent {
 }
 
 export interface UserProfile {
-  id: string; // Firebase UID
+  id: string;
   displayName: string;
   email: string;
   role: UserRole;

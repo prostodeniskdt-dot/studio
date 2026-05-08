@@ -31,7 +31,7 @@ import { format } from "date-fns"
 import { ru } from "date-fns/locale"
 
 import type { PurchaseOrder, PurchaseOrderStatus, Supplier } from '@/lib/types';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -62,7 +62,7 @@ interface PurchaseOrderFormProps {
 }
 
 export function PurchaseOrderForm({ barId, order, suppliers, onFormSubmit }: PurchaseOrderFormProps) {
-  const { user } = useUser();
+  const { user } = useAuthSession();
   const router = useRouter();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = React.useState(false);
@@ -86,13 +86,11 @@ export function PurchaseOrderForm({ barId, order, suppliers, onFormSubmit }: Pur
     
     (async () => {
       try {
-        const token = await user.getIdToken();
         if (order) {
           const res = await fetch(`/api/purchase-orders/${order.id}`, {
             method: 'PATCH',
             headers: {
               'content-type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
               order: {
@@ -111,7 +109,6 @@ export function PurchaseOrderForm({ barId, order, suppliers, onFormSubmit }: Pur
             method: 'POST',
             headers: {
               'content-type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
               order: {

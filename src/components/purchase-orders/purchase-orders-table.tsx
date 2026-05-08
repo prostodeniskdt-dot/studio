@@ -35,7 +35,7 @@ import { PurchaseOrderForm } from './purchase-order-form';
 import { formatCurrency, translateStatus } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import Link from 'next/link';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -57,7 +57,7 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
   const [orderToDelete, setOrderToDelete] = React.useState<PurchaseOrder | null>(null);
   const isMobile = useIsMobile();
 
-  const { user } = useUser();
+  const { user } = useAuthSession();
   const { toast } = useToast();
 
   const handleOpenSheet = (order?: PurchaseOrder) => {
@@ -78,10 +78,8 @@ export function PurchaseOrdersTable({ orders, barId, suppliers }: PurchaseOrders
     if (!orderToDelete || !user) return;
     
     try {
-        const token = await user.getIdToken();
         const res = await fetch(`/api/purchase-orders/${orderToDelete.id}`, {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
         });
         const json = await res.json();
         if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');

@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import type { Supplier } from '@/lib/types';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -36,7 +36,7 @@ interface SupplierFormProps {
 }
 
 export function SupplierForm({ barId, supplier, onFormSubmit }: SupplierFormProps) {
-  const { user } = useUser();
+  const { user } = useAuthSession();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = React.useState(false);
 
@@ -62,13 +62,11 @@ export function SupplierForm({ barId, supplier, onFormSubmit }: SupplierFormProp
 
     (async () => {
       try {
-        const token = await user.getIdToken();
         if (supplier) {
           const res = await fetch(`/api/suppliers/${supplier.id}`, {
             method: 'PATCH',
             headers: {
               'content-type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ supplier: data }),
           });
@@ -80,7 +78,6 @@ export function SupplierForm({ barId, supplier, onFormSubmit }: SupplierFormProp
             method: 'POST',
             headers: {
               'content-type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ supplier: data }),
           });

@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { requireFirebaseUserId } from '@/lib/firebase-admin';
+import { requireUserId } from '@/lib/auth-server';
 import { jsonResponse, readJson } from '@/lib/http';
 
 function barIdFromUid(uid: string) {
@@ -8,7 +8,7 @@ function barIdFromUid(uid: string) {
 
 export async function GET(req: Request) {
   try {
-    const uid = await requireFirebaseUserId(req);
+    const uid = await requireUserId(req);
     const barId = barIdFromUid(uid);
     const sessions = await prisma.inventorySession.findMany({
       where: { barId },
@@ -33,7 +33,7 @@ type CreateBody = {
 
 export async function POST(req: Request) {
   try {
-    const uid = await requireFirebaseUserId(req);
+    const uid = await requireUserId(req);
     const barId = barIdFromUid(uid);
     const body = await readJson<CreateBody>(req);
     const created = await prisma.inventorySession.create({

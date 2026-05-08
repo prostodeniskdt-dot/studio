@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { requireFirebaseUserId } from '@/lib/firebase-admin';
+import { requireUserId } from '@/lib/auth-server';
 import { jsonResponse, readJson } from '@/lib/http';
 
 async function requireAdmin(uid: string) {
@@ -11,7 +11,7 @@ async function requireAdmin(uid: string) {
 
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const adminUid = await requireFirebaseUserId(req);
+    const adminUid = await requireUserId(req);
     await requireAdmin(adminUid);
     const { id } = await ctx.params;
 
@@ -30,7 +30,7 @@ type PatchBody = { isBanned?: boolean };
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const adminUid = await requireFirebaseUserId(req);
+    const adminUid = await requireUserId(req);
     await requireAdmin(adminUid);
     const { id } = await ctx.params;
     const body = await readJson<PatchBody>(req);

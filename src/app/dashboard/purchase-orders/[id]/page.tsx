@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import { useParams, notFound } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import type { PurchaseOrder, PurchaseOrderLine, Product, Supplier } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,9 +16,9 @@ import { ArrowLeft } from 'lucide-react';
 export default function PurchaseOrderPage() {
     const params = useParams();
     const id = params.id as string;
-    const { user } = useUser();
+    const { user } = useAuthSession();
 
-    const barId = user ? `bar_${user.uid}` : null;
+    const barId = user ? `bar_${user.id}` : null;
     const [order, setOrder] = React.useState<any | null>(null);
     const [isLoadingOrder, setIsLoadingOrder] = React.useState(false);
 
@@ -31,9 +31,7 @@ export default function PurchaseOrderPage() {
         if (!user) return;
         setIsLoadingOrder(true);
         try {
-          const token = await user.getIdToken();
           const res = await fetch(`/api/purchase-orders/${id}`, {
-            headers: { Authorization: `Bearer ${token}` },
             cache: 'no-store',
           });
           const json = await res.json();

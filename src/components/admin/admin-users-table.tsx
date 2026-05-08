@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import type { UserProfile } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
 import { Badge } from '../ui/badge';
@@ -50,7 +50,7 @@ interface AdminUsersTableProps {
 }
 
 export function AdminUsersTable({ users }: AdminUsersTableProps) {
-  const { user: adminUser } = useUser();
+  const { user: adminUser } = useAuthSession();
   const { toast } = useToast();
   const router = useRouter();
   const [processingUserId, setProcessingUserId] = React.useState<string | null>(null);
@@ -58,18 +58,16 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
 
   const handleBanToggle = (e: React.MouseEvent, user: UserProfile) => {
     e.stopPropagation(); // Prevent row click event
-    if (!adminUser || adminUser.uid === user.id) return;
+    if (!adminUser || adminUser.id === user.id) return;
 
     setProcessingUserId(user.id);
     const newBanStatus = !user.isBanned;
     (async () => {
       try {
-        const token = await adminUser.getIdToken();
         const res = await fetch(`/api/admin/users/${user.id}`, {
           method: 'PATCH',
           headers: {
             'content-type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ isBanned: newBanStatus }),
         });
@@ -156,7 +154,7 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
       header: 'Действия',
       cell: ({ row }) => {
         const user = row.original;
-        const isSelf = adminUser?.uid === user.id;
+        const isSelf = adminUser?.id === user.id;
         const isProcessing = processingUserId === user.id;
         
         return (
@@ -204,7 +202,7 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => {
                 const profile = row.original;
-                const isSelf = adminUser?.uid === profile.id;
+                const isSelf = adminUser?.id === profile.id;
                 const isProcessing = processingUserId === profile.id;
                 const name = profile.displayName || 'Имя не указано';
                 const email = profile.email || 'Email не найден';

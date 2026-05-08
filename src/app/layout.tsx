@@ -2,10 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
-import { FirebaseClientProvider } from '@/firebase';
 import { ClientOnly } from '@/components/client-only';
-import { OfflineIndicator } from '@/components/offline-indicator';
 import { CookieBanner } from '@/components/cookie-banner';
+import { AuthProvider } from '@/contexts/auth-context';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -42,16 +41,15 @@ export default function RootLayout({
   return (
     <html lang="ru" className="h-full">
       <body className={`${inter.variable} font-sans antialiased h-full bg-background flex flex-col`}>
-        <FirebaseClientProvider>
+        <AuthProvider>
           <div className="flex-1">
             {children}
           </div>
           <ClientOnly>
             <Toaster />
-            <OfflineIndicator />
             <CookieBanner />
           </ClientOnly>
-        </FirebaseClientProvider>
+        </AuthProvider>
       </body>
     </html>
   );

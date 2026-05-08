@@ -8,8 +8,7 @@ import { AppLogo } from "@/components/app-logo";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth, useUser } from "@/firebase";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { useAuthSession } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
@@ -33,10 +32,9 @@ const signupSchema = z.object({
 type SignupFormInputs = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
-  const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading, refresh } = useAuthSession();
 
   const {
     register,
@@ -53,15 +51,6 @@ export default function SignupPage() {
   }, [user, isUserLoading, router]);
 
   const onSubmit: SubmitHandler<SignupFormInputs> = async (data) => {
-    if (!auth) {
-      toast({
-        variant: "destructive",
-        title: "Ошибка",
-        description: "Сервисы Firebase не инициализированы.",
-      });
-      return;
-    }
-
     const extraDetails = {
       city: data.city,
       establishment: data.establishment,
@@ -78,15 +67,22 @@ export default function SignupPage() {
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      
-      const profileData = {
-        displayName: data.name,
-      };
-
-      await updateProfile(userCredential.user, profileData);
-
-      // Consent logging moved to Postgres bootstrap/profile flow.
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          displayName: data.name,
+          city: data.city,
+          establishment: data.establishment,
+          phone: data.phone,
+          socialLink: data.socialLink,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Signup failed');
+      await refresh();
       
     } catch(e: any) {
         if (typeof window !== 'undefined' && Object.keys(detailsToStore).length > 0) {
@@ -94,7 +90,7 @@ export default function SignupPage() {
         }
         
         let description = "Произошла неизвестная ошибка.";
-        if (e.code === 'auth/email-already-in-use') {
+        if (String(e?.message || '').toLowerCase().includes('email')) {
             description = 'Этот email уже зарегистрирован. Пожалуйста, войдите или используйте другой адрес.';
         } else if (e.message) {
             description = e.message;

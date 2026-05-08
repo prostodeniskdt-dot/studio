@@ -52,7 +52,7 @@ import { formatCurrency, translateCategory, dedupeProductsByName, buildProductDi
 import { PremixForm } from './premix-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent } from '@/components/ui/card';
@@ -75,7 +75,7 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
   const [isDeleting, setIsDeleting] = React.useState(false);
   const isMobile = useIsMobile();
 
-  const { user } = useUser();
+  const { user } = useAuthSession();
   const { toast } = useToast();
 
   const handleOpenSheet = (premix?: Product) => {
@@ -96,10 +96,9 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
 
     (async () => {
       try {
-        const token = await user.getIdToken();
         const res = await fetch(`/api/products/${premix.id}`, {
           method: 'PATCH',
-          headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ product: updateData }),
         });
         const json = await res.json();
@@ -123,10 +122,8 @@ export function PremixesTable({ premixes }: { premixes: Product[] }) {
     setIsDeleting(true);
 
     try {
-        const token = await user.getIdToken();
         const res = await fetch(`/api/products/${premixToDelete.id}`, {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
         });
         const json = await res.json();
         if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');

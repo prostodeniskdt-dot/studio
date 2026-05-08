@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import type { InventorySession } from '@/lib/types';
 import { logger } from '@/lib/logger';
 
@@ -24,7 +24,7 @@ interface CachedSessions {
 }
 
 export function SessionsProvider({ children, barId }: { children: React.ReactNode; barId: string | null }) {
-  const { user } = useUser();
+  const { user } = useAuthSession();
   const [cache, setCache] = useState<CachedSessions | null>(null);
   const [forceRefresh, setForceRefresh] = useState(0);
   const [sessions, setSessions] = useState<InventorySession[] | null>(null);
@@ -62,9 +62,7 @@ export function SessionsProvider({ children, barId }: { children: React.ReactNod
       setIsLoading(true);
       setError(null);
       try {
-        const token = await user.getIdToken();
         const res = await fetch('/api/sessions', {
-          headers: { Authorization: `Bearer ${token}` },
           cache: 'no-store',
         });
         const json = await res.json();

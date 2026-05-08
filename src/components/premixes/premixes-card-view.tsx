@@ -29,7 +29,7 @@ import {
 import type { Product } from '@/lib/types';
 import { buildProductDisplayName, cn } from '@/lib/utils';
 import { PremixForm } from './premix-form';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useProducts } from '@/contexts/products-context';
@@ -47,7 +47,7 @@ export function PremixesCardView({ premixes, onSendToLibrary }: PremixesCardView
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isArchiving, setIsArchiving] = React.useState<string | null>(null);
 
-  const { user } = useUser();
+  const { user } = useAuthSession();
   const { toast } = useToast();
   const { products: allProducts } = useProducts();
 
@@ -93,10 +93,9 @@ export function PremixesCardView({ premixes, onSendToLibrary }: PremixesCardView
     const updateData = { isActive: !premix.isActive };
     
     try {
-      const token = await user.getIdToken();
       const res = await fetch(`/api/products/${premix.id}`, {
         method: 'PATCH',
-        headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ product: updateData }),
       });
       const json = await res.json();
@@ -119,10 +118,8 @@ export function PremixesCardView({ premixes, onSendToLibrary }: PremixesCardView
     setIsDeleting(true);
     
     try {
-      const token = await user.getIdToken();
       const res = await fetch(`/api/products/${premixToDelete.id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
       if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');

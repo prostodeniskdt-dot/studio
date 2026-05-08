@@ -14,7 +14,7 @@ import { HelpIcon } from '@/components/ui/help-icon';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { InventorySession, Product, ProductCategory, InventoryLine } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { useProducts } from '@/contexts/products-context';
 import { translateCategory, productCategories, productSubCategories, translateSubCategory, dedupeProductsByName, buildProductDisplayName } from '@/lib/utils';
 import { ProductSearch } from '@/components/products/product-search';
@@ -24,8 +24,8 @@ import { calculateVolumeMl } from '@/lib/calculator';
 
 export default function UnifiedCalculatorPage() {
   const { toast } = useToast();
-  const { user } = useUser();
-  const barId = user ? `bar_${user.uid}` : null;
+  const { user } = useAuthSession();
+  const barId = user ? `bar_${user.id}` : null;
 
   // Использовать контекст продуктов вместо прямой загрузки
   const { products, isLoading: isLoadingProducts } = useProducts();
@@ -177,9 +177,7 @@ export default function UnifiedCalculatorPage() {
     setIsSending(true);
     
     try {
-        const token = await user.getIdToken();
         const sessionsRes = await fetch('/api/sessions', {
-          headers: { Authorization: `Bearer ${token}` },
           cache: 'no-store',
         });
         const sessionsJson = await sessionsRes.json();
@@ -202,7 +200,6 @@ export default function UnifiedCalculatorPage() {
           // Разложить примикс на ингредиенты
           const ingredients = expandPremixToIngredients(selectedProduct, volume);
           const detailRes = await fetch(`/api/sessions/${activeSession.id}`, {
-            headers: { Authorization: `Bearer ${token}` },
             cache: 'no-store',
           });
           const detailJson = await detailRes.json();
@@ -229,7 +226,7 @@ export default function UnifiedCalculatorPage() {
 
           const patchRes = await fetch(`/api/sessions/${activeSession.id}`, {
             method: 'PATCH',
-            headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+            headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ upsertLines: payloadLines }),
           });
           const patchJson = await patchRes.json();
@@ -242,7 +239,6 @@ export default function UnifiedCalculatorPage() {
         } else {
           // Обычная логика (как раньше) - создать/обновить одну линию для продукта/примикса
           const detailRes = await fetch(`/api/sessions/${activeSession.id}`, {
-            headers: { Authorization: `Bearer ${token}` },
             cache: 'no-store',
           });
           const detailJson = await detailRes.json();
@@ -267,7 +263,7 @@ export default function UnifiedCalculatorPage() {
 
           const patchRes = await fetch(`/api/sessions/${activeSession.id}`, {
             method: 'PATCH',
-            headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+            headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ upsertLines: [payloadLine] }),
           });
           const patchJson = await patchRes.json();

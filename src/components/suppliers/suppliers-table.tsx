@@ -31,7 +31,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import type { Supplier } from '@/lib/types';
 import { SupplierForm } from './supplier-form';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent } from '@/components/ui/card';
@@ -47,7 +47,7 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
   const [supplierToDelete, setSupplierToDelete] = React.useState<Supplier | null>(null);
   const isMobile = useIsMobile();
 
-  const { user } = useUser();
+  const { user } = useAuthSession();
   const { toast } = useToast();
 
   const handleOpenSheet = (supplier?: Supplier) => {
@@ -68,10 +68,8 @@ export function SuppliersTable({ suppliers, barId }: SuppliersTableProps) {
     if (!supplierToDelete || !user) return;
     (async () => {
       try {
-        const token = await user.getIdToken();
         const res = await fetch(`/api/suppliers/${supplierToDelete.id}`, {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
         });
         const json = await res.json();
         if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');

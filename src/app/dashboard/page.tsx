@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { useSessions } from '@/contexts/sessions-context';
 import { metricsTracker } from '@/lib/metrics';
 
@@ -20,9 +20,9 @@ import { metricsTracker } from '@/lib/metrics';
 export default function DashboardPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user } = useAuthSession();
 
-  const barId = user ? `bar_${user.uid}` : null; 
+  const barId = user ? `bar_${user.id}` : null; 
   const { sessions, isLoading: isLoadingSessions, error: sessionsError } = useSessions();
   const [isCreating, setIsCreating] = React.useState(false);
 
@@ -31,8 +31,10 @@ export default function DashboardPage() {
     return sessions
       .filter(s => s.status === 'in_progress' || s.status === 'draft')
       .sort((a, b) => {
-        const aMs = typeof (a as any).createdAt === 'string' ? new Date((a as any).createdAt).getTime() : (a.createdAt?.toMillis?.() ?? 0);
-        const bMs = typeof (b as any).createdAt === 'string' ? new Date((b as any).createdAt).getTime() : (b.createdAt?.toMillis?.() ?? 0);
+        const aVal = (a as any).createdAt as any;
+        const bVal = (b as any).createdAt as any;
+        const aMs = aVal instanceof Date ? aVal.getTime() : typeof aVal === 'string' ? new Date(aVal).getTime() : 0;
+        const bMs = bVal instanceof Date ? bVal.getTime() : typeof bVal === 'string' ? new Date(bVal).getTime() : 0;
         return bMs - aMs;
       });
   }, [sessions]);
@@ -61,11 +63,10 @@ export default function DashboardPage() {
           return;
         }
 
-        const token = await user.getIdToken();
         const name = `Инвентаризация от ${new Date().toLocaleDateString('ru-RU')}`;
         const res = await fetch('/api/sessions', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ session: { name, status: 'in_progress' } }),
         });
         const json = await res.json();

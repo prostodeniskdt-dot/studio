@@ -8,7 +8,7 @@ import {
 import { UserNav } from "@/components/user-nav";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ClientOnly } from "@/components/client-only";
-import { useUser, useAuth } from "@/firebase";
+import { useAuthSession } from "@/contexts/auth-context";
 import { ProductsProvider } from "@/contexts/products-context";
 import { SessionsProvider } from "@/contexts/sessions-context";
 import { SuppliersProvider } from "@/contexts/suppliers-context";
@@ -18,7 +18,6 @@ import React, { useEffect, useState } from "react";
 import { Loader2, ShieldX } from "lucide-react";
 import type { UserProfile } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { signOut } from "firebase/auth";
 import { logger } from "@/lib/logger";
 import { Footer } from "@/components/footer";
 
@@ -28,27 +27,15 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isUserLoading } = useUser();
-  const auth = useAuth();
+  const { user, isLoading: isUserLoading, logout, refresh } = useAuthSession();
   const router = useRouter();
   const [isDataReady, setIsDataReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
-  async function loadProfileAndBootstrap(currentUser: NonNullable<typeof user>) {
-    const token = await currentUser.getIdToken();
-    // Bootstrap (creates Postgres user+bar if missing)
-    const boot = await fetch('/api/bootstrap', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      cache: 'no-store',
-    });
-    const bootJson = await boot.json();
-    if (!boot.ok || bootJson?.ok === false) throw new Error(bootJson?.error || 'Bootstrap failed');
-
+  async function loadProfile() {
     const res = await fetch('/api/me', {
-      headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     });
     const json = await res.json();
@@ -68,7 +55,7 @@ export default function DashboardLayout({
 
     let isMounted = true;
     setIsLoadingProfile(true);
-    loadProfileAndBootstrap(user)
+    loadProfile()
       .then(() => {
         if (isMounted) setIsDataReady(true);
       })
@@ -90,13 +77,7 @@ export default function DashboardLayout({
 
 
   const handleLogoutAndRedirect = () => {
-    if (auth) {
-      signOut(auth).then(() => {
-        router.replace('/');
-      });
-    } else {
-      router.replace('/');
-    }
+    logout().finally(() => router.replace('/'));
   };
 
   const isLoading = isUserLoading || !isDataReady || isLoadingProfile;
@@ -133,7 +114,7 @@ export default function DashboardLayout({
     );
   }
 
-  const barId = user ? `bar_${user.uid}` : null;
+  const barId = user ? `bar_${user.id}` : null;
 
   return (
     <ErrorBoundary>

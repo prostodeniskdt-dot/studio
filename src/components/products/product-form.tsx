@@ -36,9 +36,7 @@ import { checkProductDuplicate } from '@/lib/product-duplicate-check';
 import { useProducts } from '@/contexts/products-context';
 import { productCategorySchema } from '@/lib/schemas/product.schema';
 import { Separator } from '../ui/separator';
-import {
-  useUser,
-} from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -70,8 +68,8 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
-  const { user } = useUser();
-  const barId = user ? `bar_${user.uid}` : null;
+  const { user } = useAuthSession();
+  const barId = user ? `bar_${user.id}` : null;
   const { toast } = useToast();
   const [isSaving, setIsSaving] = React.useState(false);
   const [showAutoOrderWarning, setShowAutoOrderWarning] = React.useState(true);
@@ -186,7 +184,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
       fullBottleWeightG: data.fullBottleWeightG || null,
       emptyBottleWeightG: data.emptyBottleWeightG || null,
       isInLibrary: product ? product.isInLibrary : shouldCreateInLibrary,
-      createdByUserId: product ? product.createdByUserId : user?.uid || undefined,
+      createdByUserId: product ? product.createdByUserId : user?.id || undefined,
     };
 
     // Модель данных: библиотека и персональные взаимоисключающие.
@@ -199,13 +197,11 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
 
     (async () => {
       try {
-        const token = await user.getIdToken();
         if (product) {
           const res = await fetch(`/api/products/${product.id}`, {
             method: 'PATCH',
             headers: {
               'content-type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ product: productData }),
           });
@@ -216,7 +212,6 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
             method: 'POST',
             headers: {
               'content-type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ product: productData }),
           });

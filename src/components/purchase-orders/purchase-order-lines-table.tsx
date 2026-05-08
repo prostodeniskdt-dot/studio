@@ -18,7 +18,7 @@ import { buildProductDisplayName } from '@/lib/utils';
 import { formatCurrency, translateCategory, translateProductName } from '@/lib/utils';
 import { Combobox, GroupedComboboxOption } from '../ui/combobox';
 import Image from 'next/image';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent } from '@/components/ui/card';
@@ -39,7 +39,7 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
   const [isProcessing, setIsProcessing] = React.useState(false);
   const isMobile = useIsMobile();
 
-  const { user } = useUser();
+  const { user } = useAuthSession();
   const { toast } = useToast();
 
   // Create products map for O(1) lookup
@@ -69,12 +69,10 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
     setIsSaving(true);
     (async () => {
       try {
-        const token = await user.getIdToken();
         const res = await fetch(`/api/purchase-orders/${orderId}`, {
           method: 'PATCH',
           headers: {
             'content-type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             updateLines: localLines.map((l) => ({
@@ -155,12 +153,10 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
     setIsProcessing(true);
     (async () => {
       try {
-        const token = await user.getIdToken();
         const res = await fetch(`/api/purchase-orders/${orderId}`, {
           method: 'PATCH',
           headers: {
             'content-type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ deleteLineId: lineId }),
         });
@@ -183,12 +179,10 @@ export function PurchaseOrderLinesTable({ lines, products, barId, orderId, isEdi
     setIsAdding(false);
     (async () => {
       try {
-        const token = await user.getIdToken();
         const res = await fetch(`/api/purchase-orders/${orderId}`, {
           method: 'PATCH',
           headers: {
             'content-type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ addLine: { productId } }),
         });

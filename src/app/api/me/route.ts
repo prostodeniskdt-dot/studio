@@ -1,10 +1,10 @@
 import { prisma } from '@/lib/db';
-import { requireFirebaseUserId } from '@/lib/firebase-admin';
+import { requireUserId } from '@/lib/auth-server';
 import { jsonResponse, readJson } from '@/lib/http';
 
 export async function GET(req: Request) {
   try {
-    const uid = await requireFirebaseUserId(req);
+    const uid = await requireUserId(req);
     const profile = await prisma.userProfile.findUnique({ where: { id: uid } });
     return jsonResponse({ ok: true, profile });
   } catch (e) {
@@ -25,7 +25,7 @@ type PatchBody = {
 
 export async function PATCH(req: Request) {
   try {
-    const uid = await requireFirebaseUserId(req);
+    const uid = await requireUserId(req);
     const body = await readJson<PatchBody>(req);
     const updated = await prisma.userProfile.update({
       where: { id: uid },

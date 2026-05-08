@@ -8,7 +8,7 @@ import { FileText, Loader2, Save, MoreVertical, Trash2, Download, Upload, PlusCi
 import Link from "next/link";
 import { translateStatus, buildProductDisplayName } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine, CalculatedInventoryLine } from '@/lib/types';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { useProducts } from '@/contexts/products-context';
 import {
   DropdownMenu,
@@ -42,7 +42,6 @@ import { useToast } from '@/hooks/use-toast';
 import { calculateLineFields } from '@/lib/calculations';
 import { SessionHeader } from '@/components/sessions/session-header';
 import { SessionActions } from '@/components/sessions/session-actions';
-import { useOffline } from '@/hooks/use-offline';
 import { HelpIcon } from '@/components/ui/help-icon';
 import { Progress } from '@/components/ui/progress';
 import { WifiOff, AlertTriangle } from 'lucide-react';
@@ -50,11 +49,11 @@ import { WifiOff, AlertTriangle } from 'lucide-react';
 export default function SessionPage() {
   const params = useParams();
   const id = params.id as string;
-  const { user } = useUser();
+  const { user } = useAuthSession();
   const { toast } = useToast();
   const router = useRouter();
 
-  const barId = user ? `bar_${user.uid}` : null;
+  const barId = user ? `bar_${user.id}` : null;
   
   const [isDeletingSession, setIsDeletingSession] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
@@ -124,9 +123,7 @@ export default function SessionPage() {
       setIsLoadingLines(true);
       setSessionError(null);
       try {
-        const token = await user.getIdToken();
         const res = await fetch(`/api/sessions/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
           cache: 'no-store',
         });
         const json = await res.json();
@@ -241,10 +238,8 @@ export default function SessionPage() {
 
     try {
       setDeleteProgress(25);
-      const token = await user.getIdToken();
       const res = await fetch(`/api/sessions/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
       if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
@@ -285,11 +280,9 @@ export default function SessionPage() {
     }
 
     try {
-      const token = await user.getIdToken();
       const supplierId = line.product.defaultSupplierId || '';
 
       const ordersRes = await fetch('/api/purchase-orders', {
-        headers: { Authorization: `Bearer ${token}` },
         cache: 'no-store',
       });
       const ordersJson = await ordersRes.json();
@@ -302,7 +295,6 @@ export default function SessionPage() {
           method: 'POST',
           headers: {
             'content-type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             order: {
@@ -322,7 +314,6 @@ export default function SessionPage() {
         method: 'PATCH',
         headers: {
           'content-type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ addLine: { productId: line.product.id } }),
       });
@@ -348,12 +339,10 @@ export default function SessionPage() {
       const product = allProducts?.find(p => p.id === productId);
       if (!product) throw new Error("Продукт не найден");
 
-      const token = await user.getIdToken();
       const res = await fetch(`/api/sessions/${id}`, {
         method: 'PATCH',
         headers: {
           'content-type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ addProductLine: { productId } }),
       });
@@ -380,7 +369,6 @@ export default function SessionPage() {
     if (!localLines || !user) return;
     setIsSaving(true);
     try {
-      const token = await user.getIdToken();
       const payloadLines =
         localLines
           .map((line) => {
@@ -407,7 +395,6 @@ export default function SessionPage() {
         method: 'PATCH',
         headers: {
           'content-type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ upsertLines: payloadLines }),
       });
@@ -436,12 +423,10 @@ export default function SessionPage() {
       if (hasUnsavedChanges) {
           await handleSaveChanges();
       }
-      const token = await user.getIdToken();
       const res = await fetch(`/api/sessions/${id}`, {
         method: 'PATCH',
         headers: {
           'content-type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ session: { status: 'completed', closedAt: new Date().toISOString() } }),
       });

@@ -25,7 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import * as React from "react";
-import { useUser } from "@/firebase";
+import { useAuthSession } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import type { InventoryLine } from "@/lib/types";
@@ -44,7 +44,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [isExporting, setIsExporting] = React.useState<string | null>(null);
   const itemsPerPage = 9; // 3x3 grid
-  const { user } = useUser();
+  const { user } = useAuthSession();
   const { toast } = useToast();
   const { products: allProducts } = useProducts();
 
@@ -93,10 +93,8 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
 
     try {
         setDeleteProgress(25);
-        const token = await user.getIdToken();
         const res = await fetch(`/api/sessions/${idToDelete}`, {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
         });
         const json = await res.json();
         if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
@@ -129,9 +127,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     setIsExporting(session.id);
 
     try {
-      const token = await user.getIdToken();
       const res = await fetch(`/api/sessions/${session.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
         cache: 'no-store',
       });
       const json = await res.json();

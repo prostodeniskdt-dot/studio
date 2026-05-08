@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import type { UserProfile } from '@/lib/types';
 import { Loader2, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -29,7 +29,7 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading } = useAuthSession();
   const { toast } = useToast();
   const [isHelpOpen, setIsHelpOpen] = React.useState(false);
   const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null);
@@ -41,9 +41,7 @@ export default function ProfilePage() {
       if (!user) return;
       setIsLoadingProfile(true);
       try {
-        const token = await user.getIdToken();
         const res = await fetch('/api/me', {
-          headers: { Authorization: `Bearer ${token}` },
           cache: 'no-store',
         });
         const json = await res.json();
@@ -86,12 +84,10 @@ export default function ProfilePage() {
     if (!user) return;
     
     try {
-      const token = await user.getIdToken();
       const res = await fetch('/api/me', {
         method: 'PATCH',
         headers: {
           'content-type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           displayName: data.displayName,

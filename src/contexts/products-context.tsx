@@ -1,11 +1,10 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import type { Product } from '@/lib/types';
 import { logger } from '@/lib/logger';
 import { dedupeProductsByName } from '@/lib/utils';
-import { getIdTokenOrThrow } from '@/lib/auth-token';
 
 interface ProductsContextValue {
   products: Product[]; // Объединенный список (персональные + библиотека) для обратной совместимости
@@ -32,8 +31,8 @@ interface CachedProducts {
 }
 
 export function ProductsProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useUser();
-  const barId = user ? `bar_${user.uid}` : null;
+  const { user } = useAuthSession();
+  const barId = user ? `bar_${user.id}` : null;
   const [cache, setCache] = useState<CachedProducts | null>(null);
   const [forceRefresh, setForceRefresh] = useState(0);
   const [personalProducts, setPersonalProducts] = useState<Product[] | null>(null);
@@ -80,11 +79,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       setLibraryError(null);
 
       try {
-        const token = await getIdTokenOrThrow(user);
         const res = await fetch('/api/products', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
           cache: 'no-store',
         });
         const json = await res.json();

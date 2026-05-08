@@ -5,7 +5,7 @@ import { useProducts } from "@/contexts/products-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { HelpIcon } from '@/components/ui/help-icon';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import type { Product, ProductCategory } from '@/lib/types';
 import { buildProductDisplayName } from '@/lib/utils';
@@ -39,14 +39,9 @@ export default function ProductsPage() {
     const [productToSendToLibrary, setProductToSendToLibrary] = React.useState<Product | null>(null);
     const [isSendingToLibrary, setIsSendingToLibrary] = React.useState(false);
 
-    const { user } = useUser();
-    const barId = user ? `bar_${user.uid}` : null;
+    const { user } = useAuthSession();
+    const barId = user ? `bar_${user.id}` : null;
     const { toast } = useToast();
-
-    const getToken = React.useCallback(async () => {
-        if (!user) throw new Error('Not authenticated');
-        return await user.getIdToken();
-    }, [user]);
 
     const handleOpenSheet = (product?: Product) => {
         setEditingProduct(product);
@@ -68,12 +63,10 @@ export default function ProductsPage() {
 
         (async () => {
             try {
-                const token = await getToken();
                 const res = await fetch(`/api/products/${product.id}`, {
                     method: 'PATCH',
                     headers: {
                         'content-type': 'application/json',
-                        Authorization: `Bearer ${token}`,
                     },
                     body: JSON.stringify({ product: { isActive: !currentIsActive } }),
                 });
@@ -107,12 +100,10 @@ export default function ProductsPage() {
         setIsSendingToLibrary(true);
 
         try {
-            const token = await getToken();
             const res = await fetch(`/api/products/${productToSendToLibrary.id}`, {
                 method: 'PATCH',
                 headers: {
                     'content-type': 'application/json',
-                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({ sendToLibrary: true }),
             });
@@ -151,12 +142,8 @@ export default function ProductsPage() {
         setIsDeleting(true);
 
         try {
-            const token = await getToken();
             const res = await fetch(`/api/products/${productToDelete.id}`, {
                 method: 'DELETE',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
             });
             const json = await res.json();
             if (!res.ok) throw new Error(json?.error || 'Failed to delete');

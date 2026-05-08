@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import dynamic from 'next/dynamic';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import type { UserProfile } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -26,7 +26,7 @@ const AdminUsersTable = dynamic(
 
 
 export default function AdminPage() {
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading } = useAuthSession();
   const router = useRouter();
   const [users, setUsers] = React.useState<UserProfile[] | null>(null);
   const [isLoadingUsers, setIsLoadingUsers] = React.useState(false);
@@ -43,9 +43,7 @@ export default function AdminPage() {
       setUsersError(null);
       setAdminRoleError(null);
       try {
-        const token = await user.getIdToken();
         const res = await fetch('/api/admin/users', {
-          headers: { Authorization: `Bearer ${token}` },
           cache: 'no-store',
         });
         const json = await res.json();
@@ -95,7 +93,7 @@ export default function AdminPage() {
   
   // Запрос пользователей запускается только после проверки прав админа
   if (!isAuthorizedAdmin) {
-     if (user?.email === 'prostodeniskdt@gmail.com') {
+     if (user?.profile?.role === 'admin') {
         return (
              <Alert className="max-w-xl mx-auto">
                 <Info className="h-4 w-4" />

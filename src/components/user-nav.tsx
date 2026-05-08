@@ -15,42 +15,31 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useUser, useAuth } from '@/firebase';
 import { LogOut, User as UserIcon, Loader2 } from 'lucide-react';
-import { signOut } from 'firebase/auth';
+import { useAuthSession } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 
 export function UserNav() {
-  const auth = useAuth();
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading, logout } = useAuthSession();
   const router = useRouter();
   const { toast } = useToast();
 
   const handleLogout = () => {
-    if (!auth) {
-        toast({
-            variant: "destructive",
-            title: "Ошибка выхода",
-            description: "Служба аутентификации недоступна."
-        });
-        return;
-    };
-    signOut(auth).then(() => {
-        // This will trigger the useEffect in the layout/page to redirect.
+    logout()
+      .then(() => {
         router.push('/');
-        toast({
-            title: "Вы вышли из системы"
-        });
-    }).catch((error) => {
+        toast({ title: 'Вы вышли из системы' });
+      })
+      .catch((error) => {
         logger.error("Logout Error:", error);
         toast({
-            variant: "destructive",
-            title: "Ошибка выхода",
-            description: "Не удалось выйти из системы. Пожалуйста, попробуйте еще раз."
+          variant: "destructive",
+          title: "Ошибка выхода",
+          description: "Не удалось выйти из системы. Пожалуйста, попробуйте еще раз."
         });
-    });
+      });
   };
 
   const getInitials = (name: string | null | undefined) => {
@@ -79,15 +68,15 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={user.photoURL ?? `https://avatar.vercel.sh/${user.email}.png`} alt={user.displayName ?? 'User'} />
-            <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+            <AvatarImage src={`https://avatar.vercel.sh/${user.email}.png`} alt={user.profile?.displayName ?? 'User'} />
+            <AvatarFallback>{getInitials(user.profile?.displayName)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.displayName || 'Пользователь'}</p>
+            <p className="text-sm font-medium leading-none">{user.profile?.displayName || 'Пользователь'}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
             </p>

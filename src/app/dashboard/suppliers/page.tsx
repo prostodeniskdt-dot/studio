@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { SuppliersTable } from '@/components/suppliers/suppliers-table';
@@ -9,8 +9,8 @@ import { useSuppliers } from '@/contexts/suppliers-context';
 import { HelpIcon } from '@/components/ui/help-icon';
 
 export default function SuppliersPage() {
-  const { user } = useUser();
-  const barId = user ? `bar_${user.uid}` : null;
+  const { user } = useAuthSession();
+  const barId = user ? `bar_${user.id}` : null;
 
   const { suppliers, isLoading, error } = useSuppliers();
 

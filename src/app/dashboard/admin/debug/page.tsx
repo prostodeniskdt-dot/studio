@@ -1,15 +1,14 @@
 'use client';
 
 import * as React from 'react';
-import { useUser } from '@/firebase';
-import { firebaseConfig } from '@/firebase/config';
+import { useAuthSession } from '@/contexts/auth-context';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AdminDebugPage() {
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading } = useAuthSession();
   const { toast } = useToast();
 
   const [testResult, setTestResult] = React.useState<string | null>(null);
@@ -89,8 +88,7 @@ export default function AdminDebugPage() {
             <h3 className="font-semibold">Информация о клиенте:</h3>
             {isUserLoading ? <Loader2 className="animate-spin"/> : (
               <ul className="list-disc list-inside text-sm text-muted-foreground">
-                <li><span className="font-medium text-foreground">Project ID:</span> {firebaseConfig.projectId}</li>
-                <li><span className="font-medium text-foreground">User UID:</span> {user?.uid ?? 'N/A'}</li>
+                <li><span className="font-medium text-foreground">User ID:</span> {user?.id ?? 'N/A'}</li>
                 <li><span className="font-medium text-foreground">User Email:</span> {user?.email ?? 'N/A'}</li>
               </ul>
             )}

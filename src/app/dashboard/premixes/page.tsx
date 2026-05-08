@@ -7,7 +7,7 @@ import { HelpIcon } from '@/components/ui/help-icon';
 import { Button } from '@/components/ui/button';
 import { Library } from 'lucide-react';
 import Link from 'next/link';
-import { useUser } from '@/firebase';
+import { useAuthSession } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import type { Product } from '@/lib/types';
 import { buildProductDisplayName } from '@/lib/utils';
@@ -28,8 +28,8 @@ export default function PremixesPage() {
     const [premixToSendToLibrary, setPremixToSendToLibrary] = React.useState<Product | null>(null);
     const [isSendingToLibrary, setIsSendingToLibrary] = React.useState(false);
 
-    const { user } = useUser();
-    const barId = user ? `bar_${user.uid}` : null;
+    const { user } = useAuthSession();
+    const barId = user ? `bar_${user.id}` : null;
     const { toast } = useToast();
 
     if (isLoading || !personalPremixes) {
@@ -116,12 +116,10 @@ export default function PremixesPage() {
         setIsSendingToLibrary(true);
 
         try {
-            const token = await user.getIdToken();
             const res = await fetch(`/api/products/${premixToSendToLibrary.id}`, {
                 method: 'PATCH',
                 headers: {
                     'content-type': 'application/json',
-                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({ sendToLibrary: true }),
             });

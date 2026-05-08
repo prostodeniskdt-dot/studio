@@ -8,8 +8,7 @@ import { AppLogo } from "@/components/app-logo";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth, useUser } from "@/firebase";
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { useAuthSession } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
@@ -39,10 +38,9 @@ type LoginFormInputs = z.infer<typeof loginSchema>;
 type ResetPasswordFormInputs = z.infer<typeof resetPasswordSchema>;
 
 export default function LoginPage() {
-  const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading, refresh } = useAuthSession();
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
 
   const {
@@ -69,17 +67,15 @@ export default function LoginPage() {
   }, [user, isUserLoading, router]);
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
-    if (!auth) {
-         toast({
-            variant: "destructive",
-            title: "Ошибка",
-            description: "Сервисы Firebase не инициализированы.",
-        });
-        return;
-    }
     try {
-      await signInWithEmailAndPassword(auth, data.email, data.password);
-      // The useEffect will handle the redirect once the user state is updated.
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: data.email, password: data.password }),
+      });
+      const json = await res.json();
+      if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Login failed');
+      await refresh();
     } catch(e: any) {
         toast({
             variant: "destructive",
@@ -90,32 +86,16 @@ export default function LoginPage() {
   };
 
   const onResetPassword: SubmitHandler<ResetPasswordFormInputs> = async (data) => {
-    if (!auth) {
-      toast({
-        variant: "destructive",
-        title: "Ошибка",
-        description: "Сервисы Firebase не инициализированы.",
-      });
-      return;
-    }
     try {
-      await sendPasswordResetEmail(auth, data.email);
       toast({
         variant: "default",
         title: "Письмо отправлено",
-        description: "Проверьте свою почту для сброса пароля.",
+        description: "Сброс пароля будет доступен позже (в процессе миграции).",
       });
       setIsResetDialogOpen(false);
       resetResetForm();
     } catch (e: any) {
-      let errorMessage = "Произошла ошибка при отправке письма.";
-      if (e.code === 'auth/user-not-found') {
-        errorMessage = "Пользователь с таким email не найден.";
-      } else if (e.code === 'auth/invalid-email') {
-        errorMessage = "Неверный формат email.";
-      } else if (e.code === 'auth/too-many-requests') {
-        errorMessage = "Слишком много запросов. Попробуйте позже.";
-      }
+      const errorMessage = "Произошла ошибка при отправке письма.";
       toast({
         variant: "destructive",
         title: "Ошибка",

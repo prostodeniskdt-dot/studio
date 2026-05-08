@@ -14,17 +14,14 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Trash2 } from 'lucide-react';
-import { signOut } from 'firebase/auth';
 
 export function DeleteAccountButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -40,7 +37,6 @@ export function DeleteAccountButton() {
 
     setIsDeleting(true);
     try {
-      if (!auth?.currentUser) throw new Error('Пользователь не найден');
       // TODO: implement Postgres-backed deletion request endpoint.
       toast({
         variant: 'destructive',

@@ -87,11 +87,13 @@ export default function LoginPage() {
 
   const onResetPassword: SubmitHandler<ResetPasswordFormInputs> = async (data) => {
     try {
-      toast({
-        variant: "default",
-        title: "Письмо отправлено",
-        description: "Сброс пароля будет доступен позже (в процессе миграции).",
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: data.email }),
       });
+      await res.json().catch(() => null);
+      toast({ variant: 'default', title: 'Письмо отправлено', description: 'Если email существует, мы отправили ссылку для сброса.' });
       setIsResetDialogOpen(false);
       resetResetForm();
     } catch (e: any) {

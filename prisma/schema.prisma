@@ -53,6 +53,7 @@ model AuthUser {
 
   profile  UserProfile @relation(fields: [id], references: [id], onDelete: Cascade)
   sessions AuthSession[]
+  passwordResetTokens PasswordResetToken[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -66,6 +67,21 @@ model AuthSession {
   /// sha256(token) hex; token itself stored only in cookie.
   tokenHash String   @unique
   expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      AuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// sha256(token) hex; token itself sent via email link
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
   createdAt DateTime @default(now())
 
   @@index([userId])

@@ -124,7 +124,7 @@ const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, p
           <TableHeader>
             <TableRow>
               <TableHead className="w-full">Продукт</TableHead>
-              <TableHead className="text-right">Факт. (мл)</TableHead>
+              <TableHead className="text-right">Факт.</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -168,6 +168,9 @@ const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, p
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
+                              <span className="text-xs text-muted-foreground shrink-0 min-w-[2rem]">
+                                {line.stockMode === 'pieces' ? 'шт' : 'мл'}
+                              </span>
                               {isEditable ? (
                                 <Input 
                                   type="number" 
@@ -178,7 +181,8 @@ const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, p
                               ) : (
                                 <span>{line.endStock}</span>
                               )}
-                              {line.product.reorderPointMl && 
+                              {line.stockMode !== 'pieces' &&
+                               line.product.reorderPointMl && 
                                line.endStock < line.product.reorderPointMl && (
                                 <Button
                                   size="sm"

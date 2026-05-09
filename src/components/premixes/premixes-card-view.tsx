@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import type { Product } from '@/lib/types';
 import { buildProductDisplayName, cn } from '@/lib/utils';
+import { isProductCardComplete } from '@/lib/inventory-import/completeness';
 import { PremixForm } from './premix-form';
 import { useAuthSession } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -196,13 +197,19 @@ export function PremixesCardView({ premixes, onSendToLibrary }: PremixesCardView
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
-            {filteredPremixes.map((premix, index) => (
+            {filteredPremixes.map((premix, index) => {
+              const premixComplete = isProductCardComplete(premix);
+              return (
               <Card 
                 key={premix.id} 
                 className={cn(
                   "flex flex-col transition-all duration-300 hover:shadow-lg hover:scale-[1.02]",
                   premix.isActive 
-                    ? "border-primary/20 hover:border-primary/40 bg-gradient-to-br from-primary/5 to-background" 
+                    ? (
+                        premixComplete
+                          ? "border-emerald-600/50 ring-1 ring-emerald-600/20 hover:border-emerald-600/70 bg-gradient-to-br from-emerald-500/[0.04] to-background"
+                          : "border-red-600/55 ring-1 ring-red-600/20 hover:border-red-600/80 bg-gradient-to-br from-red-500/[0.05] to-background"
+                      )
                     : "opacity-60"
                 )}
                 style={{ animationDelay: `${index * 50}ms` }}
@@ -227,6 +234,14 @@ export function PremixesCardView({ premixes, onSendToLibrary }: PremixesCardView
                         >
                           {premix.isActive ? 'Активен' : 'Архивирован'}
                         </Badge>
+                        {premix.isActive && (
+                          <Badge
+                            variant={premixComplete ? 'outline' : 'destructive'}
+                            className="text-xs border-dashed"
+                          >
+                            {premixComplete ? 'Состав OK' : 'Добавьте состав и вес'}
+                          </Badge>
+                        )}
                       </CardDescription>
                     </div>
                   </div>
@@ -319,7 +334,8 @@ export function PremixesCardView({ premixes, onSendToLibrary }: PremixesCardView
                   </Button>
                 </CardFooter>
               </Card>
-            ))}
+            );
+            })}
           </div>
         )}
 

@@ -7,10 +7,17 @@ function barIdFromUid(uid: string) {
 }
 
 function mapProduct(p: any) {
-  // Prisma returns Date; UI expects Firestore Timestamp-like fields but mostly uses primitives.
-  // We keep the same field names and pass ISO strings for dates (they are not used in UI heavily).
+  const premixIngredients = p.premixIngredients?.length
+    ? p.premixIngredients.map((x: any) => ({
+        productId: x.ingredientProductId,
+        volumeMl: x.volumeMl,
+        ratio: x.ratio,
+      }))
+    : undefined;
+  const { premixIngredients: _raw, ...rest } = p;
   return {
-    ...p,
+    ...rest,
+    premixIngredients,
     createdAt: p.createdAt?.toISOString?.() ?? p.createdAt,
     updatedAt: p.updatedAt?.toISOString?.() ?? p.updatedAt,
   };
@@ -21,14 +28,22 @@ export async function GET(req: Request) {
     const uid = await requireUserId(req);
     const barId = barIdFromUid(uid);
 
+    const includePremix = {
+      premixIngredients: {
+        select: { ingredientProductId: true, volumeMl: true, ratio: true },
+      },
+    } as const;
+
     const [personal, library] = await Promise.all([
       prisma.product.findMany({
         where: { barId, isInLibrary: false },
         orderBy: { updatedAt: 'desc' },
+        include: includePremix,
       }),
       prisma.product.findMany({
         where: { isInLibrary: true },
         orderBy: { updatedAt: 'desc' },
+        include: includePremix,
       }),
     ]);
 
@@ -59,6 +74,10 @@ type CreateProductBody = {
     defaultSupplierId?: string | null;
     isActive?: boolean;
     isInLibrary?: boolean;
+    isPremix?: boolean;
+    usesVolumeCalculator?: boolean;
+    externalCode?: string | null;
+    barcode?: string | null;
     premixIngredients?: Array<{ productId: string; volumeMl: number; ratio: number }> | null;
   };
 };
@@ -71,6 +90,7 @@ export async function POST(req: Request) {
 
     const p = body.product;
     const isInLibrary = Boolean(p.isInLibrary);
+    const isPremix = p.category === 'Premix' || Boolean(p.isPremix);
 
     const created = await prisma.product.create({
       data: {
@@ -87,6 +107,10 @@ export async function POST(req: Request) {
         defaultSupplierId: p.defaultSupplierId ?? null,
         isActive: p.isActive ?? true,
         isInLibrary,
+        isPremix,
+        usesVolumeCalculator: p.usesVolumeCalculator ?? true,
+        externalCode: p.externalCode?.trim() || null,
+        barcode: p.barcode?.replace(/\s/g, '') || null,
         createdByUserId: uid,
         barId: isInLibrary ? null : barId,
       },

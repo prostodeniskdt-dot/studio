@@ -37,6 +37,11 @@ enum InventorySessionStatus {
   completed
 }
 
+enum InventoryStockMode {
+  volume_ml
+  pieces
+}
+
 enum PurchaseOrderStatus {
   draft
   ordered
@@ -162,6 +167,14 @@ model Product {
   isInLibrary     Boolean @default(false)
   createdByUserId String?
 
+  /// Бухгалтерский код номенклатуры из импортированного бланка (матчинг при повторных загрузках)
+  externalCode    String?
+
+  barcode         String?
+
+  /// false для позиций в штуках (# — калькулятор по весу не используется)
+  usesVolumeCalculator Boolean @default(true)
+
   // Bar-scoped products (null for library)
   barId String?
   bar   Bar? @relation(fields: [barId], references: [id], onDelete: Cascade)
@@ -174,6 +187,8 @@ model Product {
   inventoryLines    InventoryLine[]
 
   @@index([barId])
+  @@index([barId, externalCode])
+  @@index([barId, barcode])
   @@index([defaultSupplierId])
   @@index([category])
 }
@@ -267,6 +282,9 @@ model InventorySession {
   name   String
   status InventorySessionStatus @default(draft)
 
+  /// Отпечаток списка позиций с бланка (для диалога о повторной загрузке)
+  importListHash  String?
+
   createdByUserId String
   createdAt DateTime @default(now())
   closedAt  DateTime?
@@ -274,6 +292,7 @@ model InventorySession {
 
   lines InventoryLine[]
 
+  @@index([barId, importListHash])
   @@index([barId])
   @@index([createdByUserId])
 }
@@ -285,6 +304,9 @@ model InventoryLine {
 
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  /// volume_ml — start/end в мл; pieces — число штук в endStock (и др. поля не используются для калькулятора)
+  stockMode InventoryStockMode @default(volume_ml)
 
   // Volumes in ml
   startStock Float

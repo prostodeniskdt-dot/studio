@@ -53,6 +53,7 @@ type PatchBody = {
   upsertLines?: Array<{
     id: string;
     productId: string;
+    stockMode?: 'volume_ml' | 'pieces';
     startStock: number;
     purchases: number;
     sales: number;
@@ -64,6 +65,8 @@ type PatchBody = {
   }>;
   addProductLine?: {
     productId: string;
+    stockMode?: 'volume_ml' | 'pieces';
+    endStock?: number;
   };
 };
 
@@ -99,14 +102,17 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
           where: { inventorySessionId: id, productId: body.addProductLine.productId },
         });
         if (!existing) {
+          const mode = body.addProductLine.stockMode === 'pieces' ? 'pieces' : 'volume_ml';
+          const end = typeof body.addProductLine.endStock === 'number' ? body.addProductLine.endStock : 0;
           await tx.inventoryLine.create({
             data: {
               inventorySessionId: id,
               productId: body.addProductLine.productId,
+              stockMode: mode,
               startStock: 0,
               purchases: 0,
               sales: 0,
-              endStock: 0,
+              endStock: end,
               theoreticalEndStock: 0,
               differenceVolume: 0,
               differenceMoney: 0,
@@ -134,6 +140,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
                 id: l.id,
                 inventorySessionId: id,
                 productId: l.productId,
+                stockMode: l.stockMode === 'pieces' ? 'pieces' : 'volume_ml',
                 startStock: l.startStock,
                 purchases: l.purchases,
                 sales: l.sales,
@@ -145,6 +152,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
               },
               update: {
                 productId: l.productId,
+                ...(l.stockMode ? { stockMode: l.stockMode === 'pieces' ? 'pieces' : 'volume_ml' } : {}),
                 startStock: l.startStock,
                 purchases: l.purchases,
                 sales: l.sales,

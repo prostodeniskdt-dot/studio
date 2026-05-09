@@ -138,6 +138,15 @@ export function calculateDifferencePercent(differenceVolume: number, line: Parti
  * ```
  */
 export function calculateLineFields(line: Partial<InventoryLine>, product: Product) {
+  if (line.stockMode === 'pieces') {
+    return {
+      theoreticalEndStock: 0,
+      differenceVolume: 0,
+      differenceMoney: 0,
+      differencePercent: 0,
+    };
+  }
+
   const safeLine = {
     startStock: 0,
     purchases: 0,

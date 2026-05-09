@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { Product } from '@/lib/types';
 import { buildProductDisplayName, translateCategory, translateSubCategory, cn } from '@/lib/utils';
+import { isProductCardComplete } from '@/lib/inventory-import/completeness';
 
 interface ProductCardProps {
   product: Product;
@@ -37,6 +38,8 @@ export const ProductCard = React.memo<ProductCardProps>(({
 }) => {
   const isActive = product.isActive ?? true;
   const canSendToLibrary = onSendToLibrary && product.barId && product.isInLibrary !== true;
+  const isPremixCard = product.isPremix === true || product.category === 'Premix';
+  const calculatorOk = !isPremixCard && isProductCardComplete(product);
 
   return (
     <Card 
@@ -44,7 +47,11 @@ export const ProductCard = React.memo<ProductCardProps>(({
         "flex flex-col transition-all duration-200 hover:shadow-md",
         compact && "hover:scale-[1.01]",
         isActive 
-          ? "border-border hover:border-primary/40" 
+          ? isPremixCard
+            ? "border-border hover:border-primary/40"
+            : calculatorOk
+              ? "border-emerald-600/55 ring-1 ring-emerald-600/25 hover:border-emerald-600/70"
+              : "border-red-600/65 ring-1 ring-red-600/25 hover:border-red-600/85"
           : "opacity-60"
       )}
     >
@@ -72,6 +79,14 @@ export const ProductCard = React.memo<ProductCardProps>(({
               >
                 {isActive ? 'Активен' : 'Архивирован'}
               </Badge>
+              {!isPremixCard && isActive && (
+                <Badge
+                  variant={calculatorOk ? 'outline' : 'destructive'}
+                  className="text-xs border-dashed"
+                >
+                  {calculatorOk ? 'Калькулятор OK' : 'Заполните веса и объём'}
+                </Badge>
+              )}
             </CardDescription>
           </div>
         </div>

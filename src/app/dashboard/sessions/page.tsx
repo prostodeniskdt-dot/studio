@@ -12,6 +12,7 @@ import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthSession } from '@/contexts/auth-context';
 import { useSessions } from '@/contexts/sessions-context';
+import { ImportBlankInventory } from '@/components/dashboard/import-blank-inventory';
 
 
 export default function SessionsPage() {
@@ -95,10 +96,13 @@ export default function SessionsPage() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Инвентаризации</h1>
-        <Button onClick={handleCreateSession} disabled={isLoading || isCreating || !!hasDataLoadingError || !barId}>
-          {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-          Начать инвентаризацию
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <ImportBlankInventory />
+          <Button onClick={handleCreateSession} disabled={isLoading || isCreating || !!hasDataLoadingError || !barId}>
+            {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+            Начать инвентаризацию
+          </Button>
+        </div>
       </div>
       <div className="mb-4 flex items-center gap-2">
         <HelpIcon 

@@ -88,6 +88,11 @@ export interface Product {
   isInLibrary?: boolean; // true = продукт в общей библиотеке (виден всем пользователям)
   createdByUserId?: string; // ID пользователя, создавшего продукт (для аудита)
 
+  externalCode?: string | null;
+  barcode?: string | null;
+  /// false — только штуки/кг в строке инвентаризации; калькулятор по весу не нужен
+  usesVolumeCalculator?: boolean;
+
   isActive: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -103,6 +108,7 @@ export interface InventorySession {
   createdByUserId: string;
   createdAt: Timestamp;
   closedAt?: Timestamp;
+  importListHash?: string | null;
   lines?: InventoryLine[]; // Can be a subcollection
 }
 
@@ -110,6 +116,9 @@ export interface InventoryLine {
   id: string; 
   productId: string;
   inventorySessionId: string;
+
+  /** volume_ml — мл; pieces — количество штук (или кг как единица учёта) */
+  stockMode?: 'volume_ml' | 'pieces';
   
   // All volumes in ml
   startStock: number;

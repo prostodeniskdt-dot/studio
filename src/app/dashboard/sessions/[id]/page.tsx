@@ -379,6 +379,7 @@ export default function SessionPage() {
             return {
               id: line.id,
               productId: line.productId,
+              stockMode: line.stockMode === 'pieces' ? 'pieces' : 'volume_ml',
               startStock,
               purchases,
               sales,

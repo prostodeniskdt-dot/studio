@@ -518,11 +518,11 @@ export default function SessionPage() {
       return;
     }
 
-    if (!allProducts || allProducts.length === 0) {
+    if (isLoadingProducts) {
       toast({
         variant: 'destructive',
         title: 'Импорт не удался',
-        description: 'Список продуктов ещё загружается. Подождите и попробуйте снова.',
+        description: 'Список продуктов загружается. Подождите и повторите попытку.',
       });
       clearInput();
       return;

@@ -538,7 +538,7 @@ export default function SessionPage() {
           variant: 'destructive',
           title: 'Формат не распознан',
           description:
-            'Поддерживаются: 1) CSV из «Экспорт в CSV» приложения; 2) технический файл с колонкой productId; 3) бланк бухгалтера (; и колонки Код / Наименование / Ед. изм.), как при загрузке с раздела «Инвентаризации».',
+            'Поддерживаются: 1) CSV из «Экспорт в CSV»; 2) таблица с id продуктов (cuid) в первой ячейке строки, разделитель «,» или «;»; 3) узкий бланк (Код / Наименование / Ед. изм.; при необходимости — колонки с числами справа); 4) расширенный бланк со строкой заголовка «Группа» и «Наименование», как при создании сессии из списка инвентаризаций.',
         });
         clearInput();
         return;
@@ -552,9 +552,10 @@ export default function SessionPage() {
           { startStock: number; purchases: number; sales: number; endStock: number }
         >();
 
+        const delim = parsed.delimiter;
         parsed.bodyLines.forEach((rowStr) => {
           if (!rowStr.trim()) return;
-          const rowData = rowStr.split(',').map((c) => c.trim().replace(/^"|"$/g, ''));
+          const rowData = splitDelimitedQuotedRow(rowStr, delim);
           const productId = rowData[0];
           if (!productId) return;
           csvData.set(productId, {

@@ -1,5 +1,6 @@
 import type { BlankParsedRow } from './types';
 import { normalizeForMatch } from './normalize';
+import { splitDelimitedQuotedRow } from './split-quoted-row';
 
 /** Разбирает строковое содержимое (CSV/фрагмент из PDF в одну колонку) в позиции бланка. */
 export function parseBlankDelimitedLines(content: string, delimiter: ';' | ','): BlankParsedRow[] {
@@ -7,11 +8,39 @@ export function parseBlankDelimitedLines(content: string, delimiter: ';' | ','):
   return parseBlankLines(lines, delimiter);
 }
 
-export function parseBlankLines(lines: string[], delimiter: string): BlankParsedRow[] {
-  let inTable = false;
-  let lastGroup = '';
+/** Строка похожа на заголовок узкого бухгалтерского бланка (разделитель `;` или `,`). */
+export function lineLooksLikeCompactAccountantHeader(line: string): boolean {
+  return isCompactAccountantHeaderLine(line, ';') || isCompactAccountantHeaderLine(line, ',');
+}
 
+/** Узкий бухгалтерский бланк: Код;Наименование;Ед. изм. (+ опционально колонки количества). */
+function isCompactAccountantHeaderLine(line: string, delimiter: string): boolean {
+  const parts = line.split(delimiter).map((s) => s.trim().toLowerCase());
+  if (parts.length < 3) return false;
+  const codeHit = parts.some((c) => c === 'код' || /^код\.?$/.test(c));
+  const nameHit = parts.some((c) => c.includes('наименование'));
+  const unitHit = parts.some(
+    (c) => /ед\.?\s*изм|ед\.изм/.test(c) || (c.includes('ед') && c.includes('изм'))
+  );
+  return codeHit && nameHit && unitHit;
+}
+
+/** Берём последнюю колонку с числом начиная с индекса 3 (после кода, названия, ед. изм.). */
+function pickQtyFromCompactParts(parts: string[]): string {
+  for (let i = parts.length - 1; i >= 3; i--) {
+    const raw = parts[i]?.trim() ?? '';
+    if (!raw || /^[-–]+$/.test(raw)) continue;
+    const n = Number(String(raw).replace(/\s+/g, '').replace(',', '.'));
+    if (Number.isFinite(n)) return raw;
+  }
+  return '';
+}
+
+export function parseBlankLines(lines: string[], delimiter: string): BlankParsedRow[] {
+  let blankMode: 'none' | 'wide' | 'compact' = 'none';
+  let lastGroup = '';
   const rows: BlankParsedRow[] = [];
+  const delimQuoted = (delimiter === ';' || delimiter === ',' ? delimiter : ',') as ';' | ',';
 
   for (const rawLine of lines) {
     const line = rawLine.trimEnd();
@@ -22,20 +51,54 @@ export function parseBlankLines(lines: string[], delimiter: string): BlankParsed
     if (/^склад\s*;/i.test(line)) continue;
     if (/^\d+\s*из\s*\d+$/i.test(line.trim())) continue;
 
-    if (line.includes('Группа') && line.includes('Наименование')) {
-      inTable = true;
+    if (blankMode === 'none') {
+      if (line.includes('Группа') && line.includes('Наименование')) {
+        blankMode = 'wide';
+        continue;
+      }
+      const partsProbe = line.split(delimiter).map((s) => s.trim());
+      if (partsProbe[0]?.includes?.('Группа') && partsProbe.some((x) => x.includes('Наименование'))) {
+        blankMode = 'wide';
+        continue;
+      }
+      if (isCompactAccountantHeaderLine(line, delimiter)) {
+        blankMode = 'compact';
+        continue;
+      }
       continue;
     }
 
+    if (blankMode === 'compact') {
+      if (isCompactAccountantHeaderLine(line, delimiter)) continue;
+      const parts =
+        delimiter === ';' || delimiter === ','
+          ? splitDelimitedQuotedRow(line, delimQuoted)
+          : line.split(delimiter).map((s) => s.trim());
+      if (parts.length < 3) continue;
+      const code = (parts[0] ?? '').trim();
+      const name = (parts[1] ?? '').trim();
+      const unitRaw = (parts[2] ?? '').trim();
+      if (!name || name === 'Наименование') continue;
+      const qtyRaw = pickQtyFromCompactParts(parts);
+      let quantityFact: number | null = null;
+      if (qtyRaw && qtyRaw.length > 0 && !/^[-–]+$/.test(qtyRaw)) {
+        const n = Number(String(qtyRaw).replace(/\s+/g, '').replace(',', '.'));
+        quantityFact = Number.isFinite(n) ? n : null;
+      }
+      rows.push({
+        group: '',
+        code,
+        barcode: '',
+        name,
+        unitRaw,
+        quantityFact,
+      });
+      continue;
+    }
+
+    // wide
     const parts = line.split(delimiter).map((s) => s.trim());
     if (parts.every((p) => !p)) continue;
-
-    if (parts[0]?.includes?.('Группа') && parts.some((x) => x.includes('Наименование'))) {
-      inTable = true;
-      continue;
-    }
-
-    if (!inTable) continue;
 
     const nameSemi = delimiter === ';' ? (parts[4] ?? '').trim() : pickCommaName(parts);
     const nameCol = nameSemi;
@@ -62,7 +125,12 @@ export function parseBlankLines(lines: string[], delimiter: string): BlankParsed
     if (!name || name === 'Наименование') continue;
 
     const groupCandidate = parts[0]?.trim() ?? '';
-    if (groupCandidate && /^[А-ЯA-Z\s\-\.\/]+$/.test(normalizeGroupHeader(groupCandidate)) && !codeCol && !parts[4]) {
+    if (
+      groupCandidate &&
+      /^[А-ЯA-Z\s\-\.\/]+$/.test(normalizeGroupHeader(groupCandidate)) &&
+      !codeCol &&
+      !parts[4]
+    ) {
       lastGroup = groupCandidate;
       continue;
     }
@@ -130,9 +198,7 @@ function dedupeParsedRows(rows: BlankParsedRow[]): BlankParsedRow[] {
   const seen = new Set<string>();
   const out: BlankParsedRow[] = [];
   for (const r of rows) {
-    const k = normalizeForMatch(
-      `${r.barcode}|${r.code}|${r.name}`
-    ).replace(/\s/g, '');
+    const k = normalizeForMatch(`${r.barcode}|${r.code}|${r.name}`).replace(/\s/g, '');
     if (!k) continue;
     if (seen.has(k)) continue;
     seen.add(k);

@@ -1,49 +1,49 @@
 import type { BlankParsedRow } from './types';
-import { parseBlankDelimitedLines } from './parse-delimited-text';
+import { lineLooksLikeCompactAccountantHeader, parseBlankDelimitedLines } from './parse-delimited-text';
+import { splitDelimitedQuotedRow } from './split-quoted-row';
 
 export type ParsedSessionFile =
   | { kind: 'app_export'; bodyLines: string[] }
-  | { kind: 'legacy_id'; bodyLines: string[] }
+  | { kind: 'legacy_id'; bodyLines: string[]; delimiter: ';' | ',' }
   | { kind: 'accountant_blank'; rows: BlankParsedRow[] }
   | { kind: 'unknown' };
+
+export { splitDelimitedQuotedRow };
 
 function normalizeRawText(text: string): string {
   return text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 }
 
-/** Ячейки с учётом кавычек и экранирования "" */
-export function splitDelimitedQuotedRow(line: string, delimiter: ';' | ','): string[] {
-  const parts: string[] = [];
-  let cur = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i]!;
-    if (inQuotes) {
-      if (c === '"' && line[i + 1] === '"') {
-        cur += '"';
-        i++;
-        continue;
-      }
-      if (c === '"') {
-        inQuotes = false;
-        continue;
-      }
-      cur += c;
-    } else {
-      if (c === '"') {
-        inQuotes = true;
-        continue;
-      }
-      if (c === delimiter) {
-        parts.push(cur.trim());
-        cur = '';
-        continue;
-      }
-      cur += c;
+const CUID_FIRST_CELL_RE = /^c[a-z0-9]{20,}$/i;
+
+function firstCellDelimited(rawLine: string, delimiter: ';' | ','): string {
+  const cell = splitDelimitedQuotedRow(rawLine, delimiter)[0] ?? '';
+  return cell.replace(/^"|"$/g, '').trim();
+}
+
+/** Технический CSV: строка данных начинается с product id (cuid). Разделитель — запятая или ; */
+function detectLegacyIdLayout(lines: string[]): { delimiter: ';' | ',' } | null {
+  if (lines.length < 2) return null;
+  const headerLower = lines[0].toLowerCase();
+  const headerHintsProductId = /\bproductid\b/i.test(headerLower);
+
+  const delimiterForRow = (row: string): ';' | ',' | null => {
+    const comma = firstCellDelimited(row, ',');
+    const semi = firstCellDelimited(row, ';');
+    if (CUID_FIRST_CELL_RE.test(comma)) return ',';
+    if (CUID_FIRST_CELL_RE.test(semi)) return ';';
+    return null;
+  };
+
+  const d0 = delimiterForRow(lines[1]);
+  if (d0) return { delimiter: d0 };
+  if (headerHintsProductId) {
+    for (let i = 2; i < lines.length && i < 200; i++) {
+      const d = delimiterForRow(lines[i]);
+      if (d) return { delimiter: d };
     }
   }
-  parts.push(cur.trim());
-  return parts;
+  return null;
 }
 
 export function parseSessionImportText(text: string): ParsedSessionFile {
@@ -52,17 +52,17 @@ export function parseSessionImportText(text: string): ParsedSessionFile {
   if (lines.length < 2) return { kind: 'unknown' };
 
   const headerLower = lines[0].toLowerCase();
-  if (headerLower.includes('наименование') && (headerLower.includes('фактическ') || headerLower.includes('остаток'))) {
+  if (
+    headerLower.includes('наименование') &&
+    (headerLower.includes('фактическ') || headerLower.includes('остаток')) &&
+    !lineLooksLikeCompactAccountantHeader(lines[0])
+  ) {
     return { kind: 'app_export', bodyLines: lines.slice(1) };
   }
 
-  const firstDataRaw = lines[1];
-  if (firstDataRaw) {
-    const firstCellCsv = splitDelimitedQuotedRow(firstDataRaw, ',');
-    const idCandidate = firstCellCsv[0]?.replace(/^"|"$/g, '').trim() ?? '';
-    if (/^c[a-z0-9]{20,}$/i.test(idCandidate)) {
-      return { kind: 'legacy_id', bodyLines: lines.slice(1) };
-    }
+  const legacy = detectLegacyIdLayout(lines);
+  if (legacy) {
+    return { kind: 'legacy_id', bodyLines: lines.slice(1), delimiter: legacy.delimiter };
   }
 
   const semi = parseBlankDelimitedLines(stripped, ';');

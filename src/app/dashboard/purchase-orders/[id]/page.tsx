@@ -29,6 +29,7 @@ export default function PurchaseOrderPage() {
       let cancelled = false;
       async function load() {
         if (!user) return;
+        setOrder(null);
         setIsLoadingOrder(true);
         try {
           const res = await fetch(`/api/purchase-orders/${id}`, {

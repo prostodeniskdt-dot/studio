@@ -35,6 +35,7 @@ describe('buildSessionExportAoa', () => {
     const lines = [
       {
         id: 'l1',
+        inventorySessionId: 's1',
         productId: 'p1',
         stockMode: 'volume_ml' as const,
         startStock: 0,

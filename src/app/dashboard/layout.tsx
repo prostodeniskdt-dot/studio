@@ -27,7 +27,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading: isUserLoading, logout, refresh } = useAuthSession();
+  const { user, isLoading: isUserLoading, logout } = useAuthSession();
   const router = useRouter();
   const [isDataReady, setIsDataReady] = useState(false);
   const [error, setError] = useState<string | null>(null);

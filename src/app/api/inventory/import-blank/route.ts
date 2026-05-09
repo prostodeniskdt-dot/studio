@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { BULK_INTERACTIVE_TRANSACTION } from '@/lib/db/transaction-defaults';
 import { requireUserId } from '@/lib/auth-server';
 import { jsonResponse } from '@/lib/http';
 import { listImportFingerprint } from '@/lib/inventory-import/fingerprint';
@@ -173,7 +174,7 @@ export async function POST(req: Request) {
       }
 
       return { sessionId: session.id, createdProducts, lineCount: rows.length };
-    });
+    }, BULK_INTERACTIVE_TRANSACTION);
 
     return jsonResponse({
       ok: true,

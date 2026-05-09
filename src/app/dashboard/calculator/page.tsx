@@ -21,6 +21,7 @@ import { ProductSearch } from '@/components/products/product-search';
 import { expandPremixToIngredients } from '@/lib/premix-utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { calculateVolumeMl } from '@/lib/calculator';
+import { patchInventorySessionInLineChunks } from '@/lib/sessions/chunked-patch';
 
 export default function UnifiedCalculatorPage() {
   const { toast } = useToast();
@@ -224,13 +225,7 @@ export default function UnifiedCalculatorPage() {
             };
           });
 
-          const patchRes = await fetch(`/api/sessions/${activeSession.id}`, {
-            method: 'PATCH',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ upsertLines: payloadLines }),
-          });
-          const patchJson = await patchRes.json();
-          if (!patchRes.ok || patchJson?.ok === false) throw new Error(patchJson?.error || 'Failed');
+          await patchInventorySessionInLineChunks(activeSession.id, { upsertLines: payloadLines });
 
           toast({
             title: "Премикс разложен на ингредиенты",

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { BULK_INTERACTIVE_TRANSACTION } from '@/lib/db/transaction-defaults';
 import { requireUserId } from '@/lib/auth-server';
 import { jsonResponse, readJson } from '@/lib/http';
 
@@ -90,18 +91,31 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       await prisma.purchaseOrderLine.delete({ where: { id: body.deleteLineId } });
     }
 
-    if (body.updateLines && body.updateLines.length > 0) {
+    const updateLines = body.updateLines;
+    if (updateLines && updateLines.length > 0) {
+      const lineIds = updateLines.map((l) => l.id);
+      const foreignLines = await prisma.purchaseOrderLine.findMany({
+        where: { id: { in: lineIds }, NOT: { purchaseOrderId: id } },
+        select: { id: true },
+      });
+      if (foreignLines.length > 0) {
+        return jsonResponse({ ok: false, error: 'Some lines do not belong to this order' }, { status: 400 });
+      }
+
       await prisma.$transaction(
-        body.updateLines.map((l) =>
-          prisma.purchaseOrderLine.update({
-            where: { id: l.id },
-            data: {
-              quantity: l.quantity,
-              costPerItem: l.costPerItem,
-              receivedQuantity: l.receivedQuantity,
-            },
-          })
-        )
+        async (tx) => {
+          for (const l of updateLines) {
+            await tx.purchaseOrderLine.update({
+              where: { id: l.id },
+              data: {
+                quantity: l.quantity,
+                costPerItem: l.costPerItem,
+                receivedQuantity: l.receivedQuantity,
+              },
+            });
+          }
+        },
+        BULK_INTERACTIVE_TRANSACTION
       );
     }
 

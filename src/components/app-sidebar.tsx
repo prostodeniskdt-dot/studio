@@ -1,8 +1,9 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, BarChart3, Settings, Calculator, Truck, ShoppingCart, Shield, Bug, FlaskConical, HelpCircle, Library } from 'lucide-react';
+import { Home, Package, BarChart3, Calculator, Truck, ShoppingCart, Shield, Bug, FlaskConical, HelpCircle, Library } from 'lucide-react';
 import {
   SidebarHeader,
   Sidebar,
@@ -32,18 +33,33 @@ const adminMenuItem = { href: '/dashboard/admin', label: 'Админка', icon:
 const debugMenuItem = { href: '/dashboard/admin/debug', label: 'Debug', icon: Bug };
 
 
+function resolveActiveHref(pathname: string, candidates: readonly string[]): string | null {
+  let best: string | null = null;
+  for (const href of candidates) {
+    const matches =
+      href === '/dashboard'
+        ? pathname === '/dashboard'
+        : pathname === href || pathname.startsWith(`${href}/`);
+    if (matches && (!best || href.length > best.length)) {
+      best = href;
+    }
+  }
+  return best;
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
   const { user } = useAuthSession();
 
   const isAdmin = user?.profile?.role === 'admin';
 
-  const isActive = (path: string) => {
-    if (path === '/dashboard') {
-        return pathname === path;
-    }
-    return pathname.startsWith(path);
-  }
+  const navHrefs = useMemo(() => {
+    const base = menuItems.map((i) => i.href);
+    return isAdmin ? [...base, adminMenuItem.href, debugMenuItem.href] : base;
+  }, [isAdmin]);
+
+  const activeHref = resolveActiveHref(pathname, navHrefs);
+  const isActive = (path: string) => activeHref === path;
 
   return (
     <>

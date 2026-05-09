@@ -26,6 +26,8 @@ export default function AdminUserDetailsPage() {
     let cancelled = false;
     async function load() {
       if (!adminUser) return;
+      setUserProfile(null);
+      setSuppliers(null);
       setIsLoadingProfile(true);
       setIsLoadingSuppliers(true);
       try {

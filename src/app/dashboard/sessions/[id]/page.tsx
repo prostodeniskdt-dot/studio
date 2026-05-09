@@ -58,6 +58,11 @@ import {
   saveExportPreference,
   type SessionExportPreference,
 } from '@/lib/session-export/mirror-format';
+import {
+  patchInventorySessionInLineChunks,
+  SESSION_PATCH_LINES_CHUNK_SIZE,
+  chunkArray,
+} from '@/lib/sessions/chunked-patch';
 
 export default function SessionPage() {
   const params = useParams();
@@ -139,6 +144,10 @@ export default function SessionPage() {
     let cancelled = false;
     async function load() {
       if (!user) return;
+      // Чтобы при смене URL сессии не остались строки прошлой — иначе повторный импорт шлёт чужие line id.
+      setSession(null);
+      setLines(null);
+      setLocalLines(null);
       setIsLoadingSession(true);
       setIsLoadingLines(true);
       setSessionError(null);
@@ -412,18 +421,22 @@ export default function SessionPage() {
           })
           .filter(Boolean) as any[];
 
-      const res = await fetch(`/api/sessions/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({ upsertLines: payloadLines }),
-      });
-      const json = await res.json();
-      if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+      let lastSession: InventorySession | null = null;
+      let lastLines: InventoryLine[] = [];
+      for (const chunk of chunkArray(payloadLines, SESSION_PATCH_LINES_CHUNK_SIZE)) {
+        const res = await fetch(`/api/sessions/${id}`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ upsertLines: chunk }),
+        });
+        const json = await res.json();
+        if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+        lastSession = json.session ?? lastSession;
+        lastLines = (json.lines as InventoryLine[]) ?? lastLines;
+      }
 
-      setSession(json.session ?? null);
-      setLines(json.lines ?? []);
+      setSession(lastSession);
+      setLines(lastLines);
       toast({ title: "Изменения сохранены" });
     } catch (serverError: unknown) {
         const errorMessage = serverError instanceof Error ? serverError.message : 'Не удалось сохранить изменения';
@@ -806,19 +819,11 @@ export default function SessionPage() {
       const addPayload = [...addsByProduct.values()];
       const upserts = [...upsertByLineId.values()];
       if (upserts.length > 0 || addPayload.length > 0) {
-        const resBatch = await fetch(`/api/sessions/${id}`, {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            ...(addPayload.length > 0 ? { addProductLines: addPayload } : {}),
-            ...(upserts.length > 0 ? { upsertLines: upserts } : {}),
-          }),
+        const jb = await patchInventorySessionInLineChunks(id, {
+          ...(addPayload.length > 0 ? { addProductLines: addPayload } : {}),
+          ...(upserts.length > 0 ? { upsertLines: upserts } : {}),
         });
-        const jb = await resBatch.json();
-        if (!resBatch.ok || jb?.ok === false) {
-          throw new Error(jb?.error || 'Ошибка сохранения строк инвентаризации');
-        }
-        currentLines = (jb.lines as InventoryLine[]) ?? currentLines;
+        currentLines = jb.lines ?? currentLines;
       }
 
       setLocalLines(currentLines);

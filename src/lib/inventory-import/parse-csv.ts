@@ -8,7 +8,7 @@ function detectDelimiter(firstLine: string): ';' | ',' {
   return semi >= comma ? ';' : ',';
 }
 
-function decodeCsvBuffer(buf: Buffer): string {
+export function decodeCsvBuffer(buf: Buffer): string {
   const asUtf8 = buf.toString('utf8');
   const replacementCount = (asUtf8.match(/\uFFFD/g) ?? []).length;
   if (replacementCount > 2) {

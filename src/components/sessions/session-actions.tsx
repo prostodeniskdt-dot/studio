@@ -91,7 +91,7 @@ export function SessionActions({
               ) : (
                 <Upload className="mr-2 h-4 w-4" />
               )}
-              <span>{isImporting ? 'Импорт…' : 'Импорт из CSV'}</span>
+              <span>{isImporting ? 'Импорт…' : 'Импорт файла'}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={onExportCSV} className="transition-colors">
               <Download className="mr-2 h-4 w-4" />

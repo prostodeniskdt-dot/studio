@@ -40,7 +40,7 @@ import { Combobox } from '@/components/ui/combobox';
 import { translateCategory } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { calculateLineFields } from '@/lib/calculations';
-import { parseSessionImportText, splitDelimitedQuotedRow } from '@/lib/inventory-import/session-file-import';
+import { splitDelimitedQuotedRow, type ParsedSessionFile } from '@/lib/inventory-import/session-file-import';
 import { findBestProductMatch, type ProductMatchCandidate } from '@/lib/inventory-import/match';
 import { resolveImportRowEconomics } from '@/lib/inventory-import/row-handling';
 import { guessCategoryFromText } from '@/lib/inventory-import/category-guess';
@@ -530,20 +530,44 @@ export default function SessionPage() {
 
     setIsImporting(true);
     try {
-      const text = await file.text();
-      const parsed = parseSessionImportText(text);
+      const fd = new FormData();
+      fd.set('file', file);
+
+      const res = await fetch('/api/inventory/parse-session-import', {
+        method: 'POST',
+        body: fd,
+      });
+      const j = (await res.json()) as {
+        ok?: boolean;
+        parsed?: ParsedSessionFile;
+        error?: string;
+        hint?: string;
+      };
+
+      if (!res.ok || j.ok !== true) {
+        toast({
+          variant: 'destructive',
+          title: 'Импорт не удался',
+          description: j.hint ?? j.error ?? 'Не удалось прочитать файл. Войдите в аккаунт и проверьте формат.',
+        });
+        clearInput();
+        return;
+      }
+
+      const parsed = j.parsed!;
 
       if (parsed.kind === 'unknown') {
         toast({
           variant: 'destructive',
           title: 'Формат не распознан',
           description:
-            'Поддерживаются: 1) CSV из «Экспорт в CSV» (разделитель «;», «,» или таб); 2) таблица с id продуктов (cuid) в первой ячейке; 3) узкий бланк (Код / Наименование / Ед. изм. — также «Артикул», «Название», «Единица измерения»); 4) расширенный бланк с «Группа» и «Наименование». Сохраняйте файл в UTF-8.',
+            'Поддерживаются: CSV, Excel (XLSX, XLS) и PDF. Форматы данных: 1) выгрузка «Экспорт в CSV»; 2) строки с id продукта (cuid) в первой ячейке; 3) бланк (Код, Наименование, ед. изм.); 4) расширенный бланк с «Группа» и «Наименование». PDF и сложные таблицы лучше экспортировать в Excel и сохранить как XLSX.',
         });
         clearInput();
         return;
       }
 
+      /* use server-parsed result (same branches as before) */
       if (parsed.kind === 'legacy_id') {
         const updatedLines = [...(localLines || [])];
         let changesMade = false;
@@ -777,7 +801,7 @@ export default function SessionPage() {
       toast({
         variant: 'destructive',
         title: 'Ошибка импорта',
-        description: err instanceof Error ? err.message : 'Проверьте формат CSV.',
+        description: err instanceof Error ? err.message : 'Проверьте формат файла (CSV, Excel или PDF).',
       });
     } finally {
       setIsImporting(false);
@@ -838,7 +862,7 @@ export default function SessionPage() {
         ref={fileInputRef}
         onChange={handleFileImport}
         className="hidden"
-        accept=".csv"
+        accept=".csv,.xlsx,.xls,.pdf,application/pdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       />
       <SessionHeader session={effectiveSession} isEditable={isEditable} />
       {isEditable && (

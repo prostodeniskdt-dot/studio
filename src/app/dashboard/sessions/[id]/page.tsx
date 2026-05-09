@@ -40,6 +40,10 @@ import { Combobox } from '@/components/ui/combobox';
 import { translateCategory } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { calculateLineFields } from '@/lib/calculations';
+import { parseSessionImportText, splitDelimitedQuotedRow } from '@/lib/inventory-import/session-file-import';
+import { findBestProductMatch, type ProductMatchCandidate } from '@/lib/inventory-import/match';
+import { resolveImportRowEconomics } from '@/lib/inventory-import/row-handling';
+import { guessCategoryFromText } from '@/lib/inventory-import/category-guess';
 import { SessionHeader } from '@/components/sessions/session-header';
 import { SessionActions } from '@/components/sessions/session-actions';
 import { HelpIcon } from '@/components/ui/help-icon';
@@ -60,6 +64,7 @@ export default function SessionPage() {
   const [deleteProgress, setDeleteProgress] = React.useState(0);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isImporting, setIsImporting] = React.useState(false);
   const [localLines, setLocalLines] = React.useState<InventoryLine[] | null>(null);
   const [isAddProductOpen, setIsAddProductOpen] = React.useState(false);
 
@@ -80,7 +85,7 @@ export default function SessionPage() {
   const effectiveSession = session || cachedSession;
 
   // Использовать контекст продуктов вместо прямой загрузки
-  const { products: allProducts, isLoading: isLoadingProducts } = useProducts();
+  const { products: allProducts, isLoading: isLoadingProducts, refresh: refreshProducts } = useProducts();
 
   // Проверить sessionStorage для новых сессий (исправление race condition)
   React.useEffect(() => {
@@ -497,59 +502,285 @@ export default function SessionPage() {
     fileInputRef.current?.click();
   };
 
-  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    const clearInput = () => {
+      if (event.target) event.target.value = '';
+    };
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      try {
-        const rows = text.split('\n').slice(1);
+    if (!file || !user || !barId) {
+      toast({
+        variant: 'destructive',
+        title: 'Импорт не удался',
+        description: 'Войдите в аккаунт и повторите попытку.',
+      });
+      clearInput();
+      return;
+    }
+
+    if (!allProducts || allProducts.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Импорт не удался',
+        description: 'Список продуктов ещё загружается. Подождите и попробуйте снова.',
+      });
+      clearInput();
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const parsed = parseSessionImportText(text);
+
+      if (parsed.kind === 'unknown') {
+        toast({
+          variant: 'destructive',
+          title: 'Формат не распознан',
+          description:
+            'Поддерживаются: 1) CSV из «Экспорт в CSV» приложения; 2) технический файл с колонкой productId; 3) бланк бухгалтера (; и колонки Код / Наименование / Ед. изм.), как при загрузке с раздела «Инвентаризации».',
+        });
+        clearInput();
+        return;
+      }
+
+      if (parsed.kind === 'legacy_id') {
         const updatedLines = [...(localLines || [])];
         let changesMade = false;
+        const csvData = new Map<
+          string,
+          { startStock: number; purchases: number; sales: number; endStock: number }
+        >();
 
-        const csvData = new Map<string, any>();
-        rows.forEach(rowStr => {
-            if (!rowStr) return;
-            const rowData = rowStr.split(',');
-            const productId = rowData[0];
-            csvData.set(productId, {
-                startStock: parseFloat(rowData[2]),
-                purchases: parseFloat(rowData[3]),
-                sales: parseFloat(rowData[4]),
-                endStock: parseFloat(rowData[5]),
-            });
+        parsed.bodyLines.forEach((rowStr) => {
+          if (!rowStr.trim()) return;
+          const rowData = rowStr.split(',').map((c) => c.trim().replace(/^"|"$/g, ''));
+          const productId = rowData[0];
+          if (!productId) return;
+          csvData.set(productId, {
+            startStock: parseFloat(rowData[2] ?? ''),
+            purchases: parseFloat(rowData[3] ?? ''),
+            sales: parseFloat(rowData[4] ?? ''),
+            endStock: parseFloat(rowData[5] ?? ''),
+          });
         });
 
         updatedLines.forEach((line, index) => {
-            if (csvData.has(line.productId)) {
-                const data = csvData.get(line.productId);
-                updatedLines[index] = {
-                    ...line,
-                    startStock: isNaN(data.startStock) ? line.startStock : data.startStock,
-                    purchases: isNaN(data.purchases) ? line.purchases : data.purchases,
-                    sales: isNaN(data.sales) ? line.sales : data.sales,
-                    endStock: isNaN(data.endStock) ? line.endStock : data.endStock,
-                };
-                changesMade = true;
-            }
+          if (csvData.has(line.productId)) {
+            const data = csvData.get(line.productId)!;
+            updatedLines[index] = {
+              ...line,
+              startStock: isNaN(data.startStock) ? line.startStock : data.startStock,
+              purchases: isNaN(data.purchases) ? line.purchases : data.purchases,
+              sales: isNaN(data.sales) ? line.sales : data.sales,
+              endStock: isNaN(data.endStock) ? line.endStock : data.endStock,
+            };
+            changesMade = true;
+          }
         });
 
-        if (changesMade) {
-          setLocalLines(updatedLines);
-          toast({ title: "Импорт завершен", description: "Данные из файла загружены в таблицу. Не забудьте сохранить изменения." });
+        if (!changesMade) {
+          toast({
+            variant: 'destructive',
+            title: 'Импорт не удался',
+            description:
+              'В файле не найдено строк с productId текущих позиций. Для бланка бухгалтера используйте CSV с точкой с запятой или экспортируйте таблицу из приложения и заполните остатки.',
+          });
         } else {
-           toast({ variant: "destructive", title: "Импорт не удался", description: "Не найдено совпадающих productId в файле." });
+          setLocalLines(updatedLines);
+          toast({
+            title: 'Импорт завершен',
+            description: 'Данные загружены в таблицу. Сохраните изменения.',
+          });
+        }
+        clearInput();
+        return;
+      }
+
+      if (parsed.kind === 'app_export') {
+        const updatedLines = [...(localLines || [])];
+        let changesMade = false;
+        for (const rowStr of parsed.bodyLines) {
+          if (!rowStr.trim()) continue;
+          const cells = splitDelimitedQuotedRow(rowStr, ';');
+          if (cells.length < 2) continue;
+          const displayName = cells[0]!.trim();
+          const endVal = Number(String(cells[1]).replace(/\s/g, '').replace(',', '.'));
+          if (!displayName || Number.isNaN(endVal)) continue;
+          const idx = updatedLines.findIndex((line) => {
+            const product = allProducts.find((p) => p.id === line.productId);
+            if (!product) return false;
+            return (
+              buildProductDisplayName(product.name, product.bottleVolumeMl).trim() === displayName
+            );
+          });
+          if (idx >= 0) {
+            updatedLines[idx] = { ...updatedLines[idx]!, endStock: endVal };
+            changesMade = true;
+          }
+        }
+        if (!changesMade) {
+          toast({
+            variant: 'destructive',
+            title: 'Импорт не удался',
+            description:
+              'Ни одно наименование из файла не совпало с продуктами в этой инвентаризации. Сначала добавьте позиции или импортируйте бланк со страницы списка инвентаризаций.',
+          });
+        } else {
+          setLocalLines(updatedLines);
+          toast({
+            title: 'Импорт завершен',
+            description: 'Остатки обновлены по совпадающим названиям. Сохраните изменения.',
+          });
+        }
+        clearInput();
+        return;
+      }
+
+      const wantPremix =
+        file.name.toLowerCase().includes('заготов') || file.name.toLowerCase().includes('zagotov');
+
+      const toCandidates = (): ProductMatchCandidate[] =>
+        allProducts
+          .filter((p) => {
+            const prem = Boolean(p.isPremix || p.category === 'Premix');
+            return prem === wantPremix;
+          })
+          .map((p) => ({
+            id: p.id,
+            name: p.name,
+            barcode: p.barcode ?? null,
+            externalCode: p.externalCode ?? null,
+            isPremix: Boolean(p.isPremix || p.category === 'Premix'),
+          }));
+
+      const mutableCandidates = toCandidates();
+      let currentLines: InventoryLine[] = [...(localLines || [])];
+      const createdByImport = new Map<string, Product>();
+
+      for (const row of parsed.rows) {
+        const econ = resolveImportRowEconomics(row);
+        const match = findBestProductMatch(row, mutableCandidates, wantPremix);
+        let productId = match?.productId;
+
+        if (!productId) {
+          const category = wantPremix ? 'Premix' : guessCategoryFromText(row.group, row.name);
+          const resPost = await fetch('/api/products', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              product: {
+                name: row.name,
+                category,
+                bottleVolumeMl: econ.defaultBottleMl,
+                usesVolumeCalculator: econ.usesVolumeCalculator,
+                isPremix: wantPremix,
+                ...(wantPremix ? { costCalculationMode: 'manual' as const } : {}),
+                isInLibrary: false,
+                isActive: true,
+                externalCode: row.code?.trim() || null,
+                barcode: row.barcode?.replace(/\s/g, '') || null,
+              },
+            }),
+          });
+          const j = await resPost.json();
+          if (!resPost.ok || j?.ok === false || !j?.product?.id) {
+            throw new Error(j?.error || 'Не удалось создать продукт при импорте');
+          }
+          const createdProd = j.product as Product;
+          createdByImport.set(createdProd.id, createdProd);
+          productId = createdProd.id;
+          mutableCandidates.push({
+            id: createdProd.id,
+            name: createdProd.name,
+            barcode: createdProd.barcode ?? null,
+            externalCode: createdProd.externalCode ?? null,
+            isPremix: Boolean(createdProd.isPremix || createdProd.category === 'Premix'),
+          });
         }
 
-      } catch (error) {
-        toast({ variant: "destructive", title: "Ошибка парсинга файла", description: "Убедитесь, что файл имеет правильный формат CSV." });
-      } finally {
-        if(event.target) event.target.value = '';
+        const productForCalc =
+          allProducts.find((p) => p.id === productId) ?? createdByImport.get(productId) ?? null;
+        if (!productForCalc) {
+          throw new Error('Не удалось сопоставить продукт для расчёта строки');
+        }
+
+        const existingLine = currentLines.find((l) => l.productId === productId);
+        if (existingLine) {
+          const calc = calculateLineFields(
+            {
+              ...existingLine,
+              endStock: econ.endStock,
+              stockMode: econ.stockMode,
+            },
+            productForCalc
+          );
+          const resUp = await fetch(`/api/sessions/${id}`, {
+            method: 'PATCH',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              upsertLines: [
+                {
+                  id: existingLine.id,
+                  productId,
+                  stockMode: econ.stockMode,
+                  startStock: existingLine.startStock,
+                  purchases: existingLine.purchases,
+                  sales: existingLine.sales,
+                  endStock: econ.endStock,
+                  theoreticalEndStock: calc.theoreticalEndStock,
+                  differenceVolume: calc.differenceVolume,
+                  differenceMoney: calc.differenceMoney,
+                  differencePercent: calc.differencePercent,
+                },
+              ],
+            }),
+          });
+          const ju = await resUp.json();
+          if (!resUp.ok || ju?.ok === false) throw new Error(ju?.error || 'Ошибка обновления строки');
+          currentLines = (ju.lines as InventoryLine[]) ?? currentLines;
+        } else {
+          const resAdd = await fetch(`/api/sessions/${id}`, {
+            method: 'PATCH',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              addProductLine: {
+                productId,
+                stockMode: econ.stockMode,
+                endStock: econ.endStock,
+              },
+            }),
+          });
+          const ja = await resAdd.json();
+          if (!resAdd.ok || ja?.ok === false) throw new Error(ja?.error || 'Ошибка добавления строки');
+          currentLines = (ja.lines as InventoryLine[]) ?? currentLines;
+        }
       }
-    };
-    reader.readAsText(file);
+
+      setLocalLines(currentLines);
+      setLines(currentLines);
+      if (barId && typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem(`barboss_products_cache_${barId}`);
+        } catch {
+          /* ignore */
+        }
+      }
+      await refreshProducts();
+      toast({
+        title: 'Импорт завершен',
+        description: `Обработано позиций: ${parsed.rows.length}. Новые продукты добавлены в каталог при необходимости.`,
+      });
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка импорта',
+        description: err instanceof Error ? err.message : 'Проверьте формат CSV.',
+      });
+    } finally {
+      setIsImporting(false);
+      clearInput();
+    }
   };
   
   // Показывать loading только если нет кэшированной сессии
@@ -630,6 +861,7 @@ export default function SessionPage() {
         onDelete={handleDeleteSession}
         onImportClick={handleImportClick}
         onExportCSV={handleExportCSV}
+        isImporting={isImporting}
         isDeleteDialogOpen={isDeleteDialogOpen}
         setIsDeleteDialogOpen={setIsDeleteDialogOpen}
       />

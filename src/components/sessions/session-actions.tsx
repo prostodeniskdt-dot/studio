@@ -36,6 +36,7 @@ interface SessionActionsProps {
   onDelete: () => void;
   onImportClick: () => void;
   onExportCSV: () => void;
+  isImporting?: boolean;
   isDeleteDialogOpen: boolean;
   setIsDeleteDialogOpen: (open: boolean) => void;
 }
@@ -54,6 +55,7 @@ export function SessionActions({
   onDelete,
   onImportClick,
   onExportCSV,
+  isImporting = false,
   isDeleteDialogOpen,
   setIsDeleteDialogOpen,
 }: SessionActionsProps) {
@@ -79,9 +81,17 @@ export function SessionActions({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onSelect={onImportClick} className="transition-colors">
-              <Upload className="mr-2 h-4 w-4" />
-              <span>Импорт из CSV</span>
+            <DropdownMenuItem
+              disabled={isImporting}
+              onSelect={onImportClick}
+              className="transition-colors"
+            >
+              {isImporting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="mr-2 h-4 w-4" />
+              )}
+              <span>{isImporting ? 'Импорт…' : 'Импорт из CSV'}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={onExportCSV} className="transition-colors">
               <Download className="mr-2 h-4 w-4" />

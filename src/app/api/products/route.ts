@@ -79,6 +79,7 @@ type CreateProductBody = {
     externalCode?: string | null;
     barcode?: string | null;
     premixIngredients?: Array<{ productId: string; volumeMl: number; ratio: number }> | null;
+    costCalculationMode?: 'auto' | 'manual' | null;
   };
 };
 
@@ -108,6 +109,7 @@ export async function POST(req: Request) {
         isActive: p.isActive ?? true,
         isInLibrary,
         isPremix,
+        costCalculationMode: p.costCalculationMode ?? null,
         usesVolumeCalculator: p.usesVolumeCalculator ?? true,
         externalCode: p.externalCode?.trim() || null,
         barcode: p.barcode?.replace(/\s/g, '') || null,

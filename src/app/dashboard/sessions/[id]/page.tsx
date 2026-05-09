@@ -49,6 +49,15 @@ import { SessionActions } from '@/components/sessions/session-actions';
 import { HelpIcon } from '@/components/ui/help-icon';
 import { Progress } from '@/components/ui/progress';
 import { WifiOff, AlertTriangle } from 'lucide-react';
+import {
+  buildSessionExportAoa,
+  DEFAULT_EXPORT_PREF,
+  downloadSessionExport,
+  loadExportPreference,
+  preferenceFromImport,
+  saveExportPreference,
+  type SessionExportPreference,
+} from '@/lib/session-export/mirror-format';
 
 export default function SessionPage() {
   const params = useParams();
@@ -77,6 +86,12 @@ export default function SessionPage() {
   const [isLoadingSession, setIsLoadingSession] = React.useState(false);
   const [isLoadingLines, setIsLoadingLines] = React.useState(false);
   const [sessionError, setSessionError] = React.useState<Error | null>(null);
+
+  const [exportPref, setExportPref] = React.useState<SessionExportPreference | null>(null);
+
+  React.useEffect(() => {
+    setExportPref(loadExportPreference(id));
+  }, [id]);
 
   const hasNavigatedRef = React.useRef(false);
   const [cachedSession, setCachedSession] = React.useState<InventorySession | null>(null);
@@ -459,44 +474,23 @@ export default function SessionPage() {
   const handleExportCSV = () => {
     if (!localLines || !allProducts) return;
 
-    // Helper function to escape CSV values - always wrap in quotes for consistency
-    const escapeCSV = (value: string | number): string => {
-      const stringValue = String(value);
-      // Always wrap in quotes and escape double quotes by doubling them
-      return `"${stringValue.replace(/"/g, '""')}"`;
-    };
-
-    // Use semicolon as separator for Russian locale Excel compatibility
-    const SEPARATOR = ';';
-    const headers = ["Наименование продукта", "Фактический остаток (мл)"];
-    const headerRow = headers.map(escapeCSV).join(SEPARATOR);
-    
-    // Data rows - только название продукта и фактический остаток
-    const rows = localLines.map(line => {
-      const product = allProducts.find(p => p.id === line.productId);
-      return [
-        product ? buildProductDisplayName(product.name, product.bottleVolumeMl) : '',
-        line.endStock
-      ].map(escapeCSV).join(SEPARATOR);
+    const pref = exportPref ?? DEFAULT_EXPORT_PREF;
+    const productById = new Map(allProducts.map((p) => [p.id, p] as const));
+    const aoa = buildSessionExportAoa(pref, localLines, productById, {
+      sessionName: effectiveSession?.name,
+      barName: typeof user?.profile?.establishment === 'string' ? user.profile.establishment : undefined,
     });
-
-    // Use \r\n for Windows compatibility
-    const csvContent = [headerRow, ...rows].join('\r\n');
-    
-    // Add UTF-8 BOM at the beginning of the string for Excel compatibility
-    const BOM = '\uFEFF';
-    const csvWithBOM = BOM + csvContent;
-    
-    // Use data URI with proper encoding - this works better than encodeURI for CSV
-    const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvWithBOM);
-    const link = document.createElement("a");
-    link.setAttribute("href", dataUri);
-    link.setAttribute("download", `session_${id}_export.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast({ title: "Экспорт завершен", description: "Данные инвентаризации выгружены в CSV файл." });
+    downloadSessionExport(aoa, pref, id);
+    toast({
+      title: 'Экспорт завершен',
+      description:
+        pref.ext === 'xlsx'
+          ? 'Скачан Excel — в том же типе файла, что и последний успешный импорт.'
+          : 'Скачан CSV с теми же разделителем и колонками, что и при последнем импорте. Если импорта не было — используется стандартная двухколоночная таблица.',
+    });
   };
+
+  const exportButtonLabel = exportPref?.ext === 'xlsx' ? 'Экспорт в Excel' : 'Экспорт в CSV';
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
@@ -586,6 +580,12 @@ export default function SessionPage() {
         });
         clearInput();
         return;
+      }
+
+      const mirrorPref = preferenceFromImport(file, parsed);
+      if (mirrorPref) {
+        setExportPref(mirrorPref);
+        saveExportPreference(id, mirrorPref);
       }
 
       /* use server-parsed result (same branches as before) */
@@ -925,6 +925,7 @@ export default function SessionPage() {
         onDelete={handleDeleteSession}
         onImportClick={handleImportClick}
         onExportCSV={handleExportCSV}
+        exportButtonLabel={exportButtonLabel}
         isImporting={isImporting}
         isDeleteDialogOpen={isDeleteDialogOpen}
         setIsDeleteDialogOpen={setIsDeleteDialogOpen}

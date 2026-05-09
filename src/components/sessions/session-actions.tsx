@@ -36,6 +36,8 @@ interface SessionActionsProps {
   onDelete: () => void;
   onImportClick: () => void;
   onExportCSV: () => void;
+  /** Подпись кнопок экспорта (CSV / Excel в зависимости от последнего импорта). */
+  exportButtonLabel?: string;
   isImporting?: boolean;
   isDeleteDialogOpen: boolean;
   setIsDeleteDialogOpen: (open: boolean) => void;
@@ -55,6 +57,7 @@ export function SessionActions({
   onDelete,
   onImportClick,
   onExportCSV,
+  exportButtonLabel = 'Экспорт в CSV',
   isImporting = false,
   isDeleteDialogOpen,
   setIsDeleteDialogOpen,
@@ -72,7 +75,7 @@ export function SessionActions({
         </Button>
         <Button variant="outline" onClick={onExportCSV} className="transition-all duration-200">
           <Download className="mr-2 h-4 w-4" />
-          Экспорт в CSV
+          {exportButtonLabel}
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -95,7 +98,7 @@ export function SessionActions({
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={onExportCSV} className="transition-colors">
               <Download className="mr-2 h-4 w-4" />
-              <span>Экспорт в CSV</span>
+              <span>{exportButtonLabel}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

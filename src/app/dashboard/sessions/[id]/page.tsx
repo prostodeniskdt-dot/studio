@@ -536,6 +536,7 @@ export default function SessionPage() {
       const res = await fetch('/api/inventory/parse-session-import', {
         method: 'POST',
         body: fd,
+        credentials: 'include',
       });
       const j = (await res.json()) as {
         ok?: boolean;

@@ -9,6 +9,13 @@ function detectDelimiter(firstLine: string): ';' | ',' {
 }
 
 export function decodeCsvBuffer(buf: Buffer): string {
+  if (buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xfe) {
+    return iconv.decode(buf.subarray(2), 'utf16le');
+  }
+  if (buf.length >= 2 && buf[0] === 0xfe && buf[1] === 0xff) {
+    return iconv.decode(buf.subarray(2), 'utf16be');
+  }
+
   const asUtf8 = buf.toString('utf8');
   const replacementCount = (asUtf8.match(/\uFFFD/g) ?? []).length;
   if (replacementCount > 2) {

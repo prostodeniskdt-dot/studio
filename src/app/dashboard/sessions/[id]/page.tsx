@@ -538,7 +538,7 @@ export default function SessionPage() {
           variant: 'destructive',
           title: 'Формат не распознан',
           description:
-            'Поддерживаются: 1) CSV из «Экспорт в CSV»; 2) таблица с id продуктов (cuid) в первой ячейке строки, разделитель «,» или «;»; 3) узкий бланк (Код / Наименование / Ед. изм.; при необходимости — колонки с числами справа); 4) расширенный бланк со строкой заголовка «Группа» и «Наименование», как при создании сессии из списка инвентаризаций.',
+            'Поддерживаются: 1) CSV из «Экспорт в CSV» (разделитель «;», «,» или таб); 2) таблица с id продуктов (cuid) в первой ячейке; 3) узкий бланк (Код / Наименование / Ед. изм. — также «Артикул», «Название», «Единица измерения»); 4) расширенный бланк с «Группа» и «Наименование». Сохраняйте файл в UTF-8.',
         });
         clearInput();
         return;
@@ -601,9 +601,10 @@ export default function SessionPage() {
       if (parsed.kind === 'app_export') {
         const updatedLines = [...(localLines || [])];
         let changesMade = false;
+        const appDelim = parsed.delimiter;
         for (const rowStr of parsed.bodyLines) {
           if (!rowStr.trim()) continue;
-          const cells = splitDelimitedQuotedRow(rowStr, ';');
+          const cells = splitDelimitedQuotedRow(rowStr, appDelim);
           if (cells.length < 2) continue;
           const displayName = cells[0]!.trim();
           const endVal = Number(String(cells[1]).replace(/\s/g, '').replace(',', '.'));

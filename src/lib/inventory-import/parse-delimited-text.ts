@@ -1,27 +1,61 @@
 import type { BlankParsedRow } from './types';
 import { normalizeForMatch } from './normalize';
-import { splitDelimitedQuotedRow } from './split-quoted-row';
+import { splitDelimitedQuotedRow, type SessionDelimiter } from './split-quoted-row';
+
+/** Разделители столбцов бланков (CSV из Excel может быть через табуляцию). */
+export type BlankDelimiter = ';' | ',' | '\t';
 
 /** Разбирает строковое содержимое (CSV/фрагмент из PDF в одну колонку) в позиции бланка. */
-export function parseBlankDelimitedLines(content: string, delimiter: ';' | ','): BlankParsedRow[] {
+export function parseBlankDelimitedLines(content: string, delimiter: BlankDelimiter): BlankParsedRow[] {
   const lines = content.split(/\r?\n/);
   return parseBlankLines(lines, delimiter);
 }
 
-/** Строка похожа на заголовок узкого бухгалтерского бланка (разделитель `;` или `,`). */
+/** Строка похожа на заголовок узкого бухгалтерского бланка. */
 export function lineLooksLikeCompactAccountantHeader(line: string): boolean {
-  return isCompactAccountantHeaderLine(line, ';') || isCompactAccountantHeaderLine(line, ',');
+  return (
+    isCompactAccountantHeaderLine(line, ';') ||
+    isCompactAccountantHeaderLine(line, ',') ||
+    isCompactAccountantHeaderLine(line, '\t')
+  );
 }
 
-/** Узкий бухгалтерский бланк: Код;Наименование;Ед. изм. (+ опционально колонки количества). */
-function isCompactAccountantHeaderLine(line: string, delimiter: string): boolean {
-  const parts = line.split(delimiter).map((s) => s.trim().toLowerCase());
-  if (parts.length < 3) return false;
-  const codeHit = parts.some((c) => c === 'код' || /^код\.?$/.test(c));
-  const nameHit = parts.some((c) => c.includes('наименование'));
-  const unitHit = parts.some(
-    (c) => /ед\.?\s*изм|ед\.изм/.test(c) || (c.includes('ед') && c.includes('изм'))
+function headerCellMeansCode(c: string): boolean {
+  const t = c.trim().toLowerCase();
+  return (
+    t === 'код' ||
+    /^код\.?$/.test(t) ||
+    t.startsWith('код ') ||
+    t.includes('артикул') ||
+    t.includes('номенклатур') ||
+    t === 'н/н' ||
+    t === 'п/н'
   );
+}
+
+function headerCellMeansName(c: string): boolean {
+  const t = c.trim().toLowerCase();
+  return t.includes('наименование') || t.includes('название') || t === 'наим' || t.includes('ном. тов');
+}
+
+function headerCellMeansUnit(c: string): boolean {
+  const t = c.trim().toLowerCase().replace(/\s+/g, ' ');
+  return (
+    /ед\.?\s*изм|ед\.изм/i.test(t) ||
+    /^ед\b.*\bизм/i.test(t) ||
+    /единица.*измерения/i.test(t) ||
+    (t.includes('ед') && t.includes('изм'))
+  );
+}
+
+/** Узкий бухгалтерский бланк (Код / Наименование / Ед. изм. + числа справа). */
+function isCompactAccountantHeaderLine(line: string, delimiter: string): boolean {
+  const parts = line.split(delimiter).map((s) => s.trim());
+  if (parts.length < 3) return false;
+  const lc = parts.map((s) => s.toLowerCase());
+  const codeHit = lc.some(headerCellMeansCode);
+  const nameHit = lc.some(headerCellMeansName);
+  const unitHit = lc.some(headerCellMeansUnit);
   return codeHit && nameHit && unitHit;
 }
 
@@ -40,7 +74,8 @@ export function parseBlankLines(lines: string[], delimiter: string): BlankParsed
   let blankMode: 'none' | 'wide' | 'compact' = 'none';
   let lastGroup = '';
   const rows: BlankParsedRow[] = [];
-  const delimQuoted = (delimiter === ';' || delimiter === ',' ? delimiter : ',') as ';' | ',';
+  const delimQuoted: SessionDelimiter =
+    delimiter === ';' || delimiter === ',' || delimiter === '\t' ? delimiter : ',';
 
   for (const rawLine of lines) {
     const line = rawLine.trimEnd();
@@ -48,7 +83,7 @@ export function parseBlankLines(lines: string[], delimiter: string): BlankParsed
 
     if (/бланк\s+инвентари/i.test(line) || /^организация/i.test(line)) continue;
     if (/^на\s+дату\s*:/i.test(line)) continue;
-    if (/^склад\s*;/i.test(line)) continue;
+    if (/^склад\s*(;|\t|$)/i.test(line)) continue;
     if (/^\d+\s*из\s*\d+$/i.test(line.trim())) continue;
 
     if (blankMode === 'none') {
@@ -71,7 +106,7 @@ export function parseBlankLines(lines: string[], delimiter: string): BlankParsed
     if (blankMode === 'compact') {
       if (isCompactAccountantHeaderLine(line, delimiter)) continue;
       const parts =
-        delimiter === ';' || delimiter === ','
+        delimiter === ';' || delimiter === ',' || delimiter === '\t'
           ? splitDelimitedQuotedRow(line, delimQuoted)
           : line.split(delimiter).map((s) => s.trim());
       if (parts.length < 3) continue;
@@ -100,16 +135,17 @@ export function parseBlankLines(lines: string[], delimiter: string): BlankParsed
     const parts = line.split(delimiter).map((s) => s.trim());
     if (parts.every((p) => !p)) continue;
 
-    const nameSemi = delimiter === ';' ? (parts[4] ?? '').trim() : pickCommaName(parts);
+    const fixedWideLayout = delimiter === ';' || delimiter === '\t';
+    const nameSemi = fixedWideLayout ? (parts[4] ?? '').trim() : pickCommaName(parts);
     const nameCol = nameSemi;
     const name = nameCol;
-    const codeCol = delimiter === ';' ? (parts[2] ?? '').trim() : pickCommaCode(parts);
+    const codeCol = fixedWideLayout ? (parts[2] ?? '').trim() : pickCommaCode(parts);
 
-    const barcodeCol = delimiter === ';' ? (parts[3] ?? '').trim() : '';
+    const barcodeCol = fixedWideLayout ? (parts[3] ?? '').trim() : '';
     const code = codeCol;
     let barcode = barcodeCol;
 
-    if (delimiter === ';' && name) {
+    if (fixedWideLayout && name) {
       if (/^\d{8,}$/.test(code) && !barcode) {
         barcode = code;
       }
@@ -119,8 +155,8 @@ export function parseBlankLines(lines: string[], delimiter: string): BlankParsed
       }
     }
 
-    const unitRaw = delimiter === ';' ? (parts[5] ?? '').trim() : pickCommaUnit(parts);
-    const qtyRaw = delimiter === ';' ? (parts[6] ?? '').trim() : pickCommaQty(parts);
+    const unitRaw = fixedWideLayout ? (parts[5] ?? '').trim() : pickCommaUnit(parts);
+    const qtyRaw = fixedWideLayout ? (parts[6] ?? '').trim() : pickCommaQty(parts);
 
     if (!name || name === 'Наименование') continue;
 

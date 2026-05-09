@@ -13,6 +13,17 @@ describe('parseSessionImportText', () => {
     expect(p.kind).toBe('app_export');
     if (p.kind === 'app_export') {
       expect(p.bodyLines.length).toBe(1);
+      expect(p.delimiter).toBe(';');
+    }
+  });
+
+  it('detects app export saved as tab-separated (Excel)', () => {
+    const raw =
+      `"Наименование продукта"\t"Фактический остаток (мл)"\n` + `"Джин"\t250`;
+    const p = parseSessionImportText(raw);
+    expect(p.kind).toBe('app_export');
+    if (p.kind === 'app_export') {
+      expect(p.delimiter).toBe('\t');
     }
   });
 
@@ -32,6 +43,15 @@ describe('parseSessionImportText', () => {
     expect(p.kind).toBe('legacy_id');
     if (p.kind === 'legacy_id') {
       expect(p.delimiter).toBe(';');
+    }
+  });
+
+  it('detects legacy_id with tab delimiter', () => {
+    const raw = `ProductID\tName\tStart\tPurch\tSales\tEnd\t\n${SAMPLE_CUID}\tx\t1\t2\t3\t4\n`;
+    const p = parseSessionImportText(raw);
+    expect(p.kind).toBe('legacy_id');
+    if (p.kind === 'legacy_id') {
+      expect(p.delimiter).toBe('\t');
     }
   });
 
@@ -75,5 +95,21 @@ describe('parseBlankDelimitedLines compact', () => {
     expect(rows.length).toBe(1);
     expect(rows[0].name).toBe('Ром');
     expect(rows[0].quantityFact).toBe(100);
+  });
+
+  it('parses TAB compact with synonyms (Артикул / Название / Единица измерения)', () => {
+    const raw = 'Артикул\tНазвание\tЕдиница измерения\tКол-во\n777\tБурбон\tмл\t50\n';
+    const rows = parseBlankDelimitedLines(raw, '\t');
+    expect(rows.length).toBe(1);
+    expect(rows[0].code).toBe('777');
+    expect(rows[0].name).toBe('Бурбон');
+    expect(rows[0].quantityFact).toBe(50);
+  });
+
+  it('parses accountant_blank from TSV via parseSessionImportText', () => {
+    const raw = 'Код\tНаименование\tЕд. изм.\tФакт\t\n8\tЛикёр\tшт\t12\n';
+    const p = parseSessionImportText(raw);
+    expect(p.kind).toBe('accountant_blank');
+    if (p.kind === 'accountant_blank') expect(p.rows[0].name).toBe('Ликёр');
   });
 });

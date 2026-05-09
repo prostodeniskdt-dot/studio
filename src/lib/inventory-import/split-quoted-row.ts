@@ -1,5 +1,7 @@
+export type SessionDelimiter = ';' | ',' | '\t';
+
 /** Ячейки с учётом кавычек и экранирования "" */
-export function splitDelimitedQuotedRow(line: string, delimiter: ';' | ','): string[] {
+export function splitDelimitedQuotedRow(line: string, delimiter: SessionDelimiter): string[] {
   const parts: string[] = [];
   let cur = '';
   let inQuotes = false;

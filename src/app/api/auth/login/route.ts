@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { jsonResponse, readJson } from '@/lib/http';
 import { createSessionForUser, sessionCookieHeader } from '@/lib/auth-server';
+import { isAdminEmail } from '@/lib/admin';
 import bcrypt from 'bcryptjs';
 
 type Body = { email: string; password: string };
@@ -26,6 +27,14 @@ export async function POST(req: Request) {
 
     if (user.profile?.isBanned) {
       return jsonResponse({ ok: false, error: 'User is banned' }, { status: 403 });
+    }
+
+    // Auto-promote configured admin emails
+    if (user.profile && user.profile.role !== 'admin' && isAdminEmail(user.email)) {
+      user.profile = await prisma.userProfile.update({
+        where: { id: user.id },
+        data: { role: 'admin' },
+      });
     }
 
     // Ensure bar exists (in case of legacy data)

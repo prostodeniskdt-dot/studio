@@ -1,6 +1,8 @@
+import { randomUUID } from 'crypto';
 import { prisma } from '@/lib/db';
 import { jsonResponse, readJson } from '@/lib/http';
 import { createSessionForUser, sessionCookieHeader } from '@/lib/auth-server';
+import { isAdminEmail } from '@/lib/admin';
 import bcrypt from 'bcryptjs';
 
 type Body = {
@@ -32,18 +34,16 @@ export async function POST(req: Request) {
     if (exists) return jsonResponse({ ok: false, error: 'Email already in use' }, { status: 409 });
 
     const passwordHash = await bcrypt.hash(password, 10);
+    /// UserProfile must be inserted before AuthUser: AuthUser.id references UserProfile.id.
+    const userId = randomUUID();
 
     const created = await prisma.$transaction(async (tx) => {
-      const authUser = await tx.authUser.create({
-        data: { email, passwordHash },
-      });
-
       const profile = await tx.userProfile.create({
         data: {
-          id: authUser.id,
+          id: userId,
           displayName,
           email,
-          role: 'manager',
+          role: isAdminEmail(email) ? 'admin' : 'manager',
           city: body.city,
           establishment: body.establishment,
           phone: body.phone,
@@ -51,14 +51,18 @@ export async function POST(req: Request) {
         },
       });
 
+      const authUser = await tx.authUser.create({
+        data: { id: userId, email, passwordHash },
+      });
+
       // Ensure a default bar exists for the user (keep legacy barId format)
-      const barId = barIdFromUserId(authUser.id);
+      const barId = barIdFromUserId(userId);
       await tx.bar.upsert({
         where: { id: barId },
         create: {
           id: barId,
           name: `Бар ${displayName}`,
-          ownerUserId: authUser.id,
+          ownerUserId: userId,
         },
         update: {},
       });

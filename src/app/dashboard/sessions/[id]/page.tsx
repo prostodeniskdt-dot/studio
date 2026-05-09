@@ -529,15 +529,35 @@ export default function SessionPage() {
     }
 
     setIsImporting(true);
+    const parseController = new AbortController();
+    const parseTimeoutId = window.setTimeout(() => parseController.abort(), 180_000);
     try {
       const fd = new FormData();
       fd.set('file', file);
 
-      const res = await fetch('/api/inventory/parse-session-import', {
-        method: 'POST',
-        body: fd,
-        credentials: 'include',
-      });
+      let res: Response;
+      try {
+        res = await fetch('/api/inventory/parse-session-import', {
+          method: 'POST',
+          body: fd,
+          credentials: 'include',
+          signal: parseController.signal,
+        });
+      } catch (e) {
+        if (e instanceof Error && e.name === 'AbortError') {
+          toast({
+            variant: 'destructive',
+            title: 'Таймаут',
+            description:
+              'Разбор файла занял слишком долго (больше 3 мин). Попробуйте файл меньшего размера или сохраните как CSV/XLSX.',
+          });
+          clearInput();
+          return;
+        }
+        throw e;
+      } finally {
+        clearTimeout(parseTimeoutId);
+      }
       const j = (await res.json()) as {
         ok?: boolean;
         parsed?: ParsedSessionFile;
@@ -685,6 +705,25 @@ export default function SessionPage() {
       let currentLines: InventoryLine[] = [...(localLines || [])];
       const createdByImport = new Map<string, Product>();
 
+      type LineAdd = { productId: string; stockMode: 'volume_ml' | 'pieces'; endStock: number };
+      const addsByProduct = new Map<string, LineAdd>();
+      const upsertByLineId = new Map<
+        string,
+        {
+          id: string;
+          productId: string;
+          stockMode: 'volume_ml' | 'pieces';
+          startStock: number;
+          purchases: number;
+          sales: number;
+          endStock: number;
+          theoreticalEndStock: number;
+          differenceVolume: number;
+          differenceMoney: number;
+          differencePercent: number;
+        }
+      >();
+
       for (const row of parsed.rows) {
         const econ = resolveImportRowEconomics(row);
         const match = findBestProductMatch(row, mutableCandidates, wantPremix);
@@ -742,46 +781,44 @@ export default function SessionPage() {
             },
             productForCalc
           );
-          const resUp = await fetch(`/api/sessions/${id}`, {
-            method: 'PATCH',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              upsertLines: [
-                {
-                  id: existingLine.id,
-                  productId,
-                  stockMode: econ.stockMode,
-                  startStock: existingLine.startStock,
-                  purchases: existingLine.purchases,
-                  sales: existingLine.sales,
-                  endStock: econ.endStock,
-                  theoreticalEndStock: calc.theoreticalEndStock,
-                  differenceVolume: calc.differenceVolume,
-                  differenceMoney: calc.differenceMoney,
-                  differencePercent: calc.differencePercent,
-                },
-              ],
-            }),
+          upsertByLineId.set(existingLine.id, {
+            id: existingLine.id,
+            productId,
+            stockMode: econ.stockMode,
+            startStock: existingLine.startStock,
+            purchases: existingLine.purchases,
+            sales: existingLine.sales,
+            endStock: econ.endStock,
+            theoreticalEndStock: calc.theoreticalEndStock,
+            differenceVolume: calc.differenceVolume,
+            differenceMoney: calc.differenceMoney,
+            differencePercent: calc.differencePercent,
           });
-          const ju = await resUp.json();
-          if (!resUp.ok || ju?.ok === false) throw new Error(ju?.error || 'Ошибка обновления строки');
-          currentLines = (ju.lines as InventoryLine[]) ?? currentLines;
         } else {
-          const resAdd = await fetch(`/api/sessions/${id}`, {
-            method: 'PATCH',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              addProductLine: {
-                productId,
-                stockMode: econ.stockMode,
-                endStock: econ.endStock,
-              },
-            }),
+          addsByProduct.set(productId, {
+            productId,
+            stockMode: econ.stockMode,
+            endStock: econ.endStock,
           });
-          const ja = await resAdd.json();
-          if (!resAdd.ok || ja?.ok === false) throw new Error(ja?.error || 'Ошибка добавления строки');
-          currentLines = (ja.lines as InventoryLine[]) ?? currentLines;
         }
+      }
+
+      const addPayload = [...addsByProduct.values()];
+      const upserts = [...upsertByLineId.values()];
+      if (upserts.length > 0 || addPayload.length > 0) {
+        const resBatch = await fetch(`/api/sessions/${id}`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            ...(addPayload.length > 0 ? { addProductLines: addPayload } : {}),
+            ...(upserts.length > 0 ? { upsertLines: upserts } : {}),
+          }),
+        });
+        const jb = await resBatch.json();
+        if (!resBatch.ok || jb?.ok === false) {
+          throw new Error(jb?.error || 'Ошибка сохранения строк инвентаризации');
+        }
+        currentLines = (jb.lines as InventoryLine[]) ?? currentLines;
       }
 
       setLocalLines(currentLines);
@@ -793,7 +830,7 @@ export default function SessionPage() {
           /* ignore */
         }
       }
-      await refreshProducts();
+      void refreshProducts();
       toast({
         title: 'Импорт завершен',
         description: `Обработано позиций: ${parsed.rows.length}. Новые продукты добавлены в каталог при необходимости.`,

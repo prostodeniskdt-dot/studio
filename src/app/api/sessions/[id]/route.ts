@@ -68,6 +68,12 @@ type PatchBody = {
     stockMode?: 'volume_ml' | 'pieces';
     endStock?: number;
   };
+  /** Несколько новых строк за один запрос (импорт бланка). */
+  addProductLines?: Array<{
+    productId: string;
+    stockMode?: 'volume_ml' | 'pieces';
+    endStock?: number;
+  }>;
 };
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -97,17 +103,22 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
         });
       }
 
+      const linesToAdd = [...(body.addProductLines ?? [])];
       if (body.addProductLine?.productId) {
+        linesToAdd.push(body.addProductLine);
+      }
+      for (const pl of linesToAdd) {
+        if (!pl.productId) continue;
         const existing = await tx.inventoryLine.findFirst({
-          where: { inventorySessionId: id, productId: body.addProductLine.productId },
+          where: { inventorySessionId: id, productId: pl.productId },
         });
         if (!existing) {
-          const mode = body.addProductLine.stockMode === 'pieces' ? 'pieces' : 'volume_ml';
-          const end = typeof body.addProductLine.endStock === 'number' ? body.addProductLine.endStock : 0;
+          const mode = pl.stockMode === 'pieces' ? 'pieces' : 'volume_ml';
+          const end = typeof pl.endStock === 'number' ? pl.endStock : 0;
           await tx.inventoryLine.create({
             data: {
               inventorySessionId: id,
-              productId: body.addProductLine.productId,
+              productId: pl.productId,
               stockMode: mode,
               startStock: 0,
               purchases: 0,

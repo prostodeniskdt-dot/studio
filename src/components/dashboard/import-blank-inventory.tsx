@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useProducts } from '@/contexts/products-context';
 import { useSessions } from '@/contexts/sessions-context';
+import type { InventorySession } from '@/lib/types';
 import { useAuthSession } from '@/contexts/auth-context';
 import { Loader2, Upload } from 'lucide-react';
 
@@ -23,7 +24,7 @@ export function ImportBlankInventory() {
   const { toast } = useToast();
   const router = useRouter();
   const { refresh } = useProducts();
-  const { refresh: refreshSessions } = useSessions();
+  const { refresh: refreshSessions, addSession } = useSessions();
   const { user } = useAuthSession();
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = React.useState(false);
@@ -63,7 +64,17 @@ export function ImportBlankInventory() {
     }
 
     refresh();
-    refreshSessions();
+    if (json.sessionId) {
+      const detailRes = await fetch(`/api/sessions/${json.sessionId}`, { cache: 'no-store' });
+      const detailJson = await detailRes.json();
+      if (detailRes.ok && detailJson?.session) {
+        addSession(detailJson.session as InventorySession);
+      } else {
+        refreshSessions();
+      }
+    } else {
+      refreshSessions();
+    }
     toast({
       title: 'Бланк импортирован',
       description:

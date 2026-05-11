@@ -24,7 +24,7 @@ export default function SessionsPage() {
   const barId = user ? `bar_${user.id}` : null; 
 
   // Использовать контекст сессий вместо прямой загрузки
-  const { sessions, isLoading: isLoadingSessions, error: sessionsError } = useSessions();
+  const { sessions, isLoading: isLoadingSessions, error: sessionsError, addSession } = useSessions();
 
 
   const handleCreateSession = async () => {
@@ -59,8 +59,10 @@ export default function SessionsPage() {
       const json = await res.json();
       if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
 
-      const sessionId = json.session?.id as string | undefined;
-      if (!sessionId) throw new Error('Session not created');
+      const created = json.session as InventorySession | undefined;
+      const sessionId = created?.id;
+      if (!sessionId || !created) throw new Error('Session not created');
+      addSession(created);
 
       if (typeof window !== 'undefined') {
         const sessionDataForCache = {

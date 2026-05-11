@@ -23,7 +23,7 @@ export default function DashboardPage() {
   const { user } = useAuthSession();
 
   const barId = user ? `bar_${user.id}` : null; 
-  const { sessions, isLoading: isLoadingSessions, error: sessionsError } = useSessions();
+  const { sessions, isLoading: isLoadingSessions, error: sessionsError, addSession } = useSessions();
   const [isCreating, setIsCreating] = React.useState(false);
 
   const activeSessions = React.useMemo(() => {
@@ -71,9 +71,11 @@ export default function DashboardPage() {
         });
         const json = await res.json();
         if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
-        const sessionId = json.session?.id as string | undefined;
-        if (!sessionId) throw new Error('Session not created');
-        
+        const created = json.session as InventorySession | undefined;
+        const sessionId = created?.id;
+        if (!sessionId || !created) throw new Error('Session not created');
+        addSession(created);
+
         // Track metric
         metricsTracker.track('session_created', { sessionId, barId });
         

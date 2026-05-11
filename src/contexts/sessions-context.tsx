@@ -12,6 +12,8 @@ interface SessionsContextValue {
   refresh: () => void;
   /** Убрать сессию из состояния и кэша (после успешного DELETE и т.п.). */
   removeSession: (id: string) => void;
+  /** Добавить или обновить сессию в списке (после POST создания и т.п.). */
+  addSession: (session: InventorySession) => void;
 }
 
 const SessionsContext = createContext<SessionsContextValue | undefined>(undefined);
@@ -150,6 +152,45 @@ export function SessionsProvider({ children, barId }: { children: React.ReactNod
     [barId]
   );
 
+  const addSession = useCallback(
+    (session: InventorySession) => {
+      if (!barId || session.barId !== barId) return;
+      setSessions((prev) => {
+        const list = [...(prev ?? [])];
+        const ix = list.findIndex((s) => s.id === session.id);
+        if (ix >= 0) {
+          list[ix] = { ...list[ix], ...session };
+          return list;
+        }
+        return [session, ...list];
+      });
+      setCache((prev) => {
+        const list =
+          prev?.barId === barId ? [...prev.sessions] : [];
+        const ix = list.findIndex((s) => s.id === session.id);
+        if (ix >= 0) {
+          list[ix] = { ...list[ix], ...session };
+        } else {
+          list.unshift(session);
+        }
+        const next: CachedSessions = {
+          sessions: list,
+          timestamp: Date.now(),
+          barId,
+        };
+        if (typeof window !== 'undefined' && list.length > 0) {
+          try {
+            localStorage.setItem(`${SESSIONS_CACHE_KEY}_${barId}`, JSON.stringify(next));
+          } catch {
+            /* ignore */
+          }
+        }
+        return next;
+      });
+    },
+    [barId]
+  );
+
   // Использовать кэш если данные еще загружаются
   const effectiveSessions = React.useMemo(() => 
     sessions || (cache?.barId === barId ? cache.sessions : []) || [], 
@@ -163,7 +204,8 @@ export function SessionsProvider({ children, barId }: { children: React.ReactNod
     error: error || null,
     refresh,
     removeSession,
-  }), [effectiveSessions, effectiveIsLoading, error, refresh, removeSession]);
+    addSession,
+  }), [effectiveSessions, effectiveIsLoading, error, refresh, removeSession, addSession]);
 
   return (
     <SessionsContext.Provider value={value}>

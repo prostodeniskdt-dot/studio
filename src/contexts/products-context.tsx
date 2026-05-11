@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { useAuthSession } from '@/contexts/auth-context';
+import { useAuthSession, getWorkingBarId } from '@/contexts/auth-context';
 import type { Product } from '@/lib/types';
 import { logger } from '@/lib/logger';
 import { dedupeProductsByName } from '@/lib/utils';
@@ -32,7 +32,7 @@ interface CachedProducts {
 
 export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuthSession();
-  const barId = user ? `bar_${user.id}` : null;
+  const barId = getWorkingBarId(user);
   const [cache, setCache] = useState<CachedProducts | null>(null);
   const [forceRefresh, setForceRefresh] = useState(0);
   const [personalProducts, setPersonalProducts] = useState<Product[] | null>(null);

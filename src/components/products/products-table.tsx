@@ -54,7 +54,7 @@ import { formatCurrency, translateCategory, translateSubCategory, productCategor
 import { ProductForm } from './product-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { useAuthSession } from '@/contexts/auth-context';
+import { useAuthSession, getWorkingBarId } from '@/contexts/auth-context';
 import { useProducts } from '@/contexts/products-context';
 import { useToast } from '@/hooks/use-toast';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -80,7 +80,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const isMobile = useIsMobile();
 
   const { user } = useAuthSession();
-  const barId = user ? `bar_${user.id}` : null;
+  const barId = getWorkingBarId(user);
   const { toast } = useToast();
   const { refresh: refreshProducts } = useProducts();
 

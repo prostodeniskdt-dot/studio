@@ -50,6 +50,11 @@ enum PurchaseOrderStatus {
   cancelled
 }
 
+enum BarMemberRole {
+  staff
+  viewer
+}
+
 model AuthUser {
   /// Uses same ID as UserProfile for 1:1 mapping.
   id           String   @id @default(cuid())
@@ -113,6 +118,7 @@ model UserProfile {
   updatedAt   DateTime @updatedAt
 
   barsOwned   Bar[]    @relation("BarsOwned")
+  barMemberships BarMember[]
 }
 
 model Bar {
@@ -127,11 +133,25 @@ model Bar {
   suppliers         Supplier[]
   purchaseOrders    PurchaseOrder[]
   inventorySessions InventorySession[]
+  members         BarMember[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([ownerUserId])
+}
+
+model BarMember {
+  id     String        @id @default(cuid())
+  barId  String
+  bar    Bar           @relation(fields: [barId], references: [id], onDelete: Cascade)
+  userId String
+  user   UserProfile   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   BarMemberRole @default(staff)
+  createdAt DateTime   @default(now())
+
+  @@unique([barId, userId])
+  @@index([userId])
 }
 
 model Product {

@@ -1,10 +1,7 @@
 import { prisma } from '@/lib/db';
 import { requireUserId } from '@/lib/auth-server';
-import { jsonResponse, readJson } from '@/lib/http';
-
-function barIdFromUid(uid: string) {
-  return `bar_${uid}`;
-}
+import { jsonResponse, readJson, statusFromApiError } from '@/lib/http';
+import { assertCanWriteBar, resolveWorkingBarContext } from '@/lib/bar-access';
 
 function mapProduct(p: any) {
   const premixIngredients = p.premixIngredients?.length
@@ -26,7 +23,7 @@ function mapProduct(p: any) {
 export async function GET(req: Request) {
   try {
     const uid = await requireUserId(req);
-    const barId = barIdFromUid(uid);
+    const { barId } = await resolveWorkingBarContext(uid);
 
     const includePremix = {
       premixIngredients: {
@@ -52,10 +49,8 @@ export async function GET(req: Request) {
       libraryProducts: library.map(mapProduct),
     });
   } catch (e) {
-    return jsonResponse(
-      { ok: false, error: e instanceof Error ? e.message : String(e) },
-      { status: 401 }
-    );
+    const msg = e instanceof Error ? e.message : String(e);
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }
 
@@ -86,7 +81,8 @@ type CreateProductBody = {
 export async function POST(req: Request) {
   try {
     const uid = await requireUserId(req);
-    const barId = barIdFromUid(uid);
+    const { barId } = await resolveWorkingBarContext(uid);
+    await assertCanWriteBar(uid, barId);
     const body = await readJson<CreateProductBody>(req);
 
     const p = body.product;
@@ -132,10 +128,8 @@ export async function POST(req: Request) {
 
     return jsonResponse({ ok: true, product: mapProduct(created) });
   } catch (e) {
-    return jsonResponse(
-      { ok: false, error: e instanceof Error ? e.message : String(e) },
-      { status: 400 }
-    );
+    const msg = e instanceof Error ? e.message : String(e);
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }
 

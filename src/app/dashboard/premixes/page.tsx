@@ -7,7 +7,7 @@ import { HelpIcon } from '@/components/ui/help-icon';
 import { Button } from '@/components/ui/button';
 import { Library } from 'lucide-react';
 import Link from 'next/link';
-import { useAuthSession } from '@/contexts/auth-context';
+import { useAuthSession, getWorkingBarId } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import type { Product } from '@/lib/types';
 import { buildProductDisplayName } from '@/lib/utils';
@@ -29,7 +29,7 @@ export default function PremixesPage() {
     const [isSendingToLibrary, setIsSendingToLibrary] = React.useState(false);
 
     const { user } = useAuthSession();
-    const barId = user ? `bar_${user.id}` : null;
+    const barId = getWorkingBarId(user);
     const { toast } = useToast();
 
     if (isLoading) {

@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/db';
 import { BULK_INTERACTIVE_TRANSACTION } from '@/lib/db/transaction-defaults';
 import { requireUserId } from '@/lib/auth-server';
-import { jsonResponse } from '@/lib/http';
+import { jsonResponse, statusFromApiError } from '@/lib/http';
+import { assertCanWriteBar, resolveWorkingBarContext } from '@/lib/bar-access';
 import { listImportFingerprint } from '@/lib/inventory-import/fingerprint';
 import { findBestProductMatch, type ProductMatchCandidate } from '@/lib/inventory-import/match';
 import { parseInventoryBlankFile, isPremixBlankFilename } from '@/lib/inventory-import/parse-inventory-file';
@@ -12,24 +13,11 @@ export const runtime = 'nodejs';
 
 const MAX_BYTES = 22 * 1024 * 1024;
 
-function barIdFromUid(uid: string) {
-  return `bar_${uid}`;
-}
-
 export async function POST(req: Request) {
   try {
     const uid = await requireUserId(req);
-    const barId = barIdFromUid(uid);
-
-    await prisma.bar.upsert({
-      where: { id: barId },
-      create: {
-        id: barId,
-        name: 'Мой бар',
-        ownerUserId: uid,
-      },
-      update: {},
-    });
+    const { barId } = await resolveWorkingBarContext(uid);
+    await assertCanWriteBar(uid, barId);
 
     const ct = req.headers.get('content-type') ?? '';
     if (!ct.includes('multipart/form-data')) {
@@ -183,12 +171,9 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (msg === 'Not authenticated' || msg === 'Session expired') {
-      return jsonResponse({ ok: false, error: msg }, { status: 401 });
-    }
     if (msg === 'UNSUPPORTED_FORMAT') {
       return jsonResponse({ ok: false, error: 'Поддерживаются файлы CSV, XLSX и PDF' }, { status: 400 });
     }
-    return jsonResponse({ ok: false, error: msg }, { status: 400 });
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }

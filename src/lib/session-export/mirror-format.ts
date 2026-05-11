@@ -8,6 +8,8 @@ import * as XLSX from 'xlsx';
 /** Noto Sans с кириллицей; векторный PDF. URL привязан к ветке main репозитория googlefonts/noto-fonts. */
 const NOTO_SANS_REGULAR_TTF =
   'https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoSans/NotoSans-Regular.ttf';
+const NOTO_SANS_BOLD_TTF =
+  'https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoSans/NotoSans-Bold.ttf';
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -24,6 +26,27 @@ function isCategorySeparatorRow(firstCell: unknown): boolean {
   if (firstCell == null) return false;
   const s = String(firstCell).trim();
   return s.startsWith('—') && s.endsWith('—');
+}
+
+async function addNotoSansToDoc(
+  doc: InstanceType<(typeof import('jspdf'))['jsPDF']>
+): Promise<void> {
+  const pairs: readonly [fileName: string, url: string][] = [
+    ['NotoSans-Regular.ttf', NOTO_SANS_REGULAR_TTF],
+    ['NotoSans-Bold.ttf', NOTO_SANS_BOLD_TTF],
+  ];
+  for (const [fileName, url] of pairs) {
+    const fontRes = await fetch(url);
+    if (!fontRes.ok) {
+      throw new Error(
+        'Не удалось загрузить шрифт для PDF. Проверьте доступ в интернет или экспортируйте в Excel.'
+      );
+    }
+    const fontB64 = arrayBufferToBase64(await fontRes.arrayBuffer());
+    doc.addFileToVFS(fileName, fontB64);
+  }
+  doc.addFont('NotoSans-Regular.ttf', 'NotoSans', 'normal', 'normal', 'Identity-H');
+  doc.addFont('NotoSans-Bold.ttf', 'NotoSans', 'bold', 'normal', 'Identity-H');
 }
 
 async function downloadSessionPdfVector(
@@ -51,14 +74,7 @@ async function downloadSessionPdfVector(
   });
 
   const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
-  const fontRes = await fetch(NOTO_SANS_REGULAR_TTF);
-  if (!fontRes.ok) {
-    throw new Error('Не удалось загрузить шрифт для PDF. Проверьте доступ в интернет или экспортируйте в Excel.');
-  }
-  const fontB64 = arrayBufferToBase64(await fontRes.arrayBuffer());
-  const vfsName = 'NotoSans-Regular.ttf';
-  doc.addFileToVFS(vfsName, fontB64);
-  doc.addFont(vfsName, 'NotoSans', 'normal', 'normal', 'Identity-H');
+  await addNotoSansToDoc(doc);
   doc.setFont('NotoSans', 'normal');
   doc.setTextColor(17, 24, 39);
 
@@ -83,7 +99,12 @@ async function downloadSessionPdfVector(
       overflow: 'linebreak',
       minCellHeight: fontSize * 0.45,
     },
-    headStyles: { fillColor: [243, 244, 246], textColor: [17, 24, 39], fontStyle: 'normal' },
+    headStyles: {
+      font: 'NotoSans',
+      fillColor: [243, 244, 246],
+      textColor: [17, 24, 39],
+      fontStyle: 'normal',
+    },
     alternateRowStyles: { fillColor: [255, 255, 255] },
     tableWidth: 'auto',
     horizontalPageBreak: wideLayout && maxCols > 6,
@@ -92,6 +113,7 @@ async function downloadSessionPdfVector(
       const first = row[0];
 
       if (pref.layout === 'wide_blank' && data.section === 'body' && data.row.index < 8) {
+        data.cell.styles.font = 'NotoSans';
         data.cell.styles.fontStyle = 'bold';
         if (data.row.index >= 6) {
           data.cell.styles.fillColor = [243, 244, 246];
@@ -100,12 +122,14 @@ async function downloadSessionPdfVector(
       }
 
       if (pref.layout !== 'wide_blank' && data.section === 'body' && data.row.index === 0) {
+        data.cell.styles.font = 'NotoSans';
         data.cell.styles.fontStyle = 'bold';
         data.cell.styles.fillColor = [243, 244, 246];
         return;
       }
 
       if (data.section === 'body' && isCategorySeparatorRow(first)) {
+        data.cell.styles.font = 'NotoSans';
         data.cell.styles.fontStyle = 'bold';
         data.cell.styles.fillColor = [229, 231, 235];
       }

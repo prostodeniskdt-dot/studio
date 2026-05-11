@@ -1,10 +1,7 @@
 import { prisma } from '@/lib/db';
 import { requireUserId } from '@/lib/auth-server';
-import { jsonResponse, readJson } from '@/lib/http';
-
-function barIdFromUid(uid: string) {
-  return `bar_${uid}`;
-}
+import { jsonResponse, readJson, statusFromApiError } from '@/lib/http';
+import { assertCanWriteBar, resolveWorkingBarContext } from '@/lib/bar-access';
 
 type UpsertBody = {
   supplier: {
@@ -19,7 +16,8 @@ type UpsertBody = {
 export async function POST(req: Request) {
   try {
     const uid = await requireUserId(req);
-    const barId = barIdFromUid(uid);
+    const { barId } = await resolveWorkingBarContext(uid);
+    await assertCanWriteBar(uid, barId);
     const body = await readJson<UpsertBody>(req);
 
     const created = await prisma.supplier.create({
@@ -34,10 +32,8 @@ export async function POST(req: Request) {
     });
     return jsonResponse({ ok: true, supplier: created });
   } catch (e) {
-    return jsonResponse(
-      { ok: false, error: e instanceof Error ? e.message : String(e) },
-      { status: 400 }
-    );
+    const msg = e instanceof Error ? e.message : String(e);
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }
 
@@ -53,12 +49,12 @@ type PatchBody = {
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const uid = await requireUserId(req);
-    const barId = barIdFromUid(uid);
     const { id } = await ctx.params;
     const body = await readJson<PatchBody>(req);
 
-    const existing = await prisma.supplier.findFirst({ where: { id, barId } });
+    const existing = await prisma.supplier.findFirst({ where: { id } });
     if (!existing) return jsonResponse({ ok: false, error: 'Not found' }, { status: 404 });
+    await assertCanWriteBar(uid, existing.barId);
 
     const updated = await prisma.supplier.update({
       where: { id },
@@ -72,29 +68,24 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 
     return jsonResponse({ ok: true, supplier: updated });
   } catch (e) {
-    return jsonResponse(
-      { ok: false, error: e instanceof Error ? e.message : String(e) },
-      { status: 400 }
-    );
+    const msg = e instanceof Error ? e.message : String(e);
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }
 
 export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const uid = await requireUserId(req);
-    const barId = barIdFromUid(uid);
     const { id } = await ctx.params;
 
-    const existing = await prisma.supplier.findFirst({ where: { id, barId } });
+    const existing = await prisma.supplier.findFirst({ where: { id } });
     if (!existing) return jsonResponse({ ok: false, error: 'Not found' }, { status: 404 });
+    await assertCanWriteBar(uid, existing.barId);
 
     await prisma.supplier.delete({ where: { id } });
     return jsonResponse({ ok: true });
   } catch (e) {
-    return jsonResponse(
-      { ok: false, error: e instanceof Error ? e.message : String(e) },
-      { status: 400 }
-    );
+    const msg = e instanceof Error ? e.message : String(e);
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }
-

@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import { useParams, notFound } from 'next/navigation';
-import { useAuthSession } from '@/contexts/auth-context';
+import { useAuthSession, getWorkingBarId } from '@/contexts/auth-context';
 import type { PurchaseOrder, PurchaseOrderLine, Product, Supplier } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ export default function PurchaseOrderPage() {
     const id = params.id as string;
     const { user } = useAuthSession();
 
-    const barId = user ? `bar_${user.id}` : null;
+    const barId = getWorkingBarId(user);
     const [order, setOrder] = React.useState<any | null>(null);
     const [isLoadingOrder, setIsLoadingOrder] = React.useState(false);
 

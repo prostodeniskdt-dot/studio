@@ -2,10 +2,14 @@
 
 import React from 'react';
 
+export type BarAccess = 'owner' | 'staff' | 'viewer';
+
 type AuthUser = {
   id: string;
   email: string;
   profile?: any;
+  workingBarId?: string | null;
+  barAccess?: BarAccess | null;
 };
 
 type AuthState = {
@@ -54,5 +58,16 @@ export function useAuthSession() {
   const ctx = React.useContext(AuthContext);
   if (!ctx) throw new Error('useAuthSession must be used within AuthProvider');
   return ctx;
+}
+
+/** Активный бар для дашборда (совпадает с логикой API). */
+export function getWorkingBarId(user: Pick<AuthUser, 'id' | 'workingBarId'> | null | undefined): string | null {
+  if (!user?.id) return null;
+  if (user.workingBarId != null && user.workingBarId !== '') return user.workingBarId;
+  return `bar_${user.id}`;
+}
+
+export function canMutateWorkspace(user: Pick<AuthUser, 'barAccess'> | null | undefined): boolean {
+  return user?.barAccess !== 'viewer';
 }
 

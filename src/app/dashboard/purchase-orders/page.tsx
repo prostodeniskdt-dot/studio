@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useAuthSession } from '@/contexts/auth-context';
+import { useAuthSession, getWorkingBarId } from '@/contexts/auth-context';
 import type { PurchaseOrder, PurchaseOrderLine, Supplier, Product } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -27,7 +27,7 @@ import {
 
 export default function PurchaseOrdersPage() {
   const { user } = useAuthSession();
-  const barId = user ? `bar_${user.id}` : null;
+  const barId = getWorkingBarId(user);
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = React.useState<string | null>(null);
   const [orders, setOrders] = React.useState<any[] | null>(null);

@@ -13,7 +13,7 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { HelpIcon } from '@/components/ui/help-icon';
 import type { InventorySession, Product, ProductCategory, InventoryLine } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthSession } from '@/contexts/auth-context';
+import { useAuthSession, getWorkingBarId, canMutateWorkspace } from '@/contexts/auth-context';
 import { useProducts } from '@/contexts/products-context';
 import { translateCategory, productCategories, productSubCategories, translateSubCategory, dedupeProductsByName, buildProductDisplayName } from '@/lib/utils';
 import { ProductSearch } from '@/components/products/product-search';
@@ -26,7 +26,8 @@ import { pickLatestInProgressSession } from '@/lib/sessions/pick-latest-active';
 export default function UnifiedCalculatorPage() {
   const { toast } = useToast();
   const { user } = useAuthSession();
-  const barId = user ? `bar_${user.id}` : null;
+  const barId = getWorkingBarId(user);
+  const allowMutate = canMutateWorkspace(user);
 
   // Использовать контекст продуктов вместо прямой загрузки
   const { products, isLoading: isLoadingProducts } = useProducts();
@@ -522,7 +523,7 @@ export default function UnifiedCalculatorPage() {
                   <Button 
                     onClick={() => handleSendToInventory(calculatedVolume)} 
                     className="w-full mt-2 font-semibold" 
-                    disabled={calculatedVolume === null || isSending || !barId}
+                    disabled={calculatedVolume === null || isSending || !barId || !allowMutate}
                     size="lg"
                   >
                     {isSending ? (

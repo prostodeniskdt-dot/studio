@@ -6,7 +6,7 @@ import { useProducts } from '@/contexts/products-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { HelpIcon } from '@/components/ui/help-icon';
-import { useAuthSession } from '@/contexts/auth-context';
+import { useAuthSession, getWorkingBarId } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import type { Product, ProductCategory } from '@/lib/types';
 import { buildProductDisplayName } from '@/lib/utils';
@@ -40,7 +40,7 @@ export default function ProductsLibraryPage() {
     const [isArchiving, setIsArchiving] = React.useState<string | null>(null);
 
     const { user } = useAuthSession();
-    const barId = user ? `bar_${user.id}` : null;
+    const barId = getWorkingBarId(user);
     const { toast } = useToast();
 
     const handleOpenSheet = (product?: Product) => {

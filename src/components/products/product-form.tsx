@@ -36,7 +36,7 @@ import { checkProductDuplicate } from '@/lib/product-duplicate-check';
 import { useProducts } from '@/contexts/products-context';
 import { productCategorySchema } from '@/lib/schemas/product.schema';
 import { Separator } from '../ui/separator';
-import { useAuthSession } from '@/contexts/auth-context';
+import { useAuthSession, getWorkingBarId } from '@/contexts/auth-context';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -69,7 +69,7 @@ interface ProductFormProps {
 
 export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const { user } = useAuthSession();
-  const barId = user ? `bar_${user.id}` : null;
+  const barId = getWorkingBarId(user);
   const { toast } = useToast();
   const [isSaving, setIsSaving] = React.useState(false);
   const { globalProducts, refresh: refreshProducts } = useProducts();

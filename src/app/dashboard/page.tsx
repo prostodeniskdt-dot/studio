@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthSession } from '@/contexts/auth-context';
+import { useAuthSession, getWorkingBarId, canMutateWorkspace } from '@/contexts/auth-context';
 import { useSessions } from '@/contexts/sessions-context';
 import { metricsTracker } from '@/lib/metrics';
 
@@ -22,7 +22,8 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const { user } = useAuthSession();
 
-  const barId = user ? `bar_${user.id}` : null; 
+  const barId = getWorkingBarId(user); 
+  const allowMutate = canMutateWorkspace(user);
   const { sessions, isLoading: isLoadingSessions, error: sessionsError, addSession } = useSessions();
   const [isCreating, setIsCreating] = React.useState(false);
 
@@ -168,7 +169,7 @@ export default function DashboardPage() {
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Текущие инвентаризации</h1>
-        <Button onClick={handleCreateSession} disabled={!barId || isLoading || isCreating || !!hasDataLoadingError}>
+        <Button onClick={handleCreateSession} disabled={!barId || !allowMutate || isLoading || isCreating || !!hasDataLoadingError}>
           {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
           Начать инвентаризацию
         </Button>
@@ -198,10 +199,14 @@ export default function DashboardPage() {
           icon={BarChart3}
           title="Нет активных инвентаризаций"
           description="Начните новую инвентаризацию, чтобы отслеживать остатки продуктов в вашем баре."
-          action={{
-            label: "Начать инвентаризацию",
-            onClick: handleCreateSession
-          }}
+          action={
+            allowMutate
+              ? {
+                  label: 'Начать инвентаризацию',
+                  onClick: handleCreateSession,
+                }
+              : undefined
+          }
         />
       ) : (
         <SessionsList sessions={activeSessions} barId={barId!} />

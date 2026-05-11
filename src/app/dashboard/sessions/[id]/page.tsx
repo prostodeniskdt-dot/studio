@@ -8,7 +8,7 @@ import { FileText, Loader2, Save, MoreVertical, Trash2, Download, Upload, PlusCi
 import Link from "next/link";
 import { translateStatus, buildProductDisplayName } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine, CalculatedInventoryLine } from '@/lib/types';
-import { useAuthSession } from '@/contexts/auth-context';
+import { useAuthSession, getWorkingBarId, canMutateWorkspace } from '@/contexts/auth-context';
 import { useProducts } from '@/contexts/products-context';
 import { useSessions } from '@/contexts/sessions-context';
 import {
@@ -73,7 +73,7 @@ export default function SessionPage() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const barId = user ? `bar_${user.id}` : null;
+  const barId = getWorkingBarId(user);
   
   const [isDeletingSession, setIsDeletingSession] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
@@ -923,7 +923,7 @@ export default function SessionPage() {
   }
   
   const isLoading = (isLoadingSession || isLoadingLines || isLoadingProducts) && !sessionError;
-  const isEditable = effectiveSession.status === 'in_progress';
+  const isEditable = effectiveSession.status === 'in_progress' && canMutateWorkspace(user);
 
   return (
     <>

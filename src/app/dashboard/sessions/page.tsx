@@ -10,7 +10,7 @@ import { HelpIcon } from '@/components/ui/help-icon';
 import { useRouter } from 'next/navigation';
 import type { InventorySession } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthSession } from '@/contexts/auth-context';
+import { useAuthSession, getWorkingBarId, canMutateWorkspace } from '@/contexts/auth-context';
 import { useSessions } from '@/contexts/sessions-context';
 import { ImportBlankInventory } from '@/components/dashboard/import-blank-inventory';
 
@@ -21,7 +21,8 @@ export default function SessionsPage() {
   const { user } = useAuthSession();
   const [isCreating, setIsCreating] = React.useState(false);
 
-  const barId = user ? `bar_${user.id}` : null; 
+  const barId = getWorkingBarId(user); 
+  const allowMutate = canMutateWorkspace(user);
 
   // Использовать контекст сессий вместо прямой загрузки
   const { sessions, isLoading: isLoadingSessions, error: sessionsError, addSession } = useSessions();
@@ -90,7 +91,7 @@ export default function SessionsPage() {
         <h1 className="text-3xl font-bold tracking-tight">Инвентаризации</h1>
         <div className="flex flex-wrap gap-2">
           <ImportBlankInventory />
-          <Button onClick={handleCreateSession} disabled={isLoading || isCreating || !!hasDataLoadingError || !barId}>
+          <Button onClick={handleCreateSession} disabled={isLoading || isCreating || !!hasDataLoadingError || !barId || !allowMutate}>
             {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
             Начать инвентаризацию
           </Button>

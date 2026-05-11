@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useAuthSession } from '@/contexts/auth-context';
+import { useAuthSession, getWorkingBarId } from '@/contexts/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { SuppliersTable } from '@/components/suppliers/suppliers-table';
@@ -10,7 +10,7 @@ import { HelpIcon } from '@/components/ui/help-icon';
 
 export default function SuppliersPage() {
   const { user } = useAuthSession();
-  const barId = user ? `bar_${user.id}` : null;
+  const barId = getWorkingBarId(user);
 
   const { suppliers, isLoading, error } = useSuppliers();
 

@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, BarChart3, Calculator, Truck, ShoppingCart, Shield, Bug, FlaskConical, HelpCircle, Library } from 'lucide-react';
+import { Home, Package, BarChart3, Calculator, Truck, ShoppingCart, Shield, Bug, FlaskConical, HelpCircle, Library, UsersRound } from 'lucide-react';
 import {
   SidebarHeader,
   Sidebar,
@@ -29,6 +29,7 @@ const menuItems = [
   { href: '/dashboard/faq', label: 'Частые вопросы', icon: HelpCircle },
 ];
 
+const teamMenuItem = { href: '/dashboard/team', label: 'Команда бара', icon: UsersRound };
 const adminMenuItem = { href: '/dashboard/admin', label: 'Админка', icon: Shield };
 const debugMenuItem = { href: '/dashboard/admin/debug', label: 'Debug', icon: Bug };
 
@@ -53,10 +54,13 @@ export function AppSidebar() {
 
   const isAdmin = user?.profile?.role === 'admin';
 
+  const isBarOwner = user?.barAccess === 'owner';
+
   const navHrefs = useMemo(() => {
     const base = menuItems.map((i) => i.href);
-    return isAdmin ? [...base, adminMenuItem.href, debugMenuItem.href] : base;
-  }, [isAdmin]);
+    const withTeam = isBarOwner ? [...base, teamMenuItem.href] : base;
+    return isAdmin ? [...withTeam, adminMenuItem.href, debugMenuItem.href] : withTeam;
+  }, [isAdmin, isBarOwner]);
 
   const activeHref = resolveActiveHref(pathname, navHrefs);
   const isActive = (path: string) => activeHref === path;
@@ -91,6 +95,31 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
+          {isBarOwner && (
+            <SidebarMenuItem className="relative">
+              {isActive(teamMenuItem.href) && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-sidebar-primary rounded-r-full transition-all duration-200" />
+              )}
+              <SidebarMenuButton
+                asChild
+                isActive={isActive(teamMenuItem.href)}
+                tooltip={{ children: teamMenuItem.label }}
+                className="group relative transition-all duration-200"
+              >
+                <Link
+                  href={teamMenuItem.href}
+                  aria-label={teamMenuItem.label}
+                  aria-current={isActive(teamMenuItem.href) ? 'page' : undefined}
+                >
+                  <teamMenuItem.icon
+                    aria-hidden="true"
+                    className="transition-transform duration-200 group-hover:scale-110"
+                  />
+                  <span>{teamMenuItem.label}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           {isAdmin && (
             <>
              <SidebarMenuItem className="relative">

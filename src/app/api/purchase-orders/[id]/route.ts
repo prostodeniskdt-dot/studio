@@ -1,11 +1,8 @@
 import { prisma } from '@/lib/db';
 import { BULK_INTERACTIVE_TRANSACTION } from '@/lib/db/transaction-defaults';
 import { requireUserId } from '@/lib/auth-server';
-import { jsonResponse, readJson } from '@/lib/http';
-
-function barIdFromUid(uid: string) {
-  return `bar_${uid}`;
-}
+import { jsonResponse, readJson, statusFromApiError } from '@/lib/http';
+import { assertCanReadBar, assertCanWriteBar } from '@/lib/bar-access';
 
 function toIso(d: Date | null | undefined) {
   return d ? d.toISOString() : null;
@@ -14,14 +11,14 @@ function toIso(d: Date | null | undefined) {
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const uid = await requireUserId(req);
-    const barId = barIdFromUid(uid);
     const { id } = await ctx.params;
 
     const order = await prisma.purchaseOrder.findFirst({
-      where: { id, barId },
+      where: { id },
       include: { lines: true, supplier: true },
     });
     if (!order) return jsonResponse({ ok: false, error: 'Not found' }, { status: 404 });
+    await assertCanReadBar(uid, order.barId);
 
     return jsonResponse({
       ok: true,
@@ -34,10 +31,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
       },
     });
   } catch (e) {
-    return jsonResponse(
-      { ok: false, error: e instanceof Error ? e.message : String(e) },
-      { status: 401 }
-    );
+    const msg = e instanceof Error ? e.message : String(e);
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }
 
@@ -56,12 +51,12 @@ type PatchBody = {
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const uid = await requireUserId(req);
-    const barId = barIdFromUid(uid);
     const { id } = await ctx.params;
     const body = await readJson<PatchBody>(req);
 
-    const order = await prisma.purchaseOrder.findFirst({ where: { id, barId } });
+    const order = await prisma.purchaseOrder.findFirst({ where: { id } });
     if (!order) return jsonResponse({ ok: false, error: 'Not found' }, { status: 404 });
+    await assertCanWriteBar(uid, order.barId);
 
     if (body.order) {
       await prisma.purchaseOrder.update({
@@ -120,7 +115,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     }
 
     const updated = await prisma.purchaseOrder.findFirst({
-      where: { id, barId },
+      where: { id, barId: order.barId },
       include: { lines: true, supplier: true },
     });
 
@@ -137,29 +132,24 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
         : null,
     });
   } catch (e) {
-    return jsonResponse(
-      { ok: false, error: e instanceof Error ? e.message : String(e) },
-      { status: 400 }
-    );
+    const msg = e instanceof Error ? e.message : String(e);
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }
 
 export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const uid = await requireUserId(req);
-    const barId = barIdFromUid(uid);
     const { id } = await ctx.params;
 
-    const order = await prisma.purchaseOrder.findFirst({ where: { id, barId } });
+    const order = await prisma.purchaseOrder.findFirst({ where: { id } });
     if (!order) return jsonResponse({ ok: false, error: 'Not found' }, { status: 404 });
+    await assertCanWriteBar(uid, order.barId);
 
     await prisma.purchaseOrder.delete({ where: { id } });
     return jsonResponse({ ok: true });
   } catch (e) {
-    return jsonResponse(
-      { ok: false, error: e instanceof Error ? e.message : String(e) },
-      { status: 400 }
-    );
+    const msg = e instanceof Error ? e.message : String(e);
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }
-

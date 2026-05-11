@@ -1,10 +1,7 @@
 import { prisma } from '@/lib/db';
 import { requireUserId } from '@/lib/auth-server';
-import { jsonResponse, readJson } from '@/lib/http';
-
-function barIdFromUid(uid: string) {
-  return `bar_${uid}`;
-}
+import { jsonResponse, readJson, statusFromApiError } from '@/lib/http';
+import { assertCanWriteBar, resolveWorkingBarContext } from '@/lib/bar-access';
 
 function toIso(d: Date | null | undefined) {
   return d ? d.toISOString() : null;
@@ -13,7 +10,7 @@ function toIso(d: Date | null | undefined) {
 export async function GET(req: Request) {
   try {
     const uid = await requireUserId(req);
-    const barId = barIdFromUid(uid);
+    const { barId } = await resolveWorkingBarContext(uid);
     const orders = await prisma.purchaseOrder.findMany({
       where: { barId },
       include: { lines: true, supplier: true },
@@ -31,10 +28,8 @@ export async function GET(req: Request) {
       })),
     });
   } catch (e) {
-    return jsonResponse(
-      { ok: false, error: e instanceof Error ? e.message : String(e) },
-      { status: 401 }
-    );
+    const msg = e instanceof Error ? e.message : String(e);
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }
 
@@ -50,7 +45,8 @@ type UpsertBody = {
 export async function POST(req: Request) {
   try {
     const uid = await requireUserId(req);
-    const barId = barIdFromUid(uid);
+    const { barId } = await resolveWorkingBarContext(uid);
+    await assertCanWriteBar(uid, barId);
     const body = await readJson<UpsertBody>(req);
 
     const created = await prisma.purchaseOrder.create({
@@ -66,10 +62,7 @@ export async function POST(req: Request) {
 
     return jsonResponse({ ok: true, order: created });
   } catch (e) {
-    return jsonResponse(
-      { ok: false, error: e instanceof Error ? e.message : String(e) },
-      { status: 400 }
-    );
+    const msg = e instanceof Error ? e.message : String(e);
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }
-

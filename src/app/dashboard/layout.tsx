@@ -8,7 +8,7 @@ import {
 import { UserNav } from "@/components/user-nav";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ClientOnly } from "@/components/client-only";
-import { useAuthSession } from "@/contexts/auth-context";
+import { useAuthSession, getWorkingBarId } from "@/contexts/auth-context";
 import { ProductsProvider } from "@/contexts/products-context";
 import { SessionsProvider } from "@/contexts/sessions-context";
 import { SuppliersProvider } from "@/contexts/suppliers-context";
@@ -114,7 +114,7 @@ export default function DashboardLayout({
     );
   }
 
-  const barId = user ? `bar_${user.id}` : null;
+  const barId = getWorkingBarId(user);
 
   return (
     <ErrorBoundary>

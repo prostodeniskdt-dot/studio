@@ -1,25 +1,19 @@
 import { prisma } from '@/lib/db';
 import { requireUserId } from '@/lib/auth-server';
-import { jsonResponse } from '@/lib/http';
-
-function barIdFromUid(uid: string) {
-  return `bar_${uid}`;
-}
+import { jsonResponse, statusFromApiError } from '@/lib/http';
+import { resolveWorkingBarContext } from '@/lib/bar-access';
 
 export async function GET(req: Request) {
   try {
     const uid = await requireUserId(req);
-    const barId = barIdFromUid(uid);
+    const { barId } = await resolveWorkingBarContext(uid);
     const suppliers = await prisma.supplier.findMany({
       where: { barId },
       orderBy: { updatedAt: 'desc' },
     });
     return jsonResponse({ ok: true, suppliers });
   } catch (e) {
-    return jsonResponse(
-      { ok: false, error: e instanceof Error ? e.message : String(e) },
-      { status: 401 }
-    );
+    const msg = e instanceof Error ? e.message : String(e);
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }
-

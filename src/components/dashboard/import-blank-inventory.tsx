@@ -17,7 +17,7 @@ import { useRouter } from 'next/navigation';
 import { useProducts } from '@/contexts/products-context';
 import { useSessions } from '@/contexts/sessions-context';
 import type { InventorySession } from '@/lib/types';
-import { useAuthSession } from '@/contexts/auth-context';
+import { useAuthSession, getWorkingBarId, canMutateWorkspace } from '@/contexts/auth-context';
 import { Loader2, Upload } from 'lucide-react';
 
 export function ImportBlankInventory() {
@@ -33,7 +33,8 @@ export function ImportBlankInventory() {
     hash: string;
   } | null>(null);
 
-  const barId = user ? `bar_${user.id}` : null;
+  const barId = getWorkingBarId(user);
+  const allowMutate = canMutateWorkspace(user);
 
   const runUpload = async (file: File, confirmDuplicate: boolean): Promise<boolean> => {
     const fd = new FormData();
@@ -135,7 +136,7 @@ export function ImportBlankInventory() {
       <Button
         variant="outline"
         type="button"
-        disabled={!user || isUploading}
+        disabled={!user || isUploading || !allowMutate}
         onClick={() => inputRef.current?.click()}
       >
         {isUploading ? (

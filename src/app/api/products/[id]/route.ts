@@ -1,10 +1,7 @@
 import { prisma } from '@/lib/db';
 import { requireUserId } from '@/lib/auth-server';
-import { jsonResponse, readJson } from '@/lib/http';
-
-function barIdFromUid(uid: string) {
-  return `bar_${uid}`;
-}
+import { jsonResponse, readJson, statusFromApiError } from '@/lib/http';
+import { resolveWorkingBarContext } from '@/lib/bar-access';
 
 function mapProduct(p: any) {
   return {
@@ -24,17 +21,20 @@ type PatchBody = {
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const uid = await requireUserId(req);
-    const barId = barIdFromUid(uid);
+    const { barId: workingBarId, access } = await resolveWorkingBarContext(uid);
+    if (access === 'viewer') {
+      return jsonResponse({ ok: false, error: 'Forbidden' }, { status: 403 });
+    }
     const { id } = await ctx.params;
     const body = await readJson<PatchBody>(req);
 
     const existing = await prisma.product.findUnique({ where: { id } });
     if (!existing) return jsonResponse({ ok: false, error: 'Not found' }, { status: 404 });
 
-    // Персональные — владелец бара или автор; общая библиотека — любой авторизованный пользователь.
+    // Персональные — бар работы или автор; общая библиотека — любой авторизованный с правом записи.
     const isLibraryGlobal = existing.isInLibrary === true && (existing.barId == null || existing.barId === '');
     const canEdit =
-      (existing.barId && existing.barId === barId) ||
+      (existing.barId && existing.barId === workingBarId) ||
       (existing.createdByUserId && existing.createdByUserId === uid) ||
       isLibraryGlobal;
     if (!canEdit) return jsonResponse({ ok: false, error: 'Forbidden' }, { status: 403 });
@@ -74,33 +74,33 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 
     return jsonResponse({ ok: true, product: mapProduct(updated) });
   } catch (e) {
-    return jsonResponse(
-      { ok: false, error: e instanceof Error ? e.message : String(e) },
-      { status: 400 }
-    );
+    const msg = e instanceof Error ? e.message : String(e);
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }
 
 export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const uid = await requireUserId(req);
-    const barId = barIdFromUid(uid);
+    const { barId: workingBarId, access } = await resolveWorkingBarContext(uid);
+    if (access === 'viewer') {
+      return jsonResponse({ ok: false, error: 'Forbidden' }, { status: 403 });
+    }
     const { id } = await ctx.params;
 
     const existing = await prisma.product.findUnique({ where: { id } });
     if (!existing) return jsonResponse({ ok: false, error: 'Not found' }, { status: 404 });
 
     const canDelete =
-      (existing.barId && existing.barId === barId) || (existing.createdByUserId && existing.createdByUserId === uid);
+      (existing.barId && existing.barId === workingBarId) ||
+      (existing.createdByUserId && existing.createdByUserId === uid);
     if (!canDelete) return jsonResponse({ ok: false, error: 'Forbidden' }, { status: 403 });
 
     await prisma.product.delete({ where: { id } });
     return jsonResponse({ ok: true });
   } catch (e) {
-    return jsonResponse(
-      { ok: false, error: e instanceof Error ? e.message : String(e) },
-      { status: 400 }
-    );
+    const msg = e instanceof Error ? e.message : String(e);
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }
 

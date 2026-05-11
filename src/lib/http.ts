@@ -8,6 +8,13 @@ export function jsonResponse(body: unknown, init?: ResponseInit) {
   });
 }
 
+/** Статус ответа API по тексту ошибки из try/catch. */
+export function statusFromApiError(message: string): number {
+  if (message === 'Forbidden') return 403;
+  if (message === 'Not authenticated' || message === 'Session expired') return 401;
+  return 400;
+}
+
 export async function readJson<T>(req: Request): Promise<T> {
   const text = await req.text();
   if (!text) throw new Error('Missing JSON body');

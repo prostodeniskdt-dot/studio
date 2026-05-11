@@ -115,15 +115,22 @@ export function SessionActions({
             <DropdownMenuContent align="end" className="w-[min(100vw-2rem,20rem)]">
               <DropdownMenuItem onSelect={() => void onSessionExport('mirror')}>
                 <Download className="mr-2 h-4 w-4" />
-                {exportButtonLabel}
+                <div className="flex flex-col gap-0.5">
+                  <span>{exportButtonLabel}</span>
+                  <span className="text-xs font-normal text-muted-foreground">Как при последнем импорте</span>
+                </div>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => void onSessionExport('xlsx')}>
                 <Download className="mr-2 h-4 w-4" />
-                Экспорт Excel
+                Excel (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void onSessionExport('csv')}>
+                <Download className="mr-2 h-4 w-4" />
+                CSV (UTF-8)
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => void onSessionExport('pdf')}>
                 <Download className="mr-2 h-4 w-4" />
-                Экспорт PDF
+                PDF
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={onImportClick} disabled={isImporting}>
@@ -170,38 +177,36 @@ export function SessionActions({
             <PlusCircle className="mr-2 h-4 w-4" />
             Добавить продукт
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              void onSessionExport('mirror');
-            }}
-            className="transition-all duration-200"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            {exportButtonLabel}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              void onSessionExport('xlsx');
-            }}
-            className="transition-all duration-200"
-            title="Экспорт в Excel (.xlsx), колонки по ширине содержимого"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Экспорт Excel
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              void onSessionExport('pdf');
-            }}
-            className="transition-all duration-200"
-            title="Экспорт в PDF"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Экспорт PDF
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="transition-all duration-200">
+                <Download className="mr-2 h-4 w-4" />
+                Экспорт
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-[14rem]">
+              <DropdownMenuItem onSelect={() => void onSessionExport('mirror')}>
+                <Download className="mr-2 h-4 w-4 shrink-0" />
+                <div className="flex flex-col gap-0.5">
+                  <span>{exportButtonLabel}</span>
+                  <span className="text-xs font-normal text-muted-foreground">Как при последнем импорте</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => void onSessionExport('xlsx')}>
+                <Download className="mr-2 h-4 w-4" />
+                Excel (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void onSessionExport('csv')}>
+                <Download className="mr-2 h-4 w-4" />
+                CSV (UTF-8)
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void onSessionExport('pdf')}>
+                <Download className="mr-2 h-4 w-4" />
+                PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="outline"
             disabled={isImporting}

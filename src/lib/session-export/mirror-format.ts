@@ -2,7 +2,118 @@ import type { ParsedSessionFile } from '@/lib/inventory-import/session-file-impo
 import type { SessionDelimiter } from '@/lib/inventory-import/split-quoted-row';
 import type { InventoryLine, Product } from '@/lib/types';
 import { buildProductDisplayName, translateCategory } from '@/lib/utils';
+import type { CellHookData } from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+
+/** Noto Sans с кириллицей; векторный PDF. URL привязан к ветке main репозитория googlefonts/noto-fonts. */
+const NOTO_SANS_REGULAR_TTF =
+  'https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoSans/NotoSans-Regular.ttf';
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, chunk as unknown as number[]);
+  }
+  return btoa(binary);
+}
+
+function isCategorySeparatorRow(firstCell: unknown): boolean {
+  if (firstCell == null) return false;
+  const s = String(firstCell).trim();
+  return s.startsWith('—') && s.endsWith('—');
+}
+
+async function downloadSessionPdfVector(
+  aoa: (string | number)[][],
+  pref: SessionExportPreference,
+  documentTitle: string,
+  fileBase: string
+): Promise<void> {
+  const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ]);
+
+  const maxCols = Math.max(1, ...aoa.map((r) => r.length));
+  const wideLayout = pref.layout === 'wide_blank' || maxCols >= 6;
+  const orientation = wideLayout ? 'landscape' : 'portrait';
+  const fontSize = wideLayout ? 7 : 8.5;
+  const body = aoa.map((row) => {
+    const out: string[] = [];
+    for (let i = 0; i < maxCols; i++) {
+      const v = row[i];
+      out.push(v === undefined || v === null ? '' : String(v));
+    }
+    return out;
+  });
+
+  const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+  const fontRes = await fetch(NOTO_SANS_REGULAR_TTF);
+  if (!fontRes.ok) {
+    throw new Error('Не удалось загрузить шрифт для PDF. Проверьте доступ в интернет или экспортируйте в Excel.');
+  }
+  const fontB64 = arrayBufferToBase64(await fontRes.arrayBuffer());
+  const vfsName = 'NotoSans-Regular.ttf';
+  doc.addFileToVFS(vfsName, fontB64);
+  doc.addFont(vfsName, 'NotoSans', 'normal', 'normal', 'Identity-H');
+  doc.setFont('NotoSans', 'normal');
+  doc.setTextColor(17, 24, 39);
+
+  doc.setFontSize(13);
+  const titleLines = doc.splitTextToSize(documentTitle, wideLayout ? 277 : 190);
+  doc.text(titleLines, 14, 16);
+  const startY = 16 + titleLines.length * 6 + 2;
+
+  autoTable(doc, {
+    startY,
+    body,
+    theme: 'grid',
+    styles: {
+      font: 'NotoSans',
+      fontStyle: 'normal',
+      fontSize,
+      cellPadding: wideLayout ? 1.2 : 1.5,
+      textColor: [17, 24, 39],
+      lineColor: [55, 65, 81],
+      lineWidth: 0.05,
+      valign: 'top',
+      overflow: 'linebreak',
+      minCellHeight: fontSize * 0.45,
+    },
+    headStyles: { fillColor: [243, 244, 246], textColor: [17, 24, 39], fontStyle: 'normal' },
+    alternateRowStyles: { fillColor: [255, 255, 255] },
+    tableWidth: 'auto',
+    horizontalPageBreak: wideLayout && maxCols > 6,
+    didParseCell: (data: CellHookData) => {
+      const row = data.row.raw as string[];
+      const first = row[0];
+
+      if (pref.layout === 'wide_blank' && data.section === 'body' && data.row.index < 8) {
+        data.cell.styles.fontStyle = 'bold';
+        if (data.row.index >= 6) {
+          data.cell.styles.fillColor = [243, 244, 246];
+        }
+        return;
+      }
+
+      if (pref.layout !== 'wide_blank' && data.section === 'body' && data.row.index === 0) {
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.fillColor = [243, 244, 246];
+        return;
+      }
+
+      if (data.section === 'body' && isCategorySeparatorRow(first)) {
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.fillColor = [229, 231, 235];
+      }
+    },
+  });
+
+  await doc.save(`${fileBase}.pdf`, { returnPromise: true });
+}
 
 export const SESSION_EXPORT_PREF_KEY = (sessionId: string) => `barboss_export_pref_${sessionId}`;
 
@@ -235,62 +346,7 @@ export async function downloadSessionExport(
   }
 
   if (pref.ext === 'pdf') {
-    const html2pdf = (await import('html2pdf.js')).default;
-    const container = document.createElement('div');
-    container.style.padding = '12px';
-    container.style.fontFamily = 'system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-    container.style.fontSize = '11px';
-    container.style.color = '#111827';
-
-    const h1 = document.createElement('h1');
-    h1.textContent = documentTitle;
-    h1.style.fontSize = '16px';
-    h1.style.fontWeight = '600';
-    h1.style.margin = '0 0 12px 0';
-    container.appendChild(h1);
-
-    const table = document.createElement('table');
-    table.style.width = '100%';
-    table.style.borderCollapse = 'collapse';
-
-    aoa.forEach((row, ri) => {
-      const tr = document.createElement('tr');
-      const isHead = ri === 0;
-      const isCat =
-        !isHead &&
-        row[0] != null &&
-        String(row[0]).trim().startsWith('—') &&
-        String(row[0]).trim().endsWith('—');
-      row.forEach((cell) => {
-        const cellEl = document.createElement(isHead ? 'th' : 'td');
-        cellEl.textContent = String(cell ?? '');
-        cellEl.style.border = '1px solid #374151';
-        cellEl.style.padding = '6px 8px';
-        cellEl.style.verticalAlign = 'top';
-        if (isHead) {
-          cellEl.style.background = '#f3f4f6';
-          cellEl.style.fontWeight = '600';
-        } else if (isCat) {
-          cellEl.style.fontWeight = '700';
-          cellEl.style.background = '#e5e7eb';
-        }
-        tr.appendChild(cellEl);
-      });
-      table.appendChild(tr);
-    });
-    container.appendChild(table);
-
-    await html2pdf()
-      .set({
-        margin: [10, 10, 10, 10],
-        filename: `${fileBase}.pdf`,
-        image: { type: 'jpeg', quality: 0.92 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      })
-      .from(container)
-      .save();
-
+    await downloadSessionPdfVector(aoa, pref, documentTitle, fileBase);
     return;
   }
 

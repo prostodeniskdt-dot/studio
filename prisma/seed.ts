@@ -91,6 +91,9 @@ async function main() {
     return Number.isFinite(n) ? n : null;
   }
 
+  const skippedExamples: string[] = [];
+  let skippedCount = 0;
+
   function parseRow(line: string): Row | null {
     if (
       line === 'Таблица' ||
@@ -100,13 +103,17 @@ async function main() {
       return null;
     }
 
-    // Expect "... <volume> мл <weight> г"
-    const m = line.match(/^(.*)\s+(\d+)\s*мл\s+(\d+)\s*г$/i);
-    if (!m) return null;
+    // Expect "... <volume> мл <weight> г" (weight may be missing)
+    const m = line.match(/^(.*)\s+(\d+)\s*мл(?:\s+(\d+)\s*г)?$/i);
+    if (!m) {
+      skippedCount++;
+      if (skippedExamples.length < 20) skippedExamples.push(line);
+      return null;
+    }
 
     const left = m[1].trim();
     const bottleVolumeMl = parseIntSafe(m[2]);
-    const emptyBottleWeightG = parseIntSafe(m[3]);
+    const emptyBottleWeightG = m[3] ? parseIntSafe(m[3]) : null;
     if (!bottleVolumeMl) return null;
 
     const lower = left.toLowerCase();
@@ -154,11 +161,16 @@ async function main() {
 
   const existing = await prisma.product.findMany({
     where: { isInLibrary: true, barId: null },
-    select: { name: true, category: true, bottleVolumeMl: true },
+    select: { id: true, name: true, category: true, bottleVolumeMl: true, emptyBottleWeightG: true },
   });
-  const existingSet = new Set(existing.map((p) => `${p.name}__${p.category}__${p.bottleVolumeMl}`));
+  const existingMap = new Map(
+    existing.map((p) => [
+      `${p.name}__${p.category}__${p.bottleVolumeMl}`,
+      { id: p.id, emptyBottleWeightG: p.emptyBottleWeightG },
+    ]),
+  );
 
-  const toCreate = want.filter((r) => !existingSet.has(`${r.name}__${r.category}__${r.bottleVolumeMl}`));
+  const toCreate = want.filter((r) => !existingMap.has(`${r.name}__${r.category}__${r.bottleVolumeMl}`));
 
   if (toCreate.length > 0) {
     await prisma.product.createMany({
@@ -174,9 +186,33 @@ async function main() {
     });
   }
 
+  const toUpdate = want
+    .map((r) => {
+      const key = `${r.name}__${r.category}__${r.bottleVolumeMl}`;
+      const ex = existingMap.get(key);
+      if (!ex) return null;
+      // fill emptyBottleWeightG if missing in DB and present in PDF
+      if (ex.emptyBottleWeightG == null && r.emptyBottleWeightG != null) {
+        return { id: ex.id, emptyBottleWeightG: r.emptyBottleWeightG };
+      }
+      return null;
+    })
+    .filter(Boolean) as Array<{ id: string; emptyBottleWeightG: number }>;
+
+  if (toUpdate.length > 0) {
+    await prisma.$transaction(
+      toUpdate.map((u) => prisma.product.update({ where: { id: u.id }, data: { emptyBottleWeightG: u.emptyBottleWeightG } })),
+    );
+  }
+
   console.log(
-    `Импорт таблицы: распознано строк=${rows.length}, уникальных=${want.length}, добавлено=${toCreate.length}, уже было=${want.length - toCreate.length}`,
+    `Импорт таблицы: распознано строк=${rows.length}, уникальных=${want.length}, добавлено=${toCreate.length}, обновлено=${toUpdate.length}, уже было=${want.length - toCreate.length}, пропущено_строк=${skippedCount}`,
   );
+
+  if (skippedExamples.length > 0) {
+    console.log(`Примеры пропущенных строк (до 20):`);
+    for (const s of skippedExamples) console.log(`- ${s}`);
+  }
 }
 
 main()

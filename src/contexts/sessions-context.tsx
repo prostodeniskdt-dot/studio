@@ -10,6 +10,8 @@ interface SessionsContextValue {
   isLoading: boolean;
   error: Error | null;
   refresh: () => void;
+  /** Убрать сессию из состояния и кэша (после успешного DELETE и т.п.). */
+  removeSession: (id: string) => void;
 }
 
 const SessionsContext = createContext<SessionsContextValue | undefined>(undefined);
@@ -120,6 +122,34 @@ export function SessionsProvider({ children, barId }: { children: React.ReactNod
     setForceRefresh(prev => prev + 1);
   }, [barId]);
 
+  const removeSession = useCallback(
+    (id: string) => {
+      setSessions((prev) => (prev ?? []).filter((s) => s.id !== id));
+      setCache((prev) => {
+        if (!prev || prev.barId !== barId) return prev;
+        const nextSessions = prev.sessions.filter((s) => s.id !== id);
+        const next: CachedSessions = {
+          sessions: nextSessions,
+          timestamp: Date.now(),
+          barId,
+        };
+        if (typeof window !== 'undefined') {
+          try {
+            if (nextSessions.length === 0) {
+              localStorage.removeItem(`${SESSIONS_CACHE_KEY}_${barId}`);
+            } else {
+              localStorage.setItem(`${SESSIONS_CACHE_KEY}_${barId}`, JSON.stringify(next));
+            }
+          } catch {
+            /* ignore */
+          }
+        }
+        return nextSessions.length === 0 ? null : next;
+      });
+    },
+    [barId]
+  );
+
   // Использовать кэш если данные еще загружаются
   const effectiveSessions = React.useMemo(() => 
     sessions || (cache?.barId === barId ? cache.sessions : []) || [], 
@@ -132,7 +162,8 @@ export function SessionsProvider({ children, barId }: { children: React.ReactNod
     isLoading: effectiveIsLoading,
     error: error || null,
     refresh,
-  }), [effectiveSessions, effectiveIsLoading, error, refresh]);
+    removeSession,
+  }), [effectiveSessions, effectiveIsLoading, error, refresh, removeSession]);
 
   return (
     <SessionsContext.Provider value={value}>

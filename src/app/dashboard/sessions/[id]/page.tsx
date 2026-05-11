@@ -10,6 +10,7 @@ import { translateStatus, buildProductDisplayName } from "@/lib/utils";
 import type { InventorySession, Product, InventoryLine, CalculatedInventoryLine } from '@/lib/types';
 import { useAuthSession } from '@/contexts/auth-context';
 import { useProducts } from '@/contexts/products-context';
+import { useSessions } from '@/contexts/sessions-context';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,6 +69,7 @@ export default function SessionPage() {
   const params = useParams();
   const id = params.id as string;
   const { user } = useAuthSession();
+  const { removeSession } = useSessions();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -273,6 +275,7 @@ export default function SessionPage() {
       const json = await res.json();
       if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
       setDeleteProgress(100);
+      removeSession(id);
       toast({ title: "Инвентаризация удалена." });
       router.replace("/dashboard/sessions");
     } catch(e: unknown) {

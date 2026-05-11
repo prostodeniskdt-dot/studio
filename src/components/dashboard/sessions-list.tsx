@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import * as React from "react";
 import { useAuthSession } from "@/contexts/auth-context";
+import { useSessions } from "@/contexts/sessions-context";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import type { InventoryLine } from "@/lib/types";
@@ -45,8 +46,18 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
   const [isExporting, setIsExporting] = React.useState<string | null>(null);
   const itemsPerPage = 9; // 3x3 grid
   const { user } = useAuthSession();
+  const { removeSession } = useSessions();
   const { toast } = useToast();
   const { products: allProducts } = useProducts();
+  const deleteInFlightRef = React.useRef(false);
+
+  const totalPages = Math.ceil(sessions.length / itemsPerPage);
+  React.useEffect(() => {
+    if (sessions.length === 0) return;
+    if (currentPage > totalPages) {
+      setCurrentPage(Math.max(1, totalPages));
+    }
+  }, [sessions.length, currentPage, totalPages]);
 
   const sessionToDelete = React.useMemo(
     () => sessions.find(s => s.id === sessionToDeleteId) ?? null,
@@ -84,10 +95,12 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
   }
 
   const confirmDelete = async () => {
-    if (!sessionToDeleteId || !barId || !user) return;
-    
+    if (!sessionToDeleteId || !barId || !user || deleteInFlightRef.current) return;
+    if (isDeleting) return;
+
     const idToDelete = sessionToDeleteId;
-    
+
+    deleteInFlightRef.current = true;
     setIsDeleting(true);
     setDeleteProgress(0);
 
@@ -99,6 +112,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
         const json = await res.json();
         if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
         setDeleteProgress(100);
+        removeSession(idToDelete);
         toast({ title: "Инвентаризация удалена." });
     } catch (e: unknown) {
         const errorMessage = e instanceof Error ? e.message : "Произошла неизвестная ошибка.";
@@ -108,6 +122,7 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
             description: errorMessage
         });
     } finally {
+        deleteInFlightRef.current = false;
         setIsDeleting(false);
         setDeleteProgress(0);
         setSessionToDeleteId(null);
@@ -215,7 +230,6 @@ export function SessionsList({ sessions, barId }: SessionsListProps) {
     );
   }
 
-  const totalPages = Math.ceil(sessions.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedSessions = sessions.slice(startIndex, endIndex);

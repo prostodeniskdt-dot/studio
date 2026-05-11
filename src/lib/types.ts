@@ -107,6 +107,7 @@ export interface InventorySession {
   status: InventorySessionStatus;
   createdByUserId: string;
   createdAt: Timestamp;
+  updatedAt?: Timestamp;
   closedAt?: Timestamp;
   importListHash?: string | null;
   lines?: InventoryLine[]; // Can be a subcollection

@@ -33,10 +33,10 @@ export function SessionHeader({ session, isEditable }: SessionHeaderProps) {
   }, [session.createdAt]);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-      <div className="flex items-center gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">{session.name}</h1>
+    <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl md:text-3xl break-words">{session.name}</h1>
           {createdAtText ? <p className="text-muted-foreground mt-1">{createdAtText}</p> : null}
         </div>
         <Badge variant={getStatusVariant(session.status)} className="capitalize text-base px-3 py-1 flex items-center gap-1.5">

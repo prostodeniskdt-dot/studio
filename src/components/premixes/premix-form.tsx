@@ -35,6 +35,7 @@ import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import { useProducts } from '@/contexts/products-context';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
@@ -57,6 +58,7 @@ interface PremixFormProps {
 }
 
 export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
+  const isMobile = useIsMobile();
   const { user } = useAuthSession();
   const barId = user ? `bar_${user.id}` : null;
   const { toast } = useToast();
@@ -420,8 +422,8 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
         
         <div className="space-y-4">
           {/* Панель поиска и фильтров */}
-          <div className="flex gap-2">
-            <div className="relative flex-1">
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="relative min-w-0 flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
@@ -432,7 +434,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
               />
             </div>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="h-11 w-full shrink-0 sm:h-10 sm:w-[180px]">
                 <SelectValue placeholder="Категория" />
               </SelectTrigger>
               <SelectContent>
@@ -458,6 +460,51 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
                   ? 'Продукты не найдены. Попробуйте изменить фильтры.' 
                   : 'Нет доступных продуктов для выбора'}
               </p>
+            </div>
+          ) : isMobile ? (
+            <div className="rounded-md border">
+              <ScrollArea className="h-[300px]">
+                <div className="divide-y">
+                  {availableProducts.map((product) => {
+                    const isSelected = selectedProductId === product.id;
+                    const isAlreadyAdded = ingredients.some((ing) => ing.productId === product.id);
+                    return (
+                      <button
+                        key={product.id}
+                        type="button"
+                        disabled={isAlreadyAdded}
+                        onClick={() => !isAlreadyAdded && handleProductClick(product.id)}
+                        className={`flex w-full min-w-0 flex-col gap-2 p-3 text-left transition-colors ${
+                          isSelected
+                            ? 'bg-primary/10'
+                            : isAlreadyAdded
+                              ? 'cursor-not-allowed opacity-50'
+                              : 'hover:bg-muted/50 active:bg-muted/70'
+                        }`}
+                      >
+                        <div className="flex min-w-0 items-start justify-between gap-2">
+                          <span className="min-w-0 flex-1 break-words font-medium">
+                            {buildProductDisplayName(product.name, product.bottleVolumeMl)}
+                          </span>
+                          {isSelected ? (
+                            <Check className="h-5 w-5 shrink-0 text-primary" />
+                          ) : isAlreadyAdded ? (
+                            <Badge variant="secondary" className="shrink-0 text-xs">
+                              Добавлен
+                            </Badge>
+                          ) : null}
+                        </div>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            {translateCategory(product.category)}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">{product.bottleVolumeMl} мл</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
             </div>
           ) : (
             <div className="border rounded-md">
@@ -539,13 +586,13 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
                 </Button>
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Input
                   type="number"
                   placeholder="Объем ингредиента (мл)"
                   value={newIngredientVolume || ''}
                   onChange={(e) => setNewIngredientVolume(Number(e.target.value))}
-                  className="flex-1"
+                  className="h-11 min-w-0 flex-1 sm:h-10"
                   min="0"
                   step="1"
                   autoFocus
@@ -554,6 +601,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
                   type="button"
                   onClick={handleAddIngredient}
                   disabled={!newIngredientVolume || newIngredientVolume <= 0}
+                  className="h-11 w-full shrink-0 sm:h-10 sm:w-auto"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Добавить

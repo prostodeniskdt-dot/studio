@@ -15,6 +15,7 @@ import { ProductCard } from '@/components/products/product-card';
 interface PremixesLibraryViewProps {
   premixes: Product[];
   onAddToMyPremixes: (premix: Product) => void;
+  onEdit?: (premix: Product) => void;
   isAdding?: string | null;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
@@ -27,6 +28,7 @@ interface PremixesLibraryViewProps {
 export function PremixesLibraryView({
   premixes,
   onAddToMyPremixes,
+  onEdit,
   isAdding = null,
   searchQuery = '',
   onSearchChange,
@@ -180,9 +182,9 @@ export function PremixesLibraryView({
                   <div key={premix.id} className="relative">
                     <ProductCard
                       product={premix}
-                      onEdit={() => {}} // Не показываем редактирование для библиотечных премиксов
-                      onArchive={() => {}} // Не показываем архивирование
-                      onDelete={() => {}} // Не показываем удаление
+                      onEdit={onEdit ?? (() => {})}
+                      onArchive={() => {}}
+                      onDelete={() => {}}
                       compact
                     />
                     <div className="absolute bottom-16 right-2">

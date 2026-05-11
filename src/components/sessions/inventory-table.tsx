@@ -156,45 +156,49 @@ const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, p
                           key={line.id} 
                           className="transition-colors"
                         >
-                          <TableCell className="font-medium pl-4 md:pl-10">
-                            <div className="flex items-center gap-2">
-                              {buildProductDisplayName(line.product.name, line.product.bottleVolumeMl)}
+                          <TableCell className="min-w-0 max-w-[55vw] font-medium pl-4 sm:max-w-none md:pl-10">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="min-w-0 break-words">
+                                {buildProductDisplayName(line.product.name, line.product.bottleVolumeMl)}
+                              </span>
                               {line.product.reorderPointMl && line.endStock < line.product.reorderPointMl && (
-                                <Badge variant="destructive" className="text-xs">
+                                <Badge variant="destructive" className="shrink-0 text-xs">
                                   Минимальный остаток
                                 </Badge>
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <span className="text-xs text-muted-foreground shrink-0 min-w-[2rem]">
-                                {line.stockMode === 'pieces' ? 'шт' : 'мл'}
-                              </span>
-                              {isEditable ? (
-                                <Input 
-                                  type="number" 
-                                  value={line.endStock} 
-                                  onChange={e => handleInputChange(line.id!, 'endStock', e.target.value)} 
-                                  className="w-24 text-right ml-auto bg-primary/10 border-primary/30 transition-all duration-200 focus:ring-2 focus:ring-primary/40 focus:bg-primary/15" 
-                                />
-                              ) : (
-                                <span>{line.endStock}</span>
-                              )}
+                          <TableCell className="align-top text-right sm:align-middle">
+                            <div className="flex min-w-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end">
+                              <div className="flex items-center justify-end gap-2 sm:justify-end">
+                                <span className="min-w-[2rem] shrink-0 text-xs text-muted-foreground">
+                                  {line.stockMode === 'pieces' ? 'шт' : 'мл'}
+                                </span>
+                                {isEditable ? (
+                                  <Input
+                                    type="number"
+                                    value={line.endStock}
+                                    onChange={(e) => handleInputChange(line.id!, 'endStock', e.target.value)}
+                                    className="h-11 w-full min-w-0 max-w-[8rem] bg-primary/10 text-right transition-all duration-200 focus:bg-primary/15 focus:ring-2 focus:ring-primary/40 sm:h-10 sm:w-24"
+                                  />
+                                ) : (
+                                  <span>{line.endStock}</span>
+                                )}
+                              </div>
                               {line.stockMode !== 'pieces' &&
-                               line.product.reorderPointMl && 
-                               line.endStock < line.product.reorderPointMl && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-8"
-                                  onClick={() => onAddToOrder?.(line)}
-                                  title="Добавить продукт в заказ"
-                                >
-                                  <ShoppingCart className="h-3 w-3 mr-1" />
-                                  Добавить в заказ
-                                </Button>
-                              )}
+                                line.product.reorderPointMl &&
+                                line.endStock < line.product.reorderPointMl && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-11 w-full shrink-0 sm:h-8 sm:w-auto"
+                                    onClick={() => onAddToOrder?.(line)}
+                                    title="Добавить продукт в заказ"
+                                  >
+                                    <ShoppingCart className="mr-1 h-3 w-3" />
+                                    Добавить в заказ
+                                  </Button>
+                                )}
                             </div>
                           </TableCell>
                         </TableRow>

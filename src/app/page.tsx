@@ -108,7 +108,7 @@ export default function LoginPage() {
   
   if (isUserLoading || isSubmitting) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+      <div className="flex min-h-svh flex-col items-center justify-center bg-background p-4">
         <RunningManLoader />
       </div>
     );
@@ -116,7 +116,7 @@ export default function LoginPage() {
   
   if (user) {
      return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-svh items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
@@ -124,7 +124,7 @@ export default function LoginPage() {
 
 
   return (
-    <div className="w-full min-h-screen bg-background">
+    <div className="w-full min-h-svh bg-background">
       <div className="container relative grid min-h-svh flex-col items-center justify-center lg:max-w-none lg:grid-cols-2 lg:px-0">
         <div className="relative hidden h-full flex-col bg-muted p-10 text-primary-foreground lg:flex">
           <div className="relative z-20 flex items-center text-lg font-medium">

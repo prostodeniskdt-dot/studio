@@ -217,12 +217,10 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   }, [libraryProducts]);
 
   const refresh = useCallback(() => {
-    if (typeof window !== 'undefined' && barId) {
-      localStorage.removeItem(`${PRODUCTS_CACHE_KEY}_${barId}`);
-    }
-    setCache(null);
-    setForceRefresh(prev => prev + 1);
-  }, [barId]);
+    // Не очищаем кэш до прихода ответа: иначе `effectiveIsLoading` становится true и все
+    // разделы с продуктами уходят в скелетоны на время запроса (плохой UX и ощущение «поломки»).
+    setForceRefresh((prev) => prev + 1);
+  }, []);
 
   // Использовать кэш если данные еще загружаются с дедупликацией
   const cachedProductsLength = cache?.products?.length ?? 0;

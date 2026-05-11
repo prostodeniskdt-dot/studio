@@ -464,13 +464,45 @@ export function ProductsTable({ products }: { products: Product[] }) {
     <>
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <>
-              <div className="flex items-center justify-between py-4 gap-4 flex-wrap">
-                  <div>
+              {isMobile ? (
+                <div className="flex w-full min-w-0 flex-col gap-3 py-4">
+                  <div className="min-w-0">
+                    <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Продукты</h1>
+                    <p className="text-sm text-muted-foreground sm:text-base">
+                      Управляйте каталогом товаров и их профилями для калькулятора.
+                    </p>
+                  </div>
+                  <div className="flex w-full min-w-0 gap-2">
+                    <Sheet open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+                      <SheetTrigger asChild>
+                        <Button type="button" variant="outline" className="h-11 min-w-0 flex-1">
+                          <Search className="mr-2 h-4 w-4 shrink-0" />
+                          Фильтры
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent side="bottom" className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden">
+                        <SheetHeader className="text-left">
+                          <SheetTitle>Фильтры и поиск</SheetTitle>
+                        </SheetHeader>
+                        <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-safe">{MobileFiltersContent}</div>
+                      </SheetContent>
+                    </Sheet>
+                    <SheetTrigger asChild>
+                      <Button type="button" className="h-11 min-w-0 flex-1" onClick={() => handleOpenSheet()}>
+                        <PlusCircle className="mr-2 h-4 w-4 shrink-0" />
+                        Добавить
+                      </Button>
+                    </SheetTrigger>
+                  </div>
+                </div>
+              ) : (
+              <div className="flex min-w-0 flex-col justify-between gap-4 py-4 sm:flex-row sm:flex-wrap sm:items-center">
+                  <div className="min-w-0 shrink-0">
                       <h1 className="text-3xl font-bold tracking-tight">Продукты</h1>
                       <p className="text-muted-foreground">Управляйте каталогом товаров и их профилями для калькулятора.</p>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                      <div className="relative flex-1 min-w-[200px]">
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:justify-end">
+                      <div className="relative min-w-0 flex-1 basis-full sm:basis-48 md:min-w-[12rem]">
                           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <Input
                               type="text"
@@ -497,7 +529,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
                           value={selectedCategory ? selectedCategory : '__all__'}
                           onValueChange={(value) => handleCategoryChange(value === '__all__' ? undefined : value as ProductCategory)}
                       >
-                          <SelectTrigger className="w-[180px] h-9">
+                          <SelectTrigger className="h-9 w-full min-w-0 max-w-full sm:w-[180px]">
                               <SelectValue placeholder="Все категории" />
                           </SelectTrigger>
                           <SelectContent>
@@ -512,7 +544,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
                               value={selectedSubCategory ? selectedSubCategory : '__all__'}
                               onValueChange={(value) => handleSubCategoryChange(value === '__all__' ? undefined : value)}
                           >
-                              <SelectTrigger className="w-[180px] h-9">
+                              <SelectTrigger className="h-9 w-full min-w-0 max-w-full sm:w-[180px]">
                                   <SelectValue placeholder="Все подкатегории" />
                               </SelectTrigger>
                               <SelectContent>
@@ -566,6 +598,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
                       </SheetTrigger>
                   </div>
               </div>
+              )}
               {table.getFilteredRowModel().rows.length !== table.getRowModel().rows.length && (
                   <div className="text-sm text-muted-foreground mb-4">
                       Найдено продуктов: {table.getFilteredRowModel().rows.length}

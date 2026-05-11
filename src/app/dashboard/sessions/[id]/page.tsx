@@ -69,7 +69,7 @@ export default function SessionPage() {
   const params = useParams();
   const id = params.id as string;
   const { user } = useAuthSession();
-  const { removeSession } = useSessions();
+  const { removeSession, addSession } = useSessions();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -469,7 +469,11 @@ export default function SessionPage() {
       });
       const json = await res.json();
       if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
-      setSession(json.session ?? null);
+      const closed = json.session as InventorySession | null | undefined;
+      setSession(closed ?? null);
+      if (closed) {
+        addSession(closed);
+      }
       toast({
           title: "Инвентаризация завершена",
           description: "Инвентаризация завершена.",
@@ -958,7 +962,7 @@ export default function SessionPage() {
         isDeleteDialogOpen={isDeleteDialogOpen}
         setIsDeleteDialogOpen={setIsDeleteDialogOpen}
       />
-      <div className="overflow-x-auto">
+      <div className="min-w-0 w-full">
        {isLoading ? <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div> : (localLines && allProducts && (
         <InventoryTable 
             lines={localLines} 

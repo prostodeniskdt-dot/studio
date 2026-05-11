@@ -6,8 +6,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,110 +65,186 @@ export function SessionActions({
   isDeleteDialogOpen,
   setIsDeleteDialogOpen,
 }: SessionActionsProps) {
+  const isMobile = useIsMobile();
+
   if (!isEditable) {
     return null;
   }
 
+  const completeDialog = (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          disabled={isCompleting}
+          className={`transition-all duration-200 ${isMobile ? 'h-11 w-full' : ''}`}
+        >
+          {isCompleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Завершить
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Завершить инвентаризацию?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Все несохраненные изменения будут автоматически сохранены. После завершения вы не сможете вносить правки и будете перенаправлены на страницу отчета.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Отмена</AlertDialogCancel>
+          <AlertDialogAction onClick={onComplete}>Завершить</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="outline" onClick={onAddProduct} className="transition-all duration-200">
-          <PlusCircle className="mr-2 h-4 w-4"/>
-          Добавить продукт
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => {
-            void onSessionExport('mirror');
-          }}
-          className="transition-all duration-200"
-        >
-          <Download className="mr-2 h-4 w-4" />
-          {exportButtonLabel}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => {
-            void onSessionExport('xlsx');
-          }}
-          className="transition-all duration-200"
-          title="Экспорт в Excel (.xlsx), колонки по ширине содержимого"
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Экспорт Excel
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => {
-            void onSessionExport('pdf');
-          }}
-          className="transition-all duration-200"
-          title="Экспорт в PDF"
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Экспорт PDF
-        </Button>
-        <Button
-          variant="outline"
-          disabled={isImporting}
-          onClick={onImportClick}
-          className="transition-all duration-200"
-        >
-          {isImporting ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Upload className="mr-2 h-4 w-4" />
-          )}
-          {isImporting ? 'Импорт…' : 'Импорт файла'}
-        </Button>
+      {isMobile ? (
+        <div className="mb-4 flex w-full min-w-0 flex-col gap-2 pb-safe">
+          <Button variant="outline" onClick={onAddProduct} className="h-11 w-full shrink-0 transition-all duration-200">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Добавить продукт
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-11 w-full transition-all duration-200">
+                <Download className="mr-2 h-4 w-4" />
+                Экспорт / импорт
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[min(100vw-2rem,20rem)]">
+              <DropdownMenuItem onSelect={() => void onSessionExport('mirror')}>
+                <Download className="mr-2 h-4 w-4" />
+                {exportButtonLabel}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void onSessionExport('xlsx')}>
+                <Download className="mr-2 h-4 w-4" />
+                Экспорт Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void onSessionExport('pdf')}>
+                <Download className="mr-2 h-4 w-4" />
+                Экспорт PDF
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={onImportClick} disabled={isImporting}>
+                {isImporting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="mr-2 h-4 w-4" />
+                )}
+                {isImporting ? 'Импорт…' : 'Импорт файла'}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            onClick={onSave}
+            variant="outline"
+            disabled={!hasUnsavedChanges || isSaving}
+            className="h-11 w-full transition-all duration-200"
+          >
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            {isSaving ? 'Сохранение...' : 'Сохранить'}
+          </Button>
+          {completeDialog}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-11 w-full">
+                <MoreVertical className="mr-2 h-4 w-4" />
+                Ещё
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onSelect={() => setIsDeleteDialogOpen(true)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Удалить инвентаризацию
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ) : (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={onAddProduct} className="transition-all duration-200">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Добавить продукт
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              void onSessionExport('mirror');
+            }}
+            className="transition-all duration-200"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {exportButtonLabel}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              void onSessionExport('xlsx');
+            }}
+            className="transition-all duration-200"
+            title="Экспорт в Excel (.xlsx), колонки по ширине содержимого"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Экспорт Excel
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              void onSessionExport('pdf');
+            }}
+            className="transition-all duration-200"
+            title="Экспорт в PDF"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Экспорт PDF
+          </Button>
+          <Button
+            variant="outline"
+            disabled={isImporting}
+            onClick={onImportClick}
+            className="transition-all duration-200"
+          >
+            {isImporting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="mr-2 h-4 w-4" />
+            )}
+            {isImporting ? 'Импорт…' : 'Импорт файла'}
+          </Button>
 
-        <Button 
-          onClick={onSave} 
-          variant="outline" 
-          disabled={!hasUnsavedChanges || isSaving}
-          className="transition-all duration-200"
-        >
-          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          {isSaving ? 'Сохранение...' : 'Сохранить'}
-        </Button>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button disabled={isCompleting} className="transition-all duration-200">
-              {isCompleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Завершить
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Завершить инвентаризацию?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Все несохраненные изменения будут автоматически сохранены. После завершения вы не сможете вносить правки и будете перенаправлены на страницу отчета.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Отмена</AlertDialogCancel>
-              <AlertDialogAction onClick={onComplete}>Завершить</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-              <MoreVertical className="h-4 w-4" />
-              <span className="sr-only">Другие действия</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem 
-              onSelect={() => setIsDeleteDialogOpen(true)} 
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4"/>
-              Удалить инвентаризацию
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+          <Button
+            onClick={onSave}
+            variant="outline"
+            disabled={!hasUnsavedChanges || isSaving}
+            className="transition-all duration-200"
+          >
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            {isSaving ? 'Сохранение...' : 'Сохранить'}
+          </Button>
+          {completeDialog}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9">
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">Другие действия</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onSelect={() => setIsDeleteDialogOpen(true)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Удалить инвентаризацию
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>

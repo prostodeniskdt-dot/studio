@@ -40,16 +40,6 @@ export default function SessionsPage() {
     setIsCreating(true);
 
     try {
-      const active = (sessions ?? []).find((s) => s.status === 'in_progress');
-      if (active) {
-        toast({
-          title: "Активная инвентаризация уже существует",
-          description: "Вы будете перенаправлены на существующую инвентаризацию.",
-        });
-        router.push(`/dashboard/sessions/${active.id}`);
-        return;
-      }
-
       const name = `Инвентаризация от ${new Date().toLocaleDateString('ru-RU')}`;
       const res = await fetch('/api/sessions', {
         method: 'POST',

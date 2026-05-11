@@ -279,4 +279,9 @@
   .animate-glow {
     animation: glow 2s ease-in-out infinite;
   }
+
+  /* iOS safe area — used by footer and sticky bars */
+  .pb-safe {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+  }
 }

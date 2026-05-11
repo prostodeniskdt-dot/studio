@@ -21,6 +21,7 @@ import { expandPremixToIngredients } from '@/lib/premix-utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { calculateVolumeMl } from '@/lib/calculator';
 import { patchInventorySessionInLineChunks } from '@/lib/sessions/chunked-patch';
+import { pickLatestInProgressSession } from '@/lib/sessions/pick-latest-active';
 
 export default function UnifiedCalculatorPage() {
   const { toast } = useToast();
@@ -183,7 +184,7 @@ export default function UnifiedCalculatorPage() {
         const sessionsJson = await sessionsRes.json();
         if (!sessionsRes.ok || sessionsJson?.ok === false) throw new Error(sessionsJson?.error || 'Failed');
         const sessions = (sessionsJson.sessions ?? []) as InventorySession[];
-        const activeSession = sessions.find((s) => s.status === 'in_progress');
+        const activeSession = pickLatestInProgressSession(sessions);
 
         if (!activeSession) {
             toast({

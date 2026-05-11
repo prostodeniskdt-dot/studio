@@ -32,7 +32,7 @@ export default function PremixesPage() {
     const barId = user ? `bar_${user.id}` : null;
     const { toast } = useToast();
 
-    if (isLoading || !personalPremixes) {
+    if (isLoading) {
         return (
             <div className="w-full space-y-6">
                 <div className="space-y-2">

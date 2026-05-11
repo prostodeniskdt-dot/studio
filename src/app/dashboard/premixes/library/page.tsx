@@ -13,9 +13,13 @@ import { buildProductDisplayName } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { PremixForm } from '@/components/premixes/premix-form';
 
 export default function PremixesLibraryPage() {
     const { libraryPremixes, isLoading, refresh: refreshProducts } = useProducts();
+    const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+    const [editingPremix, setEditingPremix] = React.useState<Product | undefined>(undefined);
     const [isAdding, setIsAdding] = React.useState<string | null>(null);
     const [searchQuery, setSearchQuery] = React.useState('');
     const [selectedCategory, setSelectedCategory] = React.useState<ProductCategory | undefined>();
@@ -24,6 +28,17 @@ export default function PremixesLibraryPage() {
     const { user } = useAuthSession();
     const barId = user ? `bar_${user.id}` : null;
     const { toast } = useToast();
+
+    const handleOpenSheet = (premix?: Product) => {
+        setEditingPremix(premix);
+        setIsSheetOpen(true);
+    };
+
+    const handleCloseSheet = () => {
+        setIsSheetOpen(false);
+        setEditingPremix(undefined);
+        setTimeout(() => refreshProducts(), 200);
+    };
 
     const handleAddToMyPremixes = async (premix: Product) => {
         if (!premix || !barId || !user) return;
@@ -73,7 +88,7 @@ export default function PremixesLibraryPage() {
         }
     };
 
-    if (isLoading || !libraryPremixes) {
+    if (isLoading) {
         return (
             <div className="w-full space-y-4">
                 <div className="space-y-2">
@@ -118,6 +133,7 @@ export default function PremixesLibraryPage() {
             <PremixesLibraryView
                 premixes={libraryPremixes || []}
                 onAddToMyPremixes={handleAddToMyPremixes}
+                onEdit={(p) => handleOpenSheet(p)}
                 isAdding={isAdding}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
@@ -126,6 +142,19 @@ export default function PremixesLibraryPage() {
                 selectedSubCategory={selectedSubCategory}
                 onSubCategoryChange={setSelectedSubCategory}
             />
+
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                <SheetContent className="overflow-y-auto max-w-3xl">
+                    <SheetHeader>
+                        <SheetTitle>
+                            {editingPremix
+                                ? `Редактировать: ${buildProductDisplayName(editingPremix.name, editingPremix.bottleVolumeMl)}`
+                                : 'Премикс'}
+                        </SheetTitle>
+                    </SheetHeader>
+                    <PremixForm premix={editingPremix} onFormSubmit={handleCloseSheet} />
+                </SheetContent>
+            </Sheet>
         </div>
     );
 }

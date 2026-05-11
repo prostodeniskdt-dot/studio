@@ -25,7 +25,7 @@ export default function Error({
   }, [error])
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center gap-6 bg-gradient-to-br from-background via-background to-destructive/5 p-4 text-center">
+    <div className="flex min-h-svh w-full flex-col items-center justify-center gap-6 bg-gradient-to-br from-background via-background to-destructive/5 p-4 text-center">
       <div className="space-y-4 animate-fade-in">
         <div className="mx-auto w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">
           <AlertCircle className="h-10 w-10 text-destructive" />

@@ -12,9 +12,8 @@ import { buildProductDisplayName } from '@/lib/utils';
 import { ProductForm } from '@/components/products/product-form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Info, Library, Upload } from 'lucide-react';
+import { Library, Upload } from 'lucide-react';
 import Link from 'next/link';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -214,25 +213,6 @@ export default function ProductsPage() {
                     </Button>
                 </Link>
             </div>
-
-            <Alert>
-                <Info className="h-4 w-4" />
-                <AlertTitle>Здесь только продукты вашего бара</AlertTitle>
-                <AlertDescription className="space-y-1">
-                    <p>
-                        Строка «Найдено продуктов» и разбивка по категориям считаются по позициям с привязкой к вашему бару
-                        (не из общей библиотеки). Массовый импорт из PDF добавляет карточки в{' '}
-                        <strong>общую библиотеку</strong>, а не в этот список автоматически.
-                    </p>
-                    <p>
-                        Чтобы увидеть сотни позиций из таблицы, откройте{' '}
-                        <Link href="/dashboard/products/library" className="font-medium underline underline-offset-4">
-                            Библиотеку продуктов
-                        </Link>
-                        {' '}и при необходимости добавьте нужные к себе кнопкой «Добавить».
-                    </p>
-                </AlertDescription>
-            </Alert>
 
             <ProductsCardView
                 products={personalProducts || []}

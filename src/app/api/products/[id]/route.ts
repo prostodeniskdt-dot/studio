@@ -31,9 +31,12 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     const existing = await prisma.product.findUnique({ where: { id } });
     if (!existing) return jsonResponse({ ok: false, error: 'Not found' }, { status: 404 });
 
-    // Authorization: allow editing if personal (bar-scoped) OR createdByUserId matches.
+    // Персональные — владелец бара или автор; общая библиотека — любой авторизованный пользователь.
+    const isLibraryGlobal = existing.isInLibrary === true && (existing.barId == null || existing.barId === '');
     const canEdit =
-      (existing.barId && existing.barId === barId) || (existing.createdByUserId && existing.createdByUserId === uid);
+      (existing.barId && existing.barId === barId) ||
+      (existing.createdByUserId && existing.createdByUserId === uid) ||
+      isLibraryGlobal;
     if (!canEdit) return jsonResponse({ ok: false, error: 'Forbidden' }, { status: 403 });
 
     const sendToLibrary = body.sendToLibrary === true;

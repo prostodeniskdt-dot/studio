@@ -13,6 +13,8 @@ import { buildProductDisplayName } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { ProductForm } from '@/components/products/product-form';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,10 +35,50 @@ export default function ProductsLibraryPage() {
     const [isAdding, setIsAdding] = React.useState<string | null>(null);
     const [productToDelete, setProductToDelete] = React.useState<Product | null>(null);
     const [isDeleting, setIsDeleting] = React.useState(false);
+    const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+    const [editingProduct, setEditingProduct] = React.useState<Product | undefined>(undefined);
+    const [isArchiving, setIsArchiving] = React.useState<string | null>(null);
 
     const { user } = useAuthSession();
     const barId = user ? `bar_${user.id}` : null;
     const { toast } = useToast();
+
+    const handleOpenSheet = (product?: Product) => {
+        setEditingProduct(product);
+        setIsSheetOpen(true);
+    };
+
+    const handleCloseSheet = () => {
+        setIsSheetOpen(false);
+        setEditingProduct(undefined);
+        setTimeout(() => refreshProducts(), 200);
+    };
+
+    const handleArchiveAction = (product: Product) => {
+        if (!barId) return;
+        setIsArchiving(product.id);
+        const currentIsActive = product.isActive ?? true;
+        (async () => {
+            try {
+                const res = await fetch(`/api/products/${product.id}`, {
+                    method: 'PATCH',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ product: { isActive: !currentIsActive } }),
+                });
+                const json = await res.json();
+                if (!res.ok) throw new Error(json?.error || 'Failed to update product');
+                if (typeof window !== 'undefined' && barId) {
+                    try { localStorage.removeItem(`barboss_products_cache_${barId}`); } catch {}
+                }
+                toast({ title: 'Статус продукта изменен.' });
+                refreshProducts();
+            } catch {
+                toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось обновить продукт.' });
+            } finally {
+                setIsArchiving(null);
+            }
+        })();
+    };
 
     const handleAddToMyProducts = (product: Product) => {
         setProductToAdd(product);
@@ -179,8 +221,13 @@ export default function ProductsLibraryPage() {
             <ProductsLibraryView
                 products={libraryProducts || []}
                 onAddToMyProducts={handleAddToMyProducts}
+                onEdit={(p) => {
+                    handleOpenSheet(p);
+                }}
+                onArchive={handleArchiveAction}
                 onDelete={handleDeleteProduct}
                 isAdding={isAdding}
+                isArchiving={isArchiving}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 selectedCategory={selectedCategory}
@@ -188,6 +235,19 @@ export default function ProductsLibraryPage() {
                 selectedSubCategory={selectedSubCategory}
                 onSubCategoryChange={setSelectedSubCategory}
             />
+
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                <SheetContent className="overflow-y-auto max-w-3xl">
+                    <SheetHeader>
+                        <SheetTitle>
+                            {editingProduct
+                                ? `Редактировать: ${buildProductDisplayName(editingProduct.name, editingProduct.bottleVolumeMl)}`
+                                : 'Продукт'}
+                        </SheetTitle>
+                    </SheetHeader>
+                    <ProductForm product={editingProduct} onFormSubmit={handleCloseSheet} />
+                </SheetContent>
+            </Sheet>
 
             {/* Диалог подтверждения удаления */}
             <AlertDialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>

@@ -15,8 +15,11 @@ import { ProductCard } from './product-card';
 interface ProductsLibraryViewProps {
   products: Product[];
   onAddToMyProducts: (product: Product) => void;
+  onEdit?: (product: Product) => void;
+  onArchive?: (product: Product) => void;
   onDelete?: (product: Product) => void;
   isAdding?: string | null;
+  isArchiving?: string | null;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   selectedCategory?: ProductCategory;
@@ -28,8 +31,11 @@ interface ProductsLibraryViewProps {
 export function ProductsLibraryView({
   products,
   onAddToMyProducts,
+  onEdit,
+  onArchive,
   onDelete,
   isAdding = null,
+  isArchiving = null,
   searchQuery = '',
   onSearchChange,
   selectedCategory,
@@ -193,26 +199,25 @@ export function ProductsLibraryView({
             <AccordionContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
                 {categoryProducts.map((product) => (
-                  <div key={product.id} className="relative">
+                  <div key={product.id} className="flex flex-col gap-2">
                     <ProductCard
                       product={product}
-                      onEdit={() => {}} // Не показываем редактирование для библиотечных продуктов
-                      onArchive={() => {}} // Не показываем архивирование
+                      onEdit={onEdit ?? (() => {})}
+                      onArchive={onArchive ?? (() => {})}
                       onDelete={onDelete || (() => {})}
+                      isArchiving={isArchiving === product.id}
                       compact
                     />
-                    <div className="absolute bottom-16 right-2">
-                      <Button
-                        size="sm"
-                        variant="default"
-                        onClick={() => onAddToMyProducts(product)}
-                        disabled={isAdding === product.id}
-                        className="shadow-lg"
-                      >
-                        <Download className="mr-1.5 h-3.5 w-3.5" />
-                        {isAdding === product.id ? 'Добавление...' : 'В мои продукты'}
-                      </Button>
-                    </div>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={() => onAddToMyProducts(product)}
+                      disabled={isAdding === product.id}
+                      className="w-full shadow-md"
+                    >
+                      <Download className="mr-1.5 h-3.5 w-3.5" />
+                      {isAdding === product.id ? 'Добавление...' : 'В мои продукты'}
+                    </Button>
                   </div>
                 ))}
               </div>

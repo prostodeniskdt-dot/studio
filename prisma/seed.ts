@@ -4,6 +4,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { ProductCategory } from '@prisma/client';
 import { config } from 'dotenv';
+import { estimateFullBottleWeightG } from '../src/lib/bottle-weight-estimate';
 
 config({ path: path.join(process.cwd(), '.env') });
 config({ path: path.join(process.cwd(), '.env.local'), override: true });
@@ -161,12 +162,19 @@ async function main() {
 
   const existing = await prisma.product.findMany({
     where: { isInLibrary: true, barId: null },
-    select: { id: true, name: true, category: true, bottleVolumeMl: true, emptyBottleWeightG: true },
+    select: {
+      id: true,
+      name: true,
+      category: true,
+      bottleVolumeMl: true,
+      emptyBottleWeightG: true,
+      fullBottleWeightG: true,
+    },
   });
   const existingMap = new Map(
     existing.map((p) => [
       `${p.name}__${p.category}__${p.bottleVolumeMl}`,
-      { id: p.id, emptyBottleWeightG: p.emptyBottleWeightG },
+      { id: p.id, emptyBottleWeightG: p.emptyBottleWeightG, fullBottleWeightG: p.fullBottleWeightG },
     ]),
   );
 
@@ -179,6 +187,10 @@ async function main() {
         category: r.category,
         bottleVolumeMl: r.bottleVolumeMl,
         emptyBottleWeightG: r.emptyBottleWeightG,
+        fullBottleWeightG:
+          r.emptyBottleWeightG != null
+            ? estimateFullBottleWeightG(r.bottleVolumeMl, r.emptyBottleWeightG)
+            : null,
         isInLibrary: true,
         barId: null,
         usesVolumeCalculator: true,
@@ -193,20 +205,55 @@ async function main() {
       if (!ex) return null;
       // fill emptyBottleWeightG if missing in DB and present in PDF
       if (ex.emptyBottleWeightG == null && r.emptyBottleWeightG != null) {
-        return { id: ex.id, emptyBottleWeightG: r.emptyBottleWeightG };
+        const ew = r.emptyBottleWeightG;
+        const fw =
+          ex.fullBottleWeightG == null ? estimateFullBottleWeightG(r.bottleVolumeMl, ew) : ex.fullBottleWeightG;
+        return { id: ex.id, emptyBottleWeightG: ew, fullBottleWeightG: fw };
       }
       return null;
     })
-    .filter(Boolean) as Array<{ id: string; emptyBottleWeightG: number }>;
+    .filter(Boolean) as Array<{ id: string; emptyBottleWeightG: number; fullBottleWeightG: number | null }>;
 
   if (toUpdate.length > 0) {
     await prisma.$transaction(
-      toUpdate.map((u) => prisma.product.update({ where: { id: u.id }, data: { emptyBottleWeightG: u.emptyBottleWeightG } })),
+      toUpdate.map((u) =>
+        prisma.product.update({
+          where: { id: u.id },
+          data: { emptyBottleWeightG: u.emptyBottleWeightG, fullBottleWeightG: u.fullBottleWeightG },
+        }),
+      ),
+    );
+  }
+
+  const missingFull = await prisma.product.findMany({
+    where: {
+      isPremix: false,
+      category: { not: ProductCategory.Premix },
+      usesVolumeCalculator: true,
+      fullBottleWeightG: null,
+      emptyBottleWeightG: { not: null },
+      bottleVolumeMl: { gt: 0 },
+    },
+    select: { id: true, bottleVolumeMl: true, emptyBottleWeightG: true },
+  });
+  if (missingFull.length > 0) {
+    await prisma.$transaction(
+      missingFull.map((p) =>
+        prisma.product.update({
+          where: { id: p.id },
+          data: {
+            fullBottleWeightG: estimateFullBottleWeightG(
+              p.bottleVolumeMl,
+              p.emptyBottleWeightG as number,
+            ),
+          },
+        }),
+      ),
     );
   }
 
   console.log(
-    `Импорт таблицы: распознано строк=${rows.length}, уникальных=${want.length}, добавлено=${toCreate.length}, обновлено=${toUpdate.length}, уже было=${want.length - toCreate.length}, пропущено_строк=${skippedCount}`,
+    `Импорт таблицы: распознано строк=${rows.length}, уникальных=${want.length}, добавлено=${toCreate.length}, обновлено=${toUpdate.length}, заполнен_полный_вес=${missingFull.length}, уже было=${want.length - toCreate.length}, пропущено_строк=${skippedCount}`,
   );
 
   if (skippedExamples.length > 0) {

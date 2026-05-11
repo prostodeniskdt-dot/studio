@@ -7,11 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Combobox, type GroupedComboboxOption } from '@/components/ui/combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Weight, Send, Loader2, Search, Package, Ruler, Calculator, CheckCircle2, Sparkles, AlertTriangle } from 'lucide-react';
+import { Weight, Send, Loader2, Search, Package, Ruler, Calculator, CheckCircle2, Sparkles } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { SectionHeader } from '@/components/ui/section-header';
 import { HelpIcon } from '@/components/ui/help-icon';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { InventorySession, Product, ProductCategory, InventoryLine } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthSession } from '@/contexts/auth-context';
@@ -316,14 +315,6 @@ export default function UnifiedCalculatorPage() {
         <span className="text-sm text-muted-foreground">Подсказка работы раздела</span>
       </div>
 
-      <Alert variant="destructive" className="mb-4">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>ВАЖНО</AlertTitle>
-        <AlertDescription>
-          Для точного расчета нужен профиль бутылки: вес полной, вес пустой и номинальный объем. Калькулятор считает только по весу — линейка не требуется.
-        </AlertDescription>
-      </Alert>
-      
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Левая колонка: Выбор продукта и параметры */}
         <div className="lg:col-span-2 space-y-6">

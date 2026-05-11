@@ -84,63 +84,41 @@ export function SessionActions({
           <Download className="mr-2 h-4 w-4" />
           {exportButtonLabel}
         </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="transition-all duration-200">
-              Импорт/Экспорт
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem
-              disabled={isImporting}
-              onSelect={onImportClick}
-              className="transition-colors"
-            >
-              {isImporting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Upload className="mr-2 h-4 w-4" />
-              )}
-              <span>{isImporting ? 'Импорт…' : 'Импорт файла'}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() => {
-                void onSessionExport('mirror');
-              }}
-              className="transition-colors"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              <span>{exportButtonLabel} (как при импорте)</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() => {
-                void onSessionExport('csv');
-              }}
-              className="transition-colors"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              <span>Экспорт CSV</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() => {
-                void onSessionExport('xlsx');
-              }}
-              className="transition-colors"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              <span>Экспорт Excel (.xlsx)</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() => {
-                void onSessionExport('pdf');
-              }}
-              className="transition-colors"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              <span>Экспорт PDF</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button
+          variant="outline"
+          onClick={() => {
+            void onSessionExport('xlsx');
+          }}
+          className="transition-all duration-200"
+          title="Экспорт в Excel (.xlsx), колонки по ширине содержимого"
+        >
+          <Download className="mr-2 h-4 w-4" />
+          Экспорт Excel
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => {
+            void onSessionExport('pdf');
+          }}
+          className="transition-all duration-200"
+          title="Экспорт в PDF"
+        >
+          <Download className="mr-2 h-4 w-4" />
+          Экспорт PDF
+        </Button>
+        <Button
+          variant="outline"
+          disabled={isImporting}
+          onClick={onImportClick}
+          className="transition-all duration-200"
+        >
+          {isImporting ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="mr-2 h-4 w-4" />
+          )}
+          {isImporting ? 'Импорт…' : 'Импорт файла'}
+        </Button>
 
         <Button 
           onClick={onSave} 

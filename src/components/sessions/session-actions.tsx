@@ -35,8 +35,9 @@ interface SessionActionsProps {
   onComplete: () => void;
   onDelete: () => void;
   onImportClick: () => void;
-  onExportCSV: () => void;
-  /** Подпись кнопок экспорта (CSV / Excel в зависимости от последнего импорта). */
+  /** mirror — формат как при последнем импорте; иначе явный тип файла */
+  onSessionExport: (mode: 'mirror' | 'csv' | 'xlsx' | 'pdf') => void | Promise<void>;
+  /** Подпись основной кнопки экспорта (зеркало последнего импорта). */
   exportButtonLabel?: string;
   isImporting?: boolean;
   isDeleteDialogOpen: boolean;
@@ -56,7 +57,7 @@ export function SessionActions({
   onComplete,
   onDelete,
   onImportClick,
-  onExportCSV,
+  onSessionExport,
   exportButtonLabel = 'Экспорт в CSV',
   isImporting = false,
   isDeleteDialogOpen,
@@ -73,7 +74,13 @@ export function SessionActions({
           <PlusCircle className="mr-2 h-4 w-4"/>
           Добавить продукт
         </Button>
-        <Button variant="outline" onClick={onExportCSV} className="transition-all duration-200">
+        <Button
+          variant="outline"
+          onClick={() => {
+            void onSessionExport('mirror');
+          }}
+          className="transition-all duration-200"
+        >
           <Download className="mr-2 h-4 w-4" />
           {exportButtonLabel}
         </Button>
@@ -96,9 +103,41 @@ export function SessionActions({
               )}
               <span>{isImporting ? 'Импорт…' : 'Импорт файла'}</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={onExportCSV} className="transition-colors">
+            <DropdownMenuItem
+              onSelect={() => {
+                void onSessionExport('mirror');
+              }}
+              className="transition-colors"
+            >
               <Download className="mr-2 h-4 w-4" />
-              <span>{exportButtonLabel}</span>
+              <span>{exportButtonLabel} (как при импорте)</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                void onSessionExport('csv');
+              }}
+              className="transition-colors"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              <span>Экспорт CSV</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                void onSessionExport('xlsx');
+              }}
+              className="transition-colors"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              <span>Экспорт Excel (.xlsx)</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                void onSessionExport('pdf');
+              }}
+              className="transition-colors"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              <span>Экспорт PDF</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

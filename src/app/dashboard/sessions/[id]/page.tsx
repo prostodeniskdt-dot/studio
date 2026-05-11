@@ -487,26 +487,46 @@ export default function SessionPage() {
     }
   };
   
-  const handleExportCSV = () => {
-    if (!localLines || !allProducts) return;
+  const handleSessionExport = React.useCallback(
+    async (mode: 'mirror' | 'csv' | 'xlsx' | 'pdf') => {
+      if (!localLines || !allProducts) return;
+      const template = exportPref ?? DEFAULT_EXPORT_PREF;
+      const ext = mode === 'mirror' ? template.ext : mode;
+      const pref = { ...template, ext };
+      const productById = new Map(allProducts.map((p) => [p.id, p] as const));
+      const aoa = buildSessionExportAoa(pref, localLines, productById, {
+        sessionName: effectiveSession?.name,
+        barName: typeof user?.profile?.establishment === 'string' ? user.profile.establishment : undefined,
+      });
+      const title = effectiveSession?.name?.trim() || 'Инвентаризация';
+      try {
+        await downloadSessionExport(aoa, pref, id, title);
+        toast({
+          title: 'Экспорт завершен',
+          description:
+            ext === 'xlsx'
+              ? 'Excel: ширина колонок подобрана автоматически, позиции сгруппированы по категориям.'
+              : ext === 'pdf'
+                ? 'PDF сохранён; кириллица отображается через преобразование таблицы.'
+                : 'Файл сохранён. В таблице добавлена группировка по категориям, как в приложении.',
+        });
+      } catch (e) {
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка экспорта',
+          description: e instanceof Error ? e.message : 'Не удалось сохранить файл.',
+        });
+      }
+    },
+    [localLines, allProducts, exportPref, effectiveSession?.name, user?.profile?.establishment, id, toast]
+  );
 
-    const pref = exportPref ?? DEFAULT_EXPORT_PREF;
-    const productById = new Map(allProducts.map((p) => [p.id, p] as const));
-    const aoa = buildSessionExportAoa(pref, localLines, productById, {
-      sessionName: effectiveSession?.name,
-      barName: typeof user?.profile?.establishment === 'string' ? user.profile.establishment : undefined,
-    });
-    downloadSessionExport(aoa, pref, id);
-    toast({
-      title: 'Экспорт завершен',
-      description:
-        pref.ext === 'xlsx'
-          ? 'Скачан Excel — в том же типе файла, что и последний успешный импорт.'
-          : 'Скачан CSV с теми же разделителем и колонками, что и при последнем импорте. Если импорта не было — используется стандартная двухколоночная таблица.',
-    });
-  };
-
-  const exportButtonLabel = exportPref?.ext === 'xlsx' ? 'Экспорт в Excel' : 'Экспорт в CSV';
+  const exportButtonLabel =
+    exportPref?.ext === 'xlsx'
+      ? 'Экспорт в Excel'
+      : exportPref?.ext === 'pdf'
+        ? 'Экспорт в PDF'
+        : 'Экспорт в CSV';
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
@@ -932,7 +952,7 @@ export default function SessionPage() {
         onComplete={handleCompleteSession}
         onDelete={handleDeleteSession}
         onImportClick={handleImportClick}
-        onExportCSV={handleExportCSV}
+        onSessionExport={handleSessionExport}
         exportButtonLabel={exportButtonLabel}
         isImporting={isImporting}
         isDeleteDialogOpen={isDeleteDialogOpen}

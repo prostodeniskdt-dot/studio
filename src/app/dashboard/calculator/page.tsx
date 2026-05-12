@@ -103,7 +103,9 @@ export default function UnifiedCalculatorPage() {
     return products?.find(p => p.id === selectedProductId);
   }, [products, selectedProductId]);
   
-  const isPremix = selectedProduct?.isPremix === true;
+  // Согласовано с products-context: примикс по флагу или по категории
+  const isPremix =
+    selectedProduct?.isPremix === true || selectedProduct?.category === 'Premix';
   
   const handleCategoryChange = (category: ProductCategory | undefined) => {
     setSelectedCategory(category);

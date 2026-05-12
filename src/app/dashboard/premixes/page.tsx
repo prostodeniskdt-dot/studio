@@ -32,6 +32,52 @@ export default function PremixesPage() {
     const barId = getWorkingBarId(user);
     const { toast } = useToast();
 
+    const handleSendToLibrary = React.useCallback((premix: Product) => {
+        setPremixToSendToLibrary(premix);
+    }, []);
+
+    const confirmSendToLibrary = React.useCallback(async () => {
+        if (!premixToSendToLibrary || !user || !barId) return;
+
+        setIsSendingToLibrary(true);
+
+        try {
+            const res = await fetch(`/api/products/${premixToSendToLibrary.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'content-type': 'application/json',
+                },
+                body: JSON.stringify({ sendToLibrary: true }),
+            });
+            const json = await res.json();
+            if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+
+            if (typeof window !== 'undefined' && barId) {
+                try {
+                    localStorage.removeItem(`barboss_products_cache_${barId}`);
+                } catch {
+                    // Игнорировать ошибки очистки кэша
+                }
+            }
+
+            refreshProducts();
+
+            toast({
+                title: 'Премикс отправлен в библиотеку',
+                description: `Премикс "${buildProductDisplayName(premixToSendToLibrary.name, premixToSendToLibrary.bottleVolumeMl)}" теперь доступен всем пользователям.`,
+            });
+            setPremixToSendToLibrary(null);
+        } catch {
+            toast({
+                variant: 'destructive',
+                title: 'Ошибка отправки в библиотеку',
+                description: 'Не удалось отправить премикс в библиотеку. Попробуйте еще раз.',
+            });
+        } finally {
+            setIsSendingToLibrary(false);
+        }
+    }, [premixToSendToLibrary, user, barId, refreshProducts, toast]);
+
     if (isLoading) {
         return (
             <div className="w-full space-y-6">
@@ -105,51 +151,5 @@ export default function PremixesPage() {
             </AlertDialog>
         </div>
     );
-
-    function handleSendToLibrary(premix: Product) {
-        setPremixToSendToLibrary(premix);
-    }
-
-    async function confirmSendToLibrary() {
-        if (!premixToSendToLibrary || !user || !barId) return;
-
-        setIsSendingToLibrary(true);
-
-        try {
-            const res = await fetch(`/api/products/${premixToSendToLibrary.id}`, {
-                method: 'PATCH',
-                headers: {
-                    'content-type': 'application/json',
-                },
-                body: JSON.stringify({ sendToLibrary: true }),
-            });
-            const json = await res.json();
-            if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
-            
-            if (typeof window !== 'undefined' && barId) {
-                try {
-                    localStorage.removeItem(`barboss_products_cache_${barId}`);
-                } catch (e) {
-                    // Игнорировать ошибки очистки кэша
-                }
-            }
-            
-            refreshProducts();
-            
-            toast({ 
-                title: "Премикс отправлен в библиотеку", 
-                description: `Премикс "${buildProductDisplayName(premixToSendToLibrary.name, premixToSendToLibrary.bottleVolumeMl)}" теперь доступен всем пользователям.` 
-            });
-            setPremixToSendToLibrary(null);
-        } catch (serverError) {
-            toast({
-                variant: 'destructive',
-                title: 'Ошибка отправки в библиотеку',
-                description: 'Не удалось отправить премикс в библиотеку. Попробуйте еще раз.',
-            });
-        } finally {
-            setIsSendingToLibrary(false);
-        }
-    }
 }
 

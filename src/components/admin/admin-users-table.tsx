@@ -47,21 +47,22 @@ import { Card, CardContent } from '@/components/ui/card';
 
 interface AdminUsersTableProps {
   users: UserProfile[];
+  /** Вызывается после успешного PATCH isBanned, чтобы список обновился без перезагрузки страницы */
+  onUserBannedChange?: (userId: string, isBanned: boolean) => void;
 }
 
-export function AdminUsersTable({ users }: AdminUsersTableProps) {
+export function AdminUsersTable({ users, onUserBannedChange }: AdminUsersTableProps) {
   const { user: adminUser } = useAuthSession();
   const { toast } = useToast();
   const router = useRouter();
   const [processingUserId, setProcessingUserId] = React.useState<string | null>(null);
   const isMobile = useIsMobile();
 
-  const handleBanToggle = (e: React.MouseEvent, user: UserProfile) => {
-    e.stopPropagation(); // Prevent row click event
+  const applyBanStatus = (e: React.SyntheticEvent | null, user: UserProfile, isBanned: boolean) => {
+    e?.stopPropagation();
     if (!adminUser || adminUser.id === user.id) return;
 
     setProcessingUserId(user.id);
-    const newBanStatus = !user.isBanned;
     (async () => {
       try {
         const res = await fetch(`/api/admin/users/${user.id}`, {
@@ -69,13 +70,20 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
           headers: {
             'content-type': 'application/json',
           },
-          body: JSON.stringify({ isBanned: newBanStatus }),
+          body: JSON.stringify({ isBanned }),
         });
         const json = await res.json();
         if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
-        toast({ title: newBanStatus ? "Пользователь заблокирован" : "Пользователь разблокирован" });
+        onUserBannedChange?.(user.id, isBanned);
+        toast({
+          title: isBanned ? 'Пользователь заблокирован' : 'Пользователь разблокирован',
+        });
       } catch {
-        toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось изменить статус пользователя.' });
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: 'Не удалось изменить статус пользователя.',
+        });
       } finally {
         setProcessingUserId(null);
       }
@@ -166,7 +174,7 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
                 <span className="text-xs text-muted-foreground">{user.isBanned ? 'Заблокирован' : 'Активен'}</span>
                 <Switch
                   checked={!!user.isBanned}
-                  onCheckedChange={(checked) => handleBanToggle(new MouseEvent('click') as any, user)}
+                  onCheckedChange={(checked) => applyBanStatus(null, user, checked)}
                   disabled={isSelf || isProcessing}
                   aria-label={user.isBanned ? 'Разблокировать пользователя' : 'Заблокировать пользователя'}
                 />
@@ -258,10 +266,7 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
                           ) : (
                             <Switch
                               checked={!!profile.isBanned}
-                              onCheckedChange={(checked) => {
-                                // preserve original handler semantics
-                                handleBanToggle(new MouseEvent('click') as any, profile as any);
-                              }}
+                              onCheckedChange={(checked) => applyBanStatus(null, profile, checked)}
                               disabled={isSelf || isProcessing}
                               aria-label={profile.isBanned ? 'Разблокировать пользователя' : 'Заблокировать пользователя'}
                             />

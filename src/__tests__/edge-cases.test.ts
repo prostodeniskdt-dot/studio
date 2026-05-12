@@ -145,7 +145,14 @@ describe('edge-cases', () => {
   });
 
   describe('debounce', () => {
-    jest.useFakeTimers();
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.clearAllTimers();
+      jest.useRealTimers();
+    });
 
     it('should debounce function calls', () => {
       const func = jest.fn();
@@ -174,13 +181,14 @@ describe('edge-cases', () => {
       jest.advanceTimersByTime(50);
       expect(func).toHaveBeenCalledTimes(1);
     });
-
-    afterEach(() => {
-      jest.clearAllTimers();
-    });
   });
 
   describe('retryWithBackoff', () => {
+    afterEach(() => {
+      jest.clearAllTimers();
+      jest.useRealTimers();
+    });
+
     it('should succeed on first attempt', async () => {
       const fn = jest.fn().mockResolvedValue('success');
       const result = await retryWithBackoff(fn, 3, 100);
@@ -200,26 +208,17 @@ describe('edge-cases', () => {
 
     it('should use exponential backoff', async () => {
       jest.useFakeTimers();
-      const fn = jest.fn()
+      const fn = jest
+        .fn()
         .mockRejectedValueOnce(new Error('fail'))
         .mockRejectedValueOnce(new Error('fail'))
         .mockResolvedValueOnce('success');
 
       const promise = retryWithBackoff(fn, 3, 100);
-      
-      // First retry after 100ms
-      jest.advanceTimersByTime(100);
-      await Promise.resolve();
-      
-      // Second retry after 200ms
-      jest.advanceTimersByTime(200);
-      await Promise.resolve();
-
+      await jest.runAllTimersAsync();
       const result = await promise;
       expect(result).toBe('success');
       expect(fn).toHaveBeenCalledTimes(3);
-      
-      jest.useRealTimers();
     });
 
     it('should throw after max retries', async () => {

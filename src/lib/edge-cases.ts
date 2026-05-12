@@ -33,8 +33,8 @@ export function safeGet<T>(obj: unknown, path: string, fallback: T): T {
     }
     current = current[key];
   }
-  
-  return current !== undefined ? current : fallback;
+
+  return current !== undefined && current !== null ? current : fallback;
 }
 
 /**
@@ -65,11 +65,11 @@ export function safeFormatDate(date: unknown, locale: string = 'ru-RU'): string 
   }
   
   if (typeof date === 'string') {
-    try {
-      return new Date(date).toLocaleDateString(locale);
-    } catch {
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) {
       return '';
     }
+    return parsed.toLocaleDateString(locale);
   }
   
   return '';

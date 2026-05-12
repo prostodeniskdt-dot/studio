@@ -150,7 +150,14 @@ export default function AdminPage() {
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
          </div>
       ) : (
-        <AdminUsersTable users={users || []} />
+        <AdminUsersTable
+          users={users || []}
+          onUserBannedChange={(userId, isBanned) => {
+            setUsers((prev) =>
+              (prev ?? []).map((u) => (u.id === userId ? { ...u, isBanned } : u))
+            );
+          }}
+        />
       )}
     </div>
   );

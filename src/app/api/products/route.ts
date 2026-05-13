@@ -2,6 +2,24 @@ import { prisma } from '@/lib/db';
 import { requireUserId } from '@/lib/auth-server';
 import { jsonResponse, readJson, statusFromApiError } from '@/lib/http';
 import { assertCanWriteBar, resolveWorkingBarContext } from '@/lib/bar-access';
+import { appendFile } from 'node:fs/promises';
+import { resolve as resolvePath } from 'node:path';
+
+// #region agent log
+async function __dbgApi(message: string, data: Record<string, unknown>) {
+  const line = JSON.stringify({
+    sessionId: '6a8e21',
+    runId: 'products-sync',
+    hypothesisId: 'C',
+    location: 'src/app/api/products/route.ts',
+    message,
+    data,
+    timestamp: Date.now(),
+  });
+  const p = resolvePath(process.cwd(), 'debug-6a8e21.log');
+  await appendFile(p, line + '\n').catch(() => {});
+}
+// #endregion
 
 function mapProduct(p: any) {
   const premixIngredients = p.premixIngredients?.length
@@ -24,6 +42,7 @@ export async function GET(req: Request) {
   try {
     const uid = await requireUserId(req);
     const { barId } = await resolveWorkingBarContext(uid);
+    await __dbgApi('GET:start', { uid, barId });
 
     const includePremix = {
       premixIngredients: {
@@ -50,6 +69,7 @@ export async function GET(req: Request) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    await __dbgApi('GET:error', { error: msg });
     return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }
@@ -88,6 +108,7 @@ export async function POST(req: Request) {
     const p = body.product;
     const isInLibrary = Boolean(p.isInLibrary);
     const isPremix = p.category === 'Premix' || Boolean(p.isPremix);
+    await __dbgApi('POST:start', { uid, barId, isInLibrary, isPremix, nameLen: String(p.name ?? '').length });
 
     const created = await prisma.product.create({
       data: {
@@ -126,9 +147,11 @@ export async function POST(req: Request) {
       });
     }
 
+    await __dbgApi('POST:success', { uid, barId, createdId: created.id, isInLibrary, isPremix });
     return jsonResponse({ ok: true, product: mapProduct(created) });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    await __dbgApi('POST:error', { error: msg });
     return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }

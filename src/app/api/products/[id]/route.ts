@@ -2,6 +2,24 @@ import { prisma } from '@/lib/db';
 import { requireUserId } from '@/lib/auth-server';
 import { jsonResponse, readJson, statusFromApiError } from '@/lib/http';
 import { resolveWorkingBarContext } from '@/lib/bar-access';
+import { appendFile } from 'node:fs/promises';
+import { resolve as resolvePath } from 'node:path';
+
+// #region agent log
+async function __dbgApi(message: string, data: Record<string, unknown>) {
+  const line = JSON.stringify({
+    sessionId: '6a8e21',
+    runId: 'products-sync',
+    hypothesisId: 'C',
+    location: 'src/app/api/products/[id]/route.ts',
+    message,
+    data,
+    timestamp: Date.now(),
+  });
+  const p = resolvePath(process.cwd(), 'debug-6a8e21.log');
+  await appendFile(p, line + '\n').catch(() => {});
+}
+// #endregion
 
 function mapProduct(p: any) {
   return {
@@ -22,11 +40,19 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   try {
     const uid = await requireUserId(req);
     const { barId: workingBarId, access } = await resolveWorkingBarContext(uid);
+    const { id } = await ctx.params;
     if (access === 'viewer') {
+      await __dbgApi('PATCH:forbidden_viewer', { uid, id });
       return jsonResponse({ ok: false, error: 'Forbidden' }, { status: 403 });
     }
-    const { id } = await ctx.params;
     const body = await readJson<PatchBody>(req);
+    await __dbgApi('PATCH:start', {
+      uid,
+      workingBarId,
+      id,
+      hasProductPatch: Boolean(body.product),
+      sendToLibrary: body.sendToLibrary === true,
+    });
 
     const existing = await prisma.product.findUnique({ where: { id } });
     if (!existing) return jsonResponse({ ok: false, error: 'Not found' }, { status: 404 });
@@ -72,9 +98,19 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       }
     }
 
+    await __dbgApi('PATCH:success', {
+      uid,
+      id,
+      isInLibrary: updated.isInLibrary,
+      barId: updated.barId,
+      isActive: updated.isActive,
+      isPremix: updated.isPremix,
+      category: updated.category,
+    });
     return jsonResponse({ ok: true, product: mapProduct(updated) });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    await __dbgApi('PATCH:error', { error: msg });
     return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }

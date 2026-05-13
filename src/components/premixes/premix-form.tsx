@@ -62,7 +62,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
   const { user } = useAuthSession();
   const barId = getWorkingBarId(user);
   const { toast } = useToast();
-  const { globalProducts, isLoading: isLoadingProducts, refresh, upsertProduct } = useProducts();
+  const { globalProducts, isLoading: isLoadingProducts, upsertProduct } = useProducts();
   const [isSaving, setIsSaving] = React.useState(false);
   const [createInLibrary, setCreateInLibrary] = React.useState(false);
   
@@ -400,7 +400,6 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
               : `Премикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно создан.`,
           });
         }
-        refresh();
         setTimeout(() => onFormSubmit(), 100);
       } catch {
         toast({ variant: 'destructive', title: 'Ошибка сохранения', description: 'Не удалось сохранить премикс.' });

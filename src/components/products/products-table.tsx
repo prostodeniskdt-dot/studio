@@ -82,7 +82,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const { user } = useAuthSession();
   const barId = getWorkingBarId(user);
   const { toast } = useToast();
-  const { refresh: refreshProducts, upsertProduct, removeProductById } = useProducts();
+  const { upsertProduct, removeProductById } = useProducts();
 
   const handleOpenSheet = (product?: Product) => {
     setEditingProduct(product);
@@ -118,7 +118,6 @@ export function ProductsTable({ products }: { products: Product[] }) {
         }
         toast({ title: "Статус продукта изменен." });
         if (json?.product) upsertProduct(json.product as Product);
-        refreshProducts();
       } catch {
         toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось изменить статус.' });
       } finally {
@@ -153,9 +152,8 @@ export function ProductsTable({ products }: { products: Product[] }) {
         }
         
         removeProductById(productToDelete.id);
-        refreshProducts();
-        
-        toast({ 
+
+        toast({
           title: "Продукт удален", 
           description: `Продукт "${buildProductDisplayName(productToDelete.name, productToDelete.bottleVolumeMl)}" был безвозвратно удален.` 
         });

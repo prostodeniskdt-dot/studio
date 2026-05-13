@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function PremixesPage() {
-    const { personalPremixes, isLoading, refresh: refreshProducts, upsertProduct } = useProducts();
+    const { personalPremixes, isLoading, upsertProduct } = useProducts();
     const [premixToSendToLibrary, setPremixToSendToLibrary] = React.useState<Product | null>(null);
     const [isSendingToLibrary, setIsSendingToLibrary] = React.useState(false);
 
@@ -70,8 +70,6 @@ export default function PremixesPage() {
                     category: 'Premix',
                 });
             }
-            refreshProducts();
-
             toast({
                 title: 'Премикс отправлен в библиотеку',
                 description: `Премикс "${buildProductDisplayName(premixToSendToLibrary.name, premixToSendToLibrary.bottleVolumeMl)}" теперь доступен всем пользователям.`,
@@ -86,7 +84,7 @@ export default function PremixesPage() {
         } finally {
             setIsSendingToLibrary(false);
         }
-    }, [premixToSendToLibrary, user, barId, refreshProducts, upsertProduct, toast]);
+    }, [premixToSendToLibrary, user, barId, upsertProduct, toast]);
 
     if (isLoading) {
         return (

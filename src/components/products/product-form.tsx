@@ -72,7 +72,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const barId = getWorkingBarId(user);
   const { toast } = useToast();
   const [isSaving, setIsSaving] = React.useState(false);
-  const { globalProducts, refresh: refreshProducts, upsertProduct } = useProducts();
+  const { globalProducts, upsertProduct } = useProducts();
   const [createInLibrary, setCreateInLibrary] = React.useState(false);
   const { suppliers, isLoading: isLoadingSuppliers } = useSuppliers();
 
@@ -217,12 +217,6 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
           } catch {
             // ignore
           }
-        }
-
-        try {
-          refreshProducts();
-        } catch {
-          // ignore
         }
 
         toast({

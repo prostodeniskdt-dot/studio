@@ -32,6 +32,12 @@ export default function UnifiedCalculatorPage() {
   // Использовать контекст продуктов вместо прямой загрузки
   const { products, isLoading: isLoadingProducts } = useProducts();
 
+  React.useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7501/ingest/9bee7bc9-09c8-4378-897e-ea159885b11d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6e7a9b'},body:JSON.stringify({sessionId:'6e7a9b',location:'calculator/page.tsx:productsState',message:'calculator sees products loading state',data:{isLoadingProducts,productsLen:products?.length ?? -1,userPresent: Boolean(user?.id)},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
+    // #endregion
+  }, [isLoadingProducts, products, user?.id]);
+
   const [selectedCategory, setSelectedCategory] = React.useState<ProductCategory | undefined>();
   const [selectedSubCategory, setSelectedSubCategory] = React.useState<string | undefined>();
   const [selectedProductId, setSelectedProductId] = React.useState<string | undefined>(undefined);

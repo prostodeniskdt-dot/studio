@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function ProductsLibraryPage() {
-    const { libraryProducts, isLoading, refresh: refreshProducts, upsertProduct, removeProductById } = useProducts();
+    const { libraryProducts, isLoading, upsertProduct, removeProductById } = useProducts();
     const [searchQuery, setSearchQuery] = React.useState('');
     const [selectedCategory, setSelectedCategory] = React.useState<ProductCategory | undefined>();
     const [selectedSubCategory, setSelectedSubCategory] = React.useState<string | undefined>();
@@ -73,7 +73,6 @@ export default function ProductsLibraryPage() {
                 }
                 toast({ title: 'Статус продукта изменен.' });
                 if (json?.product) upsertProduct(json.product as Product);
-                refreshProducts();
             } catch {
                 toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось обновить продукт.' });
             } finally {
@@ -128,7 +127,6 @@ export default function ProductsLibraryPage() {
             }
             
             if (json?.product) upsertProduct(json.product as Product);
-            refreshProducts();
 
             toast({
                 title: "Продукт добавлен",
@@ -172,7 +170,6 @@ export default function ProductsLibraryPage() {
             }
             
             removeProductById(productToDelete.id);
-            refreshProducts();
 
             toast({
                 title: "Продукт удален",

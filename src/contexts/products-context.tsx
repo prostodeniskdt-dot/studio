@@ -48,6 +48,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuthSession();
   const barId = getWorkingBarId(user);
   const prevBarIdRef = React.useRef<string | undefined>(undefined);
+  const loadSeqRef = React.useRef(0);
   const [cache, setCache] = useState<CachedProducts | null>(null);
   const [forceRefresh, setForceRefresh] = useState(0);
   const [personalProducts, setPersonalProducts] = useState<Product[] | null>(null);
@@ -84,6 +85,9 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     if (prevBarIdRef.current !== undefined && prevBarIdRef.current !== barId) {
+      // #region agent log
+      fetch('http://127.0.0.1:7501/ingest/9bee7bc9-09c8-4378-897e-ea159885b11d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6e7a9b'},body:JSON.stringify({sessionId:'6e7a9b',location:'products-context.tsx:bar-switch',message:'bar id changed; clearing product lists',data:{previousBarId:String(prevBarIdRef.current ?? 'undefined'),nextBarId:String(barId ?? 'null')},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
+      // #endregion
       setPersonalProducts(null);
       setLibraryProducts(null);
       setCache(null);
@@ -100,14 +104,23 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
 
   // Load from Postgres via API
   useEffect(() => {
+    const ac = new AbortController();
     let cancelled = false;
 
     async function load() {
+      loadSeqRef.current += 1;
+      const seq = loadSeqRef.current;
+      const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
+
       if (!user) {
         setPersonalProducts(null);
         setLibraryProducts(null);
         return;
       }
+
+      // #region agent log
+      fetch('http://127.0.0.1:7501/ingest/9bee7bc9-09c8-4378-897e-ea159885b11d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6e7a9b'},body:JSON.stringify({sessionId:'6e7a9b',location:'products-context.tsx:load:start',message:'products API load starting',data:{seq,forceRefresh,barId:String(barId ?? 'null'),userId:String(user?.id ?? '')},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
+      // #endregion
 
       setIsLoadingPersonal(true);
       setIsLoadingLibrary(true);
@@ -117,6 +130,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       try {
         const res = await fetch('/api/products', {
           cache: 'no-store',
+          signal: ac.signal,
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json?.error || 'Failed to load products');
@@ -124,10 +138,25 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         if (!cancelled) {
           setPersonalProducts(json.personalProducts ?? []);
           setLibraryProducts(json.libraryProducts ?? []);
+          const ms = typeof performance !== 'undefined' ? Math.round(performance.now() - t0) : 0;
+          // #region agent log
+          fetch('http://127.0.0.1:7501/ingest/9bee7bc9-09c8-4378-897e-ea159885b11d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6e7a9b'},body:JSON.stringify({sessionId:'6e7a9b',location:'products-context.tsx:load:ok',message:'products API load applied',data:{seq,ms,personalLen:Array.isArray(json?.personalProducts)?json.personalProducts.length:-1,libraryLen:Array.isArray(json?.libraryProducts)?json.libraryProducts.length:-1,runId:'post-fix'},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+          // #endregion
         }
       } catch (e) {
+        const aborted =
+          cancelled ||
+          ac.signal.aborted ||
+          (e instanceof DOMException && e.name === 'AbortError') ||
+          (e instanceof Error && e.name === 'AbortError');
+        if (aborted) {
+          return;
+        }
         const err = e instanceof Error ? e : new Error(String(e));
         logger.warn('Failed loading products from API, using cache if present:', err);
+        // #region agent log
+        fetch('http://127.0.0.1:7501/ingest/9bee7bc9-09c8-4378-897e-ea159885b11d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6e7a9b'},body:JSON.stringify({sessionId:'6e7a9b',location:'products-context.tsx:load:err',message:'products API load failed',data:{seq,wasCancelled:cancelled,err:String(err.message).slice(0,120)},timestamp:Date.now(),hypothesisId:'H5'})}).catch(()=>{});
+        // #endregion
         if (!cancelled) {
           setPersonalError(err);
           setLibraryError(err);
@@ -145,6 +174,11 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     load();
     return () => {
       cancelled = true;
+      ac.abort();
+      const seqEnd = loadSeqRef.current;
+      // #region agent log
+      fetch('http://127.0.0.1:7501/ingest/9bee7bc9-09c8-4378-897e-ea159885b11d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6e7a9b'},body:JSON.stringify({sessionId:'6e7a9b',location:'products-context.tsx:load:cleanup',message:'load effect cleanup (cancel)',data:{lastSeqStarted:seqEnd},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
+      // #endregion
     };
   }, [user, forceRefresh, barId]);
   
@@ -280,6 +314,10 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(
     (options?: ProductsRefreshOptions) => {
       const resetLists = options?.resetLists === true;
+
+      // #region agent log
+      fetch('http://127.0.0.1:7501/ingest/9bee7bc9-09c8-4378-897e-ea159885b11d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6e7a9b'},body:JSON.stringify({sessionId:'6e7a9b',location:'products-context.tsx:refresh',message:'refresh called',data:{resetLists},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+      // #endregion
 
       if (typeof window !== 'undefined' && barId) {
         try {

@@ -17,7 +17,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { PremixForm } from '@/components/premixes/premix-form';
 
 export default function PremixesLibraryPage() {
-    const { libraryPremixes, isLoading, refresh: refreshProducts, upsertProduct } = useProducts();
+    const { libraryPremixes, isLoading, upsertProduct } = useProducts();
     const [isSheetOpen, setIsSheetOpen] = React.useState(false);
     const [editingPremix, setEditingPremix] = React.useState<Product | undefined>(undefined);
     const [isAdding, setIsAdding] = React.useState<string | null>(null);
@@ -89,9 +89,7 @@ export default function PremixesLibraryPage() {
                     category: 'Premix',
                 });
             }
-            refreshProducts();
-            
-            toast({ 
+            toast({
                 title: "Премикс добавлен", 
                 description: `Премикс "${buildProductDisplayName(premix.name, premix.bottleVolumeMl)}" добавлен в ваши премиксы.` 
             });

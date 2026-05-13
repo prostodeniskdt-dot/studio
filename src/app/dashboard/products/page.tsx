@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function ProductsPage() {
-    const { personalProducts, isLoading, refresh: refreshProducts, upsertProduct, removeProductById } = useProducts();
+    const { personalProducts, isLoading, upsertProduct, removeProductById } = useProducts();
     const [isSheetOpen, setIsSheetOpen] = React.useState(false);
     const [editingProduct, setEditingProduct] = React.useState<Product | undefined>(undefined);
     const [isArchiving, setIsArchiving] = React.useState<string | null>(null);
@@ -75,7 +75,6 @@ export default function ProductsPage() {
                 }
                 toast({ title: "Статус продукта изменен." });
                 if (json?.product) upsertProduct(json.product as Product);
-                refreshProducts();
             } catch {
                 toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось обновить продукт.' });
             } finally {
@@ -124,8 +123,6 @@ export default function ProductsPage() {
                         : {}),
                 });
             }
-            refreshProducts();
-            
             toast({ 
                 title: "Продукт отправлен в библиотеку", 
                 description: `Продукт "${buildProductDisplayName(productToSendToLibrary.name, productToSendToLibrary.bottleVolumeMl)}" теперь доступен всем пользователям.` 
@@ -163,7 +160,6 @@ export default function ProductsPage() {
             }
             
             removeProductById(productToDelete.id);
-            refreshProducts();
 
             toast({
                 title: "Продукт удален",

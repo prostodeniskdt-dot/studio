@@ -3,9 +3,9 @@
 import * as React from 'react';
 import type { InventoryLine, Product, CalculatedInventoryLine } from '@/lib/types';
 import { calculateLineFields } from '@/lib/calculations';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { translateCategory, translateSubCategory, buildProductDisplayName } from '@/lib/utils';
+import { cn, translateCategory, translateSubCategory, buildProductDisplayName } from '@/lib/utils';
 import { Loader2, Package, ShoppingCart } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Progress } from '@/components/ui/progress';
@@ -177,9 +177,16 @@ const InventoryTableInner: React.FC<InventoryTableProps> = ({ lines, setLines, p
                                 {isEditable ? (
                                   <Input
                                     type="number"
+                                    inputMode="decimal"
                                     value={line.endStock}
                                     onChange={(e) => handleInputChange(line.id!, 'endStock', e.target.value)}
-                                    className="h-11 w-full min-w-0 max-w-[8rem] bg-primary/10 text-right transition-all duration-200 focus:bg-primary/15 focus:ring-2 focus:ring-primary/40 sm:h-10 sm:w-24"
+                                    className={cn(
+                                      'h-11 min-w-[5.5rem] max-w-[9rem] bg-background text-right text-base font-medium text-foreground tabular-nums',
+                                      'border-2 border-primary/35 shadow-sm',
+                                      /* iOS Safari: spinners steal width and can hide digits in narrow cells */
+                                      '[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+                                      'transition-colors duration-200 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 sm:h-10 sm:min-w-[6rem] sm:max-w-none sm:w-24 sm:text-sm'
+                                    )}
                                   />
                                 ) : (
                                   <span>{line.endStock}</span>

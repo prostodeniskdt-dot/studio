@@ -43,6 +43,24 @@ export default function ProductsPage() {
     const barId = getWorkingBarId(user);
     const { toast } = useToast();
 
+    // #region agent log
+    const __dbg = React.useCallback((message: string, data: Record<string, unknown>) => {
+        fetch('http://127.0.0.1:7368/ingest/4b9e7ee6-7078-4b91-881c-e050e57a31cc', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6a8e21' },
+            body: JSON.stringify({
+                sessionId: '6a8e21',
+                runId: 'products-sync',
+                hypothesisId: 'A+C',
+                location: 'src/app/dashboard/products/page.tsx',
+                message,
+                data,
+                timestamp: Date.now(),
+            }),
+        }).catch(() => {});
+    }, []);
+    // #endregion
+
     const handleOpenSheet = (product?: Product) => {
         setEditingProduct(product);
         setIsSheetOpen(true);
@@ -100,6 +118,7 @@ export default function ProductsPage() {
         setIsSendingToLibrary(true);
 
         try {
+            __dbg('sendToLibrary:start', { productId: productToSendToLibrary.id, barId });
             const res = await fetch(`/api/products/${productToSendToLibrary.id}`, {
                 method: 'PATCH',
                 headers: {
@@ -109,6 +128,7 @@ export default function ProductsPage() {
             });
             const json = await res.json();
             if (!res.ok) throw new Error(json?.error || 'Failed to send to library');
+            __dbg('sendToLibrary:success', { productId: productToSendToLibrary.id, barId });
             
             if (typeof window !== 'undefined' && barId) {
                 try {
@@ -119,6 +139,7 @@ export default function ProductsPage() {
             }
             
             refreshProducts();
+            __dbg('sendToLibrary:refreshCalled', { productId: productToSendToLibrary.id, barId });
             
             toast({ 
                 title: "Продукт отправлен в библиотеку", 
@@ -126,6 +147,7 @@ export default function ProductsPage() {
             });
             setProductToSendToLibrary(null);
         } catch (serverError) {
+            __dbg('sendToLibrary:error', { productId: productToSendToLibrary?.id, barId, error: serverError instanceof Error ? serverError.message : String(serverError) });
             toast({
                 variant: 'destructive',
                 title: 'Ошибка отправки в библиотеку',

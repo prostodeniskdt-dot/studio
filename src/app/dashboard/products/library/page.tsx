@@ -43,6 +43,24 @@ export default function ProductsLibraryPage() {
     const barId = getWorkingBarId(user);
     const { toast } = useToast();
 
+    // #region agent log
+    const __dbg = React.useCallback((message: string, data: Record<string, unknown>) => {
+        fetch('http://127.0.0.1:7368/ingest/4b9e7ee6-7078-4b91-881c-e050e57a31cc', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6a8e21' },
+            body: JSON.stringify({
+                sessionId: '6a8e21',
+                runId: 'products-sync',
+                hypothesisId: 'A+C',
+                location: 'src/app/dashboard/products/library/page.tsx',
+                message,
+                data,
+                timestamp: Date.now(),
+            }),
+        }).catch(() => {});
+    }, []);
+    // #endregion
+
     const handleOpenSheet = (product?: Product) => {
         setEditingProduct(product);
         setIsSheetOpen(true);
@@ -91,6 +109,7 @@ export default function ProductsLibraryPage() {
         setIsAdding(product.id);
 
         try {
+            __dbg('libraryAdd:start', { productId: product.id, barId });
             const { id: _oldId, createdAt: _ca, updatedAt: _ua, ...rest } = product as any;
             const res = await fetch('/api/products', {
                 method: 'POST',
@@ -107,6 +126,7 @@ export default function ProductsLibraryPage() {
             });
             const json = await res.json();
             if (!res.ok) throw new Error(json?.error || 'Failed to add product');
+            __dbg('libraryAdd:success', { productId: product.id, barId });
             
             if (typeof window !== 'undefined' && barId) {
                 try {
@@ -117,6 +137,7 @@ export default function ProductsLibraryPage() {
             }
             
             refreshProducts();
+            __dbg('libraryAdd:refreshCalled', { productId: product.id, barId });
             
             toast({ 
                 title: "Продукт добавлен", 
@@ -124,6 +145,7 @@ export default function ProductsLibraryPage() {
             });
             setProductToAdd(null);
         } catch (serverError) {
+            __dbg('libraryAdd:error', { productId: product?.id, barId, error: serverError instanceof Error ? serverError.message : String(serverError) });
             toast({
                 variant: 'destructive',
                 title: 'Ошибка добавления',

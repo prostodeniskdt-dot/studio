@@ -6,6 +6,24 @@ import type { Product } from '@/lib/types';
 import { logger } from '@/lib/logger';
 import { dedupeProductsByName } from '@/lib/utils';
 
+// #region agent log
+function __dbgProducts(message: string, data: Record<string, unknown>) {
+  fetch('http://127.0.0.1:7368/ingest/4b9e7ee6-7078-4b91-881c-e050e57a31cc', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6a8e21' },
+    body: JSON.stringify({
+      sessionId: '6a8e21',
+      runId: 'products-sync',
+      hypothesisId: 'A+B+D',
+      location: 'src/contexts/products-context.tsx',
+      message,
+      data,
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+}
+// #endregion
+
 interface ProductsContextValue {
   products: Product[]; // Объединенный список (персональные + библиотека) для обратной совместимости
   globalProducts: Product[]; // Только продукты без примиксов (персональные + библиотека)
@@ -73,6 +91,13 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      __dbgProducts('load:start', {
+        barId,
+        forceRefresh,
+        hasCache: Boolean(cache),
+        userId: user?.id,
+      });
+
       setIsLoadingPersonal(true);
       setIsLoadingLibrary(true);
       setPersonalError(null);
@@ -88,6 +113,12 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         if (!cancelled) {
           setPersonalProducts(json.personalProducts ?? []);
           setLibraryProducts(json.libraryProducts ?? []);
+          __dbgProducts('load:success', {
+            barId,
+            forceRefresh,
+            personalCount: (json.personalProducts ?? []).length,
+            libraryCount: (json.libraryProducts ?? []).length,
+          });
         }
       } catch (e) {
         const err = e instanceof Error ? e : new Error(String(e));
@@ -97,6 +128,11 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
           setLibraryError(err);
           setPersonalProducts([]);
           setLibraryProducts([]);
+          __dbgProducts('load:error', {
+            barId,
+            forceRefresh,
+            error: err.message,
+          });
         }
       } finally {
         if (!cancelled) {
@@ -110,7 +146,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [user, forceRefresh]);
+  }, [user, forceRefresh, barId]);
   
   // Персональные продукты: включаем все продукты с barId (включая те, что также в библиотеке)
   const filteredPersonalProducts = React.useMemo(() => {
@@ -219,8 +255,9 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(() => {
     // Не очищаем кэш до прихода ответа: иначе `effectiveIsLoading` становится true и все
     // разделы с продуктами уходят в скелетоны на время запроса (плохой UX и ощущение «поломки»).
+    __dbgProducts('refresh:called', { barId, forceRefresh });
     setForceRefresh((prev) => prev + 1);
-  }, []);
+  }, [barId, forceRefresh]);
 
   // Использовать кэш если данные еще загружаются с дедупликацией
   const cachedProductsLength = cache?.products?.length ?? 0;

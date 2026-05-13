@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function ProductsPage() {
-    const { personalProducts, isLoading, refresh: refreshProducts } = useProducts();
+    const { personalProducts, isLoading, refresh: refreshProducts, upsertProduct, removeProductById } = useProducts();
     const [isSheetOpen, setIsSheetOpen] = React.useState(false);
     const [editingProduct, setEditingProduct] = React.useState<Product | undefined>(undefined);
     const [isArchiving, setIsArchiving] = React.useState<string | null>(null);
@@ -51,9 +51,6 @@ export default function ProductsPage() {
     const handleCloseSheet = () => {
         setIsSheetOpen(false);
         setEditingProduct(undefined);
-        setTimeout(() => {
-            refreshProducts();
-        }, 200);
     };
 
     const handleArchiveAction = (product: Product) => {
@@ -77,6 +74,7 @@ export default function ProductsPage() {
                     try { localStorage.removeItem(`barboss_products_cache_${barId}`); } catch {}
                 }
                 toast({ title: "Статус продукта изменен." });
+                if (json?.product) upsertProduct(json.product as Product);
                 refreshProducts();
             } catch {
                 toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось обновить продукт.' });
@@ -118,6 +116,14 @@ export default function ProductsPage() {
                 }
             }
             
+            if (json?.product) {
+                upsertProduct({
+                    ...(json.product as Product),
+                    ...(productToSendToLibrary.premixIngredients?.length
+                        ? { premixIngredients: productToSendToLibrary.premixIngredients }
+                        : {}),
+                });
+            }
             refreshProducts();
             
             toast({ 
@@ -156,11 +162,12 @@ export default function ProductsPage() {
                 }
             }
             
+            removeProductById(productToDelete.id);
             refreshProducts();
-            
-            toast({ 
-                title: "Продукт удален", 
-                description: `Продукт "${buildProductDisplayName(productToDelete.name, productToDelete.bottleVolumeMl)}" был безвозвратно удален.` 
+
+            toast({
+                title: "Продукт удален",
+                description: `Продукт "${buildProductDisplayName(productToDelete.name, productToDelete.bottleVolumeMl)}" был безвозвратно удален.`,
             });
             setProductToDelete(null);
         } catch (serverError) {

@@ -82,7 +82,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const { user } = useAuthSession();
   const barId = getWorkingBarId(user);
   const { toast } = useToast();
-  const { refresh: refreshProducts } = useProducts();
+  const { refresh: refreshProducts, upsertProduct, removeProductById } = useProducts();
 
   const handleOpenSheet = (product?: Product) => {
     setEditingProduct(product);
@@ -92,11 +92,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const handleCloseSheet = () => {
     setIsSheetOpen(false);
     setEditingProduct(undefined);
-    // Принудительно обновить список продуктов после закрытия формы
-    setTimeout(() => {
-      refreshProducts();
-    }, 200);
-  }
+  };
 
   const handleArchiveAction = (product: Product) => {
     if (!user || !barId) return;
@@ -121,8 +117,8 @@ export function ProductsTable({ products }: { products: Product[] }) {
           } catch {}
         }
         toast({ title: "Статус продукта изменен." });
+        if (json?.product) upsertProduct(json.product as Product);
         refreshProducts();
-        setTimeout(() => refreshProducts(), 100);
       } catch {
         toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось изменить статус.' });
       } finally {
@@ -156,7 +152,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
           }
         }
         
-        // Принудительно обновить список
+        removeProductById(productToDelete.id);
         refreshProducts();
         
         toast({ 

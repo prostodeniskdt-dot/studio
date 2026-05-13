@@ -62,7 +62,7 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
   const { user } = useAuthSession();
   const barId = getWorkingBarId(user);
   const { toast } = useToast();
-  const { globalProducts, isLoading: isLoadingProducts, refresh } = useProducts(); // Используем globalProducts для выбора ингредиентов
+  const { globalProducts, isLoading: isLoadingProducts, refresh, upsertProduct } = useProducts();
   const [isSaving, setIsSaving] = React.useState(false);
   const [createInLibrary, setCreateInLibrary] = React.useState(false);
   
@@ -363,6 +363,14 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
           });
           const json = await res.json();
           if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+          if (json?.product) {
+            upsertProduct({
+              ...(json.product as Product),
+              premixIngredients: finalIngredients,
+              isPremix: true,
+              category: 'Premix',
+            });
+          }
           toast({
             title: 'Премикс обновлен',
             description: `Премикс "${buildProductDisplayName(baseName, data.bottleVolumeMl)}" успешно обновлен.`,
@@ -377,6 +385,14 @@ export function PremixForm({ premix, onFormSubmit }: PremixFormProps) {
           });
           const json = await res.json();
           if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
+          if (json?.product) {
+            upsertProduct({
+              ...(json.product as Product),
+              premixIngredients: finalIngredients,
+              isPremix: true,
+              category: 'Premix',
+            });
+          }
           toast({
             title: 'Премикс создан',
             description: createInLibrary

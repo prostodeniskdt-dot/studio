@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function PremixesPage() {
-    const { personalPremixes, isLoading, refresh: refreshProducts } = useProducts();
+    const { personalPremixes, isLoading, refresh: refreshProducts, upsertProduct } = useProducts();
     const [premixToSendToLibrary, setPremixToSendToLibrary] = React.useState<Product | null>(null);
     const [isSendingToLibrary, setIsSendingToLibrary] = React.useState(false);
 
@@ -60,6 +60,16 @@ export default function PremixesPage() {
                 }
             }
 
+            if (json?.product) {
+                upsertProduct({
+                    ...(json.product as Product),
+                    ...(premixToSendToLibrary.premixIngredients?.length
+                        ? { premixIngredients: premixToSendToLibrary.premixIngredients }
+                        : {}),
+                    isPremix: true,
+                    category: 'Premix',
+                });
+            }
             refreshProducts();
 
             toast({
@@ -76,7 +86,7 @@ export default function PremixesPage() {
         } finally {
             setIsSendingToLibrary(false);
         }
-    }, [premixToSendToLibrary, user, barId, refreshProducts, toast]);
+    }, [premixToSendToLibrary, user, barId, refreshProducts, upsertProduct, toast]);
 
     if (isLoading) {
         return (

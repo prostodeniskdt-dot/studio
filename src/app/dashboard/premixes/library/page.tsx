@@ -17,7 +17,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { PremixForm } from '@/components/premixes/premix-form';
 
 export default function PremixesLibraryPage() {
-    const { libraryPremixes, isLoading, refresh: refreshProducts } = useProducts();
+    const { libraryPremixes, isLoading, refresh: refreshProducts, upsertProduct } = useProducts();
     const [isSheetOpen, setIsSheetOpen] = React.useState(false);
     const [editingPremix, setEditingPremix] = React.useState<Product | undefined>(undefined);
     const [isAdding, setIsAdding] = React.useState<string | null>(null);
@@ -39,7 +39,6 @@ export default function PremixesLibraryPage() {
     const handleCloseSheet = () => {
         setIsSheetOpen(false);
         setEditingPremix(undefined);
-        setTimeout(() => refreshProducts(), 200);
     };
 
     const handleAddToMyPremixes = async (premix: Product) => {
@@ -82,6 +81,14 @@ export default function PremixesLibraryPage() {
                 }
             }
             
+            if (json?.product) {
+                upsertProduct({
+                    ...(json.product as Product),
+                    premixIngredients: premix.premixIngredients,
+                    isPremix: true,
+                    category: 'Premix',
+                });
+            }
             refreshProducts();
             
             toast({ 

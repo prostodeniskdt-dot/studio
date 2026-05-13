@@ -72,7 +72,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
   const barId = getWorkingBarId(user);
   const { toast } = useToast();
   const [isSaving, setIsSaving] = React.useState(false);
-  const { globalProducts, refresh: refreshProducts } = useProducts();
+  const { globalProducts, refresh: refreshProducts, upsertProduct } = useProducts();
   const [createInLibrary, setCreateInLibrary] = React.useState(false);
   const { suppliers, isLoading: isLoadingSuppliers } = useSuppliers();
 
@@ -197,6 +197,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
           });
           const json = await res.json();
           if (!res.ok) throw new Error(json?.error || 'Failed to update product');
+          if (json?.product) upsertProduct(json.product as Product);
         } else {
           const res = await fetch('/api/products', {
             method: 'POST',
@@ -207,6 +208,7 @@ export function ProductForm({ product, onFormSubmit }: ProductFormProps) {
           });
           const json = await res.json();
           if (!res.ok) throw new Error(json?.error || 'Failed to create product');
+          if (json?.product) upsertProduct(json.product as Product);
         }
 
         if (typeof window !== 'undefined' && barId) {

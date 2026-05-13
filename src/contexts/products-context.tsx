@@ -6,6 +6,15 @@ import type { Product } from '@/lib/types';
 import { logger } from '@/lib/logger';
 import { dedupeProductsByName } from '@/lib/utils';
 
+/** Опции `refresh()` — по умолчанию «мягкая» перезагрузка: списки не очищаются, UI не блокируется. */
+export type ProductsRefreshOptions = {
+  /**
+   * Сбросить списки в памяти (как раньше) и показать полную загрузку до ответа API.
+   * Нужно редко; для добавления/редактирования одного элемента не используйте.
+   */
+  resetLists?: boolean;
+};
+
 interface ProductsContextValue {
   products: Product[]; // Объединенный список (персональные + библиотека) для обратной совместимости
   globalProducts: Product[]; // Только продукты без примиксов (персональные + библиотека)
@@ -16,7 +25,12 @@ interface ProductsContextValue {
   libraryPremixes: Product[]; // Только примиксы из библиотеки
   isLoading: boolean;
   error: Error | null;
-  refresh: () => void;
+  /** Фоновая синхронизация с сервером; см. ProductsRefreshOptions. */
+  refresh: (options?: ProductsRefreshOptions) => void;
+  /** Сразу обновить кэш в памяти после POST/PATCH (без повторной загрузки всего каталога). */
+  upsertProduct: (product: Product) => void;
+  /** Убрать продукт из локальных списков (после DELETE). */
+  removeProductById: (productId: string) => void;
 }
 
 const ProductsContext = createContext<ProductsContextValue | undefined>(undefined);
@@ -33,6 +47,7 @@ interface CachedProducts {
 export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuthSession();
   const barId = getWorkingBarId(user);
+  const prevBarIdRef = React.useRef<string | undefined>(undefined);
   const [cache, setCache] = useState<CachedProducts | null>(null);
   const [forceRefresh, setForceRefresh] = useState(0);
   const [personalProducts, setPersonalProducts] = useState<Product[] | null>(null);
@@ -61,6 +76,27 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       // Игнорировать ошибки парсинга
     }
   }, [barId]);
+
+  /** При смене бара сбрасываем состояние, чтобы не показывать продукты другого заведения. */
+  React.useEffect(() => {
+    if (!user) {
+      prevBarIdRef.current = undefined;
+      return;
+    }
+    if (prevBarIdRef.current !== undefined && prevBarIdRef.current !== barId) {
+      setPersonalProducts(null);
+      setLibraryProducts(null);
+      setCache(null);
+      try {
+        if (typeof window !== 'undefined' && prevBarIdRef.current) {
+          localStorage.removeItem(`${PRODUCTS_CACHE_KEY}_${prevBarIdRef.current}`);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    prevBarIdRef.current = barId ?? undefined;
+  }, [user, barId]);
 
   // Load from Postgres via API
   useEffect(() => {
@@ -151,7 +187,6 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     return dedupeProductsByName(premixes);
   }, [allProducts]);
   
-  const isLoading = isLoadingPersonal || isLoadingLibrary;
   const error = personalError || libraryError;
 
   // Обработка ошибок прав доступа - использовать кэш при ошибке
@@ -216,19 +251,52 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     );
   }, [libraryProducts]);
 
-  const refresh = useCallback(() => {
-    if (typeof window !== 'undefined' && barId) {
-      try {
-        localStorage.removeItem(`${PRODUCTS_CACHE_KEY}_${barId}`);
-      } catch {
-        /* ignore */
+  const upsertProduct = useCallback(
+    (p: Product) => {
+      const addToPersonal = Boolean(!p.isInLibrary && barId != null && p.barId === barId);
+      const addToLibrary = Boolean(p.isInLibrary);
+
+      setPersonalProducts((prev) => {
+        if (prev === null) return prev;
+        const without = prev.filter((x) => x.id !== p.id);
+        if (!addToPersonal) return without;
+        return [p, ...without];
+      });
+      setLibraryProducts((prev) => {
+        if (prev === null) return prev;
+        const without = prev.filter((x) => x.id !== p.id);
+        if (!addToLibrary) return without;
+        return [p, ...without];
+      });
+    },
+    [barId],
+  );
+
+  const removeProductById = useCallback((productId: string) => {
+    setPersonalProducts((prev) => (prev === null ? prev : prev.filter((x) => x.id !== productId)));
+    setLibraryProducts((prev) => (prev === null ? prev : prev.filter((x) => x.id !== productId)));
+  }, []);
+
+  const refresh = useCallback(
+    (options?: ProductsRefreshOptions) => {
+      const resetLists = options?.resetLists === true;
+
+      if (typeof window !== 'undefined' && barId) {
+        try {
+          localStorage.removeItem(`${PRODUCTS_CACHE_KEY}_${barId}`);
+        } catch {
+          /* ignore */
+        }
       }
-    }
-    setCache(null);
-    setPersonalProducts(null);
-    setLibraryProducts(null);
-    setForceRefresh((prev) => prev + 1);
-  }, [barId]);
+      setCache(null);
+      if (resetLists) {
+        setPersonalProducts(null);
+        setLibraryProducts(null);
+      }
+      setForceRefresh((prev) => prev + 1);
+    },
+    [barId],
+  );
 
   // Использовать кэш если данные еще загружаются с дедупликацией
   const cachedProductsLength = cache?.products?.length ?? 0;
@@ -238,7 +306,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       return dedupeProductsByName(cache.products);
     }
     return [];
-  }, [allProducts.length, cache?.barId, barId, cachedProductsLength]);
+  }, [allProducts, cache?.barId, barId, cachedProductsLength]);
   
   // Раздельные списки: сначала из загруженных данных, потом из кэша если данные еще загружаются с дедупликацией
   const effectiveGlobalProducts = React.useMemo(() => {
@@ -249,7 +317,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       return dedupeProductsByName(filtered);
     }
     return [];
-  }, [loadedGlobalProducts.length, cache?.barId, barId, cachedProductsLength]);
+  }, [loadedGlobalProducts, cache?.barId, barId, cachedProductsLength]);
   
   const effectivePremixes = React.useMemo(() => {
     if (loadedPremixes.length > 0) return loadedPremixes;
@@ -259,11 +327,12 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       return dedupeProductsByName(filtered);
     }
     return [];
-  }, [loadedPremixes.length, cache?.barId, barId, cachedProductsLength]);
-  
+  }, [loadedPremixes, cache?.barId, barId, cachedProductsLength]);
+
+  /** Только первый загруз или смена бара (`null`). Фоновая подгрузка после refresh() интерфейс не блокирует. */
   const effectiveIsLoading = React.useMemo(
-    () => personalProducts === null || libraryProducts === null || isLoading,
-    [personalProducts, libraryProducts, isLoading]
+    () => personalProducts === null || libraryProducts === null,
+    [personalProducts, libraryProducts],
   );
 
   // Эффективные значения с учетом кэша для персональных продуктов
@@ -279,7 +348,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       return dedupeProductsByName(cached);
     }
     return [];
-  }, [personalProductsList.length, cache?.barId, barId, cachedProductsLength]);
+  }, [personalProductsList, cache?.barId, barId, cachedProductsLength]);
   
   const effectivePersonalPremixes = React.useMemo(() => {
     if (personalPremixesList.length > 0) return personalPremixesList;
@@ -292,7 +361,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       return dedupeProductsByName(cached);
     }
     return [];
-  }, [personalPremixesList.length, cache?.barId, barId, cachedProductsLength]);
+  }, [personalPremixesList, cache?.barId, barId, cachedProductsLength]);
   
   // Эффективные значения для библиотеки
   const effectiveLibraryProducts = React.useMemo(() => {
@@ -306,7 +375,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       return dedupeProductsByName(cached);
     }
     return [];
-  }, [libraryProductsList.length, cache?.barId, barId, cachedProductsLength]);
+  }, [libraryProductsList, cache?.barId, barId, cachedProductsLength]);
   
   const effectiveLibraryPremixes = React.useMemo(() => {
     if (libraryPremixesList.length > 0) return libraryPremixesList;
@@ -318,31 +387,38 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       return dedupeProductsByName(cached);
     }
     return [];
-  }, [libraryPremixesList.length, cache?.barId, barId, cachedProductsLength]);
+  }, [libraryPremixesList, cache?.barId, barId, cachedProductsLength]);
 
-  const value: ProductsContextValue = React.useMemo(() => ({
-    products: effectiveProducts, // Объединенный список для обратной совместимости
-    globalProducts: effectiveGlobalProducts,
-    premixes: effectivePremixes,
-    personalProducts: effectivePersonalProducts,
-    personalPremixes: effectivePersonalPremixes,
-    libraryProducts: effectiveLibraryProducts,
-    libraryPremixes: effectiveLibraryPremixes,
-    isLoading: effectiveIsLoading,
-    error: error || null,
-    refresh,
-  }), [
-    effectiveProducts, 
-    effectiveGlobalProducts, 
-    effectivePremixes, 
-    effectivePersonalProducts,
-    effectivePersonalPremixes,
-    effectiveLibraryProducts,
-    effectiveLibraryPremixes,
-    effectiveIsLoading, 
-    error, 
-    refresh
-  ]);
+  const value: ProductsContextValue = React.useMemo(
+    () => ({
+      products: effectiveProducts,
+      globalProducts: effectiveGlobalProducts,
+      premixes: effectivePremixes,
+      personalProducts: effectivePersonalProducts,
+      personalPremixes: effectivePersonalPremixes,
+      libraryProducts: effectiveLibraryProducts,
+      libraryPremixes: effectiveLibraryPremixes,
+      isLoading: effectiveIsLoading,
+      error: error || null,
+      refresh,
+      upsertProduct,
+      removeProductById,
+    }),
+    [
+      effectiveProducts,
+      effectiveGlobalProducts,
+      effectivePremixes,
+      effectivePersonalProducts,
+      effectivePersonalPremixes,
+      effectiveLibraryProducts,
+      effectiveLibraryPremixes,
+      effectiveIsLoading,
+      error,
+      refresh,
+      upsertProduct,
+      removeProductById,
+    ],
+  );
 
   return (
     <ProductsContext.Provider value={value}>

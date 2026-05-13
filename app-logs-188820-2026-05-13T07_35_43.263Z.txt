@@ -1,0 +1,3313 @@
+
+
+> nextn@0.1.0 start
+
+
+
+> next start -p $PORT
+
+error: option '-p, --port <port>' argument '$PORT' is invalid. '$PORT' is not a non-negative number.
+
+> next start -p $PORT
+
+
+
+
+
+> nextn@0.1.0 start
+
+error: option '-p, --port <port>' argument '$PORT' is invalid. '$PORT' is not a non-negative number.
+
+
+
+> nextn@0.1.0 start
+
+> next start -p $PORT
+
+
+
+error: option '-p, --port <port>' argument '$PORT' is invalid. '$PORT' is not a non-negative number.
+
+
+
+
+
+> nextn@0.1.0 start
+
+> next start -p $PORT
+
+error: option '-p, --port <port>' argument '$PORT' is invalid. '$PORT' is not a non-negative number.
+
+
+
+> next start -p $PORT
+
+
+
+> nextn@0.1.0 start
+
+error: option '-p, --port <port>' argument '$PORT' is invalid. '$PORT' is not a non-negative number.
+
+> next start -p $PORT
+
+
+
+> nextn@0.1.0 start
+
+
+
+error: option '-p, --port <port>' argument '$PORT' is invalid. '$PORT' is not a non-negative number.
+
+> next start -p $PORT
+
+
+
+> nextn@0.1.0 start
+
+
+
+error: option '-p, --port <port>' argument '$PORT' is invalid. '$PORT' is not a non-negative number.
+
+
+
+> next start -p $PORT
+
+
+
+> nextn@0.1.0 start
+
+error: option '-p, --port <port>' argument '$PORT' is invalid. '$PORT' is not a non-negative number.
+
+> nextn@0.1.0 start
+
+
+
+
+
+> next start -p $PORT -H 0.0.0.0
+
+error: option '-p, --port <port>' argument '$PORT' is invalid. '$PORT' is not a non-negative number.
+
+> nextn@0.1.0 start
+
+> next start -p $PORT -H 0.0.0.0
+
+
+
+
+
+error: option '-p, --port <port>' argument '$PORT' is invalid. '$PORT' is not a non-negative number.
+
+
+
+> nextn@0.1.0 start
+
+
+
+> next start -p $PORT -H 0.0.0.0
+
+error: option '-p, --port <port>' argument '$PORT' is invalid. '$PORT' is not a non-negative number.
+
+> next start -p $PORT -H 0.0.0.0
+
+> nextn@0.1.0 start
+
+
+
+
+
+error: option '-p, --port <port>' argument '$PORT' is invalid. '$PORT' is not a non-negative number.
+
+> nextn@0.1.0 start
+
+
+
+> next start -p $PORT -H 0.0.0.0
+
+
+
+error: option '-p, --port <port>' argument '$PORT' is invalid. '$PORT' is not a non-negative number.
+
+
+
+
+
+> next start -p $PORT -H 0.0.0.0
+
+> nextn@0.1.0 start
+
+error: option '-p, --port <port>' argument '$PORT' is invalid. '$PORT' is not a non-negative number.
+
+> nextn@0.1.0 start
+
+
+
+> next start -p $PORT -H 0.0.0.0
+
+
+
+error: option '-p, --port <port>' argument '$PORT' is invalid. '$PORT' is not a non-negative number.
+
+> next start -p $PORT -H 0.0.0.0
+
+> nextn@0.1.0 start
+
+
+
+
+
+error: option '-p, --port <port>' argument '$PORT' is invalid. '$PORT' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+error: option '-p, --port <port>' argument '${PORT}' is invalid. '${PORT}' is not a non-negative number.
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+  -->  schema.prisma:7
+
+Validation Error Count: 1
+
+   | 
+
+
+
+
+
+error: Error validating datasource `db`: the URL must start with the protocol `postgresql://` or `postgres://`.
+
+
+
+ 7 |   url      = env("DATABASE_URL")
+
+   | 
+
+Invalid `prisma.authUser.findUnique()` invocation:
+
+ 6 |   provider = "postgresql"
+
+prisma:error 
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+prisma:error 
+
+Invalid `prisma.authUser.create()` invocation:
+
+
+
+
+
+Null constraint violation on the fields: (`id`)
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+
+
+Invalid `prisma.product.findMany()` invocation:
+
+
+
+The column `Product.externalCode` does not exist in the current database.
+
+prisma:error 
+
+Invalid `prisma.product.findMany()` invocation:
+
+prisma:error 
+
+
+
+
+
+The column `Product.externalCode` does not exist in the current database.
+
+prisma:error 
+
+The column `InventorySession.importListHash` does not exist in the current database.
+
+Invalid `prisma.inventorySession.findMany()` invocation:
+
+
+
+
+
+The column `InventorySession.importListHash` does not exist in the current database.
+
+
+
+
+
+prisma:error 
+
+Invalid `prisma.inventorySession.findMany()` invocation:
+
+
+
+
+
+Invalid `prisma.product.findMany()` invocation:
+
+The column `Product.externalCode` does not exist in the current database.
+
+prisma:error 
+
+
+
+prisma:error 
+
+
+
+Invalid `prisma.product.findMany()` invocation:
+
+The column `Product.externalCode` does not exist in the current database.
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+
+
+Transaction API error: Transaction not found. Transaction ID is invalid, refers to an old closed transaction Prisma doesn't have information about anymore, or was obtained before disconnecting.
+
+
+
+Invalid `prisma.inventoryLine.create()` invocation:
+
+prisma:error 
+
+prisma:error 
+
+Invalid `prisma.inventoryLine.create()` invocation:
+
+Transaction API error: Transaction not found. Transaction ID is invalid, refers to an old closed transaction Prisma doesn't have information about anymore, or was obtained before disconnecting.
+
+
+
+
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+prisma:error Error in PostgreSQL connection: Error { kind: Db, cause: Some(DbError { severity: "FATAL", parsed_severity: Some(Fatal), code: SqlState(E57P05), message: "terminating connection due to idle-session timeout", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("postgres.c"), line: Some(3510), routine: Some("ProcessInterrupts") }) }
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+> Ready on http://0.0.0.0:3000
+
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+> Ready on http://0.0.0.0:3000
+
+(node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+(Use `node --trace-deprecation ...` to show where the warning was created)

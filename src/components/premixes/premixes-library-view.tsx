@@ -192,7 +192,7 @@ export function PremixesLibraryView({
                         size="sm"
                         variant="default"
                         onClick={() => onAddToMyPremixes(premix)}
-                        disabled={isAdding === premix.id}
+                        disabled={isAdding != null}
                         className="shadow-lg"
                       >
                         <Download className="mr-1.5 h-3.5 w-3.5" />

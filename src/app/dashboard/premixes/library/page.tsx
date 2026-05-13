@@ -29,6 +29,8 @@ export default function PremixesLibraryPage() {
     const barId = getWorkingBarId(user);
     const { toast } = useToast();
 
+    const cloneFromLibraryLock = React.useRef(false);
+
     const handleOpenSheet = (premix?: Product) => {
         setEditingPremix(premix);
         setIsSheetOpen(true);
@@ -42,11 +44,19 @@ export default function PremixesLibraryPage() {
 
     const handleAddToMyPremixes = async (premix: Product) => {
         if (!premix || !barId || !user) return;
+        if (cloneFromLibraryLock.current || isAdding) return;
+        cloneFromLibraryLock.current = true;
 
         setIsAdding(premix.id);
 
         try {
-            const { id: _oldId, createdAt: _ca, updatedAt: _ua, ...rest } = premix as any;
+            const {
+                id: _oldId,
+                createdAt: _ca,
+                updatedAt: _ua,
+                defaultSupplierId: _supplier,
+                ...rest
+            } = premix as any;
             const res = await fetch('/api/products', {
                 method: 'POST',
                 headers: {
@@ -55,6 +65,7 @@ export default function PremixesLibraryPage() {
                 body: JSON.stringify({
                     product: {
                         ...rest,
+                        defaultSupplierId: null,
                         isInLibrary: false,
                         isActive: premix.isActive ?? true,
                     },
@@ -85,6 +96,7 @@ export default function PremixesLibraryPage() {
             });
         } finally {
             setIsAdding(null);
+            cloneFromLibraryLock.current = false;
         }
     };
 

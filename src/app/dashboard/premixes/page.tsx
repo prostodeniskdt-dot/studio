@@ -32,24 +32,6 @@ export default function PremixesPage() {
     const barId = getWorkingBarId(user);
     const { toast } = useToast();
 
-    // #region agent log
-    const __dbg = React.useCallback((message: string, data: Record<string, unknown>) => {
-        fetch('http://127.0.0.1:7368/ingest/4b9e7ee6-7078-4b91-881c-e050e57a31cc', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '6a8e21' },
-            body: JSON.stringify({
-                sessionId: '6a8e21',
-                runId: 'products-sync',
-                hypothesisId: 'A+C',
-                location: 'src/app/dashboard/premixes/page.tsx',
-                message,
-                data,
-                timestamp: Date.now(),
-            }),
-        }).catch(() => {});
-    }, []);
-    // #endregion
-
     const handleSendToLibrary = React.useCallback((premix: Product) => {
         setPremixToSendToLibrary(premix);
     }, []);
@@ -60,7 +42,6 @@ export default function PremixesPage() {
         setIsSendingToLibrary(true);
 
         try {
-            __dbg('premixSendToLibrary:start', { premixId: premixToSendToLibrary.id, barId });
             const res = await fetch(`/api/products/${premixToSendToLibrary.id}`, {
                 method: 'PATCH',
                 headers: {
@@ -70,7 +51,6 @@ export default function PremixesPage() {
             });
             const json = await res.json();
             if (!res.ok || json?.ok === false) throw new Error(json?.error || 'Failed');
-            __dbg('premixSendToLibrary:success', { premixId: premixToSendToLibrary.id, barId });
 
             if (typeof window !== 'undefined' && barId) {
                 try {
@@ -81,7 +61,6 @@ export default function PremixesPage() {
             }
 
             refreshProducts();
-            __dbg('premixSendToLibrary:refreshCalled', { premixId: premixToSendToLibrary.id, barId });
 
             toast({
                 title: 'Премикс отправлен в библиотеку',
@@ -89,7 +68,6 @@ export default function PremixesPage() {
             });
             setPremixToSendToLibrary(null);
         } catch {
-            __dbg('premixSendToLibrary:error', { premixId: premixToSendToLibrary?.id, barId });
             toast({
                 variant: 'destructive',
                 title: 'Ошибка отправки в библиотеку',

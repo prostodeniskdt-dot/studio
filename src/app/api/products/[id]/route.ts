@@ -2,24 +2,7 @@ import { prisma } from '@/lib/db';
 import { requireUserId } from '@/lib/auth-server';
 import { jsonResponse, readJson, statusFromApiError } from '@/lib/http';
 import { resolveWorkingBarContext } from '@/lib/bar-access';
-import { appendFile } from 'node:fs/promises';
-import { resolve as resolvePath } from 'node:path';
-
-// #region agent log
-async function __dbgApi(message: string, data: Record<string, unknown>) {
-  const line = JSON.stringify({
-    sessionId: '6a8e21',
-    runId: 'products-sync',
-    hypothesisId: 'C',
-    location: 'src/app/api/products/[id]/route.ts',
-    message,
-    data,
-    timestamp: Date.now(),
-  });
-  const p = resolvePath(process.cwd(), 'debug-6a8e21.log');
-  await appendFile(p, line + '\n').catch(() => {});
-}
-// #endregion
+import { prismaProductPatchData } from '@/lib/api/product-patch-data';
 
 function mapProduct(p: any) {
   return {
@@ -30,11 +13,19 @@ function mapProduct(p: any) {
 }
 
 type PatchBody = {
-  // Generic partial update
   product?: Record<string, unknown>;
-  // Convenience actions
   sendToLibrary?: boolean;
 };
+
+async function normalizeDefaultSupplierIdForBar(supplierId: unknown, barId: string | null): Promise<string | null> {
+  if (supplierId === null || supplierId === '') return null;
+  if (typeof supplierId !== 'string' || !barId) return null;
+  const found = await prisma.supplier.findFirst({
+    where: { id: supplierId, barId },
+    select: { id: true },
+  });
+  return found ? supplierId : null;
+}
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
@@ -42,23 +33,15 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     const { barId: workingBarId, access } = await resolveWorkingBarContext(uid);
     const { id } = await ctx.params;
     if (access === 'viewer') {
-      await __dbgApi('PATCH:forbidden_viewer', { uid, id });
       return jsonResponse({ ok: false, error: 'Forbidden' }, { status: 403 });
     }
     const body = await readJson<PatchBody>(req);
-    await __dbgApi('PATCH:start', {
-      uid,
-      workingBarId,
-      id,
-      hasProductPatch: Boolean(body.product),
-      sendToLibrary: body.sendToLibrary === true,
-    });
 
     const existing = await prisma.product.findUnique({ where: { id } });
     if (!existing) return jsonResponse({ ok: false, error: 'Not found' }, { status: 404 });
 
-    // Персональные — бар работы или автор; общая библиотека — любой авторизованный с правом записи.
-    const isLibraryGlobal = existing.isInLibrary === true && (existing.barId == null || existing.barId === '');
+    const isLibraryGlobal =
+      existing.isInLibrary === true && (existing.barId == null || existing.barId === '');
     const canEdit =
       (existing.barId && existing.barId === workingBarId) ||
       (existing.createdByUserId && existing.createdByUserId === uid) ||
@@ -66,24 +49,39 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     if (!canEdit) return jsonResponse({ ok: false, error: 'Forbidden' }, { status: 403 });
 
     const sendToLibrary = body.sendToLibrary === true;
-    const patch = body.product ?? {};
+    const rawPatch = { ...(body.product ?? {}) };
+
+    const premixIngredients = rawPatch?.premixIngredients as
+      | Array<{ productId: string; volumeMl: number; ratio: number }>
+      | undefined;
+
+    const prismaPatch = prismaProductPatchData(rawPatch);
+
+    if (Object.prototype.hasOwnProperty.call(prismaPatch, 'defaultSupplierId')) {
+      if (sendToLibrary) {
+        prismaPatch.defaultSupplierId = null;
+      } else {
+        prismaPatch.defaultSupplierId = await normalizeDefaultSupplierIdForBar(
+          prismaPatch.defaultSupplierId,
+          workingBarId
+        );
+      }
+    }
 
     const updated = await prisma.product.update({
       where: { id },
       data: {
-        ...(patch as any),
+        ...prismaPatch,
         ...(sendToLibrary
           ? {
               isInLibrary: true,
               barId: null,
+              defaultSupplierId: null,
             }
           : {}),
       },
     });
 
-    const premixIngredients = (patch as any)?.premixIngredients as
-      | Array<{ productId: string; volumeMl: number; ratio: number }>
-      | undefined;
     if (premixIngredients) {
       await prisma.premixIngredient.deleteMany({ where: { premixId: id } });
       if (premixIngredients.length > 0) {
@@ -94,23 +92,14 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
             volumeMl: ing.volumeMl,
             ratio: ing.ratio,
           })),
+          skipDuplicates: true,
         });
       }
     }
 
-    await __dbgApi('PATCH:success', {
-      uid,
-      id,
-      isInLibrary: updated.isInLibrary,
-      barId: updated.barId,
-      isActive: updated.isActive,
-      isPremix: updated.isPremix,
-      category: updated.category,
-    });
     return jsonResponse({ ok: true, product: mapProduct(updated) });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    await __dbgApi('PATCH:error', { error: msg });
     return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }
@@ -139,4 +128,3 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }
     return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
   }
 }
-

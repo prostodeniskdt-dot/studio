@@ -1,0 +1,155 @@
+import { prisma } from '@/lib/db';
+import { BULK_INTERACTIVE_TRANSACTION } from '@/lib/db/transaction-defaults';
+import { requireUserId } from '@/lib/auth-server';
+import { jsonResponse, readJson, statusFromApiError } from '@/lib/http';
+import { assertCanReadBar, assertCanWriteBar } from '@/lib/bar-access';
+
+function toIso(d: Date | null | undefined) {
+  return d ? d.toISOString() : null;
+}
+
+export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  try {
+    const uid = await requireUserId(req);
+    const { id } = await ctx.params;
+
+    const order = await prisma.purchaseOrder.findFirst({
+      where: { id },
+      include: { lines: true, supplier: true },
+    });
+    if (!order) return jsonResponse({ ok: false, error: 'Not found' }, { status: 404 });
+    await assertCanReadBar(uid, order.barId);
+
+    return jsonResponse({
+      ok: true,
+      order: {
+        ...order,
+        orderDate: toIso(order.orderDate),
+        expectedDeliveryDate: toIso(order.expectedDeliveryDate),
+        createdAt: toIso(order.createdAt),
+        updatedAt: toIso(order.updatedAt),
+      },
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
+  }
+}
+
+type PatchBody = {
+  order?: Partial<{
+    supplierId: string;
+    status: string;
+    orderDate: string; // ISO
+  }>;
+  // line operations
+  addLine?: { productId: string };
+  deleteLineId?: string;
+  updateLines?: Array<{ id: string; quantity: number; costPerItem: number; receivedQuantity: number }>;
+};
+
+export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  try {
+    const uid = await requireUserId(req);
+    const { id } = await ctx.params;
+    const body = await readJson<PatchBody>(req);
+
+    const order = await prisma.purchaseOrder.findFirst({ where: { id } });
+    if (!order) return jsonResponse({ ok: false, error: 'Not found' }, { status: 404 });
+    await assertCanWriteBar(uid, order.barId);
+
+    if (body.order) {
+      await prisma.purchaseOrder.update({
+        where: { id },
+        data: {
+          ...(body.order.supplierId ? { supplierId: body.order.supplierId } : {}),
+          ...(body.order.status ? { status: body.order.status as any } : {}),
+          ...(body.order.orderDate ? { orderDate: new Date(body.order.orderDate) } : {}),
+        },
+      });
+    }
+
+    if (body.addLine) {
+      const product = await prisma.product.findUnique({ where: { id: body.addLine.productId } });
+      await prisma.purchaseOrderLine.create({
+        data: {
+          purchaseOrderId: id,
+          productId: body.addLine.productId,
+          quantity: 1,
+          costPerItem: product?.costPerBottle ?? 0,
+          receivedQuantity: 0,
+        },
+      });
+    }
+
+    if (body.deleteLineId) {
+      await prisma.purchaseOrderLine.delete({ where: { id: body.deleteLineId } });
+    }
+
+    const updateLines = body.updateLines;
+    if (updateLines && updateLines.length > 0) {
+      const lineIds = updateLines.map((l) => l.id);
+      const foreignLines = await prisma.purchaseOrderLine.findMany({
+        where: { id: { in: lineIds }, NOT: { purchaseOrderId: id } },
+        select: { id: true },
+      });
+      if (foreignLines.length > 0) {
+        return jsonResponse({ ok: false, error: 'Some lines do not belong to this order' }, { status: 400 });
+      }
+
+      await prisma.$transaction(
+        async (tx) => {
+          for (const l of updateLines) {
+            await tx.purchaseOrderLine.update({
+              where: { id: l.id },
+              data: {
+                quantity: l.quantity,
+                costPerItem: l.costPerItem,
+                receivedQuantity: l.receivedQuantity,
+              },
+            });
+          }
+        },
+        BULK_INTERACTIVE_TRANSACTION
+      );
+    }
+
+    const updated = await prisma.purchaseOrder.findFirst({
+      where: { id, barId: order.barId },
+      include: { lines: true, supplier: true },
+    });
+
+    return jsonResponse({
+      ok: true,
+      order: updated
+        ? {
+            ...updated,
+            orderDate: toIso(updated.orderDate),
+            expectedDeliveryDate: toIso(updated.expectedDeliveryDate),
+            createdAt: toIso(updated.createdAt),
+            updatedAt: toIso(updated.updatedAt),
+          }
+        : null,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
+  }
+}
+
+export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  try {
+    const uid = await requireUserId(req);
+    const { id } = await ctx.params;
+
+    const order = await prisma.purchaseOrder.findFirst({ where: { id } });
+    if (!order) return jsonResponse({ ok: false, error: 'Not found' }, { status: 404 });
+    await assertCanWriteBar(uid, order.barId);
+
+    await prisma.purchaseOrder.delete({ where: { id } });
+    return jsonResponse({ ok: true });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return jsonResponse({ ok: false, error: msg }, { status: statusFromApiError(msg) });
+  }
+}

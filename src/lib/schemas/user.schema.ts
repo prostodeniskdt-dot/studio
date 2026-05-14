@@ -1,0 +1,40 @@
+import { z } from 'zod';
+
+export const userRoleSchema = z.enum(['admin', 'manager', 'bartender']);
+
+const consentRecordSchema = z.object({
+  accepted: z.boolean(),
+  version: z.string(),
+  timestamp: z.any(), // Firestore Timestamp
+  ipAddress: z.string().optional(),
+  userAgent: z.string().optional(),
+  documentHash: z.string().optional(),
+});
+
+const cookieConsentSchema = z.object({
+  analytics: z.boolean(),
+  marketing: z.boolean(),
+  timestamp: z.any(), // Firestore Timestamp
+  version: z.string(),
+});
+
+export const userProfileSchema = z.object({
+  id: z.string().min(1),
+  displayName: z.string().min(1, 'Имя пользователя обязательно'),
+  email: z.string().email('Некорректный email'),
+  role: userRoleSchema,
+  createdAt: z.any(), // Firestore Timestamp
+  city: z.string().optional(),
+  establishment: z.string().optional(),
+  phone: z.string().optional(),
+  socialLink: z.string().url().optional().or(z.literal('')),
+  isBanned: z.boolean().optional(),
+  consents: z.object({
+    termsAndPrivacy: consentRecordSchema.optional(),
+    cookies: cookieConsentSchema.optional(),
+  }).optional(),
+});
+
+export type UserProfileInput = z.input<typeof userProfileSchema>;
+export type UserProfileOutput = z.output<typeof userProfileSchema>;
+

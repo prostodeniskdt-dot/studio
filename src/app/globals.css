@@ -1,0 +1,287 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 45 92% 55%;
+    --primary-foreground: 240 10% 3.9%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 45 92% 55%;
+    --radius: 0.5rem;
+
+    --chart-1: 45 95% 51%;
+    --chart-2: 240 5% 65%;
+    --chart-3: 164 76% 44%;
+    --chart-4: 341 91% 55%;
+    --chart-5: 23 98% 58%;
+
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 45 92% 55%;
+    --sidebar-primary-foreground: 240 10% 3.9%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 45 92% 55%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 45 92% 55%;
+    --primary-foreground: 240 10% 3.9%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 142 71% 50%;
+    --success-foreground: 0 0% 98%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 45 92% 55%;
+
+    --chart-1: 45 95% 51%;
+    --chart-2: 240 5% 25%;
+    --chart-3: 164 76% 44%;
+    --chart-4: 341 91% 55%;
+    --chart-5: 23 98% 58%;
+
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 45 92% 55%;
+    --sidebar-primary-foreground: 240 10% 3.9%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 45 92% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    @apply leading-relaxed;
+  }
+  
+  /* Typography hierarchy */
+  h1 {
+    @apply text-4xl md:text-5xl font-bold tracking-tight;
+  }
+  
+  h2 {
+    @apply text-2xl md:text-3xl font-semibold tracking-tight;
+  }
+  
+  h3 {
+    @apply text-xl md:text-2xl font-semibold;
+  }
+  
+  /* Smooth transitions for theme switching */
+  * {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+}
+
+/* Bar Chart Animation */
+@layer utilities {
+  @keyframes scale-bar-up {
+    0% {
+      transform: scaleY(0);
+    }
+    20%, 60% {
+      transform: scaleY(var(--v));
+    }
+    100% {
+      transform: scaleY(0);
+    }
+  }
+
+  .bar {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    transform: scaleY(0);
+    animation: scale-bar-up 4s infinite ease-in-out;
+    rx: 2;
+    ry: 2;
+  }
+  
+  .bar-text {
+    font-size: 8px;
+    font-weight: 500;
+    text-anchor: middle;
+    fill: hsl(var(--foreground));
+    opacity: 0;
+  }
+
+  .bar-1 { --v: 0.62; fill: hsl(var(--chart-1)); animation-delay: 0s; }
+  .bar-2 { --v: 0.87; fill: hsl(var(--chart-2)); animation-delay: 0.2s; }
+  .bar-3 { --v: 0.50; fill: hsl(var(--chart-3)); animation-delay: 0.4s; }
+  .bar-4 { --v: 0.75; fill: hsl(var(--chart-4)); animation-delay: 0.6s; }
+  .bar-5 { --v: 0.68; fill: hsl(var(--chart-5)); animation-delay: 0.8s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bar, .bar-text {
+      animation: none !important;
+    }
+    .bar {
+      transform: scaleY(var(--v));
+    }
+    .bar-text {
+      opacity: 1;
+    }
+  }
+  
+  /* Running Man Loader Animation */
+  @keyframes run-track {
+    0% {
+      transform: translateX(-24px);
+    }
+    100% {
+      transform: translateX(calc(100% - 24px));
+    }
+  }
+
+  @keyframes fill-progress {
+    0% {
+      width: 0%;
+    }
+    100% {
+      width: 100%;
+    }
+  }
+
+  @keyframes bob-and-run {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+
+  .animate-run-track {
+    animation: run-track 2s linear infinite;
+  }
+  
+  .animate-fill-progress {
+    animation: fill-progress 2s linear infinite;
+  }
+
+  .animate-bob-and-run {
+    animation: bob-and-run 0.5s ease-in-out infinite;
+  }
+  
+  /* Gradient text utility */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent;
+  }
+  
+  /* Animation keyframes */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slide-in {
+    from {
+      transform: translateY(-10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes scale-in {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+  
+  .animate-slide-in {
+    animation: slide-in 0.3s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out;
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-in,
+    .animate-slide-in,
+    .animate-scale-in {
+      animation: none;
+    }
+  }
+  
+  /* Lightbulb glow animation */
+  @keyframes glow {
+    0%, 100% {
+      opacity: 1;
+      filter: brightness(1);
+    }
+    50% {
+      opacity: 0.7;
+      filter: brightness(1.5);
+    }
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+
+  /* iOS safe area — used by footer and sticky bars */
+  .pb-safe {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+  }
+}

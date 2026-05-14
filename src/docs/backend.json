@@ -1,0 +1,479 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the BarBoss application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The display name of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user",
+          "format": "email"
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user (admin, manager, bartender).",
+          "enum": ["admin", "manager", "bartender"]
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The timestamp when the user was created.",
+          "format": "date-time"
+        },
+        "city": {
+          "type": "string",
+          "description": "The city where the user is located."
+        },
+        "establishment": {
+          "type": "string",
+          "description": "The name of the user's bar or establishment."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The user's phone number."
+        },
+        "socialLink": {
+          "type": "string",
+          "description": "A URL to the user's social media profile (e.g., Telegram, WhatsApp).",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "displayName",
+        "email",
+        "role",
+        "createdAt"
+      ]
+    },
+    "Bar": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Bar",
+      "type": "object",
+      "description": "Represents a bar location.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the bar."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the bar."
+        },
+        "location": {
+          "type": "string",
+          "description": "The location of the bar."
+        },
+        "ownerUserId": {
+          "type": "string",
+          "description": "Reference to User. The user ID of the bar owner. (Relationship: User 1:N Bar)"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "location",
+        "ownerUserId"
+      ]
+    },
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a product in the global inventory catalog.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the product."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the product."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the product (e.g., Whiskey, Rum)."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the product image.",
+          "format": "uri"
+        },
+        "bottleVolumeMl": {
+          "type": "number",
+          "description": "The volume of the bottle in milliliters."
+        },
+        "costPerBottle": {
+          "type": "number",
+          "description": "The cost per bottle of the product."
+        },
+        "sellingPricePerPortion": {
+          "type": "number",
+          "description": "The selling price per portion of the product."
+        },
+        "portionVolumeMl": {
+          "type": "number",
+          "description": "The volume of one portion in milliliters."
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Whether the product is active or archived."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The timestamp when the product was created.",
+          "format": "date-time"
+        },
+        "reorderPointMl": {
+          "type": "number",
+          "description": "The minimum stock level in milliliters that triggers a reorder."
+        },
+        "reorderQuantity": {
+          "type": "number",
+          "description": "The default number of bottles to reorder."
+        },
+        "defaultSupplierId": {
+          "type": "string",
+          "description": "The ID of the default supplier for this product."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "category",
+        "bottleVolumeMl",
+        "costPerBottle",
+        "sellingPricePerPortion",
+        "portionVolumeMl",
+        "isActive",
+        "createdAt"
+      ]
+    },
+    "InventorySession": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "InventorySession",
+      "type": "object",
+      "description": "Represents an inventory session for a bar.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the inventory session."
+        },
+        "barId": {
+          "type": "string",
+          "description": "Reference to Bar. The bar ID for which this inventory session is conducted. (Relationship: Bar 1:N InventorySession)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the inventory session."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the inventory session (draft, in_progress, completed)."
+        },
+        "createdByUserId": {
+          "type": "string",
+          "description": "Reference to User. The user ID of the user who created the session. (Relationship: User 1:N InventorySession)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The timestamp when the inventory session was created.",
+          "format": "date-time"
+        },
+        "closedAt": {
+          "type": "string",
+          "description": "The timestamp when the inventory session was closed.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "barId",
+        "name",
+        "status",
+        "createdByUserId",
+        "createdAt"
+      ]
+    },
+    "InventoryLine": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "InventoryLine",
+      "type": "object",
+      "description": "Represents a line item in an inventory session, tracking stock levels and variances for a specific product.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the inventory line."
+        },
+        "inventorySessionId": {
+          "type": "string",
+          "description": "Reference to InventorySession. The inventory session ID to which this line item belongs. (Relationship: InventorySession 1:N InventoryLine)"
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. The product ID for this line item. (Relationship: Product 1:N InventoryLine)"
+        },
+        "startStock": {
+          "type": "number",
+          "description": "The starting stock level for the product in milliliters."
+        },
+        "purchases": {
+          "type": "number",
+          "description": "The quantity of the product purchased during the session."
+        },
+        "sales": {
+          "type": "number",
+          "description": "The quantity of the product sold during the session."
+        },
+        "endStock": {
+          "type": "number",
+          "description": "The ending stock level for the product in milliliters (actual count)."
+        },
+        "theoreticalEndStock": {
+          "type": "number",
+          "description": "The theoretical ending stock level calculated as startStock + purchases - sales."
+        },
+        "differenceVolume": {
+          "type": "number",
+          "description": "The difference between the actual and theoretical ending stock volume in milliliters."
+        },
+        "differenceMoney": {
+          "type": "number",
+          "description": "The difference in money between the actual and theoretical ending stock, calculated using the cost per bottle."
+        },
+        "differencePercent": {
+          "type": "number",
+          "description": "The percentage difference between the actual and theoretical ending stock."
+        }
+      },
+      "required": [
+        "id",
+        "inventorySessionId",
+        "productId",
+        "startStock",
+        "purchases",
+        "sales",
+        "endStock",
+        "theoreticalEndStock",
+        "differenceVolume",
+        "differenceMoney",
+        "differencePercent"
+      ]
+    },
+    "Supplier": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Supplier",
+      "type": "object",
+      "description": "Represents a supplier for a bar.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the supplier." },
+        "barId": { "type": "string", "description": "The bar this supplier is associated with." },
+        "name": { "type": "string", "description": "The name of the supplier." },
+        "contactName": { "type": "string", "description": "Contact person's name." },
+        "phone": { "type": "string", "description": "Supplier's phone number." },
+        "email": { "type": "string", "description": "Supplier's email address.", "format": "email" }
+      },
+      "required": ["id", "barId", "name"]
+    },
+    "PurchaseOrder": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PurchaseOrder",
+      "type": "object",
+      "description": "Represents a purchase order made to a supplier.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the purchase order." },
+        "barId": { "type": "string", "description": "The bar this order belongs to." },
+        "supplierId": { "type": "string", "description": "Reference to the Supplier." },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "ordered", "partially_received", "received", "cancelled"],
+          "description": "The current status of the purchase order."
+        },
+        "orderDate": { "type": "string", "format": "date-time", "description": "The date the order was placed." },
+        "expectedDeliveryDate": { "type": "string", "format": "date-time", "description": "The expected delivery date." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of creation." },
+        "createdByUserId": { "type": "string", "description": "The user who created the order." }
+      },
+      "required": ["id", "barId", "supplierId", "status", "orderDate", "createdAt", "createdByUserId"]
+    },
+    "PurchaseOrderLine": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PurchaseOrderLine",
+      "type": "object",
+      "description": "Represents a single line item in a purchase order.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the line item." },
+        "purchaseOrderId": { "type": "string", "description": "Reference to the PurchaseOrder." },
+        "productId": { "type": "string", "description": "Reference to the Product." },
+        "quantity": { "type": "number", "description": "Number of bottles ordered." },
+        "costPerItem": { "type": "number", "description": "The cost of a single bottle at the time of order." },
+        "receivedQuantity": { "type": "number", "description": "Number of bottles actually received." }
+      },
+      "required": ["id", "purchaseOrderId", "productId", "quantity", "costPerItem"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Secured by path-based ownership; only the user can read/write their own document.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+            "entityName": "AdminRole",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "isAdmin": { "type": "boolean", "const": true }
+                },
+                "required": ["isAdmin"]
+            },
+            "description": "Documents in this collection denote admin roles. The existence of a document for a user ID signifies that the user has admin rights. This is used for fast, secure checks in Firestore rules."
+        }
+      },
+      {
+        "path": "/bars/{barId}",
+        "definition": {
+          "entityName": "Bar",
+          "schema": {
+            "$ref": "#/backend/entities/Bar"
+          },
+          "description": "Stores bar locations and details. The `ownerUserId` field specifies the owner of the bar.",
+          "params": [
+            {
+              "name": "barId",
+              "description": "The unique identifier of the bar."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": {
+            "$ref": "#/backend/entities/Product"
+          },
+          "description": "Global catalog of all products. Any authenticated user can contribute to this list.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "The unique identifier of the product."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/bars/{barId}/inventorySessions/{inventorySessionId}",
+        "definition": {
+          "entityName": "InventorySession",
+          "schema": {
+            "$ref": "#/backend/entities/InventorySession"
+          },
+          "description": "Stores inventory session details. Includes denormalized `barId` and `createdByUserId` for authorization independence.",
+          "params": [
+            {
+              "name": "barId",
+              "description": "The unique identifier of the bar."
+            },
+            {
+              "name": "inventorySessionId",
+              "description": "The unique identifier of the inventory session."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/bars/{barId}/inventorySessions/{inventorySessionId}/lines/{inventoryLineId}",
+        "definition": {
+          "entityName": "InventoryLine",
+          "schema": {
+            "$ref": "#/backend/entities/InventoryLine"
+          },
+          "description": "Stores individual line items for each inventory session. Secured via the parent `inventorySessionId`.",
+          "params": [
+            {
+              "name": "barId",
+              "description": "The unique identifier of the bar."
+            },
+            {
+              "name": "inventorySessionId",
+              "description": "The unique identifier of the inventory session."
+            },
+            {
+              "name": "inventoryLineId",
+              "description": "The unique identifier of the inventory line."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/bars/{barId}/suppliers/{supplierId}",
+        "definition": {
+          "entityName": "Supplier",
+          "schema": { "$ref": "#/backend/entities/Supplier" },
+          "description": "Stores supplier information for a specific bar.",
+          "params": [
+            { "name": "barId", "description": "The unique identifier of the bar." },
+            { "name": "supplierId", "description": "The unique identifier of the supplier." }
+          ]
+        }
+      },
+      {
+        "path": "/bars/{barId}/purchaseOrders/{purchaseOrderId}",
+        "definition": {
+          "entityName": "PurchaseOrder",
+          "schema": { "$ref": "#/backend/entities/PurchaseOrder" },
+          "description": "Stores purchase order information for a specific bar.",
+          "params": [
+            { "name": "barId", "description": "The unique identifier of the bar." },
+            { "name": "purchaseOrderId", "description": "The unique identifier of the purchase order." }
+          ]
+        }
+      },
+      {
+        "path": "/bars/{barId}/purchaseOrders/{purchaseOrderId}/lines/{purchaseOrderLineId}",
+        "definition": {
+          "entityName": "PurchaseOrderLine",
+          "schema": { "$ref": "#/backend/entities/PurchaseOrderLine" },
+          "description": "Stores line items for a specific purchase order.",
+          "params": [
+            { "name": "barId", "description": "The unique identifier of the bar." },
+            { "name": "purchaseOrderId", "description": "The unique identifier of the purchase order." },
+            { "name": "purchaseOrderLineId", "description": "The unique identifier of the purchase order line." }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the BarBoss inventory management application, focusing on role-based access control and efficient data retrieval for inventory calculations and reporting. Key considerations are authorization independence, structural segregation, and clear data modeling.  The design ensures that security rules are simple, robust, and debuggable.\n\n**Authorization Independence:**  We avoid using `get()` calls in security rules by denormalizing authorization data. For instance, the `ownerUserId` from the `Bar` document is not only a reference but can also be copied to subcollections like `inventorySessions` to ensure rules can validate access without needing to read the parent `Bar` document.\n\n**Structural Segregation:** Collections are segregated based on access requirements.  User profiles are stored in `/users/{userId}`, ensuring private data is secured by path-based ownership. Collaborative data, such as inventory sessions and lines, resides in subcollections under the `Bar` document to enforce consistent security posture based on the bar context.\n\n**Access Modeling:**\n*   **Path-Based Ownership:** `/users/{userId}` allows straightforward ownership-based security rules for user data.\n*   **Hierarchical Paths for User-Owned Data**:  `/bars/{barId}/inventorySessions/{inventorySessionId}` creates a clear ownership hierarchy, simplifying rules related to bar-specific inventory.\n* **Bar Membership**: The `/bars/{barId}/members/{userId}` collection establishes a many-to-many relationship between bars and users, defining roles within a specific bar.\n\n**QAPs (Rules are not Filters):** The structure supports secure `list` operations. Access to `products` or `inventorySessions` is controlled by the `barId`, allowing listing only the resources related to a specific bar.  The `roles_admin` collection enables efficient admin role checks without reading user documents during listing.\n\n**Invariants:**  Timestamps (`createdAt`, `updatedAt`) can be enforced using server timestamps in Firestore rules. The structure also enables maintaining the integrity of ownership (e.g., only the `ownerUserId` can modify bar details).\n\n**Role-Based Access Control:** The `role` field within the `users` collection, combined with the existence of documents in `/roles_admin/{userId}`, supports role-based access control. Admins have a dedicated collection, providing a fast existence check in security rules."
+  }
+}
+    

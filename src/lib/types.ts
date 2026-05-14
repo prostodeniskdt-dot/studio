@@ -1,0 +1,213 @@
+export type Timestamp = string | Date;
+
+export type UserRole = 'admin' | 'manager' | 'bartender';
+
+export interface ConsentRecord {
+  accepted: boolean;
+  version: string; // версия документа (например "1.0")
+  timestamp: Timestamp;
+  ipAddress?: string;
+  userAgent?: string;
+  documentHash?: string; // хэш текста документа для аудита
+}
+
+export interface CookieConsent {
+  analytics: boolean;
+  marketing: boolean;
+  timestamp: Timestamp;
+  version: string;
+}
+
+export interface UserProfile {
+  id: string;
+  displayName: string;
+  email: string;
+  role: UserRole;
+  createdAt: Timestamp;
+  // New survey fields
+  city?: string;
+  establishment?: string;
+  phone?: string;
+  socialLink?: string;
+  isBanned?: boolean;
+  // Consent tracking
+  consents?: {
+    termsAndPrivacy?: ConsentRecord;
+    cookies?: CookieConsent;
+  };
+}
+
+export type ProductCategory = 'Whiskey' | 'Rum' | 'Vodka' | 'Gin' | 'Tequila' | 'Liqueur' | 'Wine' | 'Beer' | 'Syrup' | 'Brandy' | 'Vermouth' | 'Absinthe' | 'Bitters' | 'Premix' | 'Other';
+
+// Ингредиент в составе примикса
+export interface PremixIngredient {
+  productId: string; // ID продукта-ингредиента (из глобальной коллекции products)
+  volumeMl: number;  // Объем ингредиента в мл на один примикс
+  ratio: number;     // Доля от общего объема (0-1) - для валидации
+}
+export type WhiskeySubCategory = 'Scotch' | 'Irish' | 'Bourbon' | 'Japanese' | 'Other';
+export type RumSubCategory = 'White' | 'Gold' | 'Dark' | 'Spiced' | 'Other';
+export type GinSubCategory = 'London Dry' | 'Old Tom' | 'Plymouth' | 'Other';
+export type WineSubCategory = 'Red' | 'White' | 'Rose' | 'Sparkling' | 'Other';
+export type BeerSubCategory = 'Lager' | 'Ale' | 'Stout' | 'IPA' | 'Other';
+export type BrandySubCategory = 'Cognac' | 'Armagnac' | 'Calvados' | 'Other';
+export type VermouthSubCategory = 'Dry' | 'Sweet' | 'Bianco' | 'Other';
+
+export type ProductSubCategory = WhiskeySubCategory | RumSubCategory | GinSubCategory | WineSubCategory | BeerSubCategory | BrandySubCategory | VermouthSubCategory | string;
+
+
+export interface Product {
+  id: string; 
+  name: string;
+  category: ProductCategory;
+  subCategory?: ProductSubCategory;
+  imageUrl?: string;
+  
+  // Экономика (опциональные поля для обратной совместимости)
+  costPerBottle?: number;
+  sellingPricePerPortion?: number;
+  portionVolumeMl?: number;
+  
+  // Профиль бутылки
+  bottleVolumeMl: number;
+  fullBottleWeightG?: number;
+  emptyBottleWeightG?: number;
+
+  // Закупки
+  reorderPointMl?: number;
+  reorderQuantity?: number;
+  defaultSupplierId?: string;
+
+  // Примиксы
+  isPremix?: boolean; // true если это примикс (category === 'Premix')
+  premixIngredients?: PremixIngredient[]; // Состав примикса
+  barId?: string; // ID бара для ВСЕХ продуктов (undefined для продуктов в библиотеке)
+  costCalculationMode?: 'auto' | 'manual'; // 'auto' = сумма ингредиентов, 'manual' = указано вручную
+  
+  // Библиотека и владение
+  isInLibrary?: boolean; // true = продукт в общей библиотеке (виден всем пользователям)
+  createdByUserId?: string; // ID пользователя, создавшего продукт (для аудита)
+
+  externalCode?: string | null;
+  barcode?: string | null;
+  /// false — только штуки/кг в строке инвентаризации; калькулятор по весу не нужен
+  usesVolumeCalculator?: boolean;
+
+  isActive: boolean;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export type InventorySessionStatus = 'draft' | 'in_progress' | 'completed';
+
+export interface InventorySession {
+  id: string;
+  barId: string;
+  name: string;
+  status: InventorySessionStatus;
+  createdByUserId: string;
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
+  closedAt?: Timestamp;
+  importListHash?: string | null;
+  lines?: InventoryLine[]; // Can be a subcollection
+}
+
+export interface InventoryLine {
+  id: string; 
+  productId: string;
+  inventorySessionId: string;
+
+  /** volume_ml — мл; pieces — количество штук (или кг как единица учёта) */
+  stockMode?: 'volume_ml' | 'pieces';
+  
+  // All volumes in ml
+  startStock: number;
+  purchases: number;
+  endStock: number;
+  
+  // Sales in number of portions
+  sales: number; 
+
+  // Calculated fields - now adding them here as they are part of the line item
+  theoreticalEndStock: number;
+  differenceVolume: number;
+  differenceMoney: number;
+  differencePercent: number;
+}
+
+// UI-specific, not stored in DB
+export interface CalculatedInventoryLine extends InventoryLine {
+  product?: Product;
+}
+
+export interface Bar {
+  id: string;
+  name: string;
+  location: string;
+  ownerUserId: string;
+}
+
+export interface Supplier {
+    id: string;
+    barId: string;
+    name: string;
+    contactName?: string;
+    phone?: string;
+    email?: string;
+}
+
+export type PurchaseOrderStatus = 'draft' | 'ordered' | 'partially_received' | 'received' | 'cancelled';
+
+export interface PurchaseOrder {
+    id: string;
+    barId: string;
+    supplierId: string;
+    // For UI
+    supplier?: Supplier;
+    status: PurchaseOrderStatus;
+    orderDate: Timestamp;
+    expectedDeliveryDate?: Timestamp;
+    createdAt: Timestamp;
+    createdByUserId: string;
+    lines?: PurchaseOrderLine[];
+    totalAmount?: number;
+}
+
+export interface PurchaseOrderLine {
+    id: string;
+    purchaseOrderId: string;
+    productId: string;
+    // For UI
+    product?: Product;
+    quantity: number;
+    costPerItem: number;
+    receivedQuantity: number;
+}
+
+
+// --- New Type for Holiday Calendar ---
+export interface Holiday {
+    date: string; // YYYY-MM-DD
+    name: string;
+}
+
+// --- Consent Logging ---
+export interface ConsentLog {
+  userId: string;
+  consentType: 'terms_and_privacy' | 'cookies' | 'marketing';
+  accepted: boolean;
+  version: string;
+  timestamp: Timestamp;
+  ipAddress?: string;
+  userAgent?: string;
+  documentHash?: string;
+}
+
+// --- Deletion Request ---
+export interface DeletionRequest {
+  userId: string;
+  requestedAt: Timestamp;
+  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  completedAt?: Timestamp;
+}

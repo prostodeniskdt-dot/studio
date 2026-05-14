@@ -1,0 +1,27 @@
+---
+description: Safe Prisma transactions — no parallel tx calls, timeouts for bulk writes
+globs: "**/api/**/*.ts"
+alwaysApply: false
+---
+
+# Prisma transactions (BAR BOSS / studio)
+
+## Interactive transactions
+
+When using `prisma.$transaction(async (tx) => { ... })`:
+
+- Run `await tx.*` **sequentially**. Do **not** use `Promise.all`, `Promise.race`, or `array.map` firing multiple `tx` queries without awaiting one-by-one. Parallel use of the same interactive client causes **Transaction not found** / invalid transaction errors.
+- Use `tx` for all reads and writes that must commit together — avoid calling root `prisma` inside the callback for those same units of work.
+
+## Bulk operations (API)
+
+- For imports or PATCHes affecting many rows, pass explicit options — reuse `BULK_INTERACTIVE_TRANSACTION` from `src/lib/db/transaction-defaults.ts`.
+- Prefer validating foreign keys / ownership **before** or **inside** the transaction consistently (e.g. line ids must belong to the current session or purchase order).
+
+## Client: large session PATCH bodies
+
+Many `upsertLines` / `addProductLines` in one JSON can hit proxy or performance limits. Use `patchInventorySessionInLineChunks` from `src/lib/sessions/chunked-patch.ts` (or the same chunking pattern) so each request stays within `SESSION_PATCH_LINES_CHUNK_SIZE`.
+
+## Batch array form
+
+`prisma.$transaction([ prisma.model.update(...), ... ])` avoids parallel `tx` misuse but Prisma 6 typings may not expose `timeout`/`maxWait` for that overload. For large bulk updates with timeouts, use an **interactive** transaction and a **sequential** `for` loop with `await tx.*`.

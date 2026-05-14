@@ -35,6 +35,19 @@ function roundToStep(value: number, step: number): number {
   return Math.round(value / step) * step;
 }
 
+/** Небольшой положительный сдвиг объёма (мл); не показываем в интерфейсе — компенсирует характерную недооценку по весу. */
+export const CALCULATOR_VOLUME_BIAS_ML = 20;
+
+/** Читаемый вывод объёма (до 1 знака); для отправки используйте исходное число миллилитров. */
+export function formatVolumeMlForDisplay(ml: number): string {
+  if (!Number.isFinite(ml)) return '—';
+  const quantized = Math.round(ml * 10) / 10;
+  return new Intl.NumberFormat('ru-RU', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  }).format(quantized);
+}
+
 export function calculateVolumeMl(input: CalculateVolumeInput): CalculateVolumeResult {
   const stepInput = input.roundingStepMl;
   const useRounding = isFinitePositiveNumber(stepInput);
@@ -73,9 +86,8 @@ export function calculateVolumeMl(input: CalculateVolumeInput): CalculateVolumeR
 
     const raw = (currentLiquidWeight / liquidNetWeight) * bv;
     const clamped = clamp(raw, 0, bv);
-    const volumeMl = useRounding
-      ? clamp(roundToStep(clamped, stepInput), 0, bv)
-      : clamped;
+    const stepped = useRounding ? clamp(roundToStep(clamped, stepInput), 0, bv) : clamped;
+    const volumeMl = clamp(stepped + CALCULATOR_VOLUME_BIAS_ML, 0, bv);
 
     return { ok: true, volumeMl, method: 'weight', roundingStepMl, warnings };
   }

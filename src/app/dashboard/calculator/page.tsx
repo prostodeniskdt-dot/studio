@@ -19,7 +19,7 @@ import { translateCategory, productCategories, productSubCategories, translateSu
 import { ProductSearch } from '@/components/products/product-search';
 import { expandPremixToIngredients } from '@/lib/premix-utils';
 import { Checkbox } from '@/components/ui/checkbox';
-import { calculateVolumeMl } from '@/lib/calculator';
+import { calculateVolumeMl, formatVolumeMlForDisplay } from '@/lib/calculator';
 import { patchInventorySessionInLineChunks } from '@/lib/sessions/chunked-patch';
 import { pickLatestInProgressSession } from '@/lib/sessions/pick-latest-active';
 
@@ -51,6 +51,8 @@ export default function UnifiedCalculatorPage() {
   
   const [calculatedVolume, setCalculatedVolume] = React.useState<number | null>(null);
   const [calculationMethod, setCalculationMethod] = React.useState<'weight' | null>(null);
+  /** 0 — без шага округления; null — расчёт ещё не выполняли */
+  const [volumeRoundingStepMl, setVolumeRoundingStepMl] = React.useState<number | null>(null);
   
   const [isSending, setIsSending] = React.useState(false);
   
@@ -94,6 +96,7 @@ export default function UnifiedCalculatorPage() {
     setSelectedProductId(productId);
     setCalculatedVolume(null);
     setCalculationMethod(null);
+    setVolumeRoundingStepMl(null);
     // Сбрасываем состояние разложения при выборе нового продукта
     setShouldExpandPremix(false);
     setSendMode('set');
@@ -133,6 +136,7 @@ export default function UnifiedCalculatorPage() {
     setCurrentWeight('');
     setCalculatedVolume(null);
     setCalculationMethod(null);
+    setVolumeRoundingStepMl(null);
     setShouldExpandPremix(false);
     setSendMode('set');
   };
@@ -141,7 +145,8 @@ export default function UnifiedCalculatorPage() {
   const handleCalculate = () => {
     setCalculatedVolume(null);
     setCalculationMethod(null);
-    
+    setVolumeRoundingStepMl(null);
+
     const bv = parseFloat(bottleVolume);
     const fw = parseFloat(fullWeight);
     const ew = parseFloat(emptyWeight);
@@ -165,6 +170,7 @@ export default function UnifiedCalculatorPage() {
 
     setCalculatedVolume(result.volumeMl);
     setCalculationMethod(result.method);
+    setVolumeRoundingStepMl(result.roundingStepMl);
     if (result.warnings.length > 0) {
       toast({
         title: "Проверка данных",
@@ -482,13 +488,25 @@ export default function UnifiedCalculatorPage() {
                   </p>
                   {calculationMethod && (
                     <p className="text-xs text-muted-foreground mb-2">
-                      Метод: по весу (без линейки) · Округление: 10 мл
+                      Метод: по весу (без линейки)
+                      {volumeRoundingStepMl !== null && volumeRoundingStepMl > 0
+                        ? ` · Шаг округления: ${volumeRoundingStepMl} мл`
+                        : ' · Округление не применяется'}
                     </p>
                   )}
-                  <div className="flex items-center justify-center gap-2 mb-4">
-                    <p className="text-5xl font-bold gradient-text">{calculatedVolume}</p>
-                    <span className="text-2xl font-semibold text-muted-foreground">мл</span>
+                  <div className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 mb-2 min-w-0 px-1">
+                    <p
+                      className="text-4xl sm:text-5xl font-bold gradient-text max-w-full text-center break-words tabular-nums"
+                      title={Number.isFinite(calculatedVolume) ? String(calculatedVolume) : undefined}
+                    >
+                      {formatVolumeMlForDisplay(calculatedVolume)}
+                    </p>
+                    <span className="text-2xl font-semibold text-muted-foreground shrink-0">мл</span>
                   </div>
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto text-pretty px-2">
+                    Значение пропорционально разнице масс: сейчас и при полном разливе по карточке. Если расходится с мерником —
+                    проверьте фактический вес полной и пустой бутылки в профиле.
+                  </p>
                   
                   <div className="space-y-2 mt-2 mb-4">
                     <Label className="text-sm">Отправка в инвентаризацию</Label>

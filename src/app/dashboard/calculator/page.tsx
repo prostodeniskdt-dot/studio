@@ -152,7 +152,6 @@ export default function UnifiedCalculatorPage() {
       fullBottleWeightG: Number.isFinite(fw) ? fw : undefined,
       emptyBottleWeightG: Number.isFinite(ew) ? ew : undefined,
       currentWeightG: Number.isFinite(cw) ? cw : undefined,
-      roundingStepMl: 10,
     });
 
     if (!result.ok) {

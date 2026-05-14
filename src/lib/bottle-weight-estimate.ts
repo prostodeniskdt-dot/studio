@@ -6,5 +6,5 @@
 export const APPROX_SPIRIT_LIQUID_MASS_G_PER_ML = 0.93;
 
 export function estimateFullBottleWeightG(bottleVolumeMl: number, emptyBottleWeightG: number): number {
-  return Math.round(emptyBottleWeightG + bottleVolumeMl * APPROX_SPIRIT_LIQUID_MASS_G_PER_ML);
+  return emptyBottleWeightG + bottleVolumeMl * APPROX_SPIRIT_LIQUID_MASS_G_PER_ML;
 }

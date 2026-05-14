@@ -5,7 +5,8 @@ export type CalculateVolumeInput = {
   fullBottleWeightG?: number | null;
   emptyBottleWeightG?: number | null;
   currentWeightG?: number | null;
-  roundingStepMl?: number; // default 10
+  /** Если задано конечное число > 0, объём квантуется к этому шагу (мл). Иначе — без округления. */
+  roundingStepMl?: number;
 };
 
 export type CalculateVolumeResult =
@@ -30,13 +31,14 @@ function clamp(n: number, min: number, max: number): number {
 }
 
 function roundToStep(value: number, step: number): number {
-  if (!Number.isFinite(value)) return value;
-  if (!Number.isFinite(step) || step <= 0) return Math.round(value);
+  if (!Number.isFinite(value) || !Number.isFinite(step) || step <= 0) return value;
   return Math.round(value / step) * step;
 }
 
 export function calculateVolumeMl(input: CalculateVolumeInput): CalculateVolumeResult {
-  const roundingStepMl = isFinitePositiveNumber(input.roundingStepMl) ? input.roundingStepMl : 10;
+  const stepInput = input.roundingStepMl;
+  const useRounding = isFinitePositiveNumber(stepInput);
+  const roundingStepMl = useRounding ? stepInput : 0;
 
   if (!isFinitePositiveNumber(input.bottleVolumeMl)) {
     return { ok: false, errors: ['Номинальный объем бутылки должен быть положительным числом.'] };
@@ -71,9 +73,11 @@ export function calculateVolumeMl(input: CalculateVolumeInput): CalculateVolumeR
 
     const raw = (currentLiquidWeight / liquidNetWeight) * bv;
     const clamped = clamp(raw, 0, bv);
-    const rounded = clamp(roundToStep(clamped, roundingStepMl), 0, bv);
+    const volumeMl = useRounding
+      ? clamp(roundToStep(clamped, stepInput), 0, bv)
+      : clamped;
 
-    return { ok: true, volumeMl: rounded, method: 'weight', roundingStepMl, warnings };
+    return { ok: true, volumeMl, method: 'weight', roundingStepMl, warnings };
   }
 
   const errors: string[] = [];
